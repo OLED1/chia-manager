@@ -1,0 +1,35 @@
+{
+  "functioncodes" : {
+    "processGetActiveSubscriptions" : "001",
+    "processGetActiveRequests" : "002",
+    "processUpdateFrontendViewingSite" : "003",
+    "requesterLogin" : "004"
+  },
+  "errormessages" : {
+    "processGetActiveSubscriptions" : {
+      "001" : [1, "You are not allowed to query this information."]
+    },
+    "processGetActiveSubscriptions" : {
+      "001" : [1, "You are not allowed to query this information."]
+    },
+    "processUpdateFrontendViewingSite" : {
+      "001" : [1, "This user seems not to be subscribed."],
+      "002" : [1, "Not all information stated or you are not allowed to query this information."]
+    },
+    "requesterLogin" : {
+      "001" : [1, "No login information stated or too less data provided."],
+      "002" : [1, "This node waits for authentication."],
+      "003" : [1, "The connection for this node is not allowed."],
+      "004" : [1, "This node is not allowed to connect."],
+      "005" : [1, "Authtype not valid."],
+      "006" : [1, "This node is not registered to access the api. Please allow login first."],
+      "007" : [1, "This node is waiting for authentication please wait."],
+      "008" : [2, "There is an error on the database. To much rows where returned."],
+      "009" : [2, "An error occured."],
+      "010" : [1, "Data missing."],
+      "011" : [1, "Node IP address changed. Please follow instructions on frontend."],
+      "012" : [1, "This node is waiting for authentication please wait."],
+      "013" : [1, "This node is already existing. Please configure your authkey in the nodes config file."]
+    }
+  }
+}

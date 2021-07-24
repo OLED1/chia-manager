@@ -1,0 +1,96 @@
+{
+  "functioncodes" : {
+    "addUser" : "001",
+    "editUser" : "002",
+    "removeUser" : "003",
+    "userDataChanged" : "004",
+    "checkUsernameExists" : "005",
+    "getUsers" : "006",
+    "getUserSitesAndActions" : "007",
+    "checkCurrentPassword" : "008",
+    "checkRequiredData" : "009",
+    "resetUserPassword" : "010",
+    "savePersonalInfo" : "011",
+    "getUserResetInfo" : "012",
+    "sendPWResetLink" : "013",
+    "resetKeyValid" : "014",
+    "resetPW" : "015",
+    "invalidateResetKeys" : "016"
+  },
+  "errormessages" : {
+    "addUser" : {
+      "001" : [1, "Nothing found."],
+      "002" : [2, "An error occured."],
+      "003" : [1, "User exists."],
+      "004" : [1, "Something is missing."]
+    },
+    "editUser" : {
+      "001" : [1, "No data stated."],
+      "002" : [1, "User not found."],
+      "003" : [1, "Could not change data."],
+      "004" : [2, "An error occured."]
+    },
+    "removeUser" : {
+      "001" : [1, "This user cannot be deleted because it's either you or blocked."],
+      "002" : [2, "An error occured."],
+      "003" : [1, "Too many arguments or invalid session."]
+    },
+    "userDataChanged" : {
+      "001" : [1, "Data hasn't changed."],
+      "002" : [1, "No data stated."]
+    },
+    "checkUsernameExists" : {
+      "001" : [1, "User exists."],
+      "002" : [2, "An error occured."]
+    },
+    "getUsers" : {
+      "001" : [2, "An error occured."]
+    },
+    "getUserSitesAndActions" : {
+      "001" : [1, "Method not allowed."],
+      "002" : [1, "Method not allowed."],
+      "003" : [1, "Method not allowed."]
+    },
+    "checkRequiredData" : {
+      "001" : [1, "Some data is missing."]
+    },
+    "checkCurrentPassword" : {
+      "001" : [1, "Stated password does not match."],
+      "002" : [1, "Action not known or not allowed."],
+      "003" : [1, "An error occured."],
+      "004" : [1, "Not all data stated."]
+    },
+    "resetUserPassword" : {
+      "001" : [1, "New password matches old password, nothing to do."],
+      "002" : [1, "Action not known or not allowed."],
+      "003" : [2, "An error occured."],
+      "004" : [1, "Not all data stated."]
+    },
+    "savePersonalInfo" : {
+      "001" : [2, "An error occured."],
+      "002" : [1, "Function checkUsernameExists returned a non 0 status."],
+      "003" : [1, "Not all data stated."]
+    },
+    "getUserResetInfo" : {
+      "001" : [1, "Could not get userinfo."],
+      "002" : [2, "An error occured."],
+      "003" : [1, "Not all data stated."]
+    },
+    "sendPWResetLink" : {
+      "001" : [2, "Something went wrong. Resetmail will not be sent."],
+      "002" : [2, "An error occured."],
+      "003" : [1, "Something went wrong."],
+      "004" : [1, "Something went wrong."]
+    },
+    "resetKeyValid" : {
+      "001" : [1, "No valid entry found."],
+      "002" : [2, "An error occured."]
+    },
+    "resetPW" : {
+      "001" : [1, "Something went wrong."]
+    },
+    "invalidateResetKeys" : {
+      "001" : [1, "Something went wrong."]
+    }
+  }
+}

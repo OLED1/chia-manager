@@ -1,0 +1,9 @@
+{
+  "stable" : {
+  },
+  "beta" : {
+  },
+  "alpha" : {
+    "v0.1.2-alpha" : "/packages/chia_python_client_v0.1.2-alpha.zip"
+  }
+}

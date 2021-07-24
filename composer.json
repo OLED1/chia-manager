@@ -1,0 +1,12 @@
+{
+  "autoload": {
+        "psr-4": {
+            "ChiaMgmt\\": "backend/core/"
+        }
+    },
+    "require": {
+        "cboden/ratchet": "^0.4.3",
+    "ratchet/pawl": "^0.3.5",
+    "react/promise": "^2.8"
+    }
+}

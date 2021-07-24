@@ -1,0 +1,19 @@
+@media screen and (min-width: 750px){
+  #messagecontainer{
+    z-index: 9999;
+    position: fixed;
+    width: auto;
+    top: 0.5em;
+    right: 0.5em;
+  }
+}
+
+@media screen and (max-width: 749px){
+  #messagecontainer{
+    z-index: 9999;
+    position: fixed;
+    top: 0.5em;
+    right: 0.5em;
+    left: 0.5em;
+  }
+}

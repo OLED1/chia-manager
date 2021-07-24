@@ -1,0 +1,10 @@
+{
+  "Login" : "001",
+  "Mailing" : "002",
+  "MainOverview" : "003",
+  "Nodes" : "004",
+  "RequestHandler" : "005",
+  "System" : "006",
+  "Users" : "007",
+  "WebSocket" : "008"
+}
