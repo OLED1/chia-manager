@@ -107,6 +107,14 @@
                     </div>
                   </div>
                 </div>
+                <div class='col col-xl-5 col-lg-5'>
+                  <div class='card shadow mb-4'>
+                    <div class='card-body'>
+                      <h6>Transactions</h6>
+                      Here will be a chart about transactions
+                    </div>
+                  </div>
+                </div>
               </div>
               <div class='row'>
               <div class='col col-xl-5 col-lg-5'>

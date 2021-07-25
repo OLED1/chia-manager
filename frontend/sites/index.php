@@ -95,7 +95,7 @@
                 </a>
                 <a class="nav-link" data-siteid=7 href="/sites/chia_plots">
                   <i class="fas fa-hdd"></i>
-                  <span>Plots</span>
+                  <span>Harvester</span>
                 </a>
             </li>
 

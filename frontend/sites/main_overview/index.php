@@ -24,9 +24,88 @@
             class="fas fa-download fa-sm text-white-50"></i> Generate Report</a>
 </div>
 
+<div class="row">
+  <div class="col">
+    <div class="card mb-4">
+      <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Wallet Overview&nbsp;<span id='servicestatus_{$thiswallet['nodeid']}' class='badge badge-secondary'>Querying service status</span></h6>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col">
+            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+              <div class="row">
+                <!-- Sync Status Card START -->
+                <div class="col-xl-3 col-md-6 mb-4">
+                  <div class="card bg-danger text-white shadow h-100">
+                    <div class="card-body">
+                        <h6>Walletstatus: Not synced</h6>
+                        <div class="text-white-50"><h7>Height: 470417</h7></div>
+                    </div>
+                  </div>
+                </div>
+                <!-- Sync Status Card END -->
+                <!-- Total XCH Card START -->
+                <div class="col-xl-3 col-md-6 mb-4">
+                  <div class="card border-left-primary shadow h-100 py-2">
+                    <div class="card-body">
+                      <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                          <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total XCH</div>
+                          <div class="h5 mb-0 font-weight-bold text-gray-800">10 XCH</div>
+                        </div>
+                        <div class="col-auto">
+                          <i class="fas fa-money-check-alt fa-3x text-gray-300"></i>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- Total XCH Card END -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="row">
+  <div class="col">
+    <div class="card mb-4">
+      <div class="card-body">
+        <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Farm Overview</div>
+            </div>
+            <div class="col-auto">
+                <i class="fas fa-industry fa-2x text-gray-300"></i>
+            </div>
+          </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="row">
+  <div class="col">
+    <div class="card mb-4">
+      <div class="card-body">
+        <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Harvester Overview</div>
+            </div>
+            <div class="col-auto">
+                <i class="fas fa-hdd fa-2x text-gray-300"></i>
+            </div>
+          </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <!-- Content Row -->
 <div class="row">
-
     <!-- Earnings (Monthly) Card Example -->
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="card border-left-primary shadow h-100 py-2">
