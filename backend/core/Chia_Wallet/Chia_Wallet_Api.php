@@ -77,6 +77,19 @@
       }
     }
 
+    public function walletServiceRestart(array $data = NULL, array $loginData = NULL){
+      try{
+        $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryptAuthhash($loginData["authhash"])));
+        $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
+
+        $data["data"] = $nodeid;
+        return array("status" =>0, "message" => "Successfully queried wallet service restart for node $nodeid.", "data" => $data);
+      }catch(Exception $e){
+        print_r($e);
+        return array("status" => 1, "message" => "An error occured.");
+      }
+    }
+
     private function encryptAuthhash(string $encryptedauthhash){
       return openssl_encrypt($encryptedauthhash, $this->ciphering, $this->ini["serversalt"], $this->options, $this->encryption_iv);
     }

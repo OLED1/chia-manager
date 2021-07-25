@@ -90,6 +90,7 @@
                     aria-labelledby='dropdownMenuLink_{$thiswallet['walletid']}'>
                     <div class='dropdown-header'>Actions:</div>
                     <a data-wallet-id='{$thiswallet['walletid']}' class='dropdown-item refreshWalletInfo' href='#'>Refresh</a>
+                    <a data-wallet-id='{$thiswallet['walletid']}' class='dropdown-item restartWalletService' href='#'>Restart wallet service</a>
                 </div>
             </div>
           </div>

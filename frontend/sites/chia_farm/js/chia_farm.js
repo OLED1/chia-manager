@@ -1,4 +1,5 @@
 initRefreshFarmInfos();
+initRestartFarmerService();
 
 $.each(chiaFarmData, function(nodeid, farmdata) {
   queryFarmStatus(nodeid);
@@ -24,6 +25,29 @@ function initRefreshFarmInfos(){
     }
 
     sendToWSS("messageSpecificNode", "", "", "queryFarmData", datafornode);
+  });
+}
+
+function initRestartFarmerService(){
+  $(".restartFarmerService").off("click");
+  $(".restartFarmerService").on("click", function(e){
+    e.preventDefault();
+    var nodeid = $(this).attr("data-node-id");
+    var authhash = chiaFarmData[nodeid]["nodeauthhash"];
+    var datafornode = {
+      "nodeinfo":{
+        "authhash": authhash
+      },
+      "data" : {
+        "restartFarmerService" : {
+          "status" : 0,
+          "message" : "Restart farmer service.",
+          "data": {}
+        }
+      }
+    }
+
+    sendToWSS("messageSpecificNode", "", "", "restartFarmerService", datafornode);
   });
 }
 
@@ -60,6 +84,7 @@ function createFarmdataCards(data){
                 "<div class='dropdown-menu dropdown-menu-right shadow animated--fade-in' aria-labelledby='dropdownMenuLink_" + nodeid + "'>" +
                     "<div class='dropdown-header'>Actions:</div>" +
                     "<a data-node-id='" + nodeid + "' class='dropdown-item refreshFarmInfo' href='#'>Refresh</a>" +
+                    "<a data-node-id='" + nodeid + "' class='dropdown-item restartFarmerService' href='#'>Restart farmer service</a>" +
                 "</div>" +
               "</div>" +
             "</div>" +
@@ -155,8 +180,22 @@ function createFarmdataCards(data){
           "</div>" +
         "</div>" +
       "</div>");
-      sendToWSS("messageSpecificNode", "", "", "queryFarmerStatus", datafornode);
+
+      queryFarmStatus(nodeid);
   });
+  initRefreshFarmInfos();
+  initRestartFarmerService();
+}
+
+function setFarmerBadge(data){
+  var targetbadge = $("#servicestatus_" + data["data"]);
+  targetbadge.removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-alert");
+  if(data["status"] == 0){
+    targetbadge.addClass("badge-success");
+  }else{
+    targetbadge.addClass("badge-danger");
+  }
+  targetbadge.html(data["message"]);
 }
 
 function messagesTrigger(data){
@@ -168,15 +207,11 @@ function messagesTrigger(data){
     }else if(key == "getFarmData"){
       createFarmdataCards(data[key]["data"]);
       initRefreshWalletInfo();
+      sendToWSS("messageSpecificNode", "", "", "queryFarmerStatus", datafornode);
     }else if(key == "farmerStatus"){
-      var targetbadge = $("#servicestatus_" + data[key]["data"]["data"]);
-      targetbadge.removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-alert");
-      if(data[key]["data"]["status"] == 0){
-        targetbadge.addClass("badge-success");
-      }else{
-        targetbadge.addClass("badge-danger");
-      }
-      targetbadge.html(data[key]["data"]["message"]);
+      setFarmerBadge(data[key]["data"]);
+    }else if(key == "farmerServiceRestart"){
+      setFarmerBadge(data[key]["data"]);
     }
   }
 }

@@ -1,4 +1,5 @@
 initRefreshWalletInfo();
+initRestartWalletService();
 
 $.each(chiaWalletData, function(walletid, walletdata) {
   queryWalletStatus(walletid);
@@ -24,6 +25,29 @@ function initRefreshWalletInfo(){
     }
 
     sendToWSS("messageSpecificNode", "", "", "queryWalletData", datafornode);
+  });
+}
+
+function initRestartWalletService(){
+  $(".restartWalletService").off("click");
+  $(".restartWalletService").on("click", function(e){
+    e.preventDefault();
+    var walletid = $(this).attr("data-wallet-id");
+    var authhash = chiaWalletData[walletid]["nodeauthhash"];
+    var datafornode = {
+      "nodeinfo":{
+        "authhash": authhash
+      },
+      "data" : {
+        "restartWalletService" : {
+          "status" : 0,
+          "message" : "Restart farmer service.",
+          "data": {}
+        }
+      }
+    }
+
+    sendToWSS("messageSpecificNode", "", "", "restartWalletService", datafornode);
   });
 }
 
@@ -74,6 +98,7 @@ function generateWalletCards(data){
                   "<div class='dropdown-menu dropdown-menu-right shadow animated--fade-in' aria-labelledby='dropdownMenuLink'>" +
                       "<div class='dropdown-header'>Actions:</div>" +
                       "<a data-wallet-id='" + walletdata['walletid'] + "' class='dropdown-item refreshWalletInfo' href='#'>Refresh</a>" +
+                      "<a data-wallet-id='" + walletdata['walletid'] + "' class='dropdown-item restartWalletService' href='#'>Restart wallet service</a>" +
                   "</div>" +
               "</div>" +
             "</div>" +
@@ -115,7 +140,21 @@ function generateWalletCards(data){
           "</div>" +
         "</div>" +
       "</div>");
+      queryWalletStatus(walletid);
   });
+  initRefreshWalletInfo();
+  initRestartWalletService();
+}
+
+function setWalletBadge(data){
+  var targetbadge = $("#servicestatus_" + data["data"]);
+  targetbadge.removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-alert");
+  if(data["status"] == 0){
+    targetbadge.addClass("badge-success");
+  }else{
+    targetbadge.addClass("badge-danger");
+  }
+  targetbadge.html(data["message"]);
 }
 
 function messagesTrigger(data){
@@ -128,15 +167,9 @@ function messagesTrigger(data){
       generateWalletCards(data[key]["data"]);
       initRefreshWalletInfo();
     }else if(key == "walletStatus"){
-      console.log(data);
-      var targetbadge = $("#servicestatus_" + data[key]["data"]["data"]);
-      targetbadge.removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-alert");
-      if(data[key]["data"]["status"] == 0){
-        targetbadge.addClass("badge-success");
-      }else{
-        targetbadge.addClass("badge-danger");
-      }
-      targetbadge.html(data[key]["data"]["message"]);
+      setWalletBadge(data[key]["data"]);
+    }else if(key == "walletServiceRestart"){
+      setFarmerBadge(data[key]["data"]);
     }
   }
 }

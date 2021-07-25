@@ -63,6 +63,7 @@
               <div class='dropdown-menu dropdown-menu-right shadow animated--fade-in' aria-labelledby='dropdownMenuLink_<?php echo $nodeid; ?>'>
                   <div class='dropdown-header'>Actions:</div>
                   <a data-node-id='<?php echo $nodeid; ?>' class='dropdown-item refreshFarmInfo' href='#'>Refresh</a>
+                  <a data-node-id='<?php echo $nodeid; ?>' class='dropdown-item restartFarmerService' href='#'>Restart farmer service</a>
               </div>
             </div>
           </div>
