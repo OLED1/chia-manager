@@ -26,10 +26,15 @@
     }
 
     public function processRequest(array $loginData, array $backendInfo, array $data){
-      $this_class = new $backendInfo['namespace']();
-      $return = $this_class->{$backendInfo['method']}($data, $loginData);
-      sleep(1);
-      return array($backendInfo['method'] => $return);
+      if (class_exists($backendInfo['namespace']) && method_exists($backendInfo['namespace'], $backendInfo['method'])){
+        $this_class = new $backendInfo['namespace']();
+        $return = $this_class->{$backendInfo['method']}($data, $loginData);
+        sleep(1);
+        return array($backendInfo['method'] => $return);
+      }else{
+        return array("status" => 1, "message" => "Class {$backendInfo['namespace']} or function {$backendInfo['method']} not existing.");
+        //return $this->logging->getErrormessage("001");
+      }
     }
 
     public function processGetActiveSubscriptions(array $loginData, array $subscriptions){

@@ -80,7 +80,7 @@
       <div class='col'>
         <div class='card shadow mb-4'>
           <div class='card-header py-3 d-flex flex-row align-items-center justify-content-between'>
-            <h6 class='m-0 font-weight-bold text-primary'>Wallet (ID: {$thiswallet['walletid']}), Type: {$thiswallet['wallettype']}, Status: {$thiswallet['syncstatus']}&nbsp;" . ($thiswallet['syncstatus'] == "Synced" ? "<i class='fas fa-check-circle' style='color: green;'" : "<i class='fas fa-times-circle' style='color: red;'") . "></i></h6>
+            <h6 class='m-0 font-weight-bold text-primary'>Wallet (ID: {$thiswallet['walletid']}), Type: {$thiswallet['wallettype']}, Status: {$thiswallet['syncstatus']}&nbsp;" . ($thiswallet['syncstatus'] == "Synced" ? "<i class='fas fa-check-circle' style='color: green;'" : "<i class='fas fa-times-circle' style='color: red;'") . "></i>&nbsp;<span id='servicestatus_{$thiswallet['nodeid']}' class='badge badge-secondary'>Querying service status</span></h6>
             <div class='dropdown no-arrow'>
                 <a class='dropdown-toggle' href='#' role='button' id='dropdownMenuLink_{$thiswallet['walletid']}'
                     data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>

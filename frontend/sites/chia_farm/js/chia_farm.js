@@ -1,5 +1,9 @@
 initRefreshFarmInfos();
 
+$.each(chiaFarmData, function(nodeid, farmdata) {
+  queryFarmStatus(nodeid);
+});
+
 function initRefreshFarmInfos(){
   $(".refreshFarmInfo").off("click");
   $(".refreshFarmInfo").on("click", function(e){
@@ -23,16 +27,32 @@ function initRefreshFarmInfos(){
   });
 }
 
+function queryFarmStatus(nodeid){
+  var datafornode = {
+    "nodeinfo":{
+      "authhash": chiaFarmData[nodeid]["nodeauthhash"]
+    },
+    "data" : {
+      "queryFarmerStatus" : {
+        "status" : 0,
+        "message" : "Query Farmer running status.",
+        "data": {}
+      }
+    }
+  }
+
+  sendToWSS("messageSpecificNode", "", "", "queryFarmerStatus", datafornode);
+}
+
 function createFarmdataCards(data){
   $("#farminfocards").children().remove();
   $.each(data, function(nodeid, farmdata){
-    console.log(farmdata);
     $("#farminfocards").append(
       "<div class='row'>" +
         "<div class='col'>" +
           "<div class='card shadow mb-4'>" +
             "<div class='card-header py-3 d-flex flex-row align-items-center justify-content-between'>" +
-              "<h6 class='m-0 font-weight-bold text-primary'>Farmdata for host " + farmdata["hostname"] + " with id " + nodeid + "</h6>" +
+              "<h6 class='m-0 font-weight-bold text-primary'>Farmdata for host " + farmdata["hostname"] + " with id " + nodeid + "&nbsp;<span id='servicestatus_" + nodeid + "' class='badge badge-secondary'>Querying service status</span></h6>" +
               "<div class='dropdown no-arrow'>" +
               "  <a id='dropdownMenuLink_" + nodeid + "' class='dropdown-toggle' href='#' role='button' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>" +
                     "<i class='fas fa-ellipsis-v fa-sm fa-fw text-gray-400'></i>" +
@@ -135,6 +155,7 @@ function createFarmdataCards(data){
           "</div>" +
         "</div>" +
       "</div>");
+      sendToWSS("messageSpecificNode", "", "", "queryFarmerStatus", datafornode);
   });
 }
 
@@ -147,6 +168,15 @@ function messagesTrigger(data){
     }else if(key == "getFarmData"){
       createFarmdataCards(data[key]["data"]);
       initRefreshWalletInfo();
+    }else if(key == "farmerStatus"){
+      var targetbadge = $("#servicestatus_" + data[key]["data"]["data"]);
+      targetbadge.removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-alert");
+      if(data[key]["data"]["status"] == 0){
+        targetbadge.addClass("badge-success");
+      }else{
+        targetbadge.addClass("badge-danger");
+      }
+      targetbadge.html(data[key]["data"]["message"]);
     }
   }
 }

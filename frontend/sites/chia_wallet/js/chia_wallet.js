@@ -1,5 +1,9 @@
 initRefreshWalletInfo();
 
+$.each(chiaWalletData, function(walletid, walletdata) {
+  queryWalletStatus(walletid);
+});
+
 function initRefreshWalletInfo(){
   $(".refreshWalletInfo").off("click");
   $(".refreshWalletInfo").on("click", function(e){
@@ -23,6 +27,25 @@ function initRefreshWalletInfo(){
   });
 }
 
+function queryWalletStatus(walletid){
+  var authhash = chiaWalletData[walletid]["nodeauthhash"];
+
+  var datafornode = {
+    "nodeinfo":{
+      "authhash": authhash
+    },
+    "data" : {
+      "queryWalletStatus" : {
+        "status" : 0,
+        "message" : "Query Wallet running status.",
+        "data": {}
+      }
+    }
+  }
+
+  sendToWSS("messageSpecificNode", "", "", "queryWalletStatus", datafornode);
+}
+
 function generateWalletCards(data){
   $("#walletcontainer").children().remove();
   $.each(data, function(walletid, walletdata){
@@ -43,7 +66,7 @@ function generateWalletCards(data){
         "<div class='col'>" +
           "<div class='card shadow mb-4'>" +
             "<div class='card-header py-3 d-flex flex-row align-items-center justify-content-between'>" +
-              "<h6 class='m-0 font-weight-bold text-primary'>Wallet (ID: " + walletdata['walletid'] + "), Type: " + walletdata['wallettype'] + ", Status: " + walletdata['syncstatus'] + "&nbsp;" + (" + walletdata['syncstatus'] + " == "Synced" ? "<i class='fas fa-check-circle' style='color: green;'" : "<i class='fas fa-times-circle' style='color: red;'") + "></i></h6>" +
+              "<h6 class='m-0 font-weight-bold text-primary'>Wallet (ID: " + walletdata['walletid'] + "), Type: " + walletdata['wallettype'] + ", Status: " + walletdata['syncstatus'] + "&nbsp;" + (" + walletdata['syncstatus'] + " == "Synced" ? "<i class='fas fa-check-circle' style='color: green;'" : "<i class='fas fa-times-circle' style='color: red;'") + "></i>&nbsp;<span id='servicestatus_" + walletdata['nodeid'] + "' class='badge badge-secondary'>Querying service status</span></h6>" +
               "<div class='dropdown no-arrow'>" +
                   "<a class='dropdown-toggle' href='#' role='button' id='dropdownMenuLink' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>" +
                       "<i class='fas fa-ellipsis-v fa-sm fa-fw text-gray-400'></i>" +
@@ -104,6 +127,16 @@ function messagesTrigger(data){
     }else if(key == "getWalletData"){
       generateWalletCards(data[key]["data"]);
       initRefreshWalletInfo();
+    }else if(key == "walletStatus"){
+      console.log(data);
+      var targetbadge = $("#servicestatus_" + data[key]["data"]["data"]);
+      targetbadge.removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-alert");
+      if(data[key]["data"]["status"] == 0){
+        targetbadge.addClass("badge-success");
+      }else{
+        targetbadge.addClass("badge-danger");
+      }
+      targetbadge.html(data[key]["data"]["message"]);
     }
   }
 }
