@@ -27,10 +27,15 @@
 
     public function processRequest(array $loginData, array $backendInfo, array $data){
       if (class_exists($backendInfo['namespace']) && method_exists($backendInfo['namespace'], $backendInfo['method'])){
-        $this_class = new $backendInfo['namespace']();
-        $return = $this_class->{$backendInfo['method']}($data, $loginData);
-        sleep(1);
-        return array($backendInfo['method'] => $return);
+        try{
+          $this_class = new $backendInfo['namespace']();
+          $return = $this_class->{$backendInfo['method']}($data, $loginData);
+          sleep(1);
+          return array($backendInfo['method'] => $return);
+        }catch(Exception $e){
+          print_r($e);
+          return array("status" => 1, "message" => "Class {$backendInfo['namespace']} or function {$backendInfo['method']} not existing.");
+        }
       }else{
         return array("status" => 1, "message" => "Class {$backendInfo['namespace']} or function {$backendInfo['method']} not existing.");
         //return $this->logging->getErrormessage("001");
@@ -177,7 +182,9 @@
                 return $data;
               }else{
                 $sql = $this->db_api->execute("UPDATE nodes SET changedIP = ? WHERE hostname = ?", array($nodeip, $nodeinfo["hostname"]));
-                return $this->logging->getErrormessage("011");
+                $data = $this->logging->getErrormessage("011");
+                $data["data"]["newauthhash"] = $this->decryptAuthhash($sqdata[0]["nodeauthhash"]);
+                return $data;
               }
 
               //return array("status" => 1, "message" => "This node is waiting for authentication please wait.");

@@ -1,9 +1,9 @@
 <?php
-  namespace ChiaMgmt\Chia_Plots;
+  namespace ChiaMgmt\Chia_Harvester;
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\Logging\Logging_Api;
 
-  class Chia_Plots_Api{
+  class Chia_Harvester_Api{
     private $db_api, $logging_api;
 
     public function __construct(){

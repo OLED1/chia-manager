@@ -123,7 +123,7 @@
 
     public function disableUser(array $data, array $loginData = NULL){
       if(array_key_exists("userID", $data)){
-        if($loginData["userid"] != $data["userID"]){
+        if($loginData["userid"] != $data["userID"] && $data["userID"] > 1){
           try{
             $sql = $this->db_api->execute("UPDATE users SET enabled = 0 WHERE id = ?", array($data["userID"]));
             $sql = $this->db_api->execute("UPDATE users_sessions SET invalidated = 1 WHERE id = ?", array($data["userID"]));
@@ -134,7 +134,7 @@
             return array("status" => 1, "message" => "An error occured.");
           }
         }else{
-          return array("status" => 1, "message" => "You cannot disable your own account.");
+          return array("status" => 1, "message" => "You are not allowed to disable this account.");
         }
       }else{
         return array("status" => 1, "message" => "Some data is missing.");
@@ -302,7 +302,7 @@
      */
     public function resetUserPassword(array $data, array $loginData = NULL){
       if(isset($data["userID"]) && isset($data["password"])){
-        $pwcheck = checkPasswordStrength($data["password"]);
+        $pwcheck = $this->checkPasswordStrength($data["password"]);
         if($pwcheck["status"] == 0){
           try{
             $sql = $this->db_api->execute("SELECT password, salt from users where id = ?",

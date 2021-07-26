@@ -35,6 +35,15 @@
   </div>
 </div>
 <h4>My Farm</h4>
+<div class="row">
+  <div class="col">
+    <div class="card shadow mb-4">
+      <div class="card-body">
+        <button id="queryAllNodes" type="button" class="btn btn-secondary">Query farm information from all nodes</button>
+      </div>
+    </div>
+  </div>
+</div>
 <h5>Overview</h5>
 <?php if(count($farmdata["data"]) == 0) { ?>
   <div class="row">
@@ -164,7 +173,7 @@
     }
   }
 ?>
-<h5>Last Attempted Proof</h5>
-<h5>Last Block Challenges</h5>
+<!-- <h5>Last Attempted Proof</h5>
+<h5>Last Block Challenges</h5>-->
 
 <script src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_farm/js/chia_farm.js"?>></script>

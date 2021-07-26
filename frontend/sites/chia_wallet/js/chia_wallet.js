@@ -1,6 +1,12 @@
 initRefreshWalletInfo();
 initRestartWalletService();
 
+$("#queryAllNodes").on("click", function(){
+  $.each(chiaWalletData, function(walletid, walletdata) {
+      queryWalletData(walletid);
+  });
+});
+
 $.each(chiaWalletData, function(walletid, walletdata) {
   queryWalletStatus(walletid);
 });
@@ -9,22 +15,7 @@ function initRefreshWalletInfo(){
   $(".refreshWalletInfo").off("click");
   $(".refreshWalletInfo").on("click", function(e){
     e.preventDefault();
-    var walletid = $(this).attr("data-wallet-id");
-    var authhash = chiaWalletData[walletid]["nodeauthhash"];
-    var datafornode = {
-      "nodeinfo":{
-        "authhash": authhash
-      },
-      "data" : {
-        "queryWalletData" : {
-          "status" : 0,
-          "message" : "Query Wallet data.",
-          "data": {}
-        }
-      }
-    }
-
-    sendToWSS("messageSpecificNode", "", "", "queryWalletData", datafornode);
+    queryWalletData($(this).attr("data-wallet-id"));
   });
 }
 
@@ -49,6 +40,24 @@ function initRestartWalletService(){
 
     sendToWSS("messageSpecificNode", "", "", "restartWalletService", datafornode);
   });
+}
+
+function queryWalletData(walletid){
+  var authhash = chiaWalletData[walletid]["nodeauthhash"];
+  var datafornode = {
+    "nodeinfo":{
+      "authhash": authhash
+    },
+    "data" : {
+      "queryWalletData" : {
+        "status" : 0,
+        "message" : "Query Wallet data.",
+        "data": {}
+      }
+    }
+  }
+
+  sendToWSS("messageSpecificNode", "", "", "queryWalletData", datafornode);
 }
 
 function queryWalletStatus(walletid){
@@ -148,7 +157,7 @@ function generateWalletCards(data){
 
 function setWalletBadge(data){
   var targetbadge = $("#servicestatus_" + data["data"]);
-  targetbadge.removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-alert");
+  targetbadge.removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-danger");
   if(data["status"] == 0){
     targetbadge.addClass("badge-success");
   }else{

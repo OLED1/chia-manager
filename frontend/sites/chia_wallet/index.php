@@ -35,6 +35,15 @@
   </div>
 </div>
 <h5>My Wallets</h5>
+<div class="row">
+  <div class="col">
+    <div class="card shadow mb-4">
+      <div class="card-body">
+        <button id="queryAllNodes" type="button" class="btn btn-secondary">Query wallet information from all nodes</button>
+      </div>
+    </div>
+  </div>
+</div>
 <div id="walletcontainer">
   <?php if(count($walletdata["data"]) == 0) { ?>
     <div class="row">

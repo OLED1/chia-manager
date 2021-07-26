@@ -344,7 +344,22 @@ function initSysinfoRefresh(){
   $(".sysinfo-refresh").off("click");
   $(".sysinfo-refresh").on("click", function(e){
     e.preventDefault();
-    sendToWSS("queryCronData", "", "", "", {});
+    var nodeid = $(this).attr("data-nodeid");
+    var authhash = configuredNodes[nodeid]["nodeauthhash"];
+    var datafornode = {
+      "nodeinfo":{
+        "authhash": authhash
+      },
+      "data" : {
+        "querySystemInfo" : {
+          "status" : 0,
+          "message" : "Query Sysinfo data.",
+          "data": {}
+        }
+      }
+    }
+
+    sendToWSS("messageSpecificNode", "", "", "querySystemInfo", datafornode);
   });
 }
 

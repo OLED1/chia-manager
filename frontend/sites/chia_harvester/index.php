@@ -2,7 +2,7 @@
   session_start();
 
   use ChiaMgmt\Login\Login_Api;
-  use ChiaMgmt\Chia_Plots\Chia_Plots_Api;
+  use ChiaMgmt\Chia_Harvester\Chia_Harvester_Api;
   require __DIR__ . '/../../../vendor/autoload.php';
 
   $login_api = new Login_Api();
@@ -13,14 +13,14 @@
     header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/login.php");
   }
 
-  $chia_plots_api = new Chia_Plots_Api();
+  $chia_harvester_api = new Chia_Harvester_Api();
   //$farmdata = $chia_farm_api->getFarmData();
 
   echo "<script> var siteID = 6; </script>";
   //echo "<script> var chiaFarmData = " . json_encode($farmdata["data"]) . "; </script>";
 ?>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Chia Plots</h1>
+    <h1 class="h3 mb-0 text-gray-800">Chia Harvester</h1>
 </div>
 
 <div class="row">
@@ -34,7 +34,16 @@
     </div>
   </div>
 </div>
-<h5>My Plots</h5>
+<div class="row">
+  <div class="col">
+    <div class="card shadow mb-4">
+      <div class="card-body">
+        <button id="queryAllNodes" type="button" class="btn btn-secondary">Query harvester information from all nodes</button>
+      </div>
+    </div>
+  </div>
+</div>
+<h4>My Plots</h4>
 <div id="harvesterplots">
   <div class="row">
     <div class="col">

@@ -54,9 +54,9 @@ class ChiaWebSocketServer implements MessageComponentInterface {
         echo "[{$this->getDate()}] INFO: {$requesterLogin["message"]}\n";
 
         if($requesterLogin["status"] == "005004006" || $requesterLogin["status"] == "005004007" ||
-          $requesterLogin["status"] == "005004012" || $requesterLogin["status"] == "005004002"
+          $requesterLogin["status"] == "005004012" || $requesterLogin["status"] == "005004002" ||
+          $requesterLogin["status"] == "005004011"
         ){
-
           echo "[{$this->getDate()}] INFO: Send new connection request to frontend.\n";
           $requesterLogin["data"]["resid"] = $from->resourceId;
           if($requesterLogin["status"] == "005004002") $this->requests[$requesterLogin["data"]["authhash"]] = $requesterLogin["data"];

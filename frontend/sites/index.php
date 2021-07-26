@@ -93,7 +93,7 @@
                   <i class="fas fa-industry"></i>
                   <span>Farm</span>
                 </a>
-                <a class="nav-link" data-siteid=7 href="/sites/chia_plots">
+                <a class="nav-link" data-siteid=7 href="/sites/chia_harvester">
                   <i class="fas fa-hdd"></i>
                   <span>Harvester</span>
                 </a>

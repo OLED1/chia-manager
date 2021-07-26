@@ -1,6 +1,12 @@
 initRefreshFarmInfos();
 initRestartFarmerService();
 
+$("#queryAllNodes").on("click", function(){
+  $.each(chiaFarmData, function(nodeid, farmdata) {
+      queryFarmData(nodeid);
+  });
+});
+
 $.each(chiaFarmData, function(nodeid, farmdata) {
   queryFarmStatus(nodeid);
 });
@@ -9,22 +15,7 @@ function initRefreshFarmInfos(){
   $(".refreshFarmInfo").off("click");
   $(".refreshFarmInfo").on("click", function(e){
     e.preventDefault();
-    var nodeid = $(this).attr("data-node-id");
-    var authhash = chiaFarmData[nodeid]["nodeauthhash"];
-    var datafornode = {
-      "nodeinfo":{
-        "authhash": authhash
-      },
-      "data" : {
-        "queryFarmData" : {
-          "status" : 0,
-          "message" : "Query Farm data.",
-          "data": {}
-        }
-      }
-    }
-
-    sendToWSS("messageSpecificNode", "", "", "queryFarmData", datafornode);
+    queryFarmData($(this).attr("data-node-id"));
   });
 }
 
@@ -49,6 +40,24 @@ function initRestartFarmerService(){
 
     sendToWSS("messageSpecificNode", "", "", "restartFarmerService", datafornode);
   });
+}
+
+function queryFarmData(nodeid){
+  var authhash = chiaFarmData[nodeid]["nodeauthhash"];
+  var datafornode = {
+    "nodeinfo":{
+      "authhash": authhash
+    },
+    "data" : {
+      "queryFarmData" : {
+        "status" : 0,
+        "message" : "Query Farm data.",
+        "data": {}
+      }
+    }
+  }
+
+  sendToWSS("messageSpecificNode", "", "", "queryFarmData", datafornode);
 }
 
 function queryFarmStatus(nodeid){
@@ -189,7 +198,7 @@ function createFarmdataCards(data){
 
 function setFarmerBadge(data){
   var targetbadge = $("#servicestatus_" + data["data"]);
-  targetbadge.removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-alert");
+  targetbadge.removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-danger");
   if(data["status"] == 0){
     targetbadge.addClass("badge-success");
   }else{
@@ -207,7 +216,6 @@ function messagesTrigger(data){
     }else if(key == "getFarmData"){
       createFarmdataCards(data[key]["data"]);
       initRefreshWalletInfo();
-      sendToWSS("messageSpecificNode", "", "", "queryFarmerStatus", datafornode);
     }else if(key == "farmerStatus"){
       setFarmerBadge(data[key]["data"]);
     }else if(key == "farmerServiceRestart"){
