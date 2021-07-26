@@ -163,7 +163,7 @@
         try{
           $sql = $this->db_api->execute("UPDATE nodes SET scriptversion = ?, chiaversion = ?, chiapath = ? WHERE nodeauthhash = ?", array($data["scriptversion"], $data["chia"]["version"], $data["chia"]["path"], $this->encryptAuthhash($loginData["authhash"])));
 
-          return array("status" =>0, "message" => "Successfully updates version.");
+          return array("status" =>0, "message" => "Successfully updated version.");
         }catch(Exception $e){
           print_r($e);
           return array("status" => 1, "message" => "An error occured.");

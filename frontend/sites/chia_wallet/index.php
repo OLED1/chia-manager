@@ -50,7 +50,8 @@
       <div class="col">
         <div class="card shadow mb-4">
           <div class="card-body">
-            There are currently no wallets to show.
+            There are currently no wallets to show.<br>
+            Please try to rescan all data on the nodes page by pressing the button "Query all available information from all nodes".
           </div>
         </div>
       </div>

@@ -33,6 +33,9 @@ initShowNodeInfo();
 
 var updatechannels = {};
 
+$("#queryAllInfoAllNodes").on("click", function(){
+  sendToWSS("queryCronData", "", "", "", {});
+});
 
 $(".nodedefinition").on("change", function(){
   $('#nodetypes-options').multiselect("destroy");

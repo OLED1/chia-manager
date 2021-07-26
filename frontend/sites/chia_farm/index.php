@@ -45,12 +45,14 @@
   </div>
 </div>
 <h5>Overview</h5>
+<div id="farminfocards">
 <?php if(count($farmdata["data"]) == 0) { ?>
   <div class="row">
     <div class="col">
       <div class="card shadow mb-4">
         <div class="card-body">
-          There is currently no farm data to show.
+          There is currently no farm data to show.<br>
+          Please try to rescan all data on the nodes page by pressing the button "Query all available information from all nodes".
         </div>
       </div>
     </div>
@@ -59,7 +61,6 @@
   }else{
     foreach($farmdata["data"] AS $nodeid => $farmdata){
 ?>
-  <div id="farminfocards">
     <div class="row">
       <div class="col">
         <div class="card shadow mb-4">
@@ -168,11 +169,11 @@
         </div>
       </div>
     </div>
-  </div>
 <?php
     }
   }
 ?>
+</div>
 <!-- <h5>Last Attempted Proof</h5>
 <h5>Last Block Challenges</h5>-->
 

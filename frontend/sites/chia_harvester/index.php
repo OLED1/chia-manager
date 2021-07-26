@@ -14,10 +14,14 @@
   }
 
   $chia_harvester_api = new Chia_Harvester_Api();
-  //$farmdata = $chia_farm_api->getFarmData();
+  $harvesterdata = $chia_harvester_api->getHarvesterData();
+
+  //echo "<pre>";
+  //print_r($harvesterdata);
+  //echo "</pre>";
 
   echo "<script> var siteID = 6; </script>";
-  //echo "<script> var chiaFarmData = " . json_encode($farmdata["data"]) . "; </script>";
+  echo "<script> var chiaHarvesterData = " . json_encode($harvesterdata["data"]) . "; </script>";
 ?>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Chia Harvester</h1>
@@ -44,8 +48,97 @@
   </div>
 </div>
 <h4>My Plots</h4>
-<div id="harvesterplots">
+<div id="harvesterinfos">
+<?php if(count($harvesterdata["data"]) == 0) { ?>
   <div class="row">
+    <div class="col">
+      <div class="card shadow mb-4">
+        <div class="card-body">
+          There is currently no harvester data to show. <br>
+          Please try to rescan all data on the nodes page by pressing the button "Query all available information from all nodes".
+        </div>
+      </div>
+    </div>
+  </div>
+<?php
+  }else{
+    foreach($harvesterdata["data"] AS $nodeid => $harvesterinfos){ ?>
+      <div class="row">
+        <div class="col">
+          <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+              <h6 class='m-0 font-weight-bold text-primary'>Harvesterdata for host <?php echo $harvesterinfos["hostname"]; ?> with id <?php echo $nodeid; ?>&nbsp;<span id='servicestatus_666' class='badge badge-secondary'>Querying service status</span></h6>
+              <div class='dropdown no-arrow'>
+                <a id='dropdownMenuLink_<?php echo $nodeid; ?>' class='dropdown-toggle' href='#' role='button' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
+                    <i class='fas fa-ellipsis-v fa-sm fa-fw text-gray-400'></i>
+                </a>
+                <div class='dropdown-menu dropdown-menu-right shadow animated--fade-in' aria-labelledby='dropdownMenuLink_<?php echo $nodeid; ?>'>
+                    <div class='dropdown-header'>Actions:</div>
+                    <a data-node-id='<?php echo $nodeid; ?>' class='dropdown-item refreshHarvesterInfo' href='#'>Refresh</a>
+                    <a data-node-id='<?php echo $nodeid; ?>' class='dropdown-item refreshHarvesterService' href='#'>Restart harvester service</a>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <div class="card shadow mb-4">
+                    <div class="card-body">
+                      <h6>Configured plot directories</h6>
+                      <?php foreach($harvesterinfos["plotdirs"] AS $finalplotsdir => $dirinfos){ ?>
+                      <h4 class="small font-weight-bold"><?php echo $dirinfos["finalplotsdir"]; ?> (Size: <?php echo (!is_null($dirinfos["directorysize"]) ? $dirinfos["directorysize"] : "UNKNOWN - Not mounted"); ?>)<span class="float-right"><?php echo (!is_Null($dirinfos["totalused_percent"]) ? $dirinfos["totalused_percent"] : "0%"); ?></span></h4>
+                      <div class="progress mb-4">
+                          <div class="progress-bar bg-success" role="progressbar" style="width: <?php echo (!is_Null($dirinfos["totalused_percent"]) ? $dirinfos["totalused_percent"] : "0%"); ?>" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"><?php echo $dirinfos["directoryused"]; ?> - <?php echo $dirinfos["plotcount"]; ?> Plots</div>
+                      </div>
+                      <?php } ?>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col">
+                  <div class="card shadow mb-4">
+                    <div class="card-body">
+                      <h6>Found plots</h6>
+                      <div class="table-responsive">
+                        <table class="table table-bordered" id="plots_666" width="100%" cellspacing="0">
+                          <thead>
+                            <tr>
+                              <th>K-Size</th>
+                              <th>Plot Key</th>
+                              <th>Pool Key</th>
+                              <th>Filename</th>
+                              <th>Status</th>
+                              <th>Actions</th>
+                            </tr>
+                          </thead>
+                          <tfoot>
+                            <tr>
+                              <th>K-Size</th>
+                              <th>Plot Key</th>
+                              <th>Pool Key</th>
+                              <th>Filename</th>
+                              <th>Status</th>
+                              <th>Actions</th>
+                            </tr>
+                          </tfoot>
+                          <tbody>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+<?php
+    }
+  }
+?>
+  <!--<div class="row">
     <div class="col">
       <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
@@ -67,8 +160,7 @@
               <div class="card shadow mb-4">
                 <div class="card-body">
                   <h6>Configured plot directories</h6>
-                  <h4 class="small font-weight-bold">/mnt/bla1 (Size: 13TB)<span
-                          class="float-right">20%</span></h4>
+                  <h4 class="small font-weight-bold">/mnt/bla1 (Size: 13TB)<span class="float-right">20%</span></h4>
                   <div class="progress mb-4">
                       <div class="progress-bar bg-success" role="progressbar" style="width: 20%"
                           aria-valuenow="20" aria-valuemin="0" aria-valuemax="100">2,1TB - 21 Plots</div>
@@ -120,14 +212,14 @@
                       </tbody>
                     </table>
                   </div>
-            </div>
-          </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </div>-->
 </div>
 
-<script src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_plots/js/chia_plots.js"?>></script>
+<script src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_harvester/js/chia_harvester.js"?>></script>
