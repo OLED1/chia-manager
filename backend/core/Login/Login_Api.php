@@ -25,7 +25,7 @@
     public function login(string $username, string $password, string $stayloggedin){
       $userdata = $this->getCurrentUserInfos($username);
 
-      if($userdata["status"] == 0){
+      if(count($userdata["status"]) == 1 && $userdata["status"] == 0){
         $salted_hash=hash('sha256',$password.$userdata["data"]["salt"].$this->config['serversalt']);
       }else{
         return $userdata;
@@ -160,7 +160,7 @@
      */
     public function getCurrentUserInfos(string $username){
       try{
-        $sql = $this->dbcon->execute("SELECT id,name,lastname,email,password,salt FROM users WHERE username = ?",
+        $sql = $this->dbcon->execute("SELECT id,name,lastname,email,password,salt FROM users WHERE username = ? AND enabled = 1",
                                       array($username));
 
         if($sql->rowCount() == 0){

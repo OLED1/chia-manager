@@ -99,7 +99,7 @@ function generateWalletCards(data){
         "<div class='col'>" +
           "<div class='card shadow mb-4'>" +
             "<div class='card-header py-3 d-flex flex-row align-items-center justify-content-between'>" +
-              "<h6 class='m-0 font-weight-bold text-primary'>Wallet (ID: " + walletdata['walletid'] + "), Type: " + walletdata['wallettype'] + ", Status: " + walletdata['syncstatus'] + "&nbsp;" + (" + walletdata['syncstatus'] + " == "Synced" ? "<i class='fas fa-check-circle' style='color: green;'" : "<i class='fas fa-times-circle' style='color: red;'") + "></i>&nbsp;<span id='servicestatus_" + walletdata['nodeid'] + "' class='badge badge-secondary'>Querying service status</span></h6>" +
+              "<h6 class='m-0 font-weight-bold text-primary'>Wallet (ID: " + walletdata['walletid'] + "), Type: " + walletdata['wallettype'] + "&nbsp;<span id='servicestatus_" + walletdata['nodeid'] + "' class='badge badge-secondary'>Querying service status</span></h6>" +
               "<div class='dropdown no-arrow'>" +
                   "<a class='dropdown-toggle' href='#' role='button' id='dropdownMenuLink' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>" +
                       "<i class='fas fa-ellipsis-v fa-sm fa-fw text-gray-400'></i>" +
