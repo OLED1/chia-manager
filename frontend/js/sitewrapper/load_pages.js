@@ -22,6 +22,11 @@ $(function(){
     e.preventDefault();
     var link = $(this).attr("href");
 
+    if($(this).hasClass("externallink")){
+      window.open($(this).attr("href"));
+      return false;
+    }
+
     if(cntrlIsPressed){
       var win = window.open(frontend+"/index.php"+link, '_blank');
       if (win) {

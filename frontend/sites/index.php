@@ -137,7 +137,7 @@
                 <div id="collapsePersonal" class="collapse" aria-labelledby="headingPages" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <a class="collapse-item" data-siteid=5 href="/sites/usersettings">Profile & Settings</a>
-                        <a id="logout" class="collapse-item" href="#">Logout</a>
+                        <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">Logout</a>
                     </div>
                 </div>
             </li>
@@ -330,13 +330,13 @@
                             <!-- Dropdown - User Information -->
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="userDropdown">
-                                <a class="dropdown-item" href="#">
+                                <a class="dropdown-item" data-siteid=5 href="/sites/usersettings">
                                     <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Profile & Settings
                                 </a>
-                                <a class="dropdown-item" href="#">
+                                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#versionNotesModal">
                                     <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Activity Log
+                                    Version Notes
                                 </a>
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
@@ -399,7 +399,60 @@
                 <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <a id="logout" class="btn btn-primary" href="#">Logout</a>
+                    <a id="logout" class="btn btn-primary logout" href="#">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="versionNotesModal" tabindex="-1" role="dialog" aria-labelledby="versionNotesModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 40em;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="versionNotesModalLabel">Version Notes</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                  <h4 style="text-align: center;">Chia infrastructur management and monitoring tool</h4>
+                  <img src="https://chia-coin.de/assets/chia_coin_logo.png" alt="Chia Logo" class="chialogo">
+                  <h5 style="text-align: center;">Current project version: <?php echo $ini["versnummer"]; ?></h5>
+                  <p style="text-align: center;">Idea and programming by <strong>OLED1.</strong><br>
+                  Thanks for contribution to <strong>LucaAust.</strong></p>
+                  <br>
+                  <p>
+                    Find source code for the webgui on github:&nbsp;<a class="externallink"  target="_blank" href="https://github.com/OLED1/chia-web-gui">Here</a><br>
+                    Find source code for the node client on github:&nbsp;<a class="externallink"  target="_blank" href="https://github.com/OLED1/chia-node-client">Here</a>
+                  </p>
+                  <p>
+                    Backend programmed in PHP (Version 7.4.3) with MySQL (Version 8.0.26).<br>
+                    Backend uses following third party software:<br>
+                    cboden/ratchet (Version 0.4.3), amphp/websocket-client (Version 1.0), phpmailer/phpmailer (Version 6.4) and amphp/amp (Version 2.5).<br>
+                    This project support and uses composer.<br>
+                    Frontend uses following third party software:<br>
+                    jQuery (v3.6.0), Bootstrap (5.0.2), ChartJS (v2.9.4), Datatables (1.10.24), FontAwesome (5.15.3), David Stutz Multiselect (Version 2.0), Design SB Admin 2 (v4.1.3).<br>
+                    Node client programmed in Python (Version 3.9.6). Thanks to <strong>LucaAust</strong> for supporting.
+                  </p>
+                  <p>This project is licensed under the <a class="externallink" target="_blank" href="https://www.gnu.org/licenses/gpl-3.0.en.html">GNU General Public License v3.0.</a></p>
+                  <p>
+                    <strong>Change Notes for this version:</strong><br>
+                    This is the first release of the ChiaMgmt tool.<br> At the moment it is readonly for security reasons.<br>
+                    - First implementation of everything you can see
+                  </p>
+                  <p>
+                    <strong>Upcomming changes for v0.02:</strong><br>
+                    - Pooldata in Version v0.02 by using plotnft command<br>
+                    - Some more graphs in v0.02<br>
+                    - A third factor per authenticator in v0.02<br><br>
+                    - Did you find any bugs? Tell me!<br>
+                    - Do wish more features in v0.02? Tell me!<br><br>
+                    - After a professional security check, real management will be implemented<br>
+                  </p>
+                  <p>This project is open source and free and it will be forever.<br>
+                  But if you want to support us and this project you can contribute some Mojos to this address: (Coming soon).</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
