@@ -428,7 +428,7 @@
                     Backend programmed in PHP (Version 7.4.3) with MySQL (Version 8.0.26).<br>
                     Backend uses following third party software:<br>
                     cboden/ratchet (Version 0.4.3), amphp/websocket-client (Version 1.0), phpmailer/phpmailer (Version 6.4) and amphp/amp (Version 2.5).<br>
-                    This project support and uses composer.<br>
+                    This project supports and uses composer.<br>
                     Frontend uses following third party software:<br>
                     jQuery (v3.6.0), Bootstrap (5.0.2), ChartJS (v2.9.4), Datatables (1.10.24), FontAwesome (5.15.3), David Stutz Multiselect (Version 2.0), Design SB Admin 2 (v4.1.3).<br>
                     Node client programmed in Python (Version 3.9.6). Thanks to <strong>LucaAust</strong> for supporting.
