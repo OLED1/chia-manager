@@ -108,8 +108,7 @@
             </div>
             <div class="card-body" id="devices">
               <?php
-                $devices = $users_api->getLoggedInDevices();
-
+                $devices = $users_api->getLoggedInDevices($_COOKIE["user_id"]);
                 if(array_key_exists("data", $devices)){
               ?>
               <div class="table-responsive">

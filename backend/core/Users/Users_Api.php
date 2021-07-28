@@ -341,11 +341,12 @@
         if(is_null($userID)){
           $sql = $this->db_api->execute("SELECT id, userid, deviceinfo from users_sessions WHERE invalidated = 0", array());
         }else{
-          $sql = $this->db_api->execute("SELECT id, userid, deviceinfo from users_sessions WHERE userid = ? AND invalidated = 0 GROUP BY userid", array($userID));
+          $sql = $this->db_api->execute("SELECT id, userid, deviceinfo from users_sessions WHERE userid = ? AND invalidated = 0", array($userID));
         }
 
         $sqreturndata = array();
         $sqreturn = $sql->fetchAll(\PDO::FETCH_ASSOC);
+
         if(count($sqreturn) > 0){
           $sqreturndata = $sqreturn;
         }

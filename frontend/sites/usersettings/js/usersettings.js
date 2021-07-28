@@ -36,7 +36,7 @@ $(function(){
       deviceid : $(this).attr("data-device-id")
     }
 
-    sendToWSS("backendRequest", "ChiaMgmt\\Users\\Users_Api", "Users_Api", "logoutDevice", data);
+    sendToWSS("ownRequest", "ChiaMgmt\\Users\\Users_Api", "Users_Api", "logoutDevice", data);
   });
 
   function checkNewPassword(){
