@@ -85,14 +85,16 @@
 
             return array("status" => 0, "message" => "Successfully logged in.");
           }else{
-            return array("status" => 1, "message" => "Authkey not found or not valid (anymore).");
+            //return array("status" => 1, "message" => "Authkey not found or not valid (anymore).");
+            return $this->logging->getErrormessage("001");
           }
         }catch(Exception $e){
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
+          /*print_r($e);
+          return array("status" => 1, "message" => "An error occured.");*/
+          return $this->logging->getErrormessage("002", $e);
         }
       }else{
-        return array("status" => 1, "message" => "You are not authenticated.");
+        return $this->logging->getErrormessage("003");
       }
     }
 
@@ -101,7 +103,7 @@
 
       if($loginstatus == 0){
         return array("status" => 0, "message" => "You are currently logged in. No need to send authkey.");
-      }else if($loginstatus == "001005002"){
+      }else if($loginstatus == "004008002"){
         if(array_key_exists("user_id", $_COOKIE)){
           $userid = $_COOKIE['user_id'];
           $authkey = bin2hex(random_bytes(25));
@@ -124,14 +126,17 @@
 
             return array("status" => 0, "message" => "Successfully (re)sent authmail.");
           }catch(Exception $e){
-            print_r($e);
-            return array("status" => 1, "message" => "An error occured.");
+            /*print_r($e);
+            return array("status" => 1, "message" => "An error occured.");*/
+            return $this->logging->getErrormessage("001", $e);
           }
         }else{
-          return array("status" => 1, "Your are not authenticated.");
+          //return array("status" => 1, "Your are not authenticated.");
+          return $this->logging->getErrormessage("002");
         }
       }else{
-        return array("status" => 1, "An error occured, statuscode not known.");
+        //return array("status" => 1, "An error occured, statuscode not known.");
+        return $this->logging->getErrormessage("003");
       }
     }
 
@@ -144,12 +149,14 @@
           $sql = $this->dbcon->execute("UPDATE users_sessions SET invalidated = 1 WHERE userid = ? AND sessid = ?", array($userid, $sessionid));
           return array("status" => 0, "message" => "Successfully invalidated (pending) login.");
         }catch(Exception $e){
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
+          /*print_r($e);
+          return array("status" => 1, "message" => "An error occured.");*/
+          return $this->logging->getErrormessage("001", $e);
         }
 
       }else{
-        return array("status" => 1, "message" => "Cannot invalidate. You are not authenticated.");
+        //return array("status" => 1, "message" => "Cannot invalidate. You are not authenticated.");
+        return $this->logging->getErrormessage("002");
       }
     }
 
@@ -171,7 +178,8 @@
 
         return array("status" => 0,"message" => "Data successfully loaded.","data" => $data);
       }catch(Exception $e){
-        return array("status" => 0,"message" => "Data successfully loaded.","data" => $data);
+        //return array("status" => 0,"message" => "Data successfully loaded.","data" => $data);
+        return $this->logging->getErrormessage("002", $e);
       }
     }
 
@@ -259,7 +267,7 @@
 
                     return array("status" => "0", "message" => "You are logged in.");
                   }else{
-                    return array("status" => "1", "message" => "You are not logged in (anymore).");
+                    return $this->logging->getErrormessage("001");
                   }
                 }
               }else{

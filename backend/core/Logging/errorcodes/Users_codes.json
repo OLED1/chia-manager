@@ -1,58 +1,58 @@
 {
   "functioncodes" : {
-    "addUser" : "001",
-    "editUser" : "002",
-    "removeUser" : "003",
-    "userDataChanged" : "004",
-    "checkUsernameExists" : "005",
-    "getUsers" : "006",
-    "getUserSitesAndActions" : "007",
-    "checkCurrentPassword" : "008",
-    "checkRequiredData" : "009",
-    "resetUserPassword" : "010",
-    "savePersonalInfo" : "011",
-    "getUserResetInfo" : "012",
-    "sendPWResetLink" : "013",
-    "resetKeyValid" : "014",
-    "resetPW" : "015",
-    "invalidateResetKeys" : "016"
+    "savePersonalInfo" : "001",
+    "addUser" : "002",
+    "editUserInfo" : "003",
+    "disableUser" : "004",
+    "enableUser" : "005",
+    "checkUsernameExists" : "006",
+    "getUserData" : "007",
+    "checkUsernameExists" : "008",
+    "generateNewBackupKey" : "009",
+    "getBackupKey" : "010",
+    "checkCurrentPassword" : "011",
+    "checkPasswordStrength" : "012",
+    "getLoggedInDevices" : "013",
+    "logoutDevice" : "014",
+    "sendInvitationMail" : "015"
   },
   "errormessages" : {
+    "savePersonalInfo" : {
+      "001" : [2, "An error occured."],
+      "002" : [1, "Not all information stated."]
+    },
     "addUser" : {
-      "001" : [1, "Nothing found."],
-      "002" : [2, "An error occured."],
-      "003" : [1, "User exists."],
-      "004" : [1, "Something is missing."]
+      "001" : [2, "An error occured."],
+      "002" : [1, "One or more values are empty."],
+      "003" : [1, "Not all information stated."]
     },
-    "editUser" : {
-      "001" : [1, "No data stated."],
-      "002" : [1, "User not found."],
-      "003" : [1, "Could not change data."],
-      "004" : [2, "An error occured."]
+    "editUserInfo" : {
+      "001" : [1, "Some values could not be saved."],
+      "002" : [1, "One or more values are empty or password not strong enough."],
+      "003" : [1, "Not all information stated."]
     },
-    "removeUser" : {
-      "001" : [1, "This user cannot be deleted because it's either you or blocked."],
-      "002" : [2, "An error occured."],
-      "003" : [1, "Too many arguments or invalid session."]
+    "disableUser" : {
+      "001" : [2, "An error occured."],
+      "002" : [2, "You are not allowed to disable this account."],
+      "003" : [1, "Some data is missing."]
     },
-    "userDataChanged" : {
-      "001" : [1, "Data hasn't changed."],
-      "002" : [1, "No data stated."]
+    "enableUser" : {
+      "001" : [2, "An error occured."],
+      "002" : [1, "Some data is missing"]
+    },
+    "getUserData" : {
+      "001" : [2, "An error occured."]
     },
     "checkUsernameExists" : {
       "001" : [1, "User exists."],
       "002" : [2, "An error occured."]
     },
-    "getUsers" : {
+    "generateNewBackupKey" : {
+      "001" : [2, "An error occured."],
+      "002" : [1, "Not all information stated."]
+    },
+    "getBackupKey" : {
       "001" : [2, "An error occured."]
-    },
-    "getUserSitesAndActions" : {
-      "001" : [1, "Method not allowed."],
-      "002" : [1, "Method not allowed."],
-      "003" : [1, "Method not allowed."]
-    },
-    "checkRequiredData" : {
-      "001" : [1, "Some data is missing."]
     },
     "checkCurrentPassword" : {
       "001" : [1, "Stated password does not match."],
@@ -60,37 +60,24 @@
       "003" : [1, "An error occured."],
       "004" : [1, "Not all data stated."]
     },
+    "checkPasswordStrength" : {
+      "001" : [1, "Password should be at least 8 characters in length and should include at least one upper case letter, one number, and one special character."]
+    },
     "resetUserPassword" : {
       "001" : [1, "New password matches old password, nothing to do."],
       "002" : [1, "Action not known or not allowed."],
       "003" : [2, "An error occured."],
       "004" : [1, "Not all data stated."]
     },
-    "savePersonalInfo" : {
+    "getLoggedInDevices" : {
+      "001" : [1, "An error occured."]
+    },
+    "logoutDevice" : {
       "001" : [2, "An error occured."],
-      "002" : [1, "Function checkUsernameExists returned a non 0 status."],
-      "003" : [1, "Not all data stated."]
+      "002" : [1, "Device ID not stated."]
     },
-    "getUserResetInfo" : {
-      "001" : [1, "Could not get userinfo."],
-      "002" : [2, "An error occured."],
-      "003" : [1, "Not all data stated."]
+    "sendInvitationMail" : {
+      "001" : [1, "It makes no sense to send an invitation to yourself :)."]
     },
-    "sendPWResetLink" : {
-      "001" : [2, "Something went wrong. Resetmail will not be sent."],
-      "002" : [2, "An error occured."],
-      "003" : [1, "Something went wrong."],
-      "004" : [1, "Something went wrong."]
-    },
-    "resetKeyValid" : {
-      "001" : [1, "No valid entry found."],
-      "002" : [2, "An error occured."]
-    },
-    "resetPW" : {
-      "001" : [1, "Something went wrong."]
-    },
-    "invalidateResetKeys" : {
-      "001" : [1, "Something went wrong."]
-    }
   }
 }

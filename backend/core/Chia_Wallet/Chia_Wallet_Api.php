@@ -36,8 +36,7 @@
             }
           }
         }catch(Exception $e){
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
+          return $this->logging->getErrormessage("001", $e);
         }
 
         return array("status" =>0, "message" => "Successfully updated system information for node $nodeid.", "data" => ["nodeid" => $nodeid]);
@@ -59,8 +58,7 @@
 
         return array("status" =>0, "message" => "Successfully loaded chia wallet information.", "data" => $returndata);
       }catch(Exception $e){
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
+        return $this->logging->getErrormessage("001", $e);
       }
     }
 
@@ -72,8 +70,7 @@
         $data["data"] = $nodeid;
         return array("status" =>0, "message" => "Successfully queried wallet status information for node $nodeid.", "data" => $data);
       }catch(Exception $e){
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
+        return $this->logging->getErrormessage("001", $e);
       }
     }
 
@@ -85,8 +82,7 @@
         $data["data"] = $nodeid;
         return array("status" =>0, "message" => "Successfully queried wallet service restart for node $nodeid.", "data" => $data);
       }catch(Exception $e){
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
+        return $this->logging->getErrormessage("001", $e);
       }
     }
 

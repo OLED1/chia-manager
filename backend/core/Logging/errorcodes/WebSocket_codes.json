@@ -1,0 +1,24 @@
+{
+  "functioncodes" : {
+    "testConnection" : "001",
+    "updateSiteID" : "002",
+    "startWSS" : "003",
+    "stopWSS" : "004"
+  },
+  "errormessages" : {
+    "testConnection" : {
+      "001" : [2, "An error occured."]
+    },
+    "updateSiteID" : {
+      "001" : [1, "SiteID not valid."]
+    },
+    "startWSS" : {
+      "001" : [1, "Not able to start websocket server."],
+      "001" : [1, "Websocket server running. Not able to start."]
+    },
+    "stopWSS" : {
+      "001" : [1, "Not able to stop websocket server."],
+      "002" : [1, "Websocket server not running. Not able to stop."]
+    }
+  }
+}

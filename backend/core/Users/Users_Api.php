@@ -31,16 +31,16 @@
 
             return array("status" => 0, "message" => "Updated userdata successfully.", "data" => $data);
           }catch(Exeption $e){
-            //return $this->logging->getErrormessage("001",$e);
-            return array("status" => 1, "message" => "An error occured.");
+            //return array("status" => 1, "message" => "An error occured.");
+            return $this->logging->getErrormessage("001", $e);
           }
         }else{
           //$this->logging->getErrormessage("002");
           return $checkUserExists;
         }
       }else{
-        //return $this->logging->getErrormessage("003");
-        return array("status" => 1, "message" => "Not all information stated.");
+        //return array("status" => 1, "message" => "Not all information stated.");
+        return $this->logging->getErrormessage("002");
       }
     }
 
@@ -70,8 +70,9 @@
               unset($data["password"]);
               return array("status" => 0, "message" => "Updated userdata successfully.", "data" => $newData);
             }catch(Exception $e){
-              print_r($e);
-              return array("status" => 1, "message" => "An error occured.");
+              /*print_r($e);
+              return array("status" => 1, "message" => "An error occured.");*/
+              return $this->logging->getErrormessage("001", $e);
             }
           }else{
             if($userexists["status"] == 1) return $userexists;
@@ -79,11 +80,13 @@
           }
 
         }else{
-          return array("status" => 1, "message" => "One or more values are empty.");
+          //return array("status" => 1, "message" => "One or more values are empty.");
+          return $this->logging->getErrormessage("002");
         }
 
       }else{
-        return array("status" => 1, "message" => "Not all information stated.");
+        //return array("status" => 1, "message" => "Not all information stated.");
+        return $this->logging->getErrormessage("003");
       }
     }
 
@@ -108,16 +111,19 @@
             unset($data["password"]);
             return array("status" => 0, "message" => "Updated userdata successfully.", "data" => $data);
           }else{
-            return array("status" => 1, "message" => "Some values could not be safed.");
+            //return array("status" => 1, "message" => "Some values could not be saved.");
+            return $this->logging->getErrormessage("001");
           }
 
         }else{
-          return array("status" => 1, "message" => "One or more values are empty or password not strong enough.");
+          //return array("status" => 1, "message" => "One or more values are empty or password not strong enough.");
+          return $this->logging->getErrormessage("002");
         }
         unset($data["password"]);
 
       }else{
-        return array("status" => 1, "message" => "Not all information stated.");
+        //return array("status" => 1, "message" => "Not all information stated.");
+        return $this->logging->getErrormessage("003");
       }
     }
 
@@ -130,14 +136,17 @@
 
             return array("status" => 0, "message" => "Successfully disabled user with ID {$data["userID"]}.", "data" => $data);
           }catch(Exception $e){
-            print_r($e);
-            return array("status" => 1, "message" => "An error occured.");
+            /*print_r($e);
+            return array("status" => 1, "message" => "An error occured.");*/
+            return $this->logging->getErrormessage("001", $e);
           }
         }else{
-          return array("status" => 1, "message" => "You are not allowed to disable this account.");
+          //return array("status" => 1, "message" => "You are not allowed to disable this account.");
+          return $this->logging->getErrormessage("002");
         }
       }else{
-        return array("status" => 1, "message" => "Some data is missing.");
+        //return array("status" => 1, "message" => "Some data is missing.");
+        return $this->logging->getErrormessage("003");
       }
     }
 
@@ -148,11 +157,13 @@
 
           return array("status" => 0, "message" => "Successfully enabled user with ID {$data["userID"]}.", "data" => $data);
         }catch(Exception $e){
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
+          /*print_r($e);
+          return array("status" => 1, "message" => "An error occured.");*/
+          return $this->logging->getErrormessage("001", $e);
         }
       }else{
-        return array("status" => 1, "message" => "Some data is missing.");
+        //return array("status" => 1, "message" => "Some data is missing.");
+        return $this->logging->getErrormessage("002");
       }
     }
 
@@ -178,8 +189,9 @@
         }
         return array("status" => 0, "message" => "Successfully loaded user information.", "data" => $returndata);
       }catch(Exception $e){
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
+        /*print_r($e);
+        return array("status" => 1, "message" => "An error occured.");*/
+        return $this->logging->getErrormessage("001", $e);
       }
     }
 
@@ -203,12 +215,12 @@
         if($usercount == 0){
           return array("status" => 0, "message" => "User does not exist!");
         }else{
-          //return $this->logging->getErrormessage("001");
-          return array("status" => 1, "message" => "User exists.");
+          //return array("status" => 1, "message" => "User exists.");
+          return $this->logging->getErrormessage("001");
         }
       }catch(Exception $e){
-        //return $this->logging->getErrormessage("002",$e);
-        return array("status" => 1, "message" => "An error occured.");
+        //return array("status" => 1, "message" => "An error occured.");
+        return $this->logging->getErrormessage("002",$e);
       }
     }
 
@@ -228,12 +240,14 @@
 
           return array("status" => 0, "message" => "Generated new backup key for User {$data["userID"]}.", "data" => $backupkey);
         }catch(Exception $e){
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
+          /*print_r($e);
+          return array("status" => 1, "message" => "An error occured.");*/
+          return $this->logging->getErrormessage("001", $e);
         }
 
       }else{
-        return array("status" => 1, "message" => "Not all information stated.");
+        //return array("status" => 1, "message" => "Not all information stated.");
+        return $this->logging->getErrormessage("002");
       }
     }
 
@@ -244,8 +258,9 @@
 
         return array("status" => 0, "message" => "Successfully loaded user information.", "data" => $decryptedkey);
       }catch(Exception $e){
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
+        /*print_r($e);
+        return array("status" => 1, "message" => "An error occured.");*/
+        return $this->logging->getErrormessage("001", $e);
       }
     }
 
@@ -289,7 +304,8 @@
       $specialChars = preg_match('@[^\w]@', $password);
 
       if(!$uppercase || !$lowercase || !$number || !$specialChars || strlen($password) < 8) {
-        return array("status" => 1, "message" => "Password should be at least 8 characters in length and should include at least one upper case letter, one number, and one special character.");
+        //return array("status" => 1, "message" => "Password should be at least 8 characters in length and should include at least one upper case letter, one number, and one special character.");
+        return $this->logging->getErrormessage("001");
       }else{
         return array("status" => 0, "message" => "Password strong enough.");
       }
@@ -353,8 +369,9 @@
 
         return array("status" => 0, "message" => "Successfully loaded all logged in devices.", "data" => $sqreturndata);
       }catch(Exception $e){
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured");
+        /*print_r($e);
+        return array("status" => 1, "message" => "An error occured");*/
+        return $this->logging->getErrormessage("001", $e);
       }
     }
 
@@ -368,11 +385,13 @@
 
           return array("status" => 0, "message" => "Successfully logged out device.", "data" => array("deviceid" => $deviceID));
         }catch(Exception $e){
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
+          /*print_r($e);
+          return array("status" => 1, "message" => "An error occured.");*/
+          return $this->logging->getErrormessage("001", $e);
         }
       }else{
-        return array("status" => 1, "message" => "Device ID not stated.");
+        //return array("status" => 1, "message" => "Device ID not stated.");
+        return $this->logging->getErrormessage("002");
       }
     }
 
@@ -405,7 +424,8 @@
             return $userdata;
           }
         }else{
-          return array("status" => 1, "message" => "It makes no sense to send an invitation to yourself :).");
+          //return array("status" => 1, "message" => "It makes no sense to send an invitation to yourself :).");
+          return $this->logging->getErrormessage("001");
         }
       }
     }

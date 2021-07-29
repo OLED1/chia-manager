@@ -1,0 +1,23 @@
+{
+  "functioncodes" : {
+    "onClose" : "001",
+    "onError" : "002",
+    "messageSpecificNode" : "003",
+    "messageAllNodes" : "004"
+  },
+  "errormessages" : {
+    "onClose" : {
+      "001" : [1, " Connection has disconnected."]
+    },
+    "onError" : {
+      "001" : [2, "An error occured."]
+    },
+    "messageSpecificNode" : {
+      "001" : [1, "No nodes online to inform."],
+      "002" : [1, "Not all data stated."]
+    },
+    "messageAllNodes" : {
+      "001" : [1, "No nodes online to inform."]
+    }
+  }
+}

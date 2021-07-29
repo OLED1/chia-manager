@@ -286,15 +286,13 @@
                                         <div class="status-indicator"></div>
                                     </div>
                                     <div>
-                                        <div class="text-truncate">I have the photos that you ordered last month, how
-                                            would you like them sent to you?</div>
+                                        <div class="text-truncate">I have the photos that you ordered last month, how would you like them sent to you?</div>
                                         <div class="small text-gray-500">Jae Chun · 1d</div>
                                     </div>
                                 </a>
                                 <a class="dropdown-item d-flex align-items-center" href="#">
                                     <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="../frameworks/bootstrap/img/undraw_profile_3.svg"
-                                            alt="...">
+                                        <img class="rounded-circle" src="../frameworks/bootstrap/img/undraw_profile_3.svg" alt="...">
                                         <div class="status-indicator bg-warning"></div>
                                     </div>
                                     <div>
@@ -324,8 +322,7 @@
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <span id="sitewrapperusername" class="mr-2 d-none d-lg-inline text-gray-600 small"><?php echo $userData["data"]["name"] . " " . $userData["data"]["lastname"]; ?></span>
-                                <img class="img-profile rounded-circle"
-                                    src="../frameworks/bootstrap/img/undraw_profile.svg">
+                                <img class="img-profile rounded-circle" src="../frameworks/bootstrap/img/undraw_profile.svg">
                             </a>
                             <!-- Dropdown - User Information -->
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
@@ -335,7 +332,7 @@
                                     Profile & Settings
                                 </a>
                                 <a class="dropdown-item" href="#" data-toggle="modal" data-target="#versionNotesModal">
-                                    <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    <i class="fas fa-sticky-note fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Version Notes
                                 </a>
                                 <div class="dropdown-divider"></div>
@@ -445,7 +442,8 @@
                     - Some more graphs in v0.02<br>
                     - A third factor per authenticator in v0.02<br><br>
                     - Did you find any bugs? Tell me!<br>
-                    - Do wish more features in v0.02? Tell me!<br><br>
+                    - Do you wish more features in v0.02? Tell me!<br>
+                    - Do you have some ideas or enhancements? Tell me!<br><br>
                     - After a professional security check, real management will be implemented<br>
                   </p>
                   <p>This project is open source and free and it will be forever.<br>

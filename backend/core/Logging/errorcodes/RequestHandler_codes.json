@@ -1,11 +1,16 @@
 {
   "functioncodes" : {
-    "processGetActiveSubscriptions" : "001",
-    "processGetActiveRequests" : "002",
-    "processUpdateFrontendViewingSite" : "003",
-    "requesterLogin" : "004"
+    "processRequest" : "001",
+    "processGetActiveSubscriptions" : "002",
+    "processGetActiveRequests" : "003",
+    "processUpdateFrontendViewingSite" : "004",
+    "requesterLogin" : "005"
   },
   "errormessages" : {
+    "processRequest" : {
+      "001" : [1, "Class or function not found."],
+      "002" : [1, "Class or function not found."]
+    },
     "processGetActiveSubscriptions" : {
       "001" : [1, "You are not allowed to query this information."]
     },

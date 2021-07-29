@@ -1,0 +1,12 @@
+{
+  "functioncodes" : {
+    "getSiteInfos" : "001"
+  },
+  "errormessages" : {
+    "getSiteInfos" : {
+      "001" : [1, "Value siteid must be NULL or greater 0."],
+      "002" : [2, "An error occured."],
+      "003" : [1, "No all data stated."]
+    }
+  }
+}

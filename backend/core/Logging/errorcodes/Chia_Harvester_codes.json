@@ -1,0 +1,34 @@
+{
+  "functioncodes" : {
+    "updateHarvesterData" : "001",
+    "updateFoundPlots" : "002",
+    "removePlots" : "003",
+    "getFoundPlots" : "004",
+    "getHarvesterData" : "005",
+    "harvesterStatus" : "006",
+    "harvesterServiceRestart" : "007"
+  },
+  "errormessages" : {
+    "updateHarvesterData" : {
+      "001" : [2, "An error occured."]
+    },
+    "updateFoundPlots" : {
+      "001" : [2, "An error occured."]
+    },
+    "removePlots" : {
+      "001" : [2, "An error occured."]
+    },
+    "getFoundPlots" : {
+      "001" : [2, "An error occured."]
+    },
+    "getHarvesterData" : {
+      "001" : [2, "An error occured."]
+    },
+    "harvesterStatus" : {
+      "001" : [2, "An error occured."]
+    },
+    "harvesterServiceRestart" : {
+      "001" : [2, "An error occured."]
+    }
+  }
+}

@@ -1,5 +1,5 @@
 <?php
-    namespace ChiaMgmt\WebSocket;
+    namespace ChiaMgmt\WebSocketClient;
     use ChiaMgmt\Logging\Logging_Api;
     use Amp\Delayed;
     use Amp\Websocket\Client\Connection;
@@ -10,11 +10,12 @@
     use function Amp\Websocket\Client\connect;
     require __DIR__ . '/../../../vendor/autoload.php';
 
-    class ChiaWebSocketClient{
-      private $ini;
+    class WebSocketClient_Api{
+      private $ini, $logging;
 
       public function __construct(){
         $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini');
+        $this->logging = new Logging_Api($this);
       }
 
       public function testConnection(){
@@ -22,9 +23,11 @@
           $result = $this->sendToWSS("wssonlinestatus", array("command" => "onlineStatus"));
 
           if($result["status"] == 0) return $result;
-          else return array("status" => 1, "message" => "Could not connect to Websocket Server.");
+          //else return array("status" => 1, "message" => "Could not connect to Websocket Server.");
+          else return $this->logging->getErrormessage("001");
         }else{
-          return array("status" => 1, "message" => "Could not connect to Websocket Server.");
+          //return array("status" => 1, "message" => "Could not connect to Websocket Server.");
+          return $this->logging->getErrormessage("002");
         }
       }
 
@@ -55,8 +58,8 @@
           }
           return $promise;
         }catch(Exception $e){
-          // TODO: Implement correct error codes
-          return array("status" => 1, "message" => "An error occured.");
+          //return array("status" => 1, "message" => "An error occured.");
+          return $this->logging->getErrormessage("001", $e);
         }
       }
 

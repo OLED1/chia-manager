@@ -210,10 +210,13 @@ function setFarmerBadge(data){
 function messagesTrigger(data){
   var key = Object.keys(data);
 
+  console.log(data);
+
   if(data[key]["status"] == 0){
     if(key == "updateFarmData"){
       sendToWSS("backendRequest", "ChiaMgmt\\Chia_Farm\\Chia_Farm_Api", "Chia_Farm_Api", "getFarmData", {});
     }else if(key == "getFarmData"){
+      chiaFarmData = data[key]["data"];
       createFarmdataCards(data[key]["data"]);
       initRefreshWalletInfo();
     }else if(key == "farmerStatus"){

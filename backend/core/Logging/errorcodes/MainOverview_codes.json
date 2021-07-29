@@ -1,33 +1,17 @@
 {
   "functioncodes" : {
     "login" : "001",
-    "checkAuthKey" : "002",
-    "generateAndsendAuthKey" : "003",
-    "invalidateLogin" : "004",
-    "getCurrentUserInfos" : "005",
-    "setSession" : "006",
-    "logout" : "007",
-    "checklogin" : "008"
+    "getCurrentUserInfos" : "002", 
+    "setSession" : "003",
+    "logout" : "004",
+    "checklogin" : "005",
+    "refreshlogin" : "006"
   },
   "errormessages" : {
     "login" : {
       "001" : [0, "Please enter the authkey stated in the email."],
       "002" : [2, "An error occured."],
       "003" : [1, "Wrong username or password."]
-    },
-    "checkAuthKey" : {
-      "001" : [1, "Authkey not found or not valid (anymore)."],
-      "002" : [2, "An error occured."],
-      "003" : [2, "You are not authenticated."]
-    },
-    "generateAndsendAuthKey" : {
-      "001" : [2, "An error occured."],
-      "002" : [2, "Your are not authenticated."],
-      "003" : [2, "An error occured, statuscode not known."]
-    },
-    "invalidateLogin" : {
-      "001" : [2, "An error occured."],
-      "002" : [2, "Cannot invalidate. You are not authenticated."]
     },
     "getCurrentUserInfos" : {
       "001" : [1, "Wrong username or password."],
@@ -41,11 +25,15 @@
       "002" : [2, "An error occured."]
     },
     "checklogin" : {
-      "001" : [1, "You are not logged in (anymore)."],
+      "001" : [1, "Currently not logged in."],
       "002" : [1, "Authkey is not passed. Not logged in."],
       "003" : [2, "An error occured."],
       "004" : [1, "Currently not logged in."],
       "005" : [1, "No active session found."]
+    },
+    "refreshlogin" : {
+      "001" : [2, "An error occured."],
+      "002" : [2, "Cannot Refresh."]
     }
   }
 }

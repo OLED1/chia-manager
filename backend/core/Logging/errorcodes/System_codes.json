@@ -1,0 +1,19 @@
+{
+  "functioncodes" : {
+    "setSystemSettings" : "001",
+    "getAllSystemSettings" : "002",
+    "confirmSetting" : "003"
+  },
+  "errormessages" : {
+    "setSystemSettings" : {
+      "001" : [2, "An error occured."]
+    },
+    "getAllSystemSettings" : {
+      "001" : [2, "An error occured."]
+    },
+    "confirmSetting" : {
+      "001" : [2, "An error occured."],
+      "002" : [1, "No settingtype stated."]
+    }
+  }
+}

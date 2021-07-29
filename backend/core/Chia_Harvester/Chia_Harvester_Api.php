@@ -35,12 +35,15 @@
               if($harvesterdbdata["status"] == 0 && array_key_exists($finalplotsdir, $harvesterdbdata["data"][$nodeid]["plotdirs"])){
                 $diff = $this->diffData($harvesterdbdata["data"][$nodeid]["plotdirs"][$finalplotsdir], $mountpointinfo);
                 if(count($diff) > 0){
-                  //echo "UPDATE: {$harvesterdbdata["data"][$nodeid]["plotdirs"][$finalplotsdir]["id"]}";
-                  $sql = $this->db_api->execute("UPDATE chia_plots_directories SET devname = ?, mountpoint = ?, totalsize = ?, totalused = ?, totalusedpercent = ?, plotcount = ? WHERE finalplotsdir = ? AND nodeid = ?;",
-                          array($mountpointinfo["devname"], $mountpointinfo["mountpoint"], $mountpointinfo["totalsize"], $mountpointinfo["totalused"], $mountpointinfo["totalusedpercent"], $mountpointinfo["plotcount"], $mountpointinfo["finalplotsdir"], $nodeid));
+                  if(array_key_exists("devname", $mountpointinfo)){
+                    $sql = $this->db_api->execute("UPDATE chia_plots_directories SET devname = ?, mountpoint = ?, totalsize = ?, totalused = ?, totalusedpercent = ?, plotcount = ? WHERE finalplotsdir = ? AND nodeid = ?;",
+                    array($mountpointinfo["devname"], $mountpointinfo["mountpoint"], $mountpointinfo["totalsize"], $mountpointinfo["totalused"], $mountpointinfo["totalusedpercent"], $mountpointinfo["plotcount"], $mountpointinfo["finalplotsdir"], $nodeid));
+                  }else{
+                    $sql = $this->db_api->execute("UPDATE chia_plots_directories SET devname = ?, mountpoint = ?, totalsize = ?, totalused = ?, totalusedpercent = ?, plotcount = ? WHERE finalplotsdir = ? AND nodeid = ?;",
+                    array(NULL, NULL, NULL, NULL, NULL, 0, $finalplotsdir, $nodeid));
+                  }
                 }
               }else if(!array_key_exists($finalplotsdir, $harvesterdbdata["data"][$nodeid]["plotdirs"])){
-                //print_r("Found new directroy $finalplotsdir.");
                 if(array_key_exists("devname", $mountpointinfo)){
                   $sql = $this->db_api->execute("INSERT INTO chia_plots_directories (id, nodeid, devname, mountpoint, finalplotsdir, totalsize, totalused, totalusedpercent, plotcount) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?)",
                           array($nodeid, $mountpointinfo["devname"], $mountpointinfo["mountpoint"], $mountpointinfo["finalplotsdir"], $mountpointinfo["totalsize"], $mountpointinfo["totalused"], $mountpointinfo["totalusedpercent"], $mountpointinfo["plotcount"]));
@@ -64,14 +67,12 @@
 
           foreach($harvesterdbdata["data"][$nodeid]["plotdirs"] AS $finalplotsdir => $mointpointdata){
             if(!array_key_exists($finalplotsdir, $harvesterdata)){
-              //echo "Mointpoint $finalplotsdir has been removed.";
               $sql = $this->db_api->execute("DELETE FROM chia_plots_directories WHERE nodeid = ? AND finalplotsdir = ?", array($nodeid, $finalplotsdir));
               $this->removePlots($nodeid, $finalplotsdir);
             }
           }
         }catch(Exception $e){
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
+          return $this->logging->getErrormessage("001", $e);
         }
 
       return array("status" =>0, "message" => "Successfully updated farmer information for node $nodeid.", "data" => ["nodeid" => $nodeid]);
@@ -106,7 +107,6 @@
           $tempdbdata = $sqreturn;
           foreach($sqreturn AS $dbarrkey => $dbplotdata){
             if(!in_array($dbplotdata["filename"], $plotdata) && $dbplotdata["finalmountid"] == $finalmountid){
-              //echo "Plot {$dbplotdata["filename"]} has been removed\n\n";
               $this->removePlots($nodeid, $finalplotsdir);
             }
             $tempdbdata[$dbarrkey] = $dbplotdata["filename"];
@@ -114,7 +114,6 @@
 
           foreach($plotdata AS $arrkey => $localfilename){
             if(!in_array($localfilename, $tempdbdata)){
-              //echo "Plot {$localfilename} has been added.\n\n";
               $filenameexpl = explode("-", $localfilename);
               $creationdate = new \DateTime("{$filenameexpl[2]}-{$filenameexpl[3]}-{$filenameexpl[4]} {$filenameexpl[5]}:{$filenameexpl[6]}:00");
 
@@ -124,8 +123,7 @@
           }
         }
       }catch(Exception $e){
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
+        return $this->logging->getErrormessage("001", $e);
       }
     }
 
@@ -140,8 +138,7 @@
           return array("status" => 1, "message" => "More than one row was returned. Aborting deleting from db for security reasons.");
         }
       }catch(Exception $e){
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
+        return $this->logging->getErrormessage("001", $e);
       }
     }
 
@@ -151,8 +148,7 @@
 
         return array("status" =>0, "message" => "Successfully loaded chia plots information for node {$nodeid} and mountid {$finalmountid}.", "data" => $sql->fetchAll(\PDO::FETCH_ASSOC));
       }catch(Exception $e){
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
+        return $this->logging->getErrormessage("001", $e);
       }
     }
 
@@ -181,8 +177,7 @@
 
         return array("status" =>0, "message" => "Successfully loaded chia harvester information.", "data" => $returndata);
       }catch(Exception $e){
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
+        return $this->logging->getErrormessage("001", $e);
       }
     }
 
@@ -194,8 +189,7 @@
         $data["data"] = $nodeid;
         return array("status" =>0, "message" => "Successfully queried harvester status information for node $nodeid.", "data" => $data);
       }catch(Exception $e){
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
+        return $this->logging->getErrormessage("001", $e);
       }
     }
 
@@ -207,8 +201,7 @@
         $data["data"] = $nodeid;
         return array("status" =>0, "message" => "Successfully queried harvester service restart for node $nodeid.", "data" => $data);
       }catch(Exception $e){
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
+        return $this->logging->getErrormessage("001", $e);
       }
     }
 

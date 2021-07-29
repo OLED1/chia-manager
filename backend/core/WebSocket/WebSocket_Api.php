@@ -2,22 +2,23 @@
   namespace ChiaMgmt\WebSocket;
 
   use ChiaMgmt\Logging\Logging_Api;
-  use ChiaMgmt\WebSocket\ChiaWebsocketClient;
+  use ChiaMgmt\WebSocketClient\WebSocketClient_Api;
 
   class WebSocket_Api{
-    private $wsclient, $logging_api;
+    private $wsclient, $logging;
 
     public function __construct(){
-      $this->wsclient = new ChiaWebSocketClient();
-      $this->logging_api = new Logging_Api($this);
+      $this->wsclient = new WebSocketClient_Api();
+      $this->logging = new Logging_Api($this);
     }
 
     public function testConnection(){
       try{
         return $this->wsclient->testConnection();
       }catch(Exception $e){
-        print_r($e);
-        return array("status" => 1, "An error occured");
+        /*print_r($e);
+        return array("status" => 1, "An error occured");*/
+        return $this->logging->getErrormessage("001", $e);
       }
     }
 
@@ -30,7 +31,8 @@
           return $con_test;
         }
       }else{
-        return array("status" => 1, "message" => "SiteID not valid.");
+        //return array("status" => 1, "message" => "SiteID not valid.");
+        return $this->logging->getErrormessage("001");
       }
     }
 
@@ -52,10 +54,12 @@
         if($wssstatus["status"] == 0){
           return $wssstatus;
         }else{
-          return array("status" => 1, "message" => "Cannot start websocket server.");
+          //return array("status" => 1, "message" => "Cannot start websocket server.");
+          return $this->logging->getErrormessage("001");
         }
       }else{
-        return array("status" => 1, "message" => "Websocket server running. Cannot start.");
+        //return array("status" => 1, "message" => "Websocket server running. Cannot start.");
+        return $this->logging->getErrormessage("002");
       }
     }
 
@@ -68,10 +72,12 @@
         if($this->wsclient->testConnection()["status"] == 1){
           return array("status" => 0, "message" => "Websocket server stopped.");
         }else{
-          return array("status" => 1, "message" => "Cannot stop websocket server.");
+          //return array("status" => 1, "message" => "Cannot stop websocket server.");
+          return $this->logging->getErrormessage("001");
         }
       }else{
-        return array("status" => 1, "message" => "Websocket server not running. Cannot stop.");
+        //return array("status" => 1, "message" => "Websocket server not running. Cannot stop.");
+        return $this->logging->getErrormessage("002");
       }
     }
 

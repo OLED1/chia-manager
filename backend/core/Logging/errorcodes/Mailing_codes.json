@@ -1,0 +1,18 @@
+{
+  "functioncodes" : {
+    "mailServerAvailable" : "001",
+    "sendTestMail" : "002",
+    "sendMail" : "003"
+  },
+  "errormessages" : {
+    "mailServerAvailable" : {
+      "001" : [2, "Not able to connect to the configured smtp server."]
+    },
+    "sendTestMail" : {
+      "001" : [1, "Not all information stated."]
+    },
+    "sendMail" : {
+      "001" : [2, "Message could not be sent."]
+    }
+  }
+}

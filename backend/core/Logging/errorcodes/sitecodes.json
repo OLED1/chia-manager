@@ -1,10 +1,16 @@
 {
-  "Login" : "001",
-  "Mailing" : "002",
-  "MainOverview" : "003",
-  "Nodes" : "004",
-  "RequestHandler" : "005",
-  "System" : "006",
-  "Users" : "007",
-  "WebSocket" : "008"
+  "Chia_Farm" : "001",
+  "Chia_Harvester" : "002",
+  "Chia_Wallet" : "003",
+  "Login" : "004",
+  "Mailing" : "005",
+  "MainOverview" : "006",
+  "Nodes" : "007",
+  "RequestHandler" : "008",
+  "Sites" : "009",
+  "System" : "010",
+  "Users" : "011",
+  "WebSocket" : "012",
+  "WebSocketClient" : "013",
+  "WebSocketServer" : "014"
 }

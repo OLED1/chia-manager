@@ -1,0 +1,22 @@
+{
+  "functioncodes" : {
+    "updateWalletData" : "001",
+    "getWalletData" : "002",
+    "walletStatus" : "003",
+    "walletServiceRestart" : "004"
+  },
+  "errormessages" : {
+    "updateWalletData" : {
+      "001" : [2, "An error occured."]
+    },
+    "getWalletData" : {
+      "001" : [2, "An error occured."]
+    },
+    "walletStatus" : {
+      "001" : [2, "An error occured."]
+    },
+    "walletServiceRestart" : {
+      "001" : [2, "An error occured."]
+    }
+  }
+}

@@ -27,16 +27,27 @@
           $sql = $this->db_api->execute("SELECT Count(*) as count FROM chia_farm WHERE nodeid = ?", array($nodeid));
           $count = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["count"];
 
+          if(array_key_exists("total_chia_farmed", $farmdata)){
+            $totalchiafarmed = $farmdata["total_chia_farmed"];
+            $usertransactionfees = $farmdata["user_transaction_fees"];
+            $blockrewards = $farmdata["block_rewards"];
+            $lastheigthfarmed = $farmdata["last_height_farmed"];
+          }else{
+            $totalchiafarmed = 0;
+            $usertransactionfees = 0;
+            $blockrewards = 0;
+            $lastheigthfarmed = 0;
+          }
+
           if($count == 0){
             $sql = $this->db_api->execute("INSERT INTO chia_farm (id, nodeid, farming_status, total_chia_farmed, user_transaction_fees, block_rewards, last_height_farmed, plot_count, total_size_of_plots, estimated_network_space, expected_time_to_win) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            array($nodeid, $farmdata["farming_status"], $farmdata["total_chia_farmed"], $farmdata["user_transaction_fees"], $farmdata["block_rewards"], $farmdata["last_height_farmed"], $farmdata["plot_count"], $farmdata["total_size_of_plots"], $farmdata["estimated_network_space"], $farmdata["expected_time_to_win"]));
+            array($nodeid, $farmdata["farming_status"], $totalchiafarmed, $usertransactionfees, $blockrewards, $lastheigthfarmed, $farmdata["plot_count"], $farmdata["total_size_of_plots"], $farmdata["estimated_network_space"], $farmdata["expected_time_to_win"]));
           }else{
             $sql = $this->db_api->execute("UPDATE chia_farm SET farming_status = ?, total_chia_farmed = ?, user_transaction_fees = ?, block_rewards = ?, last_height_farmed = ?, plot_count = ?, total_size_of_plots = ?, estimated_network_space = ?, expected_time_to_win = ? WHERE nodeid = ?",
-            array($farmdata["farming_status"], $farmdata["total_chia_farmed"], $farmdata["user_transaction_fees"], $farmdata["block_rewards"], $farmdata["last_height_farmed"], $farmdata["plot_count"], $farmdata["total_size_of_plots"], $farmdata["estimated_network_space"], $farmdata["expected_time_to_win"], $nodeid));
+            array($farmdata["farming_status"], $totalchiafarmed, $usertransactionfees, $blockrewards, $lastheigthfarmed, $farmdata["plot_count"], $farmdata["total_size_of_plots"], $farmdata["estimated_network_space"], $farmdata["expected_time_to_win"], $nodeid));
           }
         }catch(Exception $e){
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
+          return $this->logging->getErrormessage("001", $e);
         }
 
         return array("status" =>0, "message" => "Successfully updated farm information for node $nodeid.", "data" => ["nodeid" => $nodeid]);
@@ -58,8 +69,7 @@
 
         return array("status" =>0, "message" => "Successfully loaded chia farm information.", "data" => $returndata);
       }catch(Exception $e){
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
+        return $this->logging->getErrormessage("001", $e);
       }
     }
 
@@ -71,8 +81,7 @@
         $data["data"] = $nodeid;
         return array("status" =>0, "message" => "Successfully queried farmer status information for node $nodeid.", "data" => $data);
       }catch(Exception $e){
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
+        return $this->logging->getErrormessage("001", $e);
       }
     }
 
@@ -84,8 +93,7 @@
         $data["data"] = $nodeid;
         return array("status" =>0, "message" => "Successfully queried farmer service restart for node $nodeid.", "data" => $data);
       }catch(Exception $e){
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
+        return $this->logging->getErrormessage("001", $e);
       }
     }
 

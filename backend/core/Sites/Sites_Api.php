@@ -24,7 +24,8 @@
           }else if($siteid > 0){
             $sql = $this->db_api->execute("SELECT id, namespace FROM sites WHERE id = ?", array($siteid));
           }else{
-            return array("status" => 1, "message" => "Value siteid must be NULL or greater 0.");
+            //return array("status" => 1, "message" => "Value siteid must be NULL or greater 0.");
+            return $this->logging->getErrormessage("001");
           }
 
           $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
@@ -35,11 +36,13 @@
 
           return array("status" => 0, "message" => "Successfully loaded site(s) information.", "data" => $returndata);
         }catch(Exception $e){
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
+          /*print_r($e);
+          return array("status" => 1, "message" => "An error occured.");*/
+          return $this->logging->getErrormessage("002", $e);
         }
       }else{
-        return array("status" => 1, "message" => "No all data stated.");
+        //return array("status" => 1, "message" => "No all data stated.");
+        return $this->logging->getErrormessage("003");
       }
     }
   }

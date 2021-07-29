@@ -1,16 +1,17 @@
 <?php
-namespace ChiaMgmt\WebSocket;
+namespace ChiaMgmt\WebSocketServer;
 
 use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;
 use ChiaMgmt\Login\Login_Api;
 use ChiaMgmt\RequestHandler\RequestHandler_Api;
 use ChiaMgmt\Sites\Sites_Api;
+use ChiaMgmt\Logging\Logging_Api;
 
 require __DIR__ . '/../../../vendor/autoload.php';
 
 class ChiaWebSocketServer implements MessageComponentInterface {
-    protected $clients, $users, $subscription, $websocketClient, $login_api, $requestHandler, $requests, $sites_api, $sites_data;
+    protected $clients, $users, $subscription, $websocketClient, $login_api, $requestHandler, $requests, $sites_api, $sites_data, $logging;
 
     public function __construct() {
       echo "[{$this->getDate()}] INFO: Starting websocket server\n";
@@ -21,6 +22,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
 
       $this->login_api = new Login_Api();
       $this->sites_api = new Sites_Api();
+      $this->logging = new Logging_Api($this);
       $this->sites_data = $this->sites_api->getSiteInfos(["siteid" => NULL])["data"];
     }
 
@@ -141,7 +143,10 @@ class ChiaWebSocketServer implements MessageComponentInterface {
         // The connection is closed, remove it, as we can no longer send it messages
         $this->clients->detach($conn);
 
-        echo "[{$this->getDate()}] INFO: Connection {$conn->resourceId} has disconnected\n";
+        $message = "Connection {$conn->resourceId} has disconnected\n";
+        echo "[{$this->getDate()}] WARNING: {$message}\n";
+        $this->logging->getErrormessage("001", $message);
+
         unset($this->users[$conn->resourceId]);
 
         $changed = false;
@@ -168,6 +173,8 @@ class ChiaWebSocketServer implements MessageComponentInterface {
 
     public function onError(ConnectionInterface $conn, \Exception $e) {
         echo "[{$this->getDate()}] CRITICAL: An error has occurred: {$e->getMessage()}\n";
+        $this->logging->getErrormessage("001", $e->getMessage());
+
         $conn->close();
     }
 
@@ -239,11 +246,16 @@ class ChiaWebSocketServer implements MessageComponentInterface {
         if($informedcount > 0){
           return array("messageSpecificNode" => array("status" => 0, "message" => "Successfully queryied cron request to {$informedcount} node(s)."));
         }else{
-          return array("messageSpecificNode" => array("status" => 0, "message" => "No nodes online to inform."));
+          //return array("messageSpecificNode" => array("status" => 0, "message" => "No nodes online to inform."));
+          $data = $this->logging->getErrormessage("001");
+          //Add Nodeid in $data["data"]
+          return array("messageSpecificNode" => $data);
         }
         //$this->users[$mycon]->send(json_encode(array("messageSpecificNode" => array("status" => 0, "message" => "Successfully queried message to specific node."))));
       }else{
-        $this->users[$mycon]->send(json_encode(array("messageSpecificNode" => array("status" => 1, "message" => "Not all data stated."))));
+        //$this->users[$mycon]->send(json_encode(array("messageSpecificNode" => array("status" => 1, "message" => "Not all data stated."))));
+        //$this->users[$mycon]->send(json_encode(array("messageSpecificNode" => $this->logging->getErrormessage("002"))));
+        return array("messageSpecificNode" => $this->logging->getErrormessage("002"));
       }
     }
 
@@ -266,7 +278,10 @@ class ChiaWebSocketServer implements MessageComponentInterface {
       if($informedcount > 0){
         return array($nodeInfo["socketaction"] => array("status" => 0, "message" => "Successfully queryied cron request to {$informedcount} node(s)."));
       }else{
-        return array($nodeInfo["socketaction"] => array("status" => 0, "message" => "No nodes online to inform."));
+        //return array($nodeInfo["socketaction"] => array("status" => 0, "message" => "No nodes online to inform."));
+        $data = $this->logging->getErrormessage("001");
+        //Add Node ID to data as data
+        return array($nodeInfo["socketaction"] => $data);
       }
     }
 

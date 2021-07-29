@@ -1,0 +1,22 @@
+{
+  "functioncodes" : {
+    "updateFarmData" : "001",
+    "getFarmData" : "002",
+    "farmerStatus" : "003",
+    "farmerServiceRestart" : "004"
+  },
+  "errormessages" : {
+    "updateFarmData" : {
+      "001" : [2, "An error occured."]
+    },
+    "getFarmData" : {
+      "001" : [2, "An error occured."]
+    },
+    "farmerStatus" : {
+      "001" : [2, "An error occured."]
+    },
+    "farmerServiceRestart" : {
+      "001" : [2, "An error occured."]
+    }
+  }
+}

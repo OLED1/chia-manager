@@ -33,9 +33,9 @@ function initWsclient(){
         }else if(key in data && "status" in data[key] && data[key]["status"] == 0){
           showMessage(0, data[key]["message"]);
         }else if("status" in data && data["status"] != 0){
-          showMessage(2, data["message"]);
+          showMessage(data["loglevel"], data["message"]);
         }else if(key in data && "status" in data[key] && data["status"] != 0){
-          showMessage(2, data[key]["message"]);
+          showMessage(data[key]["loglevel"], data[key]["message"]);
         }
       }
     };

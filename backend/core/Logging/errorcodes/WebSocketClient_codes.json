@@ -1,0 +1,15 @@
+{
+  "functioncodes" : {
+    "testConnection" : "001",
+    "sendToWSS" : "002"
+  },
+  "errormessages" : {
+    "testConnection" : {
+      "001" : [2, "Could not connect to Websocket Server."],
+      "002" : [2, "Could not connect to Websocket Server."]
+    },
+    "sendToWSS" : {
+      "001" : [2, "An error occured."]
+    }
+  }
+}

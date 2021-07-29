@@ -31,12 +31,11 @@
       if(isset($maildata["mailserverdomain"]) && isset($maildata["mailserverport"])){
         $connection = @fsockopen($maildata["mailserverdomain"], $maildata["mailserverport"]);
 
-        if (is_resource($connection))
-        {
+        if (is_resource($connection)){
           return array("status" => 0, "message" => "Mailserver configuration seems valid.");
         }else{
-          return array("status" => 1, "message" => "Cannot connect to smtp server " . $maildata["mailserverdomain"].":".$maildata["mailserverport"] . " .");
-          //return $this->logging->getErrormessage("001","Cannot connect to smtp server " . $maildata["mailserverdomain"].":".$maildata["mailserverport"] . " .");
+          //return array("status" => 1, "message" => "Cannot connect to smtp server " . $maildata["mailserverdomain"].":".$maildata["mailserverport"] . " .");
+          return $this->logging->getErrormessage("001","Not able to connect to the configured smtp server " . $maildata["mailserverdomain"].":".$maildata["mailserverport"] . " .");
         }
       }
     }
@@ -53,7 +52,8 @@
         $recpients = $data["receipients"];
         return $this->sendMail($recpients, $subject, $message);
       }else{
-        return array("status" => 1, "message" => "Not all information stated");
+        //return array("status" => 1, "message" => "Not all information stated.");
+        return $this->logging->getErrormessage("001");
       }
     }
 
@@ -109,8 +109,8 @@
 
           return array("status" => 0, "message" => "Message has been sent.");
         }catch (Exception $e) {
-          //return $this->logging->getErrormessage("001","Message could not be sent. Mailer Error: {$mail->ErrorInfo}.");
-          return array("status" => 1, "message" => "Message could not be sent. Mailer Error: {$mail->ErrorInfo}.");
+          //return array("status" => 1, "message" => "Message could not be sent. Mailer Error: {$mail->ErrorInfo}.");
+          return $this->logging->getErrormessage("001","Message could not be sent. Mailer Error: {$mail->ErrorInfo}.");
         }
       }
       return $mailsettings;

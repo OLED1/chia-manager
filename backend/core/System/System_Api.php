@@ -36,8 +36,9 @@
 
           return array("status" => 0, "message" => "Successfully updated system settings for settingtype $settingtype.", "data" => $settingkey);
         }catch(Exception $e){
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured");
+          /*print_r($e);
+          return array("status" => 1, "message" => "An error occured.");*/
+          return $this->logging->getErrormessage("001", $e);
         }
       }
     }
@@ -48,8 +49,9 @@
 
         return array("status" => 0, "message" => "Successfully loaded all system settings.", "data" => $this->formatSetting($sql->fetchAll(\PDO::FETCH_ASSOC)));
       }catch(Exception $e){
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured");
+        /*print_r($e);
+        return array("status" => 1, "message" => "An error occured");*/
+        return $this->logging->getErrormessage("001", $e);
       }
     }
 
@@ -61,11 +63,13 @@
 
           return array("status" => 0, "message" => "Successfully confirmed settingtype $settingtype.", "data" => array("settingtype" => $settingtype));
         }catch(Exception $e){
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
+          /*print_r($e);
+          return array("status" => 1, "message" => "An error occured.");*/
+          return $this->logging->getErrormessage("001", $e);
         }
       }else{
-        return array("status" => 1, "message" => "No settingtype stated.");
+        //return array("status" => 1, "message" => "No settingtype stated.");
+        return $this->logging->getErrormessage("002");
       }
     }
 
