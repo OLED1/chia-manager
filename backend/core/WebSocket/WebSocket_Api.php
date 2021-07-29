@@ -47,8 +47,8 @@
 
     public function startWSS(){
       $wssstatus = $this->wsclient->testConnection();
-      if($wssstatus["status"] == 1){
-        exec("php " . __DIR__ . "/websocket.php > /dev/null &");
+      if($wssstatus["status"] == "013001001" || $wssstatus["status"] == "013001002"){
+        exec("php " . __DIR__ . "/../WebSocketServer/websocket.php > /dev/null &");
         sleep(1);
         $wssstatus = $this->wsclient->testConnection();
         if($wssstatus["status"] == 0){
@@ -69,7 +69,8 @@
         exec("kill -9 {$wssstatus["data"]}");
         sleep(1);
 
-        if($this->wsclient->testConnection()["status"] == 1){
+        $wssstatus = $this->wsclient->testConnection();
+        if($wssstatus["status"] == "013001001" || $wssstatus["status"] == "013001002"){
           return array("status" => 0, "message" => "Websocket server stopped.");
         }else{
           //return array("status" => 1, "message" => "Cannot stop websocket server.");
@@ -90,7 +91,5 @@
         return $stop;
       }
     }
-
-
   }
 ?>

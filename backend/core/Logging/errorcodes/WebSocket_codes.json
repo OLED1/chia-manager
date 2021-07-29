@@ -14,7 +14,7 @@
     },
     "startWSS" : {
       "001" : [1, "Not able to start websocket server."],
-      "001" : [1, "Websocket server running. Not able to start."]
+      "002" : [1, "Websocket server running. Not able to start."]
     },
     "stopWSS" : {
       "001" : [1, "Not able to stop websocket server."],
