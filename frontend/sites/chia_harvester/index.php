@@ -84,7 +84,7 @@
                 <div class='dropdown-menu dropdown-menu-right shadow animated--fade-in' aria-labelledby='dropdownMenuLink_<?php echo $nodeid; ?>'>
                     <div class='dropdown-header'>Actions:</div>
                     <a data-node-id='<?php echo $nodeid; ?>' class='dropdown-item refreshHarvesterInfo' href='#'>Refresh</a>
-                    <a data-node-id='<?php echo $nodeid; ?>' class='dropdown-item refreshHarvesterService' href='#'>Restart harvester service</a>
+                    <a data-node-id='<?php echo $nodeid; ?>' class='dropdown-item restartHarvesterService' href='#'>Restart harvester service</a>
                 </div>
               </div>
             </div>
