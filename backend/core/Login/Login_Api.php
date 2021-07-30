@@ -5,6 +5,7 @@
   use ChiaMgmt\Mailing\Mailing_Api;
   use ChiaMgmt\System\System_Api;
 
+
   class Login_Api{
     private $dbcon, $config, $logging, $mailing_api, $system_api;
 
@@ -103,7 +104,9 @@
 
       if($loginstatus == 0){
         return array("status" => 0, "message" => "You are currently logged in. No need to send authkey.");
-      }else if($loginstatus == "004008002"){
+
+      }else if($loginstatus == "004008002" || $loginstatus == "004008005"){
+
         if(array_key_exists("user_id", $_COOKIE)){
           $userid = $_COOKIE['user_id'];
           $authkey = bin2hex(random_bytes(25));
@@ -147,6 +150,9 @@
 
         try{
           $sql = $this->dbcon->execute("UPDATE users_sessions SET invalidated = 1 WHERE userid = ? AND sessid = ?", array($userid, $sessionid));
+          setcookie('user_id', null, -1, '/');
+          setcookie('PHPSESSID', null, -1, '/');
+
           return array("status" => 0, "message" => "Successfully invalidated (pending) login.");
         }catch(Exception $e){
           /*print_r($e);
@@ -188,7 +194,7 @@
      * @param int $id The users id which logged in
      * @return array  Return a status code array
      */
-    public function setSession(int $id){
+    public function setSession(int $userid){
       try{
         session_destroy();
         $sessionID = session_create_id();
@@ -198,23 +204,23 @@
           'PHPSESSID',//name
           $sessionID,//value
           0,//expires at end of session
-          $currentCookieParams['path'],//path
+          "/",//path
           $currentCookieParams['domain'],//domain
           true, //secure
           true //httponly
           );
 
-          setcookie(
+        setcookie(
           'user_id',//name
-          $id,//value
+          $userid,//value
           0,//expires at end of session
-          $currentCookieParams['path'],//path
+          "/",//path
           $currentCookieParams['domain'],//domain
           true, //secure
           true //httponly
-          );
+        );
 
-          return array("status" => 0, "message" => "Session successfully set!", "data" => array("userid" => $id, "sessid" => $sessionID));
+          return array("status" => 0, "message" => "Session successfully set!", "data" => array("userid" => $userid, "sessid" => $sessionID));
         }catch(Exception $e){
           return $this->logging->getErrormessage("001",$e);
         }
@@ -252,6 +258,7 @@
 
             if(Count($returneddata) > 0){
               $returneddata = $returneddata[0];
+
 
               if($returneddata["authkeypassed"] == 1){
                 if(is_null($returneddata["validuntil"])){

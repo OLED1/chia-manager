@@ -254,7 +254,12 @@
     public function getBackupKey(int $userID){
       try{
         $sql = $this->db_api->execute("SELECT backupkey FROM users_backupkeys WHERE userid = ? AND valid = 1", array($userID));
-        $decryptedkey = $this->decrypt($sql->fetchAll(\PDO::FETCH_ASSOC)[0]["backupkey"]);
+        $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
+        if($sqdata > 0 && array_key_exists(0, $sqdata) && array_key_exists("backupkey", $sqdata[0])){
+          $decryptedkey = $this->decrypt($sqdata[0]["backupkey"]);
+        }else{
+          $decryptedkey = "";
+        }
 
         return array("status" => 0, "message" => "Successfully loaded user information.", "data" => $decryptedkey);
       }catch(Exception $e){

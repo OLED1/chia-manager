@@ -27,7 +27,7 @@ $(function(){
     var data = {
       userID: userid
     };
-    sendToWSS("backendRequest", "ChiaMgmt\\Users\\Users_Api", "Users_Api", "generateNewBackupKey", data);
+    sendToWSS("ownRequest", "ChiaMgmt\\Users\\Users_Api", "Users_Api", "generateNewBackupKey", data);
   });
 
   $(".logoutdevice").on("click", function(){
@@ -102,7 +102,7 @@ $(function(){
         password: currentPassword
       };
 
-      sendToWSS("backendRequest", "ChiaMgmt\\Users\\Users_Api", "Users_Api", "checkCurrentPassword", data);
+      sendToWSS("ownRequest", "ChiaMgmt\\Users\\Users_Api", "Users_Api", "checkCurrentPassword", data);
     }
   }
 
@@ -117,7 +117,7 @@ $(function(){
       });
 
       data["userID"] = userid;
-      sendToWSS("backendRequest", "ChiaMgmt\\Users\\Users_Api", "Users_Api", "savePersonalInfo", data);
+      sendToWSS("ownRequest", "ChiaMgmt\\Users\\Users_Api", "Users_Api", "savePersonalInfo", data);
     }
   });
 });
@@ -129,12 +129,11 @@ function resetUserPassword(){
     password: newPW
   };
 
-  sendToWSS("backendRequest", "ChiaMgmt\\Users\\Users_Api", "Users_Api", "resetUserPassword", data);
+  sendToWSS("ownRequest", "ChiaMgmt\\Users\\Users_Api", "Users_Api", "resetUserPassword", data);
 }
 
 function messagesTrigger(data){
   var key = Object.keys(data);
-  console.log(data[key]);
 
   if(data[key]["status"] == 0){
     if (key == "savePersonalInfo"){
