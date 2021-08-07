@@ -26,7 +26,7 @@
 
         try{
           if(count($sqdata) == 0 || (count($sqdata) == 1 && ($lastquerytime <= $now))){
-            $extapidata = $this->getDateFromExtApi();
+            $extapidata = $this->getDataFromExtApi();
             if($extapidata["status"] == 0){
               $netspacedata = $extapidata["data"]["netspace"];
               $marketdata = $extapidata["data"]["market"];
@@ -75,7 +75,7 @@
       }
     }
 
-    private function getDateFromExtApi(){
+    private function getDataFromExtApi(){
       $overall = true;
 
       $curl = curl_init();
@@ -113,7 +113,7 @@
         $market_date = new \DateTime("@" . $market_result["timestamp"]);
 
         $netspace_result["timestamp"] = $netspace_date->format("Y-m-d H:i:s");
-        $market_result["timestamp"] = $netspace_date->format("Y-m-d H:i:s");
+        $market_result["timestamp"] = $market_date->format("Y-m-d H:i:s");
 
         return array("status" => 0, "message" => "Data from external api queried successfully.", "data" => array("netspace" => $netspace_result, "market" => $market_result));
       }else{
