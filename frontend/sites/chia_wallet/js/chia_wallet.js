@@ -99,7 +99,7 @@ function generateWalletCards(data){
         "<div class='col'>" +
           "<div class='card shadow mb-4'>" +
             "<div class='card-header py-3 d-flex flex-row align-items-center justify-content-between'>" +
-              "<h6 class='m-0 font-weight-bold text-primary'>Wallet (ID: " + walletdata['walletid'] + "), Type: " + walletdata['wallettype'] + "&nbsp;<span id='servicestatus_" + walletdata['nodeid'] + "' class='badge badge-secondary'>Querying service status</span></h6>" +
+              "<h6 class='m-0 font-weight-bold text-primary'>Wallet (ID: " + walletdata['walletid'] + "), Type: " + walletdata['wallettype'] + "&nbsp;<span id='servicestatus_" + walletdata['nodeid'] + "' class='badge statusbadge badge-secondary'>Querying service status</span></h6>" +
               "<div class='dropdown no-arrow'>" +
                   "<a class='dropdown-toggle' href='#' role='button' id='dropdownMenuLink' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>" +
                       "<i class='fas fa-ellipsis-v fa-sm fa-fw text-gray-400'></i>" +
@@ -169,8 +169,6 @@ function setWalletBadge(data){
 function messagesTrigger(data){
   var key = Object.keys(data);
 
-  console.log(data[key]);
-
   if(data[key]["status"] == 0){
     if(key == "updateWalletData"){
       sendToWSS("backendRequest", "ChiaMgmt\\Chia_Wallet\\Chia_Wallet_Api", "Chia_Wallet_Api", "getWalletData", {});
@@ -181,7 +179,9 @@ function messagesTrigger(data){
     }else if(key == "walletStatus"){
       setWalletBadge(data[key]["data"]);
     }else if(key == "walletServiceRestart"){
-      setFarmerBadge(data[key]["data"]);
+      setWalletBadge(data[key]["data"]);
     }
+  }else if(data[key]["status"] == "014003001"){
+    $(".statusbadge").removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-danger").addClass("badge-danger").html("Node not reachable");
   }
 }

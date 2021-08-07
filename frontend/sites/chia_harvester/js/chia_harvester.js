@@ -113,7 +113,7 @@ function createHarvesterCards(data){
         "<div class='col'>" +
           "<div class='card shadow mb-4'>" +
             "<div class='card-header py-3 d-flex flex-row align-items-center justify-content-between'>" +
-              "<h6 class='m-0 font-weight-bold text-primary'>Harvesterdata for host " + harvesterinfos['hostname'] + " with id " + nodeid +"&nbsp;<span id='servicestatus_" + nodeid + "' class='badge badge-secondary'>Querying service status</span></h6>" +
+              "<h6 class='m-0 font-weight-bold text-primary'>Harvesterdata for host " + harvesterinfos['hostname'] + " with id " + nodeid +"&nbsp;<span id='servicestatus_" + nodeid + "' class='badge statusbadge badge-secondary'>Querying service status</span></h6>" +
               "<div class='dropdown no-arrow'>" +
                 "<a id='dropdownMenuLink_" + nodeid +"' class='dropdown-toggle' href='#' role='button' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>" +
                     "<i class='fas fa-ellipsis-v fa-sm fa-fw text-gray-400'></i>" +
@@ -212,5 +212,7 @@ function messagesTrigger(data){
     }else if(key == "harvesterServiceRestart"){
       setHarvesterBadge(data[key]["data"]);
     }
+  }else if(data[key]["status"] == "014003001"){
+    $(".statusbadge").removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-danger").addClass("badge-danger").html("Node not reachable");
   }
 }

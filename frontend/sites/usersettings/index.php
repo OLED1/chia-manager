@@ -112,7 +112,7 @@
                 if(array_key_exists("data", $devices)){
               ?>
               <div class="table-responsive">
-                  <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                  <table class="table table-bordered" id="loggedInDevices" width="100%" cellspacing="0">
                     <thead>
                       <tr>
                         <th>Device Info</th>
@@ -148,17 +148,33 @@
 <div class="row">
   <div class="col-xl-3 col-lg-3">
     <div class="card shadow mb-4">
-      <div
-      class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-      <h6 class="m-0 font-weight-bold text-primary">Backup Key</h6>
-    </div>
-    <div class="card-body" id="personinfo">
-      <div class="input-group mb-3">
-        <input type="text" id="backupkey" name="name" class="form-control personinput" value="<?php echo $users_api->getBackupKey($_COOKIE["user_id"])["data"]; ?>" readonly>
+      <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">Backup Key</h6>
       </div>
-      <button id="generateNewBackupKey" class="btn btn-primary btn-block" href="#">Generate New</button>
+      <div class="card-body" id="personinfo">
+        <div class="input-group mb-3">
+          <input type="text" id="backupkey" name="name" class="form-control personinput" value="<?php echo $users_api->getBackupKey($_COOKIE["user_id"])["data"]; ?>" readonly>
+        </div>
+        <button id="generateNewBackupKey" class="btn btn-primary btn-block" href="#">Generate New</button>
+      </div>
     </div>
   </div>
+  <div class="col-xl-3 col-lg-3">
+    <div class="card shadow mb-4">
+      <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">Regional Settings</h6>
+      </div>
+      <div class="card-body" id="regionalsettings">
+        <div class="form-group">
+          <label for="exampleFormControlSelect1">Currency</label>
+          <select class="form-control" id="exampleFormControlSelect1">
+            <option>USD</option>
+            <option>EUR</option>
+            <option>...</option>
+          </select>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 

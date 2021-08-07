@@ -90,7 +90,7 @@
       <div class='col'>
         <div class='card shadow mb-4'>
           <div class='card-header py-3 d-flex flex-row align-items-center justify-content-between'>
-            <h6 class='m-0 font-weight-bold text-primary'>Wallet (ID: {$thiswallet['walletid']}), Type: {$thiswallet['wallettype']}&nbsp;<span id='servicestatus_{$thiswallet['nodeid']}' class='badge badge-secondary'>Querying service status</span></h6>
+            <h6 class='m-0 font-weight-bold text-primary'>Wallet (ID: {$thiswallet['walletid']}), Type: {$thiswallet['wallettype']}&nbsp;<span id='servicestatus_{$thiswallet['nodeid']}' class='badge statusbadge badge-secondary'>Querying service status</span></h6>
             <div class='dropdown no-arrow'>
                 <a class='dropdown-toggle' href='#' role='button' id='dropdownMenuLink_{$thiswallet['walletid']}'
                     data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
@@ -107,7 +107,7 @@
           <div class='card-body'>
             {$synccard}
               <div class='row'>
-                <div class='col col-xl-5 col-lg-5'>
+                <div class='col'>
                   <div class='card shadow mb-4'>
                     <div class='card-header'>
                       Wallet Address
@@ -117,11 +117,63 @@
                     </div>
                   </div>
                 </div>
-                <div class='col col-xl-5 col-lg-5'>
+                <div class='col'>
                   <div class='card shadow mb-4'>
                     <div class='card-body'>
-                      <h6>Transactions</h6>
-                      Here will be a chart about transactions
+                      <div class='row'>
+                        <div class='col mb-4'>
+                            <div class='card border-left-success shadow h-100 py-2'>
+                                <div class='card-body'>
+                                    <div class='row no-gutters align-items-center'>
+                                        <div class='col mr-2'>
+                                            <div class='text-xs font-weight-bold text-success text-uppercase mb-1'>
+                                                Total XCH owning</div>
+                                            <div class='h5 mb-0 font-weight-bold text-gray-800'>XCH 40,000</div>
+                                        </div>
+                                        <div class='col-auto'>
+                                            <i class='fas fa-wallet fa-2x text-gray-300'></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                      </div>
+                      <div class='row'>
+                        <div class='col mb-4'>
+                            <div class='card border-left-primary shadow h-100 py-2'>
+                                <div class='card-body'>
+                                    <div class='row no-gutters align-items-center'>
+                                        <div class='col mr-2'>
+                                            <div class='text-xs font-weight-bold text-primary text-uppercase mb-1'>
+                                                Total XCH in USD</div>
+                                            <div class='h5 mb-0 font-weight-bold text-gray-800'>USD 40,000</div>
+                                        </div>
+                                        <div class='col-auto'>
+                                            <i class='fas fa-dollar-sign fa-2x text-gray-300'></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                      </div>
+                      <div class='row'>
+                        <div class='col'>
+                          <div class='card shadow mb-4'>
+                            <div class='card-body'>
+                              <h6>Transactions Chart</h6>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class='row'>
+                        <div class='col'>
+                          <div class='card shadow mb-4'>
+                            <div class='card-body'>
+                              <h6>Transactions Table</h6>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

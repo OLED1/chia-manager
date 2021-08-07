@@ -65,7 +65,7 @@
       <div class="col">
         <div class="card shadow mb-4">
           <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-            <h6 class='m-0 font-weight-bold text-primary'>Farmdata for host <?php echo $farmdata["hostname"]; ?> with id <?php echo $nodeid; ?>&nbsp;<span id='servicestatus_<?php echo $nodeid; ?>' class='badge badge-secondary'>Querying service status</span></h6>
+            <h6 class='m-0 font-weight-bold text-primary'>Farmdata for host <?php echo $farmdata["hostname"]; ?> with id <?php echo $nodeid; ?>&nbsp;<span id='servicestatus_<?php echo $nodeid; ?>' class='badge statusbadge badge-secondary'>Querying service status</span></h6>
             <div class='dropdown no-arrow'>
               <a id='dropdownMenuLink_<?php echo $nodeid; ?>' class='dropdown-toggle' href='#' role='button' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
                   <i class='fas fa-ellipsis-v fa-sm fa-fw text-gray-400'></i>
@@ -161,6 +161,35 @@
                     <h5>Estimated time to Win</h5>
                     <h4><?php echo ($farmdata["expected_time_to_win"]); ?></h4>
                     <h7>&nbsp;</h7>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col">
+                <div class="card shadow mb-4">
+                  <div class="card-body">
+                    <h5>Latest Challenges</h5>
+                    <div class="table-responsive">
+                      <table class="table table-bordered" id="challengestable_<?php echo $nodeid; ?>" width="100%" cellspacing="0">
+                        <thead>
+                          <tr>
+                            <th>Date</th>
+                            <th>Hash</th>
+                            <th>Index</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                        <tfoot>
+                          <tr>
+                            <th>Date</th>
+                            <th>Hash</th>
+                            <th>Index</th>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
                   </div>
                 </div>
               </div>

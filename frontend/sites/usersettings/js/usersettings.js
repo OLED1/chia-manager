@@ -1,4 +1,7 @@
 $(function(){
+
+  initLoggedInDevicesTable();
+
   $("#resetpwbtn").on("click",function(e){
     e.preventDefault();
     if(checkFieldsNotEmpty("resetpw") && checkNewPassword()){
@@ -38,6 +41,10 @@ $(function(){
 
     sendToWSS("ownRequest", "ChiaMgmt\\Users\\Users_Api", "Users_Api", "logoutDevice", data);
   });
+
+  function initLoggedInDevicesTable(){
+    $("#loggedInDevices").DataTable();
+  }
 
   function checkNewPassword(){
     var regex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})";

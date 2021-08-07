@@ -255,7 +255,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
       }else{
         //$this->users[$mycon]->send(json_encode(array("messageSpecificNode" => array("status" => 1, "message" => "Not all data stated."))));
         //$this->users[$mycon]->send(json_encode(array("messageSpecificNode" => $this->logging->getErrormessage("002"))));
-        return array("messageSpecificNode" => $this->logging->getErrormessage("002"));
+        return array("messageSpecificNode" => $this->logging->getErrormessage("002", $request));
       }
     }
 
