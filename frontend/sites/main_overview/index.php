@@ -3,6 +3,7 @@
 
   use ChiaMgmt\Login\Login_Api;
   use ChiaMgmt\MainOverview\MainOverview_Api;
+  use ChiaMgmt\Chia_Overall\Chia_Overall_Api;
   require __DIR__ . '/../../../vendor/autoload.php';
 
   $login_api = new Login_Api();
@@ -14,6 +15,7 @@
   }
 
   $main_overview_api = new MainOverview_Api();
+  $chia_overall_api = new Chia_Overall_Api();
 
   echo "<script> var siteID = 1; </script>";
 ?>
@@ -24,6 +26,48 @@
             class="fas fa-download fa-sm text-white-50"></i> Generate Report</a>
 </div>
 
+<div class="row">
+  <div class="col">
+    <div class="card mb-4">
+      <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Chia overall information</h6>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <?php
+            $chia_overall_data = $chia_overall_api->queryOverallData();
+
+            if($chia_overall_data["status"] == 0 && count($chia_overall_data["data"]) > 0){
+              $chiadata = $chia_overall_data["data"];
+          ?>
+          <div class="col">
+            <div class="row">
+              <?php print_r($chiadata); ?>
+              <div class="col-xl-3 mb-4">
+              </div>
+              <div class="col-xl-3 mb-4">
+              </div>
+              <div class="col-xl-3 mb-4">
+              </div>
+              <div class="col-xl-3 mb-4">
+              </div>
+            </div>
+          </div>
+          <?php }else{ ?>
+          <div class="col">
+              <div class="card bg-danger text-white shadow">
+                  <div class="card-body">
+                      No chia overall data found
+                      <div class="text-white-50 small">Something seems not to be working properly. No data has been received from external source.</div>
+                  </div>
+              </div>
+          </div>
+          <?php } ?>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="row">
   <div class="col">
     <div class="card mb-4">
@@ -73,15 +117,10 @@
 <div class="row">
   <div class="col">
     <div class="card mb-4">
+      <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Farm Overview&nbsp;<span id='servicestatus_{$thiswallet['nodeid']}' class='badge badge-secondary'>Querying service status</span></h6>
+      </div>
       <div class="card-body">
-        <div class="row no-gutters align-items-center">
-            <div class="col mr-2">
-              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Farm Overview</div>
-            </div>
-            <div class="col-auto">
-                <i class="fas fa-industry fa-2x text-gray-300"></i>
-            </div>
-          </div>
       </div>
     </div>
   </div>
@@ -89,21 +128,14 @@
 <div class="row">
   <div class="col">
     <div class="card mb-4">
+      <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Harvester Overview&nbsp;<span id='servicestatus_{$thiswallet['nodeid']}' class='badge badge-secondary'>Querying service status</span></h6>
+      </div>
       <div class="card-body">
-        <div class="row no-gutters align-items-center">
-            <div class="col mr-2">
-              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Harvester Overview</div>
-            </div>
-            <div class="col-auto">
-                <i class="fas fa-hdd fa-2x text-gray-300"></i>
-            </div>
-          </div>
       </div>
     </div>
   </div>
 </div>
-
-
 <!-- Content Row -->
 <div class="row">
     <!-- Earnings (Monthly) Card Example -->
