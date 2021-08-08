@@ -9,7 +9,7 @@
     public function __construct(){
       $this->db_api = new DB_Api();
       $this->logging_api = new Logging_Api($this);
-      $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini');
+      $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
     }
 
     public function queryOverallData(DateTime $fromtime = NULL){

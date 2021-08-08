@@ -7,7 +7,7 @@
     private $db_api, $logging_api, $ini;
 
     public function __construct(){
-      $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini');
+      $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
 
       $this->db_api = new DB_Api();
       $this->logging_api = new Logging_Api($this);

@@ -41,12 +41,14 @@ function initWsclient(){
     };
 
     socket.onopen = function(evt) {
-      $("#wsstatus").text("Socket: Connected.").css("color","green");
+      //$("#wsstatus").text("Socket: Connected.").css("color","green");
+      $("#wsstatus").text("Socket: Connected.").removeClass("badge-danger").addClass("badge-success");
       sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "loginStatus", {});
     };
 
     socket.onclose = function(msg){
-      $("#wsstatus").html("Socket: Not connected. Trying to reconnect.<br>Some features will not work.").css("color","red");
+      //$("#wsstatus").html("Socket: Not connected. Trying to reconnect.<br>Some features will not work.").css("color","red");
+      $("#wsstatus").text("Socket: Not connected. Trying to reconnect.").removeClass("badge-success").addClass("badge-danger");
       //showMessage(1, "Lost connection to wss server. Trying to reconnect.");
       socket.close();
       if(!alreadyreconnecting){

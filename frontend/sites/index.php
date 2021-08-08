@@ -4,7 +4,7 @@
   require __DIR__ . '/../../vendor/autoload.php';
 
   $login_api = new Login_Api();
-  $ini = parse_ini_file(__DIR__.'/../../backend/config/config.ini');
+  $ini = parse_ini_file(__DIR__.'/../../backend/config/config.ini.php');
   $loggedin = $login_api->checklogin();
 
   if($loggedin["status"] > 0){
@@ -217,7 +217,10 @@
 
                         <li class="nav-item no-arrow mx-1">
                           <span class="nav-link">
-                              <span class="mr-2 d-none d-lg-inline text-gray-600 small"><h6 id="wsstatus"></h6></span>
+                            <span id="wsstatus" class="badge badge-secondary"></span>
+                            <span class="mr-2 d-none d-lg-inline text-gray-600 small">
+                              <!--<h6 id="wsstatus"></h6>-->
+                            </span>
                           </span>
                         </li class="nav-item dropdown no-arrow d-sm-none">
 

@@ -1,3 +1,4 @@
-backend/config/config.ini
-logs/*.log
+backend/config/
+logs/
+*.log
 .ftpconfig

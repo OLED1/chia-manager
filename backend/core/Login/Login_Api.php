@@ -14,7 +14,7 @@
       $this->logging = new Logging_Api($this);
       $this->mailing_api = new Mailing_Api();
       $this->system_api = new System_Api();
-      $this->config = parse_ini_file(__DIR__.'/../../config/config.ini');
+      $this->config = parse_ini_file(__DIR__.'/../../config/config.ini.php');
     }
 
     /**

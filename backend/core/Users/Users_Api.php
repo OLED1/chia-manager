@@ -18,7 +18,7 @@
       $this->db_api = new DB_Api();
       $this->logging = new Logging_Api($this);
       $this->mailing_api = new Mailing_Api();
-      $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini');
+      $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
     }
 
     public function savePersonalInfo(array $data, array $loginData = NULL){

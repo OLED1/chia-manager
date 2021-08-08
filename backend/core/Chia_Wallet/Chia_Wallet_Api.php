@@ -11,7 +11,7 @@
       $this->iv_length = openssl_cipher_iv_length($this->ciphering);
       $this->options = 0;
       $this->encryption_iv = '1234567891011121';
-      $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini');
+      $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
 
       $this->db_api = new DB_Api();
       $this->logging_api = new Logging_Api($this);

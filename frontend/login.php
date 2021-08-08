@@ -6,7 +6,7 @@
 
   $login_api = new Login_Api();
 
-  $ini = parse_ini_file(__DIR__.'/../backend/config/config.ini');
+  $ini = parse_ini_file(__DIR__.'/../backend/config/config.ini.php');
   $loggedin = $login_api->checklogin();
 
   if($loggedin["status"] == 0){

@@ -19,7 +19,7 @@
       $this->mailer = new PHPMailer(true);
       $this->logging_api = new Logging_Api($this);
       $this->system_api = new System_Api();
-      $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini');
+      $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
     }
 
   /**

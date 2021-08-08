@@ -22,7 +22,7 @@
       $this->login_api = new Login_Api();
       $this->db_api = new DB_Api();
       $this->logging = new Logging_Api($this);
-      $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini');
+      $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
     }
 
     public function processRequest(array $loginData, array $backendInfo, array $data){

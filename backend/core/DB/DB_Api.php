@@ -10,7 +10,7 @@
      * The constructur initialises the databse instance with the parameters stated in the config file.
      */
     public function __construct(){
-      $ini = parse_ini_file(__DIR__.'/../../config/config.ini');
+      $ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
 
       try{
         $this->con = new \PDO('mysql:dbname='. $ini["db_name"] .';host='. $ini['db_host'], $ini['db_user'], $ini['db_password']);
