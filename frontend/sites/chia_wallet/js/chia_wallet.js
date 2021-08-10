@@ -135,9 +135,9 @@ function generateWalletCards(data){
                       "<div class='table-responsive'>" +
                         "<table class='table table-bordered' width='100%' cellspacing='0'>" +
                           "<tbody>" +
-                            "<tr><td><strong>Total Balance</strong></td><td>" + parseFloat(walletdata['totalbalance']).toFixed(2) + " xch (" + (parseFloat(walletdata['totalbalance']).toFixed(2) * 1000000000000) + " mojo)</td></tr>" +
-                            "<tr><td><strong>Pending Total Balance</strong></td><td>" + parseFloat(walletdata['pendingtotalbalance']).toFixed(2) + " xch  (" + (parseFloat(walletdata['pendingtotalbalance']).toFixed(2) * 1000000000000) + " mojo)</td></tr>" +
-                            "<tr><td><strong>spendable</strong></td><td>" + parseFloat(walletdata['spendable']).toFixed(2) + " xch (" + (parseFloat(walletdata['spendable']).toFixed(2) * 1000000000000) + " mojo)</td></tr>" +
+                            "<tr><td><strong>Total Balance</strong></td><td>" + parseFloat(walletdata['totalbalance']) + " xch (" + (parseFloat(walletdata['totalbalance']) * 1000000000000) + " mojo)</td></tr>" +
+                            "<tr><td><strong>Pending Total Balance</strong></td><td>" + parseFloat(walletdata['pendingtotalbalance']) + " xch  (" + (parseFloat(walletdata['pendingtotalbalance']) * 1000000000000) + " mojo)</td></tr>" +
+                            "<tr><td><strong>Spendable</strong></td><td>" + parseFloat(walletdata['spendable']) + " xch (" + (parseFloat(walletdata['spendable']) * 1000000000000) + " mojo)</td></tr>" +
                           "</tbody>" +
                         "</table>" +
                       "</div>" +

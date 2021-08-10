@@ -58,8 +58,9 @@ function initWsclient(){
     };
 
     socket.onerror = (msg) => {
-      $("#wsstatus").html("Socket: Not connected. Trying to reconnect.<br>Some features will not work.").css("color","red");
+      //$("#wsstatus").html("Socket: Not connected. Trying to reconnect.<br>Some features will not work.").css("color","red");
       //showMessage(2, "Not connected to websocket server. No live data will be available.");
+      $("#wsstatus").text("Socket: Not connected. Trying to reconnect.").removeClass("badge-success").addClass("badge-danger");
       socket.close();
       if(!alreadyreconnecting){
         alreadyreconnecting = true;

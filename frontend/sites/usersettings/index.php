@@ -3,6 +3,7 @@
 
   use ChiaMgmt\Login\Login_Api;
   use ChiaMgmt\Users\Users_Api;
+  use ChiaMgmt\Exchangerates\Exchangerates_Api;
   require __DIR__ . '/../../../vendor/autoload.php';
 
   $login_api = new Login_Api();
@@ -15,6 +16,9 @@
 
   $login_api = new Login_Api();
   $users_api = new Users_Api();
+  $exchangerates_api = new Exchangerates_Api();
+
+  //print_r($exchangerates_api->getAllCurrencies());
 
   $userData = array();
   if(array_key_exists("user_id", $_COOKIE)) $userData = $users_api->getOwnUserData($_COOKIE["user_id"]);
@@ -168,9 +172,17 @@
         <div class="form-group">
           <label for="exampleFormControlSelect1">Currency</label>
           <select class="form-control" id="exampleFormControlSelect1">
-            <option>USD</option>
-            <option>EUR</option>
-            <option>...</option>
+            <?php
+              $currencies = $exchangerates_api->getAllCurrencies();
+              if($currencies["status"] == 0 && count($currencies["data"]) > 0){
+                foreach($currencies["data"] AS $arrkey => $thiscurrency){
+                  print_r($thiscurrency);
+                  echo "<option value='{$thiscurrency["currency_code"]}'>(" . strtoupper($thiscurrency["currency_code"]) . ") {$thiscurrency["currency_desc"]}</option>";
+                }
+              }else{
+                echo "<option value='usd'>(USD) United States dollar</option>";
+              }
+            ?>
           </select>
         </div>
       </div>

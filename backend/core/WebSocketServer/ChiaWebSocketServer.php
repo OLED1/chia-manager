@@ -51,7 +51,12 @@ class ChiaWebSocketServer implements MessageComponentInterface {
 
         //Authenticate Node usind ReqeuestHandler
         $this->requestHandler = new RequestHandler_Api();
-        $requesterLogin = $this->requestHandler->requesterLogin($nodeip, $loginData, $data["node"]["nodeinfo"]);
+
+        if(is_array($loginData) && is_array($data["node"]["nodeinfo"])){
+          $requesterLogin = $this->requestHandler->requesterLogin($nodeip, $loginData, $data["node"]["nodeinfo"]);
+        }else{
+          $this->users[$from->resourceId]->send(json_encode(array("notallinformationstated" => array("status" => 1, "message" => "Not all information stated."))));
+        }
 
         echo "[{$this->getDate()}] INFO: {$requesterLogin["message"]}\n";
 
@@ -255,7 +260,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
       }else{
         //$this->users[$mycon]->send(json_encode(array("messageSpecificNode" => array("status" => 1, "message" => "Not all data stated."))));
         //$this->users[$mycon]->send(json_encode(array("messageSpecificNode" => $this->logging->getErrormessage("002"))));
-        return array("messageSpecificNode" => $this->logging->getErrormessage("002", $request));
+        return array("messageSpecificNode" => $this->logging->getErrormessage("002", json_encode($request)));
       }
     }
 
