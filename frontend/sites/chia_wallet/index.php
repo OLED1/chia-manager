@@ -3,6 +3,7 @@
 
   use ChiaMgmt\Login\Login_Api;
   use ChiaMgmt\Chia_Wallet\Chia_Wallet_Api;
+  use ChiaMgmt\Chia_Overall\Chia_Overall_Api;
   use ChiaMgmt\Exchangerates\Exchangerates_Api;
   require __DIR__ . '/../../../vendor/autoload.php';
 
@@ -15,10 +16,25 @@
   }
 
   $chia_wallet_api = new Chia_Wallet_Api();
+  $chia_overall_api = new Chia_Overall_Api();
   $exchangerates_api = new Exchangerates_Api();
 
   $walletdata = $chia_wallet_api->getWalletData();
-  print_r($exchangerates_api->queryExchangeRatesData("eur"));
+  $chia_overall_data = $chia_overall_api->queryOverallData();
+
+  $defaultCurrency = $exchangerates_api-> getUserDefaultCurrency($_COOKIE["user_id"]);
+  if($defaultCurrency["status"] == 0) $defaultCurrency = $defaultCurrency["data"]["currency_code"];
+  else $defaultCurrency = "usd";
+
+  $exchangerate = $exchangerates_api->queryExchangeRatesData($defaultCurrency);
+  if($exchangerate["status"] == 0 && array_key_exists($defaultCurrency, $exchangerate["data"])){
+    $exchangerate = $exchangerate["data"][$defaultCurrency]["currency_rate"];
+  }else{
+    $defaultCurrency = "usd";
+    $exchangerate = 1;
+  }
+
+  $chiapriceindefcurr = number_format(floatval($chia_overall_data["data"]["price_usd"]) * floatval($exchangerate), 2);
 
   echo "<script> var siteID = 5; </script>";
   echo "<script> var chiaWalletData = " . json_encode($walletdata["data"]) . "; </script>";
@@ -149,8 +165,8 @@
                                       <div class='row no-gutters align-items-center'>
                                           <div class='col mr-2'>
                                               <div class='text-xs font-weight-bold text-primary text-uppercase mb-1'>
-                                                  Total XCH in USD</div>
-                                              <div class='h5 mb-0 font-weight-bold text-gray-800'>USD 40,000</div>
+                                                  Total XCH in {$defaultCurrency}</div>
+                                              <div class='h5 mb-0 font-weight-bold text-gray-800 text-uppercase'>{$defaultCurrency} " . ($chiapriceindefcurr*$thiswallet['totalbalance']) . "</div>
                                           </div>
                                           <div class='col-auto'>
                                               <i class='fas fa-dollar-sign fa-2x text-gray-300'></i>

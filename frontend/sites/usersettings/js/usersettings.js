@@ -42,6 +42,15 @@ $(function(){
     sendToWSS("ownRequest", "ChiaMgmt\\Users\\Users_Api", "Users_Api", "logoutDevice", data);
   });
 
+  $("#currency_select").on("change", function(){
+    var data = {
+      userid: userid,
+      currency_code : $(this).val()
+    }
+
+    sendToWSS("ownRequest", "ChiaMgmt\\Exchangerates\\Exchangerates_Api", "Exchangerates_Api", "setUserDefaultCurrency", data);
+  });
+
   function initLoggedInDevicesTable(){
     $("#loggedInDevices").DataTable();
   }
@@ -141,6 +150,8 @@ function resetUserPassword(){
 
 function messagesTrigger(data){
   var key = Object.keys(data);
+
+  console.log(data);
 
   if(data[key]["status"] == 0){
     if (key == "savePersonalInfo"){
