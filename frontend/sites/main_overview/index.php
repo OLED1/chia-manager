@@ -4,6 +4,7 @@
   use ChiaMgmt\Login\Login_Api;
   use ChiaMgmt\MainOverview\MainOverview_Api;
   use ChiaMgmt\Chia_Overall\Chia_Overall_Api;
+  use ChiaMgmt\Exchangerates\Exchangerates_Api;
   require __DIR__ . '/../../../vendor/autoload.php';
 
   $login_api = new Login_Api();
@@ -16,6 +17,19 @@
 
   $main_overview_api = new MainOverview_Api();
   $chia_overall_api = new Chia_Overall_Api();
+  $exchangerates_api = new Exchangerates_Api();
+
+  $defaultCurrency = $exchangerates_api-> getUserDefaultCurrency($_COOKIE["user_id"]);
+  if($defaultCurrency["status"] == 0) $defaultCurrency = $defaultCurrency["data"]["currency_code"];
+  else $defaultCurrency = "usd";
+
+  $exchangerate = $exchangerates_api->queryExchangeRatesData($defaultCurrency);
+  if($exchangerate["status"] == 0 && array_key_exists($defaultCurrency, $exchangerate["data"])){
+    $exchangerate = $exchangerate["data"][$defaultCurrency]["currency_rate"];
+  }else{
+    $defaultCurrency = "usd";
+    $exchangerate = 1;
+  }
 
   echo "<script> var siteID = 1; </script>";
 ?>
@@ -42,14 +56,43 @@
           ?>
           <div class="col">
             <div class="row">
-              <?php print_r($chiadata); ?>
               <div class="col-xl-3 mb-4">
+                <div class="card border-left-primary shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                    Total Netspace</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo $chiadata["netspace"]; ?></div>
+                                <i class="fas <?php echo (floatval($chiadata["daychange_percent"]) > 0 ? "fa-arrow-up" : "fa-arrow-down"); ?>" style="color: <?php echo (floatval($chiadata["daychange_percent"]) > 0 ? "green" : "red"); ?>"></i>&nbsp;<?php echo number_format($chiadata["daychange_percent"], 2) . "% (24h)"; ?>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-hdd fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
               </div>
               <div class="col-xl-3 mb-4">
-              </div>
-              <div class="col-xl-3 mb-4">
-              </div>
-              <div class="col-xl-3 mb-4">
+                <div class="card border-left-success shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                    Current XCH price</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800 text-uppercase"><?php echo "{$defaultCurrency}&nbsp;" . number_format(floatval($chiadata["price_usd"]) * floatval($exchangerate), 2); ?></div>
+                                <div class="text-uppercase">
+                                  <i class="fas fa-arrow-down" style="color: red;"></i>&nbsp;<?php echo "{$defaultCurrency}&nbsp;" . number_format(floatval($chiadata["daymin_24h_usd"]) * floatval($exchangerate), 2); ?>
+                                  <i class="fas fa-arrow-up" style="color: green;"></i>&nbsp;<?php echo "{$defaultCurrency}&nbsp;" . number_format(floatval($chiadata["daymax_24h_usd"]) * floatval($exchangerate), 2); ?>
+                                  &nbsp;(24h)
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-money-bill-wave fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
               </div>
             </div>
           </div>

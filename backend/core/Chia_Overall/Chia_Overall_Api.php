@@ -107,7 +107,7 @@
       if($overall){
         $base = log($netspace_result["netspace"]) / log(1024);
         $suffix = array("", " kiB", " MiB", " GiB", " TiB", " PiB", " EiB")[floor($base)];
-        $netspace_result["netspace"] = pow(1024, $base - floor($base)) . $suffix;
+        $netspace_result["netspace"] = number_format(pow(1024, $base - floor($base)),2) . $suffix;
 
         $netspace_date = new \DateTime("@" . $netspace_result["timestamp"]);
         $market_date = new \DateTime("@" . $market_result["timestamp"]);
