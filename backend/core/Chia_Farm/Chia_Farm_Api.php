@@ -18,7 +18,7 @@
     }
 
     public function updateFarmData(array $data, array $loginData = NULL){
-      if(array_key_exists("farm", $data)){
+      if(array_key_exists("farm", $data) && array_key_exists("farming_status", $data["farm"])){
         try{
           $farmdata = $data["farm"];
           $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryptAuthhash($loginData["authhash"])));
@@ -51,6 +51,9 @@
         }
 
         return array("status" =>0, "message" => "Successfully updated farm information for node $nodeid.", "data" => ["nodeid" => $nodeid]);
+      }else{
+        //TODO Implement correct status code
+        return array("status" =>1, "message" => "Not all data stated.");
       }
     }
 

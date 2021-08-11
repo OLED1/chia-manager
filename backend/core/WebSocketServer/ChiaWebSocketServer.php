@@ -96,12 +96,20 @@ class ChiaWebSocketServer implements MessageComponentInterface {
               $this->users[$from->resourceId]->send(json_encode(array("status" => 0, "message" => "Websocket server ready to rumble.", "data" => getmypid())));
               break;
             case "backendRequest": //Returns the requested value to all frontend Clients which are viewing a specific site
-              $this_req = $this->requestHandler->processRequest($loginData, $backendInfo, $reqData);
-              $this->messageFrontendClients($loginData, $this_req, $from->resourceId, $backendInfo);
+              if(is_array($loginData) && is_array($backendInfo) && is_array($reqData)){
+                $this_req = $this->requestHandler->processRequest($loginData, $backendInfo, $reqData);
+                $this->messageFrontendClients($loginData, $this_req, $from->resourceId, $backendInfo);
+              }else{
+                $this->users[$from->resourceId]->send(json_encode(array($backendInfo['method'] => array("status" => 1, "message" => "Sent data invalid."))));
+              }
               break;
             case "ownRequest": //Returns the requested value just to the requesters open socket
-              $this_req = $this->requestHandler->processRequest($loginData, $backendInfo, $reqData);
-              $this->users[$from->resourceId]->send(json_encode($this_req));
+              if(is_array($loginData) && is_array($backendInfo) && is_array($reqData)){
+                $this_req = $this->requestHandler->processRequest($loginData, $backendInfo, $reqData);
+                $this->users[$from->resourceId]->send(json_encode($this_req));
+              }else{
+                $this->users[$from->resourceId]->send(json_encode(array($backendInfo['method'] => array("status" => 1, "message" => "Sent data invalid."))));
+              }
               break;
             case "getActiveSubscriptions": //Returns the current subscriptions for all connected WS Nodes
               $this_req = $this->requestHandler->processGetActiveSubscriptions($loginData, $this->subscription);

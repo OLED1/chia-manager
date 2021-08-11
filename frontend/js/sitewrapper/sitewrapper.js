@@ -108,21 +108,22 @@ function showMessage(messagetype, message){
     var type = messagetype;
   }
 
-  /*var tempmsgid = "tmp_" + Math.random().toString(36).substring(4);
-  setTimeout(function () {
-    $("#messagecontainer").append(
-      "<div id='" + tempmsgid + "' class='card " + type + " text-white shadow'>" +
-          "<div class='card-body'>" +
-              message +
-          "</div>" +
-      "</div>"
-    );
-    setTimeout(function () {
-      $("#" + tempmsgid).fadeOut().remove(), 10000
-    },5000);
-  },50);*/
 
   if(messagetype > 0){
+    var tempmsgid = "tmp_" + Math.random().toString(36).substring(4);
+    setTimeout(function () {
+      $("#messagecontainer").append(
+        "<div id='" + tempmsgid + "' class='card " + type + " text-white shadow'>" +
+        "<div class='card-body'>" +
+        message +
+        "</div>" +
+        "</div>"
+      );
+      setTimeout(function () {
+        $("#" + tempmsgid).fadeOut().remove(), 10000
+      },5000);
+    },50);
+
     $("#alerts").prepend(
       "<a class='dropdown-item d-flex align-items-center' href='#'>" +
       "<div class='mr-3'>" +

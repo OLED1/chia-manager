@@ -1,5 +1,4 @@
 $(function(){
-
   initLoggedInDevicesTable();
 
   $("#resetpwbtn").on("click",function(e){
@@ -151,8 +150,6 @@ function resetUserPassword(){
 function messagesTrigger(data){
   var key = Object.keys(data);
 
-  console.log(data);
-
   if(data[key]["status"] == 0){
     if (key == "savePersonalInfo"){
       $("#sitewrapperusername").text(data[key]["data"]["name"] + " " + data[key]["data"]["lastname"]);
@@ -164,7 +161,10 @@ function messagesTrigger(data){
     }else if(key == "resetUserPassword"){
       $("#resetpw").find("input").val("");
     }else if(key == "logoutDevice"){
-      $("#device_" + data[key]["data"]["deviceid"]).hide("slow").remove();
+      $("#loggedInDevices").DataTable()
+        .row($("#device_" + data[key]["data"]["deviceid"]))
+        .remove()
+        .draw();
     }
   }
 }

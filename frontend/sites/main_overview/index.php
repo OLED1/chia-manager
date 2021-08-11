@@ -81,7 +81,7 @@
                                 <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                     Total Netspace</div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo $chiadata["netspace"]; ?></div>
-                                <i class="fas <?php echo (floatval($chiadata["daychange_percent"]) > 0 ? "fa-arrow-up" : "fa-arrow-down"); ?>" style="color: <?php echo (floatval($chiadata["daychange_percent"]) > 0 ? "green" : "red"); ?>"></i>&nbsp;<?php echo number_format($chiadata["daychange_percent"], 2) . "% (24h)"; ?>
+                                <i class="fas <?php echo (floatval($chiadata["daychange_percent"]) > 0 ? "fa-arrow-up" : "fa-arrow-down"); ?>" style="color: <?php echo (floatval($chiadata["daychange_percent"]) > 0 ? "green" : "red"); ?>"></i>&nbsp;<?php echo number_format($chiadata["daychange_percent"], 2) . "% (24H)"; ?>
                             </div>
                             <div class="col-auto">
                                 <i class="fas fa-hdd fa-2x text-gray-300"></i>

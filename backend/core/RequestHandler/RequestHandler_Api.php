@@ -30,16 +30,13 @@
         try{
           $this_class = new $backendInfo['namespace']();
           $return = $this_class->{$backendInfo['method']}($data, $loginData);
-          sleep(1);
+          //sleep(1);
           return array($backendInfo['method'] => $return);
         }catch(Exception $e){
-          //print_r($e);
-          //return array("status" => 1, "message" => "Class {$backendInfo['namespace']} or function {$backendInfo['method']} not existing.");
           return $this->logging->getErrormessage("001", "Class {$backendInfo['namespace']} or function {$backendInfo['method']} not existing.");
         }
       }else{
         return array("status" => 1, "message" => "Class {$backendInfo['namespace']} or function {$backendInfo['method']} not existing.");
-        //return $this->logging->getErrormessage("001");
         return $this->logging->getErrormessage("002", "Class {$backendInfo['namespace']} or function {$backendInfo['method']} not existing.");
       }
     }
@@ -49,7 +46,6 @@
           $loginData["authhash"] == $this->ini["backend_client_auth_hash"]){
         return array("getActiveSubscriptions" => array("status" => 0, "message" => "Successfully loaded active subscriptions.", "data" => $subscriptions));
       }else{
-        //return array("status" => 1, "message" => "You are not allowed to query this information.");
         return $this->logging->getErrormessage("001");
       }
     }
@@ -60,7 +56,6 @@
           $loginData["authhash"] == $this->ini["backend_client_auth_hash"]){
         return array("getActiveRequests" => array("status" => 0, "message" => "Successfully loaded active requests.", "data" => $requests));
       }else{
-        //return array("status" => 1, "message" => "You are not allowed to query this information.");
         return $this->logging->getErrormessage("001");
       }
     }
@@ -80,10 +75,8 @@
 
             if($found) return array("updateFrontendViewingSite" => array("status" => 0, "message" => "Sucessfully updated siteID.", "data" => $subscriptions));
           }
-          //return array("updateFrontendViewingSite" => array("status" => 1, "message" => "This user seems not to be subscribed."));
           return $this->logging->getErrormessage("001");
       }else{
-        //return array("updateFrontendViewingSite" => array("status" => 1, "message" => "Not all information stated or you are not allowed to query this information."));
         return $this->logging->getErrormessage("002");
       }
     }
@@ -98,7 +91,6 @@
 
     public function requesterLogin(string $nodeip, array $data, array $nodeinfo){
       if(array_key_exists("authhash", $data)){
-        //$encryptedauthhash = hash('sha256',$data["authhash"]);
         $encryptedauthhash = $this->encryptAuthhash($data["authhash"]);
 
         try{
@@ -126,7 +118,6 @@
 
                   return $authenticated;
                 }else{
-                  //return array("status" => 1, "message" => "No login information stated or too less data provided.");
                   return $this->logging->getErrormessage("001");
                 }
               }else if($sqldata["authtype"] == 0){ //Authtype is currently not known, because this node is not authenticated to the api
@@ -142,11 +133,9 @@
                 if($sqldata["nodetype"] == "backendClient" && $nodeip == "localhost"){
                   return array("status" => 0, "message" => "This node is allowed to connect.", "nodeinfo" => array("type" => $sqldata["nodetype"]));
                 }else{
-                  //return array("status" => 1, "message" => "This node is not allowed to connect.");
                   return $this->logging->getErrormessage("004");
                 }
               }else{
-                //return array("status" => 1, "message" => "Authtype " . $sqldata["authtype"] . " not valid.");
                 return $this->logging->getErrormessage("005", "Authtype " . $sqldata["authtype"] . " not valid.");
               }
             }else if($sqldata["conallow"] == 2){
@@ -188,21 +177,14 @@
                 $data["data"]["newauthhash"] = $this->decryptAuthhash($sqdata[0]["nodeauthhash"]);
                 return $data;
               }
-
-              //return array("status" => 1, "message" => "This node is waiting for authentication please wait.");
-              //return $this->logging->getErrormessage("007");
             }
           }else{
-            //return array("status" => 1, "message" => "There is an error on the database. To much rows where returned.");
             return $this->logging->getErrormessage("008");
           }
         }catch(Exception $e){
-          //print_r($e);
-          //return array("status" => 1, "message" => "An error occured.");
           return $this->logging->getErrormessage("009", $e);
         }
       }else{
-        //return array("status" => 1, "message" => "Data missing.");
         return $this->logging->getErrormessage("010");
       }
     }
