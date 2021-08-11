@@ -36,7 +36,7 @@
 </div>
 <!-- Content Row -->
 <div class="row">
-  <div class="col-7">
+  <div class="col">
     <div class="card shadow mb-4">
       <div class="card-body">
         <button type="button" id="addUser" class="btn btn-success">Add User</button>
@@ -46,7 +46,7 @@
 </div>
 
 <div class="row">
-    <div class="col-7">
+    <div class="col">
         <div class="card shadow mb-4">
             <div
                 class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
@@ -82,7 +82,7 @@
     </div>
   </div>
   <div class="row">
-    <div class="col-7">
+    <div class="col">
         <div class="card shadow mb-4">
             <div
                 class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
