@@ -108,7 +108,7 @@ function showMessage(messagetype, message){
     var type = messagetype;
   }
 
-  var tempmsgid = "tmp_" + Math.random().toString(36).substring(4);
+  /*var tempmsgid = "tmp_" + Math.random().toString(36).substring(4);
   setTimeout(function () {
     $("#messagecontainer").append(
       "<div id='" + tempmsgid + "' class='card " + type + " text-white shadow'>" +
@@ -120,10 +120,10 @@ function showMessage(messagetype, message){
     setTimeout(function () {
       $("#" + tempmsgid).fadeOut().remove(), 10000
     },5000);
-  },50);
+  },50);*/
 
   if(messagetype > 0){
-    $("#alerts").append(
+    $("#alerts").prepend(
       "<a class='dropdown-item d-flex align-items-center' href='#'>" +
       "<div class='mr-3'>" +
       "<div class='icon-circle " + type + "'>" +
@@ -137,6 +137,6 @@ function showMessage(messagetype, message){
       "</a>"
     );
     var newcount = parseInt($("#alerts-counter").text().split("+")[0]) + 1;
-    $("#alerts-counter").text(newcount + "+");  
+    $("#alerts-counter").text(newcount + "+");
   }
 }
