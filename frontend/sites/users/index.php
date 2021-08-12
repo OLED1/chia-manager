@@ -64,6 +64,8 @@
                             <th>Actions</th>
                           </tr>
                       </thead>
+                      <tbody>
+                      </tbody>
                       <tfoot>
                           <tr>
                             <th>ID</th>
@@ -73,8 +75,6 @@
                             <th>Actions</th>
                           </tr>
                       </tfoot>
-                      <tbody>
-                      </tbody>
                   </table>
               </div>
             </div>
@@ -100,6 +100,8 @@
                             <th>Actions</th>
                           </tr>
                       </thead>
+                      <tbody>
+                      </tbody>
                       <tfoot>
                           <tr>
                             <th>ID</th>
@@ -109,8 +111,6 @@
                             <th>Actions</th>
                           </tr>
                       </tfoot>
-                      <tbody>
-                      </tbody>
                   </table>
               </div>
             </div>

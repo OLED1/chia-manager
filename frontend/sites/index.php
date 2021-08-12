@@ -34,12 +34,9 @@
 
     <!-- Custom fonts for this template-->
     <link href="../frameworks/bootstrap/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
-    <link
-        href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
-        rel="stylesheet">
-
+    <link href="../css/google_fonts/nunito/nunito-font.css" rel="stylesheet">
     <!-- Custom styles for this template-->
-    <link href="../frameworks/bootstrap/vendor/bootstrap/__old/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../frameworks/bootstrap/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="../frameworks/bootstrap/css/sb-admin-2.min.css" rel="stylesheet">
     <link href="../css/custom.css" rel="stylesheet">
     <link href="../frameworks/davidstutz-multiselect/css/bootstrap-multiselect.min.css" rel="stylesheet">
@@ -81,22 +78,28 @@
 
             <!-- Nav Item - Pages Collapse Menu -->
             <li class="nav-item">
-                <a class="nav-link" data-siteid=2 href="/sites/nodes">
-                  <i class="fas fa-sitemap"></i>
-                  <span>Nodes</span>
-                </a>
-                <a class="nav-link" data-siteid=5 href="/sites/chia_wallet">
-                  <i class="fas fa-wallet"></i>
-                  <span>Wallet</span>
-                </a>
-                <a class="nav-link" data-siteid=6 href="/sites/chia_farm">
-                  <i class="fas fa-industry"></i>
-                  <span>Farm</span>
-                </a>
-                <a class="nav-link" data-siteid=7 href="/sites/chia_harvester">
-                  <i class="fas fa-hdd"></i>
-                  <span>Harvester</span>
-                </a>
+              <a class="nav-link" data-siteid=2 href="/sites/nodes">
+                <i class="fas fa-sitemap"></i>
+                <span>Nodes</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-siteid=5 href="/sites/chia_wallet">
+                <i class="fas fa-wallet"></i>
+                <span>Wallet</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-siteid=6 href="/sites/chia_farm">
+                <i class="fas fa-industry"></i>
+                <span>Farm</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-siteid=7 href="/sites/chia_harvester">
+                <i class="fas fa-hdd"></i>
+                <span>Harvester</span>
+              </a>
             </li>
 
             <!-- Divider -->
@@ -113,6 +116,8 @@
                 <i class="fas fa-users-cog"></i>
                 <span>Users</span>
               </a>
+            </liv>
+            <li class="nav-item">
               <a class="nav-link" data-siteid=3 href="/sites/system">
                 <i class="fas fa-server"></i>
                 <span>Settings</span>
@@ -129,17 +134,17 @@
 
             <!-- Nav Item - Pages Collapse Menu -->
             <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePersonal"
-                    aria-expanded="true" aria-controls="collapsePersonal">
-                    <i class="fas fa-user-cog"></i>
-                    <span>Personal</span>
-                </a>
-                <div id="collapsePersonal" class="collapse" aria-labelledby="headingPages" data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">
-                        <a class="collapse-item" data-siteid=5 href="/sites/usersettings">Profile & Settings</a>
-                        <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">Logout</a>
-                    </div>
-                </div>
+              <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePersonal"
+                  aria-expanded="true" aria-controls="collapsePersonal">
+                  <i class="fas fa-user-cog"></i>
+                  <span>Personal</span>
+              </a>
+              <div id="collapsePersonal" class="collapse" aria-labelledby="headingPages" data-parent="#accordionSidebar">
+                  <div class="bg-white py-2 collapse-inner rounded">
+                      <a class="collapse-item" data-siteid=5 href="/sites/usersettings">Profile & Settings</a>
+                      <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">Logout</a>
+                  </div>
+              </div>
             </li>
 
             <!-- Divider -->
@@ -149,13 +154,6 @@
             <div class="text-center d-none d-md-inline">
                 <button class="rounded-circle border-0" id="sidebarToggle"></button>
             </div>
-
-            <!-- Sidebar Message -->
-            <!--<div class="sidebar-card d-none d-lg-flex">
-                <img class="sidebar-card-illustration mb-2" src="img/undraw_rocket.svg" alt="...">
-                <p class="text-center mb-2"><strong>SB Admin Pro</strong> is packed with premium features, components, and more!</p>
-                <a class="btn btn-success btn-sm" href="https://startbootstrap.com/theme/sb-admin-pro">Upgrade to Pro!</a>
-            </div>-->
 
         </ul>
         <!-- End of Sidebar -->
@@ -173,18 +171,6 @@
                     <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
                         <i class="fa fa-bars"></i>
                     </button>
-
-                    <!-- Topbar Search -->
-                    <!--<form class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
-                      <div class="input-group">
-                        <input type="text" class="form-control bg-light border-0 small" placeholder="Search for..." aria-label="Search" aria-describedby="basic-addon2">
-                        <div class="input-group-append">
-                            <button class="btn btn-primary" type="button">
-                                <i class="fas fa-search fa-sm"></i>
-                            </button>
-                        </div>
-                      </div>
-                    </form>-->
 
                     <!-- Topbar Navbar -->
                     <ul class="navbar-nav ml-auto">
@@ -214,7 +200,6 @@
                           <span class="nav-link">
                             <span id="wsstatus" class="badge badge-secondary"></span>
                             <span class="mr-2 d-none d-lg-inline text-gray-600 small">
-                              <!--<h6 id="wsstatus"></h6>-->
                             </span>
                           </span>
                         </li class="nav-item dropdown no-arrow d-sm-none">
@@ -239,68 +224,6 @@
                                 <a class="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
                             </div>
                         </li>
-
-                        <!-- Nav Item - Messages -->
-                        <!--<li class="nav-item dropdown no-arrow mx-1">
-                            <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-envelope fa-fw"></i>
-                                <span class="badge badge-danger badge-counter">7</span>
-                            </a>
-                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                                aria-labelledby="messagesDropdown">
-                                <h6 class="dropdown-header">
-                                    Message Center
-                                </h6>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="../frameworks/bootstrap/img/undraw_profile_1.svg"
-                                            alt="...">
-                                        <div class="status-indicator bg-success"></div>
-                                    </div>
-                                    <div class="font-weight-bold">
-                                        <div class="text-truncate">Hi there! I am wondering if you can help me with a
-                                            problem I've been having.</div>
-                                        <div class="small text-gray-500">Emily Fowler · 58m</div>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="../frameworks/bootstrap/img/undraw_profile_2.svg"
-                                            alt="...">
-                                        <div class="status-indicator"></div>
-                                    </div>
-                                    <div>
-                                        <div class="text-truncate">I have the photos that you ordered last month, how would you like them sent to you?</div>
-                                        <div class="small text-gray-500">Jae Chun · 1d</div>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="../frameworks/bootstrap/img/undraw_profile_3.svg" alt="...">
-                                        <div class="status-indicator bg-warning"></div>
-                                    </div>
-                                    <div>
-                                        <div class="text-truncate">Last month's report looks great, I am very happy with
-                                            the progress so far, keep up the good work!</div>
-                                        <div class="small text-gray-500">Morgan Alvarez · 2d</div>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="https://source.unsplash.com/Mv9hjnEUHR4/60x60"
-                                            alt="...">
-                                        <div class="status-indicator bg-success"></div>
-                                    </div>
-                                    <div>
-                                        <div class="text-truncate">Am I a good boy? The reason I ask is because someone
-                                            told me that people say this to all dogs, even if they aren't good...</div>
-                                        <div class="small text-gray-500">Chicken the Dog · 2w</div>
-                                    </div>
-                                </a>
-                                <a class="dropdown-item text-center small text-gray-500" href="#">Read More Messages</a>
-                            </div>
-                        </li>-->
 
                         <!-- Nav Item - User Information -->
                         <li class="nav-item dropdown no-arrow">
@@ -397,7 +320,7 @@
                 </div>
                 <div class="modal-body">
                   <h4 style="text-align: center;">Chia infrastructur management and monitoring tool</h4>
-                  <img src="https://chia-coin.de/assets/chia_coin_logo.png" alt="Chia Logo" class="chialogo">
+                  <img src="../img/chia_coin_logo.png" alt="Chia Logo" class="chialogo">
                   <h5 style="text-align: center;">Current project version: <?php echo $ini["versnummer"]; ?></h5>
                   <p style="text-align: center;">Idea and programming by <strong>OLED1.</strong><br>
                   Thanks for contribution to <strong>LucaAust.</strong></p>

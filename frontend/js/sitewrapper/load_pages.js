@@ -88,7 +88,7 @@ $(function(){
               }else{
                 $("#accordionSidebar .active").removeClass("active");
                 if(clickeditem != undefined){
-                  clickeditem.addClass("active");
+                  clickeditem.closest(".nav-item").addClass("active");
                 }else{
                   $(".nav-item").first().addClass("active");
                 }

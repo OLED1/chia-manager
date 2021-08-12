@@ -2,3 +2,4 @@ backend/config/
 logs/
 *.log
 .ftpconfig
+frontend/frameworks/bootstrap-samples
