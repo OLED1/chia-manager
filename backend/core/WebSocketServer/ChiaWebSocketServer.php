@@ -138,7 +138,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
             }
           }catch(Exception $e){
             //TODO Implement correct status code
-            $this->users[$from->resourceId]->send(json_encode(array($backendInfo['method'] => array("status" => 1, "message" => "An error occured $e."))));
+            $this->users[$from->resourceId]->send(json_encode(array($backendInfo['method'] => array("status" => 1, "message" => "An error occured " . $e->getMessage() . "."))));
           }
         }else{
           $this->users[$from->resourceId]->send(json_encode(array("loginStatus" => $requesterLogin)));
