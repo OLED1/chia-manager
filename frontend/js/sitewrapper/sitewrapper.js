@@ -121,7 +121,7 @@ function showMessage(messagetype, message){
       );
       setTimeout(function () {
         $("#" + tempmsgid).fadeOut().remove(), 10000
-      },5000);
+      },2000);
     },50);
 
     $("#alerts").prepend(

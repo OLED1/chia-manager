@@ -47,16 +47,19 @@
           try{
             $security = $this->system_api->getSpecificSystemSetting("security");
             $authkeypassed = 1;
+            $sendauthkey = false;
 
             if($security["status"] == 0 && array_key_exists("security", $security["data"]) &&
                 $security["data"]["security"]["TOTP"]["value"] == 1){
 
                 $authkeypassed = 0;
-                $this->generateAndsendAuthKey();
+                $sendauthkey = true;
             }
 
             $sql = $this->dbcon->execute("Insert INTO users_sessions (id, userid, sessid, authkeypassed, deviceinfo, validuntil) VALUES (NULL, ?, ?, ?, ?, ?)",
                                           array($session["data"]["userid"], $session["data"]["sessid"], $authkeypassed, $_SERVER['HTTP_USER_AGENT'], $validuntil));
+
+            if($sendauthkey) $this->generateAndsendAuthKey($session["data"]["userid"], $session["data"]["sessid"]);
 
             return $this->logging->getErrormessage("001");
           }catch(Exception $e){
@@ -86,12 +89,9 @@
 
             return array("status" => 0, "message" => "Successfully logged in.");
           }else{
-            //return array("status" => 1, "message" => "Authkey not found or not valid (anymore).");
             return $this->logging->getErrormessage("001");
           }
         }catch(Exception $e){
-          /*print_r($e);
-          return array("status" => 1, "message" => "An error occured.");*/
           return $this->logging->getErrormessage("002", $e);
         }
       }else{
@@ -99,16 +99,16 @@
       }
     }
 
-    public function generateAndsendAuthKey(){
-      $loginstatus = $this->checklogin()["status"];
+    public function generateAndsendAuthKey(int $userid = NULL, string $sessid = NULL){
+      $loginstatus = $this->checklogin($sessid, $userid)["status"];
 
       if($loginstatus == 0){
         return array("status" => 0, "message" => "You are currently logged in. No need to send authkey.");
 
-      }else if($loginstatus == "004008002" || $loginstatus == "004008005"){
+      }else if($loginstatus == "004008002"){
 
-        if(array_key_exists("user_id", $_COOKIE)){
-          $userid = $_COOKIE['user_id'];
+        if(array_key_exists("user_id", $_COOKIE) || !is_null($userid)){
+          if(array_key_exists('user_id', $_COOKIE)) $userid = $_COOKIE['user_id'];
           $authkey = bin2hex(random_bytes(25));
 
           try{
@@ -129,16 +129,12 @@
 
             return array("status" => 0, "message" => "Successfully (re)sent authmail.");
           }catch(Exception $e){
-            /*print_r($e);
-            return array("status" => 1, "message" => "An error occured.");*/
             return $this->logging->getErrormessage("001", $e);
           }
         }else{
-          //return array("status" => 1, "Your are not authenticated.");
           return $this->logging->getErrormessage("002");
         }
       }else{
-        //return array("status" => 1, "An error occured, statuscode not known.");
         return $this->logging->getErrormessage("003");
       }
     }
@@ -155,13 +151,10 @@
 
           return array("status" => 0, "message" => "Successfully invalidated (pending) login.");
         }catch(Exception $e){
-          /*print_r($e);
-          return array("status" => 1, "message" => "An error occured.");*/
           return $this->logging->getErrormessage("001", $e);
         }
 
       }else{
-        //return array("status" => 1, "message" => "Cannot invalidate. You are not authenticated.");
         return $this->logging->getErrormessage("002");
       }
     }
@@ -220,75 +213,75 @@
           true //httponly
         );
 
-          return array("status" => 0, "message" => "Session successfully set!", "data" => array("userid" => $userid, "sessid" => $sessionID));
-        }catch(Exception $e){
-          return $this->logging->getErrormessage("001",$e);
-        }
+        return array("status" => 0, "message" => "Session successfully set!", "data" => array("userid" => $userid, "sessid" => $sessionID));
+      }catch(Exception $e){
+        return $this->logging->getErrormessage("001",$e);
       }
+    }
 
-      /**
-       * Logs a user out and removes his session ID from db
-       * @param  int $userid The user which should be logged out
-       * @return array       Returns a status code array
-       */
-      public function logout(int $userid){
+    /**
+     * Logs a user out and removes his session ID from db
+     * @param  int $userid The user which should be logged out
+     * @return array       Returns a status code array
+     */
+    public function logout(int $userid){
+      try{
+        $sql = $this->dbcon->execute("UPDATE users SET loginDate = NULL, sessionString = NULL, ipaddr = NULL WHERE id = ?",
+        array($userid));
+
+        session_destroy();
+        return $this->logging->getErrormessage("001","User with ID " . $userid . " logged out.");
+      }catch(Exception $e){
+        return $this->logging->getErrormessage("002",$e);
+      }
+    }
+
+    public function checklogin(string $sessionid = NULL, int $userid = NULL){
+      if((isset($_COOKIE['user_id']) || !is_null($userid)) &&
+        (isset($_COOKIE['PHPSESSID']) || !is_null($sessionid))
+      ){
+        if(is_null($userid)) $userid = $_COOKIE['user_id'];
+        if(is_null($sessionid)) $sessionid = $_COOKIE['PHPSESSID'];
+
         try{
-          $sql = $this->dbcon->execute("UPDATE users SET loginDate = NULL, sessionString = NULL, ipaddr = NULL WHERE id = ?",
-          array($userid));
+          $sql = $this->dbcon->execute("SELECT authkeypassed, validuntil FROM users_sessions WHERE userid = ? AND sessid = ? AND invalidated = 0",
+          array($userid, $sessionid));
 
-          session_destroy();
-          return $this->logging->getErrormessage("001","User with ID " . $userid . " logged out.");
-        }catch(Exception $e){
-          return $this->logging->getErrormessage("002",$e);
-        }
-      }
+          $returneddata = $sql->fetchAll(\PDO::FETCH_ASSOC);
 
-      public function checklogin(string $sessionid = NULL, int $userid = NULL){
-        if((isset($_COOKIE['user_id']) || !is_null($userid)) &&
-          (isset($_COOKIE['PHPSESSID']) || !is_null($sessionid))
-        ){
-          if(is_null($userid)) $userid = $_COOKIE['user_id'];
-          if(is_null($sessionid)) $sessionid = $_COOKIE['PHPSESSID'];
-
-          try{
-            $sql = $this->dbcon->execute("SELECT authkeypassed, validuntil FROM users_sessions WHERE userid = ? AND sessid = ? AND invalidated = 0",
-            array($userid, $sessionid));
-
-            $returneddata = $sql->fetchAll(\PDO::FETCH_ASSOC);
-
-            if(Count($returneddata) > 0){
-              $returneddata = $returneddata[0];
+          if(Count($returneddata) > 0){
+            $returneddata = $returneddata[0];
 
 
-              if($returneddata["authkeypassed"] == 1){
-                if(is_null($returneddata["validuntil"])){
+            if($returneddata["authkeypassed"] == 1){
+              if(is_null($returneddata["validuntil"])){
+                return array("status" => "0", "message" => "You are logged in.");
+              }else{
+                $validuntil = new  \DateTime($returneddata["validuntil"]);
+                $currentdate = new \DateTime();
+
+                if($currentdate <= $validuntil){
+                  $currentdate->modify("+30 minutes");
+                  $sql = $this->dbcon->execute("UPDATE users_sessions SET validuntil = ? WHERE userid = ? AND sessid = ?",
+                                                array($currentdate->format("Y-m-d H:i:s"), $userid, $sessionid));
+
                   return array("status" => "0", "message" => "You are logged in.");
                 }else{
-                  $validuntil = new  \DateTime($returneddata["validuntil"]);
-                  $currentdate = new \DateTime();
-
-                  if($currentdate <= $validuntil){
-                    $currentdate->modify("+30 minutes");
-                    $sql = $this->dbcon->execute("UPDATE users_sessions SET validuntil = ? WHERE userid = ? AND sessid = ?",
-                                                  array($currentdate->format("Y-m-d H:i:s"), $userid, $sessionid));
-
-                    return array("status" => "0", "message" => "You are logged in.");
-                  }else{
-                    return $this->logging->getErrormessage("001");
-                  }
+                  return $this->logging->getErrormessage("001");
                 }
-              }else{
-                return $this->logging->getErrormessage("002");
               }
             }else{
-                return $this->logging->getErrormessage("005");
+              return $this->logging->getErrormessage("002");
             }
-          }catch(Exception $e){
-            return $this->logging->getErrormessage("003",$e);
+          }else{
+              return $this->logging->getErrormessage("005");
           }
-        }else{
-          return $this->logging->getErrormessage("004","", false);
+        }catch(Exception $e){
+          return $this->logging->getErrormessage("003",$e);
         }
+      }else{
+        return $this->logging->getErrormessage("004","", false);
       }
+    }
   }
 ?>

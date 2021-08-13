@@ -98,13 +98,17 @@ $(function(){
   }
 
   function showAuthKeyWindow(){
-    $("#loginwindow").hide(500);
-    $("#authkeywindow").show(500);
+    if($("#authkeywindow").is(":hidden")){
+      $("#loginwindow").hide(500);
+      $("#authkeywindow").show(500);
+    }
   }
 
   function showloginwindow(){
-    $("#authkeywindow").hide(500);
-    $("#loginwindow").show(500);
+    if($("#loginwindow").is(":hidden")){
+      $("#authkeywindow").hide(500);
+      $("#loginwindow").show(500);
+    }
   }
 
   function resendAuthkey(){
@@ -136,7 +140,6 @@ $(function(){
             $("#resetPWLogin").val("");
           }else if(action == "generateAndsendAuthKey"){
             showMessage("alert-success", result["message"]);
-            $(location).attr('href',frontend + '/index.php');
           }else if(action == "invalidateLogin"){
             showloginwindow();
           }else if(action == "checkAuthKey"){
@@ -144,8 +147,8 @@ $(function(){
           }
         }else{
           if(result["status"] == "004001001"){
-            resendAuthkey();
             showAuthKeyWindow();
+            showMessage("alert-warning", result["message"]);
           }else{
             showMessage("alert-danger", result["message"]);
           }
