@@ -11,7 +11,7 @@ use ChiaMgmt\Logging\Logging_Api;
 require __DIR__ . '/../../../vendor/autoload.php';
 
 class ChiaWebSocketServer implements MessageComponentInterface {
-    protected $clients, $users, $subscription, $websocketClient, $login_api, $requestHandler, $requests, $sites_api, $sites_data, $logging;
+    protected $clients, $users, $subscription, $websocketClient, $login_api, $requestHandler, $requests, $sites_api, $sites_data, $sites_data1, $logging;
 
     public function __construct() {
       echo "[{$this->getDate()}] INFO: Starting websocket server\n";
@@ -91,54 +91,57 @@ class ChiaWebSocketServer implements MessageComponentInterface {
           echo "[{$this->getDate()}] INFO: Requested socketaction: ". $nodeInfo["socketaction"] . " from {$from->resourceId}.\n";
           echo "[{$this->getDate()}] INFO: Transmitted data {$msg}.\n";
 
-          try{
-            switch($nodeInfo["socketaction"]){
-              case "wssonlinestatus":
-                $this->users[$from->resourceId]->send(json_encode(array("status" => 0, "message" => "Websocket server ready to rumble.", "data" => getmypid())));
-                break;
-              case "backendRequest": //Returns the requested value to all frontend Clients which are viewing a specific site
+          switch($nodeInfo["socketaction"]){
+            case "wssonlinestatus":
+              $this->users[$from->resourceId]->send(json_encode(array("status" => 0, "message" => "Websocket server ready to rumble.", "data" => getmypid())));
+              break;
+            case "backendRequest": //Returns the requested value to all frontend Clients which are viewing a specific site
+              if(is_array($loginData) && is_array($backendInfo) && is_array($reqData)){
                 $this_req = $this->requestHandler->processRequest($loginData, $backendInfo, $reqData);
                 $this->messageFrontendClients($loginData, $this_req, $from->resourceId, $backendInfo);
-                break;
-              case "ownRequest": //Returns the requested value just to the requesters open socket
+              }else{
+                $this->users[$from->resourceId]->send(json_encode(array($backendInfo['method'] => array("status" => 1, "message" => "One of the required arrays has a wrong datatype."))));
+              }
+              break;
+            case "ownRequest": //Returns the requested value just to the requesters open socket
+              if(is_array($loginData) && is_array($backendInfo) && is_array($reqData)){
                 $this_req = $this->requestHandler->processRequest($loginData, $backendInfo, $reqData);
                 $this->users[$from->resourceId]->send(json_encode($this_req));
-                break;
-              case "getActiveSubscriptions": //Returns the current subscriptions for all connected WS Nodes
-                $this_req = $this->requestHandler->processGetActiveSubscriptions($loginData, $this->subscription);
-                $this->users[$from->resourceId]->send(json_encode($this_req));
-                break;
-              case "getActiveRequests": //Returns the current subscriptions for all connected WS Nodes
-                $this_req = $this->requestHandler->processGetActiveRequests($loginData, $this->requests);
-                $this->users[$from->resourceId]->send(json_encode($this_req));
-                break;
-              case "updateFrontendViewingSite": //Updates the viewing site for a user connected to a web client
-                $this_req = $this->requestHandler->processUpdateFrontendViewingSite($loginData, $this->subscription, $reqData, $from->resourceId);
-                if(array_key_exists("data", $this_req["updateFrontendViewingSite"])){
-                  $this->subscription = $this_req["updateFrontendViewingSite"]["data"];
-                  unset($this_req["updateFrontendViewingSite"]["data"]);
-                }
-                $this->users[$from->resourceId]->send(json_encode($this_req));
-                break;
-              case "messageSpecificNode":
-                $this->users[$from->resourceId]->send(json_encode($this->messageSpecificNode($loginData, $reqData, $from->resourceId)));
-                break;
-                case "queryCronData":
-                echo "[{$this->getDate()}] INFO: Querying cron data.\n";
-                $this->users[$from->resourceId]->send(json_encode($this->messageAllNodes($nodeInfo, $reqData)));
-                break;
-              case "informAllWebclients":
-                break;
-              case "informSpecificWebclient":
-                break;
-              case "informAllNodes":
-                break;
-              default:
-                $this->users[$from->resourceId]->send(json_encode(array("status" => 1, "message" => "Socketaction " . $nodeInfo["socketaction"] . " not known.")));
-            }
-          }catch(Exception $e){
-            //TODO Implement correct status code
-            $this->users[$from->resourceId]->send(json_encode(array($backendInfo['method'] => array("status" => 1, "message" => "An error occured " . $e->getMessage() . "."))));
+              }else{
+                $this->users[$from->resourceId]->send(json_encode(array($backendInfo['method'] => array("status" => 1, "message" => "One of the required arrays has a wrong datatype."))));
+              }
+              break;
+            case "getActiveSubscriptions": //Returns the current subscriptions for all connected WS Nodes
+              $this_req = $this->requestHandler->processGetActiveSubscriptions($loginData, $this->subscription);
+              $this->users[$from->resourceId]->send(json_encode($this_req));
+              break;
+            case "getActiveRequests": //Returns the current subscriptions for all connected WS Nodes
+              $this_req = $this->requestHandler->processGetActiveRequests($loginData, $this->requests);
+              $this->users[$from->resourceId]->send(json_encode($this_req));
+              break;
+            case "updateFrontendViewingSite": //Updates the viewing site for a user connected to a web client
+              $this_req = $this->requestHandler->processUpdateFrontendViewingSite($loginData, $this->subscription, $reqData, $from->resourceId);
+              if(array_key_exists("data", $this_req["updateFrontendViewingSite"])){
+                $this->subscription = $this_req["updateFrontendViewingSite"]["data"];
+                unset($this_req["updateFrontendViewingSite"]["data"]);
+              }
+              $this->users[$from->resourceId]->send(json_encode($this_req));
+              break;
+            case "messageSpecificNode":
+              $this->users[$from->resourceId]->send(json_encode($this->messageSpecificNode($loginData, $reqData, $from->resourceId)));
+              break;
+              case "queryCronData":
+              echo "[{$this->getDate()}] INFO: Querying cron data.\n";
+              $this->users[$from->resourceId]->send(json_encode($this->messageAllNodes($nodeInfo, $reqData)));
+              break;
+            case "informAllWebclients":
+              break;
+            case "informSpecificWebclient":
+              break;
+            case "informAllNodes":
+              break;
+            default:
+              $this->users[$from->resourceId]->send(json_encode(array("status" => 1, "message" => "Socketaction " . $nodeInfo["socketaction"] . " not known.")));
           }
         }else{
           $this->users[$from->resourceId]->send(json_encode(array("loginStatus" => $requesterLogin)));
@@ -194,9 +197,9 @@ class ChiaWebSocketServer implements MessageComponentInterface {
 
     private function messageFrontendClients(array $loginData, array $datatosend, int $mycon = NULL, array $backendInfo = NULL){
       if(is_null($backendInfo) && array_key_exists("siteID", $loginData) && $loginData["siteID"] > 0){
-        $siteID = $loginData["siteID"];
+        $siteID = $this->sites_data["by-id"][$loginData["siteID"]]["sitestoinform"];
       }else if(!is_null($backendInfo) && array_key_exists("namespace", $backendInfo) && $backendInfo["namespace"] != ""){
-        $siteID = $this->sites_data["by-namespace"][$backendInfo["namespace"]]["id"];
+        $siteID = $this->sites_data["by-namespace"][$backendInfo["namespace"]]["sitestoinform"];
       }else{
         echo "[{$this->getDate()}] WARNING: No siteid can be found.\n";
       }
@@ -204,9 +207,9 @@ class ChiaWebSocketServer implements MessageComponentInterface {
       if(!array_key_exists("loginStatus", $datatosend) && array_key_exists("webClient", $this->subscription)) {
         foreach($this->subscription["webClient"] AS $connectionid => $condetails){
           if(array_key_exists("siteID", $condetails) && array_key_exists("userid", $condetails) &&
-            $condetails["siteID"] == $siteID){
+            in_array($condetails["siteID"], $siteID)){
 
-            echo "[{$this->getDate()}] INFO: User {$condetails["userid"]} is viewing site {$siteID} so he will be informed using socket $connectionid.\n";
+            echo "[{$this->getDate()}] INFO: User {$condetails["userid"]} is viewing site {$condetails["siteID"]} so he will be informed using socket $connectionid.\n";
             if(array_key_exists($connectionid, $this->users)){
               echo "[{$this->getDate()}] INFO: Informing $connectionid about changes.\n";
               $this->users[$connectionid]->send(json_encode($datatosend));
@@ -214,7 +217,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
               echo "[{$this->getDate()}] WARNING: Connection $connectionid is not existing.\n";
             }
           }else{
-            echo "[{$this->getDate()}] WARNING: No connection found which satisfy the site {$siteID}.\n";
+            echo "[{$this->getDate()}] WARNING: No connection found which satisfies one of these sites: " . json_encode($siteID) . ".\n";
           }
         }
       }else if(array_key_exists("loginStatus", $datatosend)){

@@ -20,28 +20,37 @@
 
         try{
           if(is_null($siteid)){
-            $sql = $this->db_api->execute("SELECT id, namespace FROM sites", array());
+            $sql = $this->db_api->execute("SELECT s.id, spi.sitetoinform, s.namespace FROM sites s LEFT JOIN sites_pagestoinform spi ON spi.siteid = s.id ORDER by siteid, spi.sitetoinform", array());
           }else if($siteid > 0){
-            $sql = $this->db_api->execute("SELECT id, namespace FROM sites WHERE id = ?", array($siteid));
+            $sql = $this->db_api->execute("SELECT s.id, spi.sitetoinform, s.namespace FROM sites s LEFT JOIN sites_pagestoinform spi ON spi.siteid = s.id WHERE s.id = ? ORDER by siteid, spi.sitetoinform", array($siteid));
           }else{
-            //return array("status" => 1, "message" => "Value siteid must be NULL or greater 0.");
             return $this->logging->getErrormessage("001");
           }
 
           $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
+          $returndata["by-id"] = [];
+          $returndata["by-namespace"] = [];
           foreach ($sqdata as $arrkey => $sitesvalues) {
-            $returndata["by-id"][$sitesvalues["id"]] = $sitesvalues;
-            $returndata["by-namespace"][$sitesvalues["namespace"]] = $sitesvalues;
+            if(!array_key_exists($sitesvalues["id"], $returndata["by-id"])){
+              $returndata["by-id"][$sitesvalues["id"]] = $sitesvalues;
+              $returndata["by-id"][$sitesvalues["id"]]["sitestoinform"] = [];
+            }
+            unset($returndata["by-id"][$sitesvalues["id"]]["sitetoinform"]);
+            array_push($returndata["by-id"][$sitesvalues["id"]]["sitestoinform"], $sitesvalues["sitetoinform"]);
+
+            if(!array_key_exists($sitesvalues["namespace"], $returndata["by-namespace"])){
+              $returndata["by-namespace"][$sitesvalues["namespace"]] = $sitesvalues;
+              $returndata["by-namespace"][$sitesvalues["namespace"]]["sitestoinform"] = [];
+            }
+            unset($returndata["by-namespace"][$sitesvalues["namespace"]]["sitetoinform"]);
+            array_push($returndata["by-namespace"][$sitesvalues["namespace"]]["sitestoinform"], $sitesvalues["sitetoinform"]);
           }
 
           return array("status" => 0, "message" => "Successfully loaded site(s) information.", "data" => $returndata);
         }catch(Exception $e){
-          /*print_r($e);
-          return array("status" => 1, "message" => "An error occured.");*/
           return $this->logging->getErrormessage("002", $e);
         }
       }else{
-        //return array("status" => 1, "message" => "No all data stated.");
         return $this->logging->getErrormessage("003");
       }
     }
