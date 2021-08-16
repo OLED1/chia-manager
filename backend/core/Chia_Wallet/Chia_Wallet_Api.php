@@ -45,15 +45,18 @@
 
     public function getWalletData(array $data = NULL, array $loginData = NULL){
       try{
-        $sql = $this->db_api->execute("SELECT cw.walletid, cw.nodeid, n.nodeauthhash, cw.walletaddress, cw.walletheight, cw.syncstatus, cw.wallettype, cw.totalbalance, cw.pendingtotalbalance, cw.spendable
-                                       FROM chia_wallets cw
-                                       JOIN nodes n ON cw.nodeid = n.id"
-                                       , array());
+       $sql = $this->db_api->execute("SELECT cw.walletid, nt.nodeid, n.nodeauthhash, n.hostname, cw.walletaddress, cw.walletheight, cw.syncstatus, cw.wallettype, cw.totalbalance, cw.pendingtotalbalance, cw.spendable
+                                      FROM nodetype nt
+                                      JOIN nodes n ON n.id = nt.nodeid
+                                      LEFT JOIN chia_wallets cw ON cw.nodeid = nt.nodeid
+                                      WHERE nt.code = 5"
+                                      , array());
+
 
         $returndata = [];
         foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $walletinfo){
           $walletinfo["nodeauthhash"] = $this->decryptAuthhash($walletinfo["nodeauthhash"]);
-          $returndata[$walletinfo["walletid"]] = $walletinfo;
+          $returndata[$walletinfo["nodeid"]][(is_numeric($walletinfo["walletid"]) ? $walletinfo["walletid"] : 0)] = $walletinfo;
         }
 
         return array("status" =>0, "message" => "Successfully loaded chia wallet information.", "data" => $returndata);

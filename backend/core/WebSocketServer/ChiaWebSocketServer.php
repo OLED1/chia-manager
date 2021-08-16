@@ -264,6 +264,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
           return array("messageSpecificNode" => array("status" => 0, "message" => "Successfully queryied cron request to {$informedcount} node(s)."));
         }else{
           $data = $this->logging->getErrormessage("001");
+          $data["data"]["informed"] = $alreadyinformed;
           return array("messageSpecificNode" => $data);
         }
       }else{
@@ -292,6 +293,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
       }else{
         //return array($nodeInfo["socketaction"] => array("status" => 0, "message" => "No nodes online to inform."));
         $data = $this->logging->getErrormessage("001");
+        $data["data"]["informed"] = $alreadyinformed;
         //Add Node ID to data as data
         return array($nodeInfo["socketaction"] => $data);
       }

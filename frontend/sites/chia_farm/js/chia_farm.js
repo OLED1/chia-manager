@@ -258,6 +258,11 @@ function messagesTrigger(data){
       setFarmerBadge(data[key]["data"]);
     }
   }else if(data[key]["status"] == "014003001"){
-    $(".statusbadge").removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-danger").addClass("badge-danger").html("Node not reachable");
+    $(".statusbadge").each(function(){
+      var thisnodeid = $(this).attr("data-node-id");
+      if(($(this).hasClass("badge-secondary") || $(this).hasClass("badge-success")) && $.inArray(data[key]["data"]["informed"],thisnodeid) == -1){
+        $(this).removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-danger").addClass("badge-danger").html("Node not reachable");
+      }
+    });
   }
 }

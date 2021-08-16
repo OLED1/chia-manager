@@ -76,7 +76,14 @@
         <div class="col">
           <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-              <h6 class='m-0 font-weight-bold text-primary'>Harvesterdata for host <?php echo $harvesterinfos["hostname"]; ?> with id <?php echo $nodeid; ?>&nbsp;<span id='servicestatus_<?php echo $nodeid; ?>' class='badge statusbadge badge-secondary'>Querying service status</span></h6>
+              <h6 class='m-0 font-weight-bold text-primary'>Harvesterdata for host <?php echo $harvesterinfos["hostname"]; ?> with id <?php echo $nodeid; ?>&nbsp;
+              <?php
+              if(is_null($harvesterinfos["plotdirs"][array_key_first($harvesterinfos["plotdirs"])]["finalplotsdir"])){ ?>
+                <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-danger'>No data found</span>
+              <?php }else{ ?>
+                <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-secondary'>Querying service status</span>
+              <?php } ?>
+              </h6>
               <div class='dropdown no-arrow'>
                 <a id='dropdownMenuLink_<?php echo $nodeid; ?>' class='dropdown-toggle' href='#' role='button' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
                     <i class='fas fa-ellipsis-v fa-sm fa-fw text-gray-400'></i>
@@ -88,6 +95,15 @@
                 </div>
               </div>
             </div>
+            <?php if(is_null($harvesterinfos["plotdirs"][array_key_first($harvesterinfos["plotdirs"])]["finalplotsdir"])){ ?>
+            <div class="card-body">
+              <div class="card bg-danger text-white shadow">
+                <div class="card-body">
+                  There is currently no data to show! Please make a rescan of this system.
+                </div>
+              </div>
+            </div>
+            <?php }else{ ?>
             <div class="card-body">
               <div class="row">
                 <div class="col">
@@ -161,6 +177,7 @@
                 </div>
               </div>
             </div>
+            <?php } ?>
           </div>
         </div>
       </div>

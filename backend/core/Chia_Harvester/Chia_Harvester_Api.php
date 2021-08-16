@@ -155,22 +155,27 @@
     public function getHarvesterData(array $data = NULL, array $loginData = NULL, int $nodeid = NULL, bool $getPlots = true){
       try{
         if(is_null($nodeid)){
-          $sql = $this->db_api->execute("SELECT cp.id, cp.nodeid, n.nodeauthhash, n.hostname, cp.devname, cp.mountpoint, cp.finalplotsdir, cp.totalsize, cp.totalused, cp.totalusedpercent, cp.plotcount
-                                        FROM chia_plots_directories cp
-                                        JOIN nodes n ON cp.nodeid = n.id"
+          $sql = $this->db_api->execute("SELECT cp.id, nt.nodeid, n.nodeauthhash, n.hostname, cp.devname, cp.mountpoint, cp.finalplotsdir, cp.totalsize, cp.totalused, cp.totalusedpercent, cp.plotcount
+                                          FROM nodetype nt
+                                          JOIN nodes n ON n.id = nt.nodeid
+                                          LEFT JOIN chia_plots_directories cp ON cp.nodeid = nt.nodeid
+                                          WHERE nt.code = 4"
                                         , array());
         }else{
-          $sql = $this->db_api->execute("SELECT cp.id, cp.nodeid, n.nodeauthhash, n.hostname, cp.devname, cp.mountpoint, cp.finalplotsdir, cp.totalsize, cp.totalused, cp.totalusedpercent, cp.plotcount
-                                        FROM chia_plots_directories cp
-                                        JOIN nodes n ON cp.nodeid = n.id
-                                        WHERE cp.nodeid = ?"
+          $sql = $this->db_api->execute("SELECT cp.id, nt.nodeid, n.nodeauthhash, n.hostname, cp.devname, cp.mountpoint, cp.finalplotsdir, cp.totalsize, cp.totalused, cp.totalusedpercent, cp.plotcount
+                                          FROM nodetype nt
+                                          JOIN nodes n ON n.id = nt.nodeid
+                                          LEFT JOIN chia_plots_directories cp ON cp.nodeid = nt.nodeid
+                                          WHERE nt.code = 4 AND cp.nodeid = ?"
                                         , array($nodeid));
         }
 
         $returndata = [];
         foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $harvesterinfo){
           $returndata[$harvesterinfo["nodeid"]]["plotdirs"][$harvesterinfo["finalplotsdir"]] = $harvesterinfo;
-          if($getPlots) $returndata[$harvesterinfo["nodeid"]]["plotdirs"][$harvesterinfo["finalplotsdir"]]["foundplots"] = $this->getFoundPlots($harvesterinfo["nodeid"], $harvesterinfo["id"]);
+          if($getPlots && !is_null($harvesterinfo["nodeid"]) && !is_null($harvesterinfo["id"])){
+            $returndata[$harvesterinfo["nodeid"]]["plotdirs"][$harvesterinfo["finalplotsdir"]]["foundplots"] = $this->getFoundPlots($harvesterinfo["nodeid"], $harvesterinfo["id"]);
+          }
           $returndata[$harvesterinfo["nodeid"]]["hostname"] = $harvesterinfo["hostname"];
           $returndata[$harvesterinfo["nodeid"]]["nodeauthhash"] = $this->decryptAuthhash($harvesterinfo["nodeauthhash"]);
         }

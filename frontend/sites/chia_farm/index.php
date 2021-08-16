@@ -14,10 +14,10 @@
   }
 
   $chia_farm_api = new Chia_Farm_Api();
-  $farmdata = $chia_farm_api->getFarmData();
+  $farm_api_data = $chia_farm_api->getFarmData();
 
   echo "<script> var siteID = 6; </script>";
-  echo "<script> var chiaFarmData = " . json_encode($farmdata["data"]) . "; </script>";
+  echo "<script> var chiaFarmData = " . json_encode($farm_api_data["data"]) . "; </script>";
 ?>
 <!-- Page Heading -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -46,7 +46,7 @@
 </div>
 <h5>Overview</h5>
 <div id="farminfocards">
-<?php if(count($farmdata["data"]) == 0) { ?>
+<?php if(count($farm_api_data["data"]) == 0) { ?>
   <div class="row">
     <div class="col">
       <div class="card shadow mb-4">
@@ -59,13 +59,19 @@
   </div>
 <?php
   }else{
-    foreach($farmdata["data"] AS $nodeid => $farmdata){
+    foreach($farm_api_data["data"] AS $nodeid => $farmdata){
 ?>
     <div class="row">
       <div class="col">
         <div class="card shadow mb-4">
           <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-            <h6 class='m-0 font-weight-bold text-primary'>Farmdata for host <?php echo $farmdata["hostname"]; ?> with id <?php echo $nodeid; ?>&nbsp;<span id='servicestatus_<?php echo $nodeid; ?>' class='badge statusbadge badge-secondary'>Querying service status</span></h6>
+            <h6 class='m-0 font-weight-bold text-primary'>Farmdata for host <?php echo $farmdata["hostname"]; ?> with id <?php echo $nodeid; ?>&nbsp;
+            <?php if(is_null($farmdata["farming_status"])){ ?>
+              <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-danger'>No data found</span>
+            <?php }else{ ?>
+              <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-secondary'>Querying service status</span>
+            <?php } ?>
+            </h6>
             <div class='dropdown no-arrow'>
               <a id='dropdownMenuLink_<?php echo $nodeid; ?>' class='dropdown-toggle' href='#' role='button' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
                   <i class='fas fa-ellipsis-v fa-sm fa-fw text-gray-400'></i>
@@ -77,6 +83,15 @@
               </div>
             </div>
           </div>
+          <?php if(is_null($farmdata["farming_status"])){ ?>
+          <div class="card-body">
+            <div class="card bg-danger text-white shadow">
+              <div class="card-body">
+                There is currently no data to show! Please make a rescan of this system.
+              </div>
+            </div>
+          </div>
+          <?php }else{ ?>
           <div class="card-body">
             <div class="row">
               <div class="col">
@@ -195,6 +210,7 @@
               </div>
             </div>
           </div>
+          <?php } ?>
         </div>
       </div>
     </div>

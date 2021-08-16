@@ -77,24 +77,32 @@
     </div>
   </div>
   <?php }else{
-    foreach ($walletdata["data"] as $arrkey => $thiswallet){
+    foreach ($walletdata["data"] as $nodeid => $nodedata){
+      foreach($nodedata as $walletid => $thiswallet){
   ?>
   <div class='row'>
     <div class='col'>
       <div class='card shadow mb-4'>
         <div class='card-header py-3 d-flex flex-row align-items-center justify-content-between'>
-          <h6 class='m-0 font-weight-bold text-primary'><?php echo "Wallet (ID: {$thiswallet['walletid']}), Type: {$thiswallet['wallettype']}"; ?>&nbsp;<span id='servicestatus_<?php echo $thiswallet['nodeid']; ?>' class='badge statusbadge badge-secondary'>Querying service status</span></h6>
+          <h6 class='m-0 font-weight-bold text-primary'><?php echo "Host: {$thiswallet['hostname']}, Wallet (ID: {$walletid}), Type: {$thiswallet['wallettype']}"; ?>&nbsp;
+          <?php if(is_numeric($thiswallet['walletid'])){ ?>
+              <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-secondary'>Querying service status</span>
+          <?php }else{ ?>
+            <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-danger'>No data found</span>
+          <?php } ?>
+          </h6>
           <div class='dropdown no-arrow'>
             <a class='dropdown-toggle' href='#' role='button' id='dropdownMenuLink_<?php echo $thiswallet['nodeid']; ?>' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
               <i class='fas fa-ellipsis-v fa-sm fa-fw text-gray-400'></i>
             </a>
             <div class='dropdown-menu dropdown-menu-right shadow animated--fade-in' aria-labelledby='dropdownMenuLink_<?php echo $thiswallet['nodeid']; ?>'>
               <div class='dropdown-header'>Actions:</div>
-              <a data-wallet-id='<?php echo $thiswallet['nodeid']; ?>' class='dropdown-item refreshWalletInfo' href='#'>Refresh</a>
-              <a data-wallet-id='<?php echo $thiswallet['nodeid']; ?>' class='dropdown-item restartWalletService' href='#'>Restart wallet service</a>
+              <a data-node-id='<?php echo $nodeid; ?>' class='dropdown-item refreshWalletInfo' href='#'>Refresh</a>
+              <a data-node-id='<?php echo $nodeid; ?>' class='dropdown-item restartWalletService' href='#'>Restart wallet service</a>
             </div>
           </div>
         </div>
+        <?php if(is_numeric($thiswallet['walletid'])){ ?>
         <div class='card-body'>
           <div class='row'>
             <div class='col'>
@@ -195,10 +203,20 @@
             </div>
           </div>
         </div>
+      <?php }else{ ?>
+        <div class="card-body">
+          <div class="card bg-danger text-white shadow">
+            <div class="card-body">
+              There is currently no data to show! Please make a rescan of this system.
+            </div>
+          </div>
+        </div>
+      <?php } ?>
       </div>
     </div>
   </div>
   <?php
+        }
       }
     }
   ?>
