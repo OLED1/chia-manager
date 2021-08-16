@@ -4,7 +4,7 @@ $(function(){
   var subpage = href.split("index.php")[1];
 
   if(subpage == "" || subpage == "/" || subpage == undefined){
-    loadPage("/sites/main_overview/","Main Overview");
+    loadPage("/sites/main_overview/","Dashboard");
   }else{
     loadPage(subpage,"");
   }
@@ -109,8 +109,8 @@ $(function(){
                 }*/
 
                 //var sitename = "Chia Mgmt. - " + $(".sb-sidenav-menu .nav-link.active").last().attr("data-sitename");
-                $('head title', window.parent.document).text(sitename);
-                if (history.pushState) window.history.pushState("", sitename, frontend + "/index.php" + href);
+                $('head title', window.parent.document).text("Chia Manager - " + sitename);
+                if (history.pushState) window.history.pushState("", "Chia Manager - " + sitename, frontend + "/index.php" + href);
               }
               //setTimeout( function(){ hideLoadingDialog(); }, 500);
               var data = {

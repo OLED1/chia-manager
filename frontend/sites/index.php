@@ -32,6 +32,10 @@
 
     <title>Chia Manager - Dashboard</title>
 
+    <link rel="shortcut icon" type="image/x-icon" href="<?php echo $ini["frontend_url"]."/img/favicon.ico"?>">
+    <link rel="icon" type="image/png" href="<?php echo $ini["frontend_url"]."/img/favicon.png"?>" sizes="32x32">
+    <link rel="icon" type="image/png" href="<?php echo $ini["frontend_url"]."/img/favicon.png"?>" sizes="96x96">
+
     <!-- Custom fonts for this template-->
     <link href="../frameworks/bootstrap/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
     <link href="../css/google_fonts/nunito/nunito-font.css" rel="stylesheet">
@@ -46,16 +50,17 @@
 
     <!-- Page Wrapper -->
     <div id="wrapper">
-
         <!-- Sidebar -->
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
             <!-- Sidebar - Brand -->
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.php">
-                <div class="sidebar-brand-icon rotate-n-15">
-                    <i class="fas fa-project-diagram"></i>
-                </div>
-                <div class="sidebar-brand-text mx-3">Chia Manager</div>
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="/sites/main_overview/">
+              <span class="sidebar-brand-icon projectlogo"></span>
+              <!--<div class="sidebar-brand-icon rotate-n-15">
+                <i clas="projectlogo"></i>
+                <i class="fas fa-project-diagram"></i>
+              </div>-->
+              <div class="sidebar-brand-text mx-1">Chia Manager</div>
             </a>
 
             <!-- Divider -->
@@ -259,7 +264,7 @@
                 <!--<div id="sitecontent" class="container-fluid">
                 </div>-->
                 <main>
-                  <div id="messagecontainer">
+                  <div id="messagecontainer" style="margin-top: 4em;">
                   </div>
                   <div class="container-fluid" id="sitecontent" style="overflow: auto;">
                   </div>
