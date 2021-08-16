@@ -42,7 +42,7 @@
     <link href="../frameworks/davidstutz-multiselect/css/bootstrap-multiselect.min.css" rel="stylesheet">
 </head>
 
-<body id="page-top">
+<body id="page-top" style="overflow: hidden;">
 
     <!-- Page Wrapper -->
     <div id="wrapper">
@@ -159,7 +159,7 @@
         <!-- End of Sidebar -->
 
         <!-- Content Wrapper -->
-        <div id="content-wrapper" class="d-flex flex-column">
+        <div id="content-wrapper" class="d-flex flex-column" style="overflow: hidden;">
 
             <!-- Main Content -->
             <div id="content">
@@ -261,7 +261,7 @@
                 <main>
                   <div id="messagecontainer">
                   </div>
-                  <div class="container-fluid" id="sitecontent">
+                  <div class="container-fluid" id="sitecontent" style="overflow: auto;">
                   </div>
                 </main>
                 <!-- /.container-fluid -->

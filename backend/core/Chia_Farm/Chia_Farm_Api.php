@@ -59,7 +59,7 @@
 
     public function getFarmData(array $data = NULL, array $loginData = NULL){
       try{
-        $sql = $this->db_api->execute("SELECT cf.nodeid, cf.farming_status, n.hostname, n.nodeauthhash, cf.total_chia_farmed, cf.user_transaction_fees, cf.block_rewards, cf.last_height_farmed, cf.plot_count, cf.total_size_of_plots, cf.estimated_network_space, cf.expected_time_to_win
+        $sql = $this->db_api->execute("SELECT nt.nodeid, cf.farming_status, n.hostname, n.nodeauthhash, cf.total_chia_farmed, cf.user_transaction_fees, cf.block_rewards, cf.last_height_farmed, cf.plot_count, cf.total_size_of_plots, cf.estimated_network_space, cf.expected_time_to_win, cf.querydate
                                         FROM nodetype nt
                                         JOIN nodes n ON n.id = nt.nodeid
                                         LEFT JOIN chia_farm cf ON cf.nodeid = nt.nodeid

@@ -155,14 +155,14 @@
     public function getHarvesterData(array $data = NULL, array $loginData = NULL, int $nodeid = NULL, bool $getPlots = true){
       try{
         if(is_null($nodeid)){
-          $sql = $this->db_api->execute("SELECT cp.id, nt.nodeid, n.nodeauthhash, n.hostname, cp.devname, cp.mountpoint, cp.finalplotsdir, cp.totalsize, cp.totalused, cp.totalusedpercent, cp.plotcount
+          $sql = $this->db_api->execute("SELECT cp.id, nt.nodeid, n.nodeauthhash, n.hostname, cp.devname, cp.mountpoint, cp.finalplotsdir, cp.totalsize, cp.totalused, cp.totalusedpercent, cp.plotcount, cp.querydate
                                           FROM nodetype nt
                                           JOIN nodes n ON n.id = nt.nodeid
                                           LEFT JOIN chia_plots_directories cp ON cp.nodeid = nt.nodeid
                                           WHERE nt.code = 4"
                                         , array());
         }else{
-          $sql = $this->db_api->execute("SELECT cp.id, nt.nodeid, n.nodeauthhash, n.hostname, cp.devname, cp.mountpoint, cp.finalplotsdir, cp.totalsize, cp.totalused, cp.totalusedpercent, cp.plotcount
+          $sql = $this->db_api->execute("SELECT cp.id, nt.nodeid, n.nodeauthhash, n.hostname, cp.devname, cp.mountpoint, cp.finalplotsdir, cp.totalsize, cp.totalused, cp.totalusedpercent, cp.plotcount, cp.querydate
                                           FROM nodetype nt
                                           JOIN nodes n ON n.id = nt.nodeid
                                           LEFT JOIN chia_plots_directories cp ON cp.nodeid = nt.nodeid
@@ -172,7 +172,9 @@
 
         $returndata = [];
         foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $harvesterinfo){
-          $returndata[$harvesterinfo["nodeid"]]["plotdirs"][$harvesterinfo["finalplotsdir"]] = $harvesterinfo;
+          if(!is_null($harvesterinfo["finalplotsdir"])) $returndata[$harvesterinfo["nodeid"]]["plotdirs"][$harvesterinfo["finalplotsdir"]] = $harvesterinfo;
+          else $returndata[$harvesterinfo["nodeid"]]["plotdirs"]["Unknown"] = $harvesterinfo;
+
           if($getPlots && !is_null($harvesterinfo["nodeid"]) && !is_null($harvesterinfo["id"])){
             $returndata[$harvesterinfo["nodeid"]]["plotdirs"][$harvesterinfo["finalplotsdir"]]["foundplots"] = $this->getFoundPlots($harvesterinfo["nodeid"], $harvesterinfo["id"]);
           }

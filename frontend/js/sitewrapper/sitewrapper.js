@@ -1,3 +1,11 @@
+$(window).on('load', function() {
+  $("#sitecontent").css("height", window.getVisible());
+});
+
+$(window).resize(function() {
+  $("#sitecontent").css("height", window.getVisible());
+});
+
 $(function(){
   $("#completely-logout").on("click",function(){
     logout();
@@ -140,4 +148,17 @@ function showMessage(messagetype, message){
     var newcount = parseInt($("#alerts-counter").text().split("+")[0]) + 1;
     $("#alerts-counter").text(newcount + "+");
   }
+}
+
+function getVisible() {
+  $("#sitecontent").css("height","100%");
+  var $el = $("main"),
+    scrollTop = $(this).scrollTop(),
+    scrollBot = scrollTop + $(this).height(),
+    elTop = $el.offset().top,
+    elBottom = elTop + $el.outerHeight(),
+    visibleTop = elTop < scrollTop ? scrollTop : elTop,
+    visibleBottom = elBottom > scrollBot ? scrollBot : elBottom;
+
+  return visibleBottom - visibleTop - $("footer").outerHeight();
 }

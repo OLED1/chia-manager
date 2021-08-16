@@ -43,13 +43,14 @@
 
             curl_close($ch);
 
-            foreach ($codes_result as $currency_code => $currency_description) {
-              if(array_key_exists("usd", $rates_result) && array_key_exists($currency_code, $rates_result["usd"])){
+            foreach ($codes_result as $currency_code_res => $currency_description) {
+              if(array_key_exists("usd", $rates_result) && array_key_exists($currency_code_res, $rates_result["usd"])){
                 $sql = $this->db_api->execute("REPLACE INTO exchangerates (currency_code, currency_desc, currency_rate, updatedate) VALUES (?, ?, ?, ?)",
-                array($currency_code, $currency_description, $rates_result["usd"][$currency_code], $rates_result["date"]));
+                array($currency_code_res, $currency_description, $rates_result["usd"][$currency_code_res], $rates_result["date"]));
               }
             }
           }
+
           return $this->getExchangerate($currency_code);
         }catch(Exception $e){
           //TODO Implement correct status code

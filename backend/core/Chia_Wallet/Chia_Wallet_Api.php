@@ -45,7 +45,7 @@
 
     public function getWalletData(array $data = NULL, array $loginData = NULL){
       try{
-       $sql = $this->db_api->execute("SELECT cw.walletid, nt.nodeid, n.nodeauthhash, n.hostname, cw.walletaddress, cw.walletheight, cw.syncstatus, cw.wallettype, cw.totalbalance, cw.pendingtotalbalance, cw.spendable
+       $sql = $this->db_api->execute("SELECT cw.walletid, nt.nodeid, n.nodeauthhash, n.hostname, cw.walletaddress, cw.walletheight, cw.syncstatus, cw.wallettype, cw.totalbalance, cw.pendingtotalbalance, cw.spendable, cw.querydate
                                       FROM nodetype nt
                                       JOIN nodes n ON n.id = nt.nodeid
                                       LEFT JOIN chia_wallets cw ON cw.nodeid = nt.nodeid
