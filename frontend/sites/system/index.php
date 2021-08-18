@@ -193,13 +193,13 @@
                       <span class="input-group-text">Credentials</span>
                       <input id="loginname" name="loginname" type="text" class="form-control" aria-label="user" placeholder="username" value="<?php echo $mailsettings["loginname"]["value"]; ?>">
                       <span class="input-group-text">//</span>
-                      <input id="loginpassword" name="loginpassword" type="password" class="form-control" aria-label="example.com" placeholder="password" value="<?php echo $mailsettings["loginpassword"]["value"]; ?>">
+                      <input id="loginpassword" name="loginpassword" type="password" class="form-control" aria-label="example.com" placeholder="password" value="*******">
                     </div>
                   </div>
                 </div>
               </div>
               <div class="row">
-                <div class="col col-sm-3 col-md-2 col-lg-2 col-xl-3 smtp">
+                <div class="col smtp">
                   <div class="alert alert-danger" role="alert" id="mailsetuperror" style="display: none;"></div>
                 </div>
               </div>

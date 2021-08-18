@@ -26,7 +26,8 @@
         "var frontend = '". $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."';" .
         "var websocket = '". $ini["socket_protocol"]."://".$ini["socket_domain"]."".$ini["socket_listener"]."';" .
         "var authhash = '". $ini["web_client_auth_hash"]."';" .
-        "var userID = " . $_COOKIE["user_id"] . "; sessid = '" . $_COOKIE["PHPSESSID"] . "';</script>";
+        "var userdata = " . json_encode($userData["data"]) . ";" .
+        "var userID = " . $_COOKIE["user_id"] . "; var sessid = '" . $_COOKIE["PHPSESSID"] . "';</script>";
 ?>
 <html lang="en">
 <head>
@@ -57,7 +58,7 @@
     <div id="wrapper">
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion gui-mode-elem <?php echo $gui_mode_string; ?>" id="accordionSidebar">
             <!-- Sidebar - Brand -->
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="/sites/main_overview/">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
               <span class="sidebar-brand-icon projectlogo"></span>
               <!--<div class="sidebar-brand-icon rotate-n-15">
                 <i clas="projectlogo"></i>
@@ -70,8 +71,9 @@
 
             <li class="nav-item active">
                 <a class="nav-link" data-siteid=1 href="/sites/main_overview/">
-                    <i class="fas fa-fw fa-tachometer-alt"></i>
-                    <span>Dashboard</span></a>
+                  <i class="fas fa-fw fa-tachometer-alt"></i>
+                  <span>Dashboard</span>
+                </a>
             </li>
             <hr class="sidebar-divider">
             <div class="sidebar-heading">
@@ -133,7 +135,7 @@
               </a>
               <div id="collapsePersonal" class="collapse" aria-labelledby="headingPages" data-parent="#accordionSidebar">
                   <div class="bg-white py-2 collapse-inner rounded">
-                      <a class="collapse-item" data-siteid=5 href="/sites/usersettings">Profile & Settings</a>
+                      <a class="collapse-item" data-siteid=5 href="/sites/usersettings"><span>Profile & Settings</span></a>
                       <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">Logout</a>
                   </div>
               </div>
@@ -148,7 +150,7 @@
         </ul>
         <div id="content-wrapper" class="d-flex flex-column" style="overflow: hidden;">
             <div id="content" class="gui-mode-elem <?php echo $gui_mode_string; ?>">
-                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow gui-mode-elem <?php echo $gui_mode; ?>">
+                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow gui-mode-elem <?php echo $gui_mode_string; ?>">
                     <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
                         <i class="fa fa-bars"></i>
                     </button>

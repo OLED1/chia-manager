@@ -53,7 +53,7 @@
         return $this->sendMail($recpients, $subject, $message);
       }else{
         //return array("status" => 1, "message" => "Not all information stated.");
-        return $this->logging->getErrormessage("001");
+        return $this->logging_api->getErrormessage("001");
       }
     }
 

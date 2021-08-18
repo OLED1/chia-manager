@@ -25,24 +25,25 @@ $(function(){
 
   $("#send-testmail").on("click", function(){
     $("#send_testmail_dialog").modal("show");
-    useremail = "Currently not working.";
+    useremail = userdata["email"];
     $("#this-account-mail").text(useremail);
   });
 
   $("#confirm-testmail-option").on("click",function(){
     var data = {};
     if($("#this-mail").is(":checked")){
-      data["receipients"] = useremail;
+      data["receipients"] = [useremail];
     }else{
       var targetmail = $("#custom-mail-address").val();
       if(targetmail.trim().length > 0){
-        data["receipients"] = targetmail;
+        data["receipients"] = [targetmail];
       }else{
         showMessage(2, "The custom mail address field is not allowed to be empty.");
       }
     }
+
     $("#confirm-testmail-option i").show();
-      sendToWSS("backendRequest", "ChiaMgmt\\Mailing\\Mailing_Api", "Mailing_Api", "sendTestMail", data);
+      sendToWSS("ownRequest", "ChiaMgmt\\Mailing\\Mailing_Api", "Mailing_Api", "sendTestMail", data);
   });
 
   $("#startWSS").on("click", function(){
@@ -68,12 +69,12 @@ $(function(){
     $('#mailsetupform *').filter(':input:visible').each(function(){
       var currentelement = $(this);
 
-      if(currentelement.val().trim().length > 0){
+      if(currentelement.val().trim().length > 0 && currentelement.val().trim() != "*******"){
         data[currentelement.attr("name")] = {};
         data[currentelement.attr("name")]["type"] = currentelement.attr("type");
         data[currentelement.attr("name")]["value"] = currentelement.val();
       }else{
-        showErrorMessage("mailsetuperror","All fields must not empty.");
+        showErrorMessage("mailsetuperror","All fields must not empty (" + currentelement.attr("name") + ").");
         error = 1;
       }
     });
@@ -82,6 +83,7 @@ $(function(){
       $("#save-mail-settings i").show();
       var datatosend = {};
       datatosend["mailing"] = data;
+
       window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "setSystemSettings", datatosend);
     }
   });
