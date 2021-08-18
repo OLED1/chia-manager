@@ -75,17 +75,17 @@
     }
 
     public function getUserDefaultCurrency(int $userid){
-      if($userid > 0){
+      if($userid > 0 && array_key_exists("user_id", $_COOKIE) && $_COOKIE["user_id"] == $userid){
         try{
           $sql = $this->db_api->execute("SELECT currency_code FROM users_settings WHERE userid = ?", array($userid));
           $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
 
           if(count($sqdata) == 0){
-            $defaulCurrencyStatus = $this->setUserDefaultCurrency(array("currency_code" => "usd"), array("userid" => $userid));
-            if($defaulCurrencyStatus["status"] == 0){
+            $defaultCurrencyStatus = $this->setUserDefaultCurrency(array("currency_code" => "usd"), array("userid" => $userid));
+            if($defaultCurrencyStatus["status"] == 0){
               $returndata = array("currency_code" => "usd");
             }else{
-              return $defaulCurrencyStatus;
+              return $defaultCurrencyStatus;
             }
           }else{
             $returndata = $sqdata[0];

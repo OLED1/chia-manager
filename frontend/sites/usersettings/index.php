@@ -3,6 +3,7 @@
 
   use ChiaMgmt\Login\Login_Api;
   use ChiaMgmt\Users\Users_Api;
+  use ChiaMgmt\UserSettings\UserSettings_Api;
   use ChiaMgmt\Exchangerates\Exchangerates_Api;
   require __DIR__ . '/../../../vendor/autoload.php';
 
@@ -16,6 +17,7 @@
 
   $login_api = new Login_Api();
   $users_api = new Users_Api();
+  $user_settings_api = new UserSettings_Api();
   $exchangerates_api = new Exchangerates_Api();
 
   $userData = array();
@@ -108,13 +110,16 @@
       <div class="col">
         <div class="card shadow mb-4">
           <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-            <h6 class="m-0 font-weight-bold text-primary">Backup Key</h6>
+            <h6 class="m-0 font-weight-bold text-primary">Gui Color Scheme</h6>
           </div>
-          <div class="card-body" id="personinfo">
-            <div class="input-group mb-3">
-              <input type="text" id="backupkey" name="name" class="form-control personinput" value="<?php echo $users_api->getBackupKey($_COOKIE["user_id"])["data"]; ?>" readonly>
+          <div class="card-body">
+            <?php $gui_mode = $user_settings_api->getGuiMode($_COOKIE["user_id"])["data"]["gui_mode"]; ?>
+            <div class="form-group">
+              <select class="form-control" id="gui-color-scheme_select">
+                <option value=1 <?php echo ($gui_mode == 1 ? "selected" : ""); ?>>Light</option>
+                <option value=2 <?php echo ($gui_mode == 2 ? "selected" : ""); ?>>Dark</option>
+              </select>
             </div>
-            <button id="generateNewBackupKey" class="btn btn-primary btn-block" href="#">Generate New</button>
           </div>
         </div>
       </div>
@@ -130,7 +135,7 @@
                 <?php
                   $currencies = $exchangerates_api->getAllCurrencies();
                   if($currencies["status"] == 0 && count($currencies["data"]) > 0){
-                    $defaultCurrency = $exchangerates_api-> getUserDefaultCurrency($_COOKIE["user_id"]);
+                    $defaultCurrency = $user_settings_api->getUserDefaultCurrency($_COOKIE["user_id"]);
                     if($defaultCurrency["status"] == 0) $defaultCurrency = $defaultCurrency["data"]["currency_code"];
                     else $defaultCurrency = "usd";
 
@@ -143,6 +148,21 @@
                 ?>
               </select>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <div class="card shadow mb-4">
+          <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Backup Key</h6>
+          </div>
+          <div class="card-body" id="personinfo">
+            <div class="input-group mb-3">
+              <input type="text" id="backupkey" name="name" class="form-control personinput" value="<?php echo $users_api->getBackupKey($_COOKIE["user_id"])["data"]; ?>" readonly>
+            </div>
+            <button id="generateNewBackupKey" class="btn btn-primary btn-block" href="#">Generate New</button>
           </div>
         </div>
       </div>

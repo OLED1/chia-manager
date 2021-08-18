@@ -1,6 +1,8 @@
 <?php
   use ChiaMgmt\Login\Login_Api;
   use ChiaMgmt\Users\Users_Api;
+  use ChiaMgmt\UserSettings\UserSettings_Api;
+
   require __DIR__ . '/../../vendor/autoload.php';
 
   $login_api = new Login_Api();
@@ -12,6 +14,10 @@
   }
 
   $users_api = new Users_Api();
+  $user_settings_api = new UserSettings_Api();
+
+  $gui_mode = $user_settings_api->getGuiMode($_COOKIE["user_id"])["data"]["gui_mode"];
+  $gui_mode_string = ($gui_mode == 0 ? "gui-mode-auto" : ($gui_mode == 1 ? "gui-mode-light" : "gui-mode-dark"));
 
   $userData = array();
   if(array_key_exists("user_id", $_COOKIE)) $userData = $users_api->getOwnUserData($_COOKIE["user_id"]);
@@ -43,16 +49,13 @@
     <link href="../frameworks/bootstrap/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="../frameworks/bootstrap/css/sb-admin-2.min.css" rel="stylesheet">
     <link href="../css/custom.css" rel="stylesheet">
+    <link href="../css/gui-modes/dark-mode.css" rel="stylesheet">
     <link href="../frameworks/davidstutz-multiselect/css/bootstrap-multiselect.min.css" rel="stylesheet">
 </head>
 
-<body id="page-top" style="overflow: hidden;">
-
-    <!-- Page Wrapper -->
+<body id="page-top" class="gui-mode-elem <?php echo $gui_mode_string; ?>" style="overflow: auto;">
     <div id="wrapper">
-        <!-- Sidebar -->
-        <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
-
+        <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion gui-mode-elem <?php echo $gui_mode_string; ?>" id="accordionSidebar">
             <!-- Sidebar - Brand -->
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="/sites/main_overview/">
               <span class="sidebar-brand-icon projectlogo"></span>
@@ -63,25 +66,17 @@
               <div class="sidebar-brand-text mx-1">Chia Manager</div>
             </a>
 
-            <!-- Divider -->
             <hr class="sidebar-divider my-0">
 
-            <!-- Nav Item - Dashboard -->
             <li class="nav-item active">
                 <a class="nav-link" data-siteid=1 href="/sites/main_overview/">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
                     <span>Dashboard</span></a>
             </li>
-
-            <!-- Divider -->
             <hr class="sidebar-divider">
-
-            <!-- Heading -->
             <div class="sidebar-heading">
                 My Chia Infra
             </div>
-
-            <!-- Nav Item - Pages Collapse Menu -->
             <li class="nav-item">
               <a class="nav-link" data-siteid=2 href="/sites/nodes">
                 <i class="fas fa-sitemap"></i>
@@ -107,15 +102,11 @@
               </a>
             </li>
 
-            <!-- Divider -->
             <hr class="sidebar-divider">
 
-            <!-- Heading -->
             <div class="sidebar-heading">
                 System
             </div>
-
-            <!-- Nav Item - Pages Collapse Menu -->
             <li class="nav-item">
               <a class="nav-link" data-siteid=4 href="/sites/users">
                 <i class="fas fa-users-cog"></i>
@@ -129,15 +120,11 @@
               </a>
             </li>
 
-            <!-- Divider -->
             <hr class="sidebar-divider">
 
-            <!-- Heading -->
             <div class="sidebar-heading">
                 Personal
             </div>
-
-            <!-- Nav Item - Pages Collapse Menu -->
             <li class="nav-item">
               <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePersonal"
                   aria-expanded="true" aria-controls="collapsePersonal">
@@ -152,40 +139,25 @@
               </div>
             </li>
 
-            <!-- Divider -->
             <hr class="sidebar-divider d-none d-md-block">
 
-            <!-- Sidebar Toggler (Sidebar) -->
             <div class="text-center d-none d-md-inline">
                 <button class="rounded-circle border-0" id="sidebarToggle"></button>
             </div>
 
         </ul>
-        <!-- End of Sidebar -->
-
-        <!-- Content Wrapper -->
         <div id="content-wrapper" class="d-flex flex-column" style="overflow: hidden;">
-
-            <!-- Main Content -->
-            <div id="content">
-
-                <!-- Topbar -->
-                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
-
-                    <!-- Sidebar Toggle (Topbar) -->
+            <div id="content" class="gui-mode-elem <?php echo $gui_mode_string; ?>">
+                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow gui-mode-elem <?php echo $gui_mode; ?>">
                     <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
                         <i class="fa fa-bars"></i>
                     </button>
-
-                    <!-- Topbar Navbar -->
                     <ul class="navbar-nav ml-auto">
-
-                        <!-- Nav Item - Search Dropdown (Visible Only XS) -->
                         <li class="nav-item dropdown no-arrow d-sm-none">
-                            <a class="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button"
+                            <!--<a class="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fas fa-search fa-fw"></i>
-                            </a>
+                            </a>-->
                             <!-- Dropdown - Messages -->
                             <div class="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in" aria-labelledby="searchDropdown">
                               <form class="form-inline mr-auto w-100 navbar-search">
@@ -208,17 +180,12 @@
                             </span>
                           </span>
                         </li class="nav-item dropdown no-arrow d-sm-none">
-
-
-                        <!-- Nav Item - Alerts -->
                         <li class="nav-item dropdown no-arrow mx-1">
                             <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fas fa-bell fa-fw"></i>
-                                <!-- Counter - Alerts -->
                                 <span id="alerts-counter" class="badge badge-danger badge-counter">0</span>
                             </a>
-                            <!-- Dropdown - Alerts -->
                             <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="alertsDropdown">
                                 <h6 class="dropdown-header">
@@ -229,15 +196,12 @@
                                 <a class="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
                             </div>
                         </li>
-
-                        <!-- Nav Item - User Information -->
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <span id="sitewrapperusername" class="mr-2 d-none d-lg-inline text-gray-600 small"><?php echo $userData["data"]["name"] . " " . $userData["data"]["lastname"]; ?></span>
                                 <img class="img-profile rounded-circle" src="../frameworks/bootstrap/img/undraw_profile.svg">
                             </a>
-                            <!-- Dropdown - User Information -->
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="userDropdown">
                                 <a class="dropdown-item" data-siteid=5 href="/sites/usersettings">
@@ -258,44 +222,26 @@
 
                     </ul>
                 </nav>
-                <!-- End of Topbar -->
-
-                <!-- Begin Page Content -->
-                <!--<div id="sitecontent" class="container-fluid">
-                </div>-->
                 <main>
                   <div id="messagecontainer" style="margin-top: 4em;">
                   </div>
                   <div class="container-fluid" id="sitecontent" style="overflow: auto;">
                   </div>
                 </main>
-                <!-- /.container-fluid -->
-
             </div>
-            <!-- End of Main Content -->
-
-            <!-- Footer -->
-            <footer class="sticky-footer bg-white">
+            <footer class="sticky-footer bg-white gui-mode-elem <?php echo $gui_mode_string; ?>">
                 <div class="container my-auto">
                     <div class="copyright text-center my-auto">
                         <span>Copyright &copy; ChiaMgmt Version <?php echo $ini["versnummer"]; ?>. All rights reserved.</span>
                     </div>
                 </div>
             </footer>
-            <!-- End of Footer -->
-
         </div>
-        <!-- End of Content Wrapper -->
-
     </div>
-    <!-- End of Page Wrapper -->
-
-    <!-- Scroll to Top Button-->
     <a id="scrolltopagetop" class="scroll-to-top rounded" href="#">
         <i class="fas fa-angle-up"></i>
     </a>
 
-    <!-- Logout Modal-->
     <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
         aria-hidden="true">
         <div class="modal-dialog" role="document">

@@ -47,7 +47,18 @@ $(function(){
       currency_code : $(this).val()
     }
 
-    sendToWSS("ownRequest", "ChiaMgmt\\Exchangerates\\Exchangerates_Api", "Exchangerates_Api", "setUserDefaultCurrency", data);
+    sendToWSS("ownRequest", "ChiaMgmt\\UserSettings\\UserSettings_Api", "UserSettings_Api", "setUserDefaultCurrency", data);
+  });
+
+  $("#gui-color-scheme_select").on("change", function(){
+    var data = {
+      userid: userid,
+      gui_mode : $(this).val()
+    }
+
+    console.log(data);
+
+    sendToWSS("ownRequest", "ChiaMgmt\\UserSettings\\UserSettings_Api", "UserSettings_Api", "setGuiMode", data);
   });
 
   function initLoggedInDevicesTable(){
@@ -165,6 +176,12 @@ function messagesTrigger(data){
         .row($("#device_" + data[key]["data"]["deviceid"]))
         .remove()
         .draw();
+    }else if(key == "setGuiMode"){
+      if(data[key]["data"] == 1){
+        $(".gui-mode-elem").removeClass("gui-mode-dark").addClass("gui-mode-light");
+      }else if(data[key]["data"] == 2){
+        $(".gui-mode-elem").removeClass("gui-mode-light").addClass("gui-mode-dark");
+      }
     }
   }
 }
