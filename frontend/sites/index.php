@@ -86,6 +86,12 @@
               </a>
             </li>
             <li class="nav-item">
+              <a class="nav-link" data-siteid=8 href="/sites/chia_infra_sysinfo">
+                <i class="fas fa-network-wired"></i>
+                <span>Infra Sysinfo</span>
+              </a>
+            </li>
+            <li class="nav-item">
               <a class="nav-link" data-siteid=5 href="/sites/chia_wallet">
                 <i class="fas fa-wallet"></i>
                 <span>Wallet</span>

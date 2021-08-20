@@ -41,30 +41,39 @@
 
           if($count == 0){
             $sql = $this->db_api->execute("INSERT INTO chia_farm (id, nodeid, farming_status, total_chia_farmed, user_transaction_fees, block_rewards, last_height_farmed, plot_count, total_size_of_plots, estimated_network_space, expected_time_to_win) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            array($nodeid, $farmdata["farming_status"], $totalchiafarmed, $usertransactionfees, $blockrewards, $lastheigthfarmed, $farmdata["plot_count"], $farmdata["total_size_of_plots"], $farmdata["estimated_network_space"], $farmdata["expected_time_to_win"]));
+            array($nodeid, $farmdata["farming_status"], $totalchiafarmed, $usertransactionfees, $blockrewards, $lastheigthfarmed, $farmdata["plot_count_for_all_harvesters"], $farmdata["total_size_of_plots"], $farmdata["estimated_network_space"], $farmdata["expected_time_to_win"]));
           }else{
             $sql = $this->db_api->execute("UPDATE chia_farm SET farming_status = ?, total_chia_farmed = ?, user_transaction_fees = ?, block_rewards = ?, last_height_farmed = ?, plot_count = ?, total_size_of_plots = ?, estimated_network_space = ?, expected_time_to_win = ? WHERE nodeid = ?",
-            array($farmdata["farming_status"], $totalchiafarmed, $usertransactionfees, $blockrewards, $lastheigthfarmed, $farmdata["plot_count"], $farmdata["total_size_of_plots"], $farmdata["estimated_network_space"], $farmdata["expected_time_to_win"], $nodeid));
+            array($farmdata["farming_status"], $totalchiafarmed, $usertransactionfees, $blockrewards, $lastheigthfarmed, $farmdata["plot_count_for_all_harvesters"], $farmdata["total_size_of_plots"], $farmdata["estimated_network_space"], $farmdata["expected_time_to_win"], $nodeid));
           }
         }catch(Exception $e){
           return $this->logging->getErrormessage("001", $e);
         }
 
-        return array("status" =>0, "message" => "Successfully updated farm information for node $nodeid.", "data" => ["nodeid" => $nodeid]);
+        return array("status" =>0, "message" => "Successfully updated farm information for node $nodeid.", "data" => ["nodeid" => $nodeid, "data" => $this->getFarmData($data, $loginData, $nodeid)]);
       }else{
         //TODO Implement correct status code
         return array("status" =>1, "message" => "Not all data stated.");
       }
     }
 
-    public function getFarmData(array $data = NULL, array $loginData = NULL){
+    public function getFarmData(array $data = NULL, array $loginData = NULL, int $nodeid = NULL){
       try{
-        $sql = $this->db_api->execute("SELECT nt.nodeid, cf.farming_status, n.hostname, n.nodeauthhash, cf.total_chia_farmed, cf.user_transaction_fees, cf.block_rewards, cf.last_height_farmed, cf.plot_count, cf.total_size_of_plots, cf.estimated_network_space, cf.expected_time_to_win, cf.querydate
-                                        FROM nodetype nt
-                                        JOIN nodes n ON n.id = nt.nodeid
-                                        LEFT JOIN chia_farm cf ON cf.nodeid = nt.nodeid
-                                        WHERE nt.code = 3"
-                                       , array());
+        if(is_null($nodeid)){
+          $sql = $this->db_api->execute("SELECT nt.nodeid, cf.farming_status, n.hostname, n.nodeauthhash, cf.total_chia_farmed, cf.user_transaction_fees, cf.block_rewards, cf.last_height_farmed, cf.plot_count, cf.total_size_of_plots, cf.estimated_network_space, cf.expected_time_to_win, cf.querydate
+                                          FROM nodetype nt
+                                          JOIN nodes n ON n.id = nt.nodeid
+                                          LEFT JOIN chia_farm cf ON cf.nodeid = nt.nodeid
+                                          WHERE nt.code = 3"
+                                          , array());
+        }else{
+          $sql = $this->db_api->execute("SELECT nt.nodeid, cf.farming_status, n.hostname, n.nodeauthhash, cf.total_chia_farmed, cf.user_transaction_fees, cf.block_rewards, cf.last_height_farmed, cf.plot_count, cf.total_size_of_plots, cf.estimated_network_space, cf.expected_time_to_win, cf.querydate
+                                          FROM nodetype nt
+                                          JOIN nodes n ON n.id = nt.nodeid
+                                          LEFT JOIN chia_farm cf ON cf.nodeid = nt.nodeid
+                                          WHERE nt.code = 3 AND nt.nodeid = ?"
+                                          , array($nodeid));
+        }
 
         $returndata = [];
         foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $farminfo){

@@ -6,10 +6,11 @@
   use ChiaMgmt\Chia_Wallet\Chia_Wallet_Api;
   use ChiaMgmt\Chia_Farm\Chia_Farm_Api;
   use ChiaMgmt\Chia_Harvester\Chia_Harvester_Api;
+  use ChiaMgmt\Nodes\Nodes_Api;
   use ChiaMgmt\Logging\Logging_Api;
 
   class MainOverview_Api{
-    private $db_api, $logging_api, $chia_overall_api, $exchangerates_api, $chia_wallet_api, $chia_farm_api, $chia_harvester_api;
+    private $db_api, $logging_api, $chia_overall_api, $exchangerates_api, $chia_wallet_api, $chia_farm_api, $chia_harvester_api, $nodes_api;
 
     public function __construct(){
       $this->db_api = new DB_Api();
@@ -20,6 +21,7 @@
       $this->chia_wallet_api = new Chia_Wallet_Api();
       $this->chia_farm_api = new Chia_Farm_Api();
       $this->chia_harvester_api = new Chia_Harvester_Api();
+      $this->nodes_api = new Nodes_Api();
     }
 
     public function getAllOverviewData(){
@@ -47,6 +49,11 @@
       $harvesterData = $this->chia_harvester_api->getHarvesterData();
       if($harvesterData["status"] == 0) $returndata["harvesterinfos"] = $harvesterData["data"];
       else $returndata["harvesterinfos"] = [];
+
+      //Nodeinfos
+      $nodesData = $this->nodes_api->getConfiguredNodes();
+      if($nodesData["status"] == 0) $returndata["nodesinfos"] = $nodesData["data"];
+      else $returndata["nodesinfos"] = [];
 
       return array("status" => 0, "message" => "Successfully loaded all overview data.", "data" => $returndata);
     }

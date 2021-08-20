@@ -89,7 +89,7 @@
             <h6 class="m-0 font-weight-bold text-primary">Server Security</h6>
           </div>
           <div class="card-body">
-            <p>To ensure your server is as secure as possible your have the following options. Please be aware of some of this settings. For example: Enabling TOTP requires your mailsettings to be checked, tested and confirmed.<p>
+            <p>To ensure your server is as secure as possible you have the following options. Please be aware of some of this settings. For example: Enabling TOTP requires your mailsettings to be checked, tested and confirmed.<p>
             <div class="custom-control custom-checkbox">
                 <input type="checkbox" class="custom-control-input" id="enableTOTP" <?php echo( $security ? "checked" : ""); ?> >
                 <label class="custom-control-label" for="enableTOTP">Enable and enforce TOTP via E-Mail</label>

@@ -25,19 +25,29 @@
   echo "</pre>";*/
 
   echo "<script> var siteID = 1; </script>";
+  echo "<script> var overviewInfos = " . json_encode($overviewData) . "; </script>";
 ?>
 <!-- Page Heading -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
-    <!--<a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i
-            class="fas fa-download fa-sm text-white-50"></i> Generate Report</a>-->
+</div>
+<div class="row">
+  <div class="col">
+    <div class="alert alert-warning" role="alert">
+      Please be aware: Some of the shown data may not be real live data.<br>
+      E.g. If a service says the node is "farming" and the node state says "node not connected", the last values from the database are shown.
+    </div>
+  </div>
 </div>
 <div class="row">
   <div class="col-lg-3 mb-4">
     <div class="card bg-success text-white shadow">
       <div class="card-body">
         Successfully running services
-        <div class="text-white-50 small"><h3>14</h3></div>
+        <div class="text-white-50">
+          <h3 id="ok-service-count">?</h3>
+          <div class="text-white-50">No actions needed</div>
+        </div>
       </div>
     </div>
   </div>
@@ -45,7 +55,10 @@
     <div class="card bg-danger text-white shadow">
       <div class="card-body">
         Critical services
-        <div class="text-white-50 small"><h3>2</h3></div>
+        <div class="text-white-50">
+          <h3 id="crit-service-count">?</h3>
+          <div class="text-white-50">Urgent actions needed</div>
+        </div>
       </div>
     </div>
   </div>
@@ -128,9 +141,9 @@
         if(count($overviewData["walletinfos"]) > 0){
           $hostchecks = "";
           foreach ($overviewData["walletinfos"] as $nodeid => $nodedata) {
-            $hostchecks .= "{$nodedata[array_key_first($nodedata)]["hostname"]}:&nbsp;<span id='servicestatus_wallet_{$nodeid}' class='badge " . (array_key_first($nodedata) > 0 ? "badge-secondary" : "badge-danger") . "'>" . (array_key_first($nodedata) > 0 ? "Querying service status" : "No data found") . "</span><br>";
+            $hostchecks .= "{$nodedata[array_key_first($nodedata)]["hostname"]}:&nbsp;<span id='servicestatus_wallet_{$nodeid}' data-nodeid={$nodeid} class='badge nodestatus " . (array_key_first($nodedata) > 0 ? "badge-secondary" : "badge-danger") . "'>" . (array_key_first($nodedata) > 0 ? "Querying service status" : "No data found") . "</span><br>";
             foreach($nodedata AS $walletid => $walletdata){
-              $walletsyncstatus .= "{$walletdata["hostname"]} - Wallet {$walletid}:&nbsp;<span id='syncstatus_{$nodeid}' class='badge " . ($walletid > 0 && $walletdata["syncstatus"] == "Synced" ? "badge-success" : "badge-danger") . "'>" . ($walletid > 0 ? $walletdata["syncstatus"]."&nbsp;(Height: {$walletdata["walletheight"]})" : "No data found"). "</span></br>";
+              $walletsyncstatus .= "{$walletdata["hostname"]} - Wallet {$walletid}:&nbsp;<span id='syncstatus_{$nodeid}_{$walletid}' data-nodeid={$nodeid} data-walletid={$walletid} class='badge walletstatus " . ($walletid > 0 && $walletdata["syncstatus"] == "Synced" ? "badge-success" : "badge-danger") . "'>" . ($walletid > 0 ? $walletdata["syncstatus"]."&nbsp;(Height: {$walletdata["walletheight"]})" : "No data found"). "</span></br>";
               $totalxch += floatval($walletdata["totalbalance"]);
             }
           }
@@ -244,8 +257,8 @@
           $hostchecks = "";
 
           foreach($overviewData["farminfos"] AS $nodeid => $nodedata){
-            $hostchecks .= "{$nodedata["hostname"]}:&nbsp;<span id='servicestatus_farmer_{$nodeid}' class='badge " . (!is_null($nodedata["farming_status"]) ? "badge-secondary" : "badge-danger") . "'>" . (!is_null($nodedata["farming_status"]) ? "Querying service status" : "No data found") . "</span><br>";
-            $farmingstatus .= "{$nodedata["hostname"]}:&nbsp;<span id='farmingstatus_{$nodeid}' class='badge " . (!is_null($nodedata["farming_status"]) ? ($nodedata["farming_status"] == "Farming" ? "badge-success" : "badge-danger") : "badge-danger") . "'>" . (is_null($nodedata["farming_status"]) ? "No data found" : $nodedata["farming_status"]) . "</span></br>";
+            $hostchecks .= "{$nodedata["hostname"]}:&nbsp;<span id='servicestatus_farmer_{$nodeid}' data-nodeid={$nodeid} class='badge nodestatus " . (!is_null($nodedata["farming_status"]) ? "badge-secondary" : "badge-danger") . "'>" . (!is_null($nodedata["farming_status"]) ? "Querying service status" : "No data found") . "</span><br>";
+            $farmingstatus .= "{$nodedata["hostname"]}:&nbsp;<span id='farmingstatus_{$nodeid}' data-nodeid={$nodeid} class='badge farmerstatus " . (!is_null($nodedata["farming_status"]) ? ($nodedata["farming_status"] == "Farming" ? "badge-success" : "badge-danger") : "badge-danger") . "'>" . (is_null($nodedata["farming_status"]) ? "No data found" : $nodedata["farming_status"]) . "</span></br>";
             $totalplotcount += intval($nodedata["plot_count"]);
             $plotinfoexpl = explode(" ",$nodedata["total_size_of_plots"]);
             $totalsizeofplots += floatval($plotinfoexpl[0]) * intval($sizes[$plotinfoexpl[1]]);
@@ -371,7 +384,7 @@
       if(count($overviewData["harvesterinfos"]) > 0){
         $hostchecks = "";
         foreach($overviewData["harvesterinfos"] AS $nodeid => $nodedata){
-          $hostchecks .= "{$nodedata["hostname"]}:&nbsp;<span id='servicestatus_harvester_{$nodeid}' class='badge " . (!array_key_exists("Unknown", $nodedata["plotdirs"]) ? "badge-secondary" : "badge-danger") . "'>" . (!array_key_exists("Unknown", $nodedata["plotdirs"]) ? "Querying service status" : "No data found") . "</span><br>";
+          $hostchecks .= "{$nodedata["hostname"]}:&nbsp;<span id='servicestatus_harvester_{$nodeid}' data-nodeid={$nodeid} class='badge nodestatus " . (!array_key_exists("Unknown", $nodedata["plotdirs"]) ? "badge-secondary" : "badge-danger") . "'>" . (!array_key_exists("Unknown", $nodedata["plotdirs"]) ? "Querying service status" : "No data found") . "</span><br>";
           $nodes = array();
           foreach($nodedata["plotdirs"] AS $finalplotsdir => $plotdata){
             if(is_null($plotdata["devname"]) && $finalplotsdir != "Unknown"){
@@ -379,7 +392,7 @@
                 $criticalmount .= "{$nodedata["hostname"]}:<br>";
                 array_push($nodes, $nodedata["hostname"]);
               }
-              $criticalmount .= "<span id='plot_crit_{$plotdata["id"]}' class='badge badge-danger'>{$finalplotsdir}</span></br>";
+              $criticalmount .= "<span id='plot_crit_{$plotdata["id"]}' data-nodeid={$nodeid} class='badge harvesterstatus badge-danger'>{$finalplotsdir}</span></br>";
 
             }
           }
@@ -446,5 +459,4 @@
   </div>
 </div>
 
-<!-- Page level plugins -->
-<script src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/frameworks/bootstrap/vendor/chart.js/Chart.min.js"?>></script>
+<script src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/main_overview/js/main_overview.js"?>></script>

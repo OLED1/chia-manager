@@ -255,7 +255,7 @@
 
             if($returneddata["authkeypassed"] == 1){
               if(is_null($returneddata["validuntil"])){
-                return array("status" => "0", "message" => "You are logged in.");
+                return array("status" => "0", "message" => "User with id {$userid} is logged in.");
               }else{
                 $validuntil = new  \DateTime($returneddata["validuntil"]);
                 $currentdate = new \DateTime();
@@ -265,7 +265,7 @@
                   $sql = $this->dbcon->execute("UPDATE users_sessions SET validuntil = ? WHERE userid = ? AND sessid = ?",
                                                 array($currentdate->format("Y-m-d H:i:s"), $userid, $sessionid));
 
-                  return array("status" => "0", "message" => "You are logged in.");
+                  return array("status" => "0", "message" => "User with id {$userid} is logged in.");
                 }else{
                   return $this->logging->getErrormessage("001");
                 }

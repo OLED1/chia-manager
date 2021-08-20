@@ -16,7 +16,7 @@
 #content.gui-mode-dark h3,
 #content.gui-mode-dark h4,
 #content.gui-mode-dark h5{
-  color: #fff!important;
+  color: #fff;
 }
 
 #accordionSidebar.gui-mode-dark{
@@ -33,6 +33,11 @@
 #content.gui-mode-dark .card-header{
   background-color: #6b6b6b;
   border-bottom: 1px solid #969696;
+}
+
+#content.gui-mode-dark .card-footer{
+  background-color: #6b6b6b;
+  border-top: 1px solid #969696;
 }
 
 #content.gui-mode-dark .card-header h6{
@@ -59,7 +64,7 @@
 }
 
 #content.gui-mode-dark .table{
-  color: #4c4c4c;
+  color: #fff;
 }
 
 #content.gui-mode-dark .table-bordered{
@@ -107,7 +112,7 @@ body.gui-mode-dark .topbar .dropdown-list .dropdown-item {
 }
 
 body.gui-mode-dark{
-  color: #b0b1b8;
+  color: #fff;
 }
 
 body.gui-mode-dark .modal-content{

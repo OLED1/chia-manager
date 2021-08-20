@@ -171,6 +171,8 @@ function setWalletBadge(data){
 function messagesTrigger(data){
   var key = Object.keys(data);
 
+  console.log(data);
+
   if(data[key]["status"] == 0){
     if(key == "updateWalletData"){
       sendToWSS("backendRequest", "ChiaMgmt\\Chia_Wallet\\Chia_Wallet_Api", "Chia_Wallet_Api", "getWalletData", {});

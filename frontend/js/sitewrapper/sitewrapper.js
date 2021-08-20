@@ -119,7 +119,7 @@ function showMessage(messagetype, message){
 
   if(messagetype > 0){
     var tempmsgid = "tmp_" + Math.random().toString(36).substring(4);
-    setTimeout(function () {
+    /*setTimeout(function () {
       $("#messagecontainer").append(
         "<div id='" + tempmsgid + "' class='card " + type + " text-white shadow'>" +
         "<div class='card-body'>" +
@@ -130,7 +130,7 @@ function showMessage(messagetype, message){
       setTimeout(function () {
         $("#" + tempmsgid).fadeOut().remove(), 10000
       },2000);
-    },50);
+    },50);*/
 
     $("#alerts").prepend(
       "<a class='dropdown-item d-flex align-items-center' href='#'>" +

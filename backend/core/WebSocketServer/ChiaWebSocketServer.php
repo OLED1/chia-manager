@@ -221,7 +221,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
               echo "[{$this->getDate()}] WARNING: Connection $connectionid is not existing.\n";
             }
           }else{
-            echo "[{$this->getDate()}] WARNING: No connection found which satisfies one of these sites: " . json_encode($siteID) . ".\n";
+            echo "[{$this->getDate()}] WARNING: User {$condetails["userid"]} is not watching a site which satisfies one of these sites: " . json_encode($siteID) . ".\n";
           }
         }
       }else if(array_key_exists("loginStatus", $datatosend)){

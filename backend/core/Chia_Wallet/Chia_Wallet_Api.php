@@ -24,34 +24,45 @@
           $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
 
           foreach($data["wallet"] AS $walletid => $walletdata){
-            $sql = $this->db_api->execute("SELECT Count(*) as count FROM chia_wallets WHERE walletid = ?", array($walletid));
+            $sql = $this->db_api->execute("SELECT Count(*) as count FROM chia_wallets WHERE walletid = ? AND nodeid = ?", array($walletid, $nodeid));
             $count = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["count"];
 
             if($count == 0){
               $sql = $this->db_api->execute("INSERT INTO chia_wallets (id, nodeid, walletid, walletaddress, walletheight, syncstatus, wallettype, totalbalance, pendingtotalbalance, spendable) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
               array($nodeid, $walletid, $walletdata["walletaddress"], $walletdata["walletheight"], $walletdata["syncstatus"], $walletdata["wallettype"], $walletdata["totalbalance"], $walletdata["pendingtotalbalance"], $walletdata["spendable"]));
             }else{
-              $sql = $this->db_api->execute("UPDATE chia_wallets SET nodeid = ?, walletaddress = ?, walletheight = ?, syncstatus = ?, wallettype = ?, totalbalance = ?, pendingtotalbalance = ?, spendable = ? WHERE walletid = ?",
-              array($nodeid, $walletdata["walletaddress"], $walletdata["walletheight"], $walletdata["syncstatus"], $walletdata["wallettype"], $walletdata["totalbalance"], $walletdata["pendingtotalbalance"], $walletdata["spendable"], $walletid));
+              $sql = $this->db_api->execute("UPDATE chia_wallets SET  walletaddress = ?, walletheight = ?, syncstatus = ?, wallettype = ?, totalbalance = ?, pendingtotalbalance = ?, spendable = ? WHERE walletid = ? AND nodeid = ?",
+              array($walletdata["walletaddress"], $walletdata["walletheight"], $walletdata["syncstatus"], $walletdata["wallettype"], $walletdata["totalbalance"], $walletdata["pendingtotalbalance"], $walletdata["spendable"], $walletid, $nodeid));
             }
           }
         }catch(Exception $e){
           return $this->logging->getErrormessage("001", $e);
         }
 
-        return array("status" =>0, "message" => "Successfully updated system information for node $nodeid.", "data" => ["nodeid" => $nodeid]);
+        return array("status" => 0, "message" => "Successfully updated wallet information for node $nodeid.", "data" => ["nodeid" => $nodeid, "data" => $this->getWalletData($data, $loginData, $nodeid)["data"]]);
+      }else{
+        //TODO Implement correct status code
+        return array("status" =>1, "message" => "Not all data stated.");
       }
     }
 
-    public function getWalletData(array $data = NULL, array $loginData = NULL){
+    public function getWalletData(array $data = NULL, array $loginData = NULL, int $nodeid = NULL){
       try{
-       $sql = $this->db_api->execute("SELECT cw.walletid, nt.nodeid, n.nodeauthhash, n.hostname, cw.walletaddress, cw.walletheight, cw.syncstatus, cw.wallettype, cw.totalbalance, cw.pendingtotalbalance, cw.spendable, cw.querydate
-                                      FROM nodetype nt
-                                      JOIN nodes n ON n.id = nt.nodeid
-                                      LEFT JOIN chia_wallets cw ON cw.nodeid = nt.nodeid
-                                      WHERE nt.code = 5"
-                                      , array());
-
+        if(is_null($nodeid)){
+          $sql = $this->db_api->execute("SELECT cw.walletid, nt.nodeid, n.nodeauthhash, n.hostname, cw.walletaddress, cw.walletheight, cw.syncstatus, cw.wallettype, cw.totalbalance, cw.pendingtotalbalance, cw.spendable, cw.querydate
+                                         FROM nodetype nt
+                                         JOIN nodes n ON n.id = nt.nodeid
+                                         LEFT JOIN chia_wallets cw ON cw.nodeid = nt.nodeid
+                                         WHERE nt.code = 5"
+                                         , array());
+        }else{
+          $sql = $this->db_api->execute("SELECT cw.walletid, nt.nodeid, n.nodeauthhash, n.hostname, cw.walletaddress, cw.walletheight, cw.syncstatus, cw.wallettype, cw.totalbalance, cw.pendingtotalbalance, cw.spendable, cw.querydate
+                                         FROM nodetype nt
+                                         JOIN nodes n ON n.id = nt.nodeid
+                                         LEFT JOIN chia_wallets cw ON cw.nodeid = nt.nodeid
+                                         WHERE nt.code = 5 AND nt.nodeid = ?"
+                                         , array($nodeid));
+        }
 
         $returndata = [];
         foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $walletinfo){

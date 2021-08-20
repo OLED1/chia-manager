@@ -75,7 +75,10 @@
           return $this->logging->getErrormessage("001", $e);
         }
 
-      return array("status" =>0, "message" => "Successfully updated farmer information for node $nodeid.", "data" => ["nodeid" => $nodeid]);
+        return array("status" =>0, "message" => "Successfully updated farmer information for node $nodeid.", "data" => ["nodeid" => $nodeid, "data" => $this->getHarvesterData($data, $loginData, $nodeid, false)["data"]]);
+      }else{
+        //TODO Implement correct status code
+        return array("status" =>1, "message" => "Not all data stated.");
       }
     }
 

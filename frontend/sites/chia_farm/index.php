@@ -98,7 +98,7 @@
                 <div class="card shadow mb-4">
                   <div class="card-body">
                     <h5>Farming Status</h5>
-                    <h4 class='<?php echo ($farmdata["farming_status"] == "Farming" ? "text-success" : "text-danger") ?>'><?php echo $farmdata["farming_status"]; ?><span style="font-size: 1.2em;">&#8226;</span></h4>
+                    <h4 class='<?php echo ($farmdata["farming_status"] == "Farming" ? "text-success" : "text-danger") ?>'><?php echo $farmdata["farming_status"]; ?><span>&#8226;</span></h4>
                     <h7>&nbsp;</h7>
                   </div>
                 </div>
