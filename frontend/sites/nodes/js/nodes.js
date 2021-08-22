@@ -1,18 +1,3 @@
-//INIT ALL CHART ARRAYS
-var sysinfodata = {};
-var charts = {};
-charts["ram"] = {};
-charts["ram"]["chart"] = {}
-charts["ram"]["ctx"] = {};
-
-charts["swap"] = {};
-charts["swap"]["chart"] = {}
-charts["swap"]["ctx"] = {};
-
-charts["load"] = {};
-charts["load"]["chart"] = {}
-charts["load"]["ctx"] = {};
-
 var configuredClients = $("#configuredClients").DataTable();
 
 $("#chia-nodes-select").multiselect({
@@ -312,57 +297,9 @@ function initShowNodeInfo(){
     }
   });
 
-  $('#chia-nodes-select').multiselect({
-    buttonWidth: '20%',
-    includeSelectAllOption: true,
-    numberDisplayed: 5,
-    onSelectAll: function(element, checked) {
-      $.each($('#chia-nodes-select option:selected'), function(){
-        sendToWSS("ownRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getSystemInfo", { "nodeid": $(this).val() });
-      });
-    },
-    onChange: function(element, checked) {
-      if(checked && element.val() != undefined && element.val() > 0){
-        sendToWSS("ownRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getSystemInfo", { "nodeid": element.val() });
-      }else{
-        sysinfodata[element.val()] = {};
-        charts[element.val()] = {};
-        $("#container_" + element.val()).hide("slow").remove();
-      }
-    },
-    onDeselectAll: function() {
-      sysinfodata = {};
-      charts = {};
-      $(".sysinfocontainer").hide("slow").remove();
-    }
-  });
-
   $(".connection-info").off("click");
   $(".connection-info").on("click", function(){
     console.log($(this));
-  });
-}
-
-function initSysinfoRefresh(){
-  $(".sysinfo-refresh").off("click");
-  $(".sysinfo-refresh").on("click", function(e){
-    e.preventDefault();
-    var nodeid = $(this).attr("data-nodeid");
-    var authhash = configuredNodes[nodeid]["nodeauthhash"];
-    var datafornode = {
-      "nodeinfo":{
-        "authhash": authhash
-      },
-      "data" : {
-        "querySystemInfo" : {
-          "status" : 0,
-          "message" : "Query Sysinfo data.",
-          "data": {}
-        }
-      }
-    }
-
-    sendToWSS("messageSpecificNode", "", "", "querySystemInfo", datafornode);
   });
 }
 

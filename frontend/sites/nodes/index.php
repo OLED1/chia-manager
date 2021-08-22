@@ -272,31 +272,6 @@
         </div>
     </div>
 </div>
-<div class="row">
-  <div class="col">
-    <div class="card shadow mb-4">
-      <div class="card-body">
-        <button id="queryAllInfoAllNodes" type="button" class="btn btn-secondary">Query all available information from all nodes</button>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="row">
-  <div class="col">
-    <div class="card shadow mb-4">
-      <div
-          class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-          <h6 class="m-0 font-weight-bold text-primary">Chia Node Information</h6>
-      </div>
-      <div id="all_node_sysinfo_container" class="card-body">
-        <div class="input-group mb-3">
-          <select id="chia-nodes-select" multiple="multiple">
-          </select>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 <div class="modal fade" id="allowIPModal" data-mode="" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true" data-keyboard="false" data-backdrop="static">
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">

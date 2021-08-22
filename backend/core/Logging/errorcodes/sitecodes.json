@@ -12,5 +12,6 @@
   "Users" : "011",
   "WebSocket" : "012",
   "WebSocketClient" : "013",
-  "WebSocketServer" : "014"
+  "WebSocketServer" : "014",
+  "Chai_Infra_Sysinfo" : "015"
 }

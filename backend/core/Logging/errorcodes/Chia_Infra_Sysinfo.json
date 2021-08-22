@@ -1,0 +1,15 @@
+{
+  "functioncodes" : {
+    "updateSystemInfo" : "001",
+    "getSystemInfo" : "002"
+  },
+  "errormessages" : {
+    "updateSystemInfo" : {
+      "001" : [2, "An error occured."]
+    },
+    "getSystemInfo" : {
+      "001" : [2, "An error occured."],
+      "002" : [1, "Not all data stated."]
+    }
+  }
+}
