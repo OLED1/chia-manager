@@ -172,7 +172,7 @@ function initAndDrawLoadChart(nodeid){
 function messagesTrigger(data){
   var key = Object.keys(data);
 
-  /*$('#all_node_sysinfo_container').load(frontend_url + "/sites/chia_infra_sysinfo/templates/cards.php");
+  /*$('#all_node_sysinfo_container').load(frontend + "/sites/chia_infra_sysinfo/templates/cards.php");
   reloadTables();*/
 
   if(data[key]["status"] == 0){
