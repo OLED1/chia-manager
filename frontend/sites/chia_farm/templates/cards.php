@@ -15,6 +15,7 @@
 
   $chia_farm_api = new Chia_Farm_Api();
   $farm_api_data = $chia_farm_api->getFarmData();
+  $challenges = $chia_farm_api->getAllChallenges();
 
   if(array_key_exists("data", $farm_api_data) && count($farm_api_data["data"]) > 0){
     echo "<script> var chiaFarmData = " . json_encode($farm_api_data["data"]) . "; </script>";
@@ -174,6 +175,19 @@
               </tr>
             </thead>
             <tbody>
+              <?php
+                if(array_key_exists("data", $challenges) && count($challenges["data"]) > 0){
+                  foreach($challenges["data"] AS $arrkey => $challenge){
+              ?>
+                <tr>
+                  <td><?php echo $challenge["date"]; ?></td>
+                  <td><?php echo $challenge["hash"]; ?></td>
+                  <td><?php echo $challenge["hash_index"]; ?></td>
+                </tr>
+              <?php
+                  }
+                }
+              ?>
             </tbody>
             <tfoot>
               <tr>

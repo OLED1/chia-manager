@@ -46,11 +46,13 @@
             $sql = $this->db_api->execute("UPDATE chia_farm SET farming_status = ?, total_chia_farmed = ?, user_transaction_fees = ?, block_rewards = ?, last_height_farmed = ?, plot_count = ?, total_size_of_plots = ?, estimated_network_space = ?, expected_time_to_win = ? WHERE nodeid = ?",
             array($farmdata["farming_status"], $totalchiafarmed, $usertransactionfees, $blockrewards, $lastheigthfarmed, $farmdata["plot_count_for_all_harvesters"], $farmdata["total_size_of_plots"], $farmdata["estimated_network_space"], $farmdata["expected_time_to_win"], $nodeid));
           }
+
+          $this->updateChallenges($data["farm"], $loginData);
         }catch(Exception $e){
           return $this->logging->getErrormessage("001", $e);
         }
 
-        return array("status" =>0, "message" => "Successfully updated farm information for node $nodeid.", "data" => ["nodeid" => $nodeid, "data" => $this->getFarmData($data, $loginData, $nodeid)]);
+        return array("status" => 0, "message" => "Successfully updated farm information for node $nodeid.", "data" => ["nodeid" => $nodeid, "data" => $this->getFarmData($data, $loginData, $nodeid)]);
       }else{
         //TODO Implement correct status code
         return array("status" =>1, "message" => "Not all data stated.");
@@ -108,6 +110,38 @@
         return array("status" =>0, "message" => "Successfully queried farmer service restart for node $nodeid.", "data" => $data);
       }catch(Exception $e){
         return $this->logging->getErrormessage("001", $e);
+      }
+    }
+
+    public function updateChallenges(array $data = NULL, array $loginData = NULL){
+      if(array_key_exists("challenges", $data)){
+        try{
+          $now = new \DateTime("now");
+          foreach ($data["challenges"] as $arrkey => $challenge) {
+            $exploded = explode(" ", $challenge);
+            $sql = $this->db_api->execute("REPLACE INTO chia_farm_challenges (id, date, hash, hash_index) VALUES (NULL, ?, ?, ?)",
+                                          array($now->format("Y-m-d H:i:s"), $exploded[1], $exploded[3]));
+          }
+
+          return array("status" => 0, "message" => "Successfully updated challenges information.");
+        }catch(Exception $e){
+          //TODO Implement correct status code
+          return array("status" => 1, "message" => "An error occured.");
+        }
+      }else{
+        //TODO Implement correct status code
+        return array("status" => 1, "message" => "Not all data stated.");
+      }
+    }
+
+    public function getAllChallenges(array $data = NULL, array $loginData = NULL){
+      try{
+        $sql = $this->db_api->execute("SELECT date, hash, hash_index FROM chia_farm_challenges", array());
+
+        return array("status" =>0, "message" => "Successfully queried all challenges.", "data" => $sql->fetchAll(\PDO::FETCH_ASSOC));
+      }catch(Exception $e){
+        //TODO Implement correct status code
+        return array("status" => 1, "message" => "An error occured.");
       }
     }
 
