@@ -25,7 +25,7 @@
 
     public function getActiveRequests(){
       $this->websocket_api = new WebSocket_Api();
-      return $this->websocket_api->sendToWSS("getActiveRequests")["getActiveRequests"];;
+      return $this->websocket_api->sendToWSS("getActiveRequests")["getActiveRequests"];
     }
 
     public function getConfiguredNodes(){
@@ -245,6 +245,157 @@
     public function getUpdateChannels(array $data, array $loginData = NULL){
       $channels = file_get_contents(__DIR__ . "/../../../nodepackages/versions.json");
       return array("status" =>0, "message" => "Successfully loaded all updatechannels.", "data" => json_decode($channels, true));
+    }
+
+    public function queryNodesServicesStatus(array $data = [], array $loginData = NULL, $server = NULL, $ignoreDate = false){
+      $allNodeStatus = $this->getNodeStatus($data);
+      if($allNodeStatus["status"] > 0) return $allNodeStatus;
+
+      $allNodeStatus = $allNodeStatus["data"];
+      if(!is_null($server)){
+        $activeSubscriptions = $server->getActiveSubscriptions($loginData);
+      }else{
+        $this->websocket_api = new WebSocket_Api();
+        $activeSubscriptions = $this->websocket_api->sendToWSS("getActiveSubscriptions")["getActiveSubscriptions"];
+      }
+
+      $foundnode = [];
+      $datatosave = [];
+
+      $now = new \DateTime();
+      if($activeSubscriptions["status"] == 0 && array_key_exists("data", $activeSubscriptions)){
+        foreach($activeSubscriptions["data"] AS $nodetype => $allnodesconnected){
+          if($nodetype != "webClient" && $nodetype != "backendClient"){
+            foreach($allnodesconnected AS $connid => $nodedata){
+              if(array_key_exists($nodedata["nodeid"], $allNodeStatus) && !in_array($nodedata["nodeid"], $foundnode)){
+                array_push($foundnode, $nodedata["nodeid"]);
+              }
+            }
+          }
+        }
+      }else{
+        return $activeSubscriptions;
+      }
+
+      //Onlinestatus: 0 = Disconnected, 1 = Connected, 2 = Querying
+      foreach($allNodeStatus AS $arrkey => $nodedata){
+        if(in_array($nodedata["nodeid"], $foundnode)){
+          $onlinestatus = 1;
+          $walletstatus = 2;
+          $farmerstatus = 2;
+          $harvesterstatus = 2;
+        }else{
+          $onlinestatus = 0;
+          $walletstatus = 0;
+          $farmerstatus = 0;
+          $harvesterstatus = 0;
+        }
+
+        try{
+          if(array_key_exists($nodedata["nodeid"], $allNodeStatus)){
+            $querytime = new \DateTime($allNodeStatus[$nodedata["nodeid"]]["querytime"]);
+            $querytime->modify('+30 seconds');
+
+            if($now > $querytime || $ignoreDate){
+              $this->queryDataFromNode($nodedata, $server);
+
+              $sql = $this->db_api->execute("UPDATE nodes_status SET onlinestatus = ?, walletstatus = ?, farmerstatus = ?, harvesterstatus = ?, querytime = ? WHERE nodeid = ?",
+                                            array($onlinestatus, $walletstatus, $farmerstatus, $harvesterstatus, $now->format("Y-m-d H:i:s"), $nodedata["nodeid"]));
+            }
+          }else{
+            $this->queryDataFromNode($nodedata, $server);
+
+            $sql = $this->db_api->execute("INSERT INTO nodes_status (id, nodeid, onlinestatus, walletstatus, farmerstatus, harvesterstatus, querytime)
+                                            VALUES(NULL, ?, ?, ?, ?, ?, ?)",
+                                            array($nodedata["nodeid"], $onlinestatus, $walletstatus, $farmerstatus, $harvesterstatus, $now->format("Y-m-d H:i:s")));
+          }
+        }catch(Exception $e){
+          //TODO Implement correct status code
+          print_r($e);
+          return array("status" => 1, "message" => "An error occured.");
+        }
+      }
+
+      return $this->getNodeStatus($data);
+    }
+
+    public function setNodeServiceStats(array $data = [], array $loginData = NULL, $server = NULL){
+      if(array_key_exists("type", $data) && array_key_exists("stat", $data) && array_key_exists("nodeid", $data)){
+        if(is_numeric($data["stat"]) && $data["type"] >= 3 && $data["type"] <= 5){
+          if($data["type"] == 3){
+            $updateCol = "farmerstatus";
+          }else if($data["type"] == 4){
+            $updateCol = "harvesterstatus";
+          }else if($data["type"] == 5){
+            $updateCol = "walletstatus";
+          }
+
+          $sql = $this->db_api->execute("UPDATE nodes_status SET $updateCol = ? WHERE nodeid = ?", array($data["stat"], $data["nodeid"]));
+
+          return array("status" => 0, "message" => "Successfully updated $updateCol for node {$data["nodeid"]}.");
+        }else{
+          //TODO Implement correct status code
+          return array("status" => 1, "message" => "Stat {$data["stat"]} no known.");
+        }
+      }else{
+        //TODO Implement correct status code
+        return array("status" => 1, "message" => "Not all data stated.");
+      }
+    }
+
+    private function getNodeStatus(array $nodedata = []){
+      if(count($nodedata) == 0){
+        $sql = $this->db_api->execute("SELECT n.id AS nodeid, n.nodeauthhash FROM nodetype nt JOIN nodes n ON n.id = nt.nodeid WHERE code >= 3 AND code <= 5 GROUP by n.id", array());
+        $nodedata = $sql->fetchAll(\PDO::FETCH_ASSOC);
+      }
+
+      $nodeids = [];
+      $or_statement = "";
+      for($i = 0; $i < count($nodedata); $i++){
+        if(array_key_exists($i+1, $nodedata)){
+          $or_statement .= "nodeid = ? OR ";
+        }else{
+          $or_statement .= "nodeid = ?";
+        }
+        array_push($nodeids, $nodedata[$i]["nodeid"]);
+      }
+
+      try{
+        $sql = $this->db_api->execute("SELECT nodeid, onlinestatus, walletstatus, farmerstatus, harvesterstatus, querytime FROM nodes_status WHERE $or_statement", $nodeids);
+        $sqreturn = $sql->fetchAll(\PDO::FETCH_ASSOC);
+
+
+        for($i = 0; $i < count($sqreturn); $i++){
+          $sqreturn[$sqreturn[$i]["nodeid"]] = $sqreturn[$i];
+          unset($sqreturn[$i]);
+        }
+
+        return array("status" => 0, "message" => "Successfully loaded requested node status.", "data" => $sqreturn);
+      }catch(Exception $e){
+        //TODO Implement correct status code
+        print_r($e);
+        return array("status" => 1, "message" => "An error occured.");
+      }
+    }
+
+    private function queryDataFromNode(array $nodedata, $server = NULL){
+      $sql = $this->db_api->execute("SELECT na.description, n.nodeauthhash FROM nodetype nt JOIN nodetypes_avail na ON na.code = nt.code JOIN nodes n ON n.id = nt.nodeid WHERE nt.code >= 3 AND nt.code <= 5 AND nt.nodeid = ?", array($nodedata["nodeid"]));
+
+      foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $infos){
+        $querydata = [];
+        $querydata["data"]["query" . $infos["description"] . "Status"] = array(
+          "status" => 0,
+          "message" => "Query " . $infos["description"] . " running status.",
+          "data"=> array()
+        );
+        $querydata["nodeinfo"]["authhash"] = $this->decryptAuthhash($infos["nodeauthhash"]);
+        if(!is_null($server)){
+          $server->messageSpecificNode($querydata);
+        }else{
+          $this->websocket_api = new WebSocket_Api();
+          $activeSubscriptions = $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
+        }
+      }
     }
 
     private function encryptAuthhash(string $encryptedauthhash){

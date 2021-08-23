@@ -80,13 +80,13 @@ class ChiaWebSocketServer implements MessageComponentInterface {
             if($type != "backendClient" && (!array_key_exists($type, $this->subscription) || !array_key_exists($from->resourceId, $this->subscription[$type]))){
                 echo "[{$this->getDate()}] INFO: Newly connected {$type} client connected.\n";
                 foreach(explode(",", $type) AS $arrkey => $this_type){
-                  $this->subscription[trim($this_type)][$from->resourceId] = $loginData;
+                  $this->subscription[trim($this_type)][$from->resourceId] = $requesterLogin["nodeinfo"]["nodedata"];
                 }
                 $this->messageFrontendClients(array("siteID" => 2), $this->requestHandler->processNodeConnectionChanged($this->subscription));
             }else{
               echo "[{$this->getDate()}] INFO: Detected backend Client or existing connection.\n";
               foreach(explode(",", $type) AS $arrkey => $this_type){
-                $this->subscription[trim($this_type)][$from->resourceId] = $loginData;
+                $this->subscription[trim($this_type)][$from->resourceId] = $requesterLogin["nodeinfo"]["nodedata"];
               }
             }
           }
@@ -101,7 +101,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
               break;
             case "backendRequest": //Returns the requested value to all frontend Clients which are viewing a specific site
               if(is_array($loginData) && is_array($backendInfo) && is_array($reqData)){
-                $this_req = $this->requestHandler->processRequest($loginData, $backendInfo, $reqData);
+                $this_req = $this->requestHandler->processRequest($loginData, $backendInfo, $reqData, $this);
                 $this->messageFrontendClients($loginData, $this_req, $from->resourceId, $backendInfo);
               }else{
                 $this->users[$from->resourceId]->send(json_encode(array($backendInfo['method'] => array("status" => 1, "message" => "One of the required arrays has a wrong datatype."))));
@@ -109,7 +109,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
               break;
             case "ownRequest": //Returns the requested value just to the requesters open socket
               if(is_array($loginData) && is_array($backendInfo) && is_array($reqData)){
-                $this_req = $this->requestHandler->processRequest($loginData, $backendInfo, $reqData);
+                $this_req = $this->requestHandler->processRequest($loginData, $backendInfo, $reqData, $this);
                 $this->users[$from->resourceId]->send(json_encode($this_req));
               }else{
                 $this->users[$from->resourceId]->send(json_encode(array($backendInfo['method'] => array("status" => 1, "message" => "One of the required arrays has a wrong datatype."))));
@@ -132,9 +132,9 @@ class ChiaWebSocketServer implements MessageComponentInterface {
               $this->users[$from->resourceId]->send(json_encode($this_req));
               break;
             case "messageSpecificNode":
-              $this->users[$from->resourceId]->send(json_encode($this->messageSpecificNode($loginData, $reqData, $from->resourceId)));
+              $this->users[$from->resourceId]->send(json_encode($this->messageSpecificNode($reqData)));
               break;
-              case "queryCronData":
+            case "queryCronData":
               echo "[{$this->getDate()}] INFO: Querying cron data.\n";
               $this->users[$from->resourceId]->send(json_encode($this->messageAllNodes($nodeInfo, $reqData)));
               break;
@@ -195,6 +195,10 @@ class ChiaWebSocketServer implements MessageComponentInterface {
         $conn->close();
     }
 
+    public function getActiveSubscriptions(array $loginData){
+      return $this->requestHandler->processGetActiveSubscriptions($loginData, $this->subscription);
+    }
+
     private function getDate(){
       return date("d.m.Y H:i:s");
     }
@@ -235,10 +239,8 @@ class ChiaWebSocketServer implements MessageComponentInterface {
       }
     }
 
-    private function messageSpecificNode(array $request, array $data, int $mycon){
-      if(array_key_exists("nodeinfo", $data) && array_key_exists("authhash", $data["nodeinfo"]) &&
-        array_key_exists("data", $data)
-      ){
+    public function messageSpecificNode(array $data){
+      if(array_key_exists("nodeinfo", $data) && array_key_exists("authhash", $data["nodeinfo"]) && array_key_exists("data", $data)){
         $alreadyinformed = [];
 
         foreach($this->requests AS $authhash => $requesterinfo){
@@ -268,7 +270,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
           return array("messageSpecificNode" => $data);
         }
       }else{
-        return array("messageSpecificNode" => $this->logging->getErrormessage("002", json_encode($request)));
+        return array("messageSpecificNode" => $this->logging->getErrormessage("002", json_encode($data)));
       }
     }
 

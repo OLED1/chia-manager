@@ -66,8 +66,17 @@
 <div class="row">
   <div class="col">
     <div class="card mb-4">
-      <div class="card-header py-3">
+      <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
           <h6 class="m-0 font-weight-bold text-primary">Chia overall information</h6>
+          <div class='dropdown no-arrow'>
+            <a class='dropdown-toggle' href='#' role='button' id='overallMenu' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
+              <i class='fas fa-ellipsis-v fa-sm fa-fw text-gray-400'></i>
+            </a>
+            <div class='dropdown-menu dropdown-menu-right shadow animated--fade-in' aria-labelledby='overallMenu'>
+              <div class='dropdown-header'>Actions:</div>
+              <a id="refreshOverallInfo" class='dropdown-item' href='#'>Refresh</a>
+            </div>
+          </div>
       </div>
       <div class="card-body">
         <div class="row">
@@ -134,8 +143,17 @@
 <div class="row">
   <div class="col">
     <div class="card mb-4">
-      <div class="card-header py-3">
+      <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
           <h6 class="m-0 font-weight-bold text-primary">Wallet Overview</h6>
+          <div class='dropdown no-arrow'>
+            <a class='dropdown-toggle' href='#' role='button' id='walletMenu' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
+              <i class='fas fa-ellipsis-v fa-sm fa-fw text-gray-400'></i>
+            </a>
+            <div class='dropdown-menu dropdown-menu-right shadow animated--fade-in' aria-labelledby='walletMenu'>
+              <div class='dropdown-header'>Actions:</div>
+              <a id="refreshWalletInfo" class='dropdown-item' href='#'>Refresh</a>
+            </div>
+          </div>
       </div>
       <?php
         if(count($overviewData["walletinfos"]) > 0){
@@ -248,8 +266,17 @@
 <div class="row">
   <div class="col">
     <div class="card mb-4">
-      <div class="card-header py-3">
+      <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
         <h6 class="m-0 font-weight-bold text-primary">Farm Overview</h6>
+        <div class='dropdown no-arrow'>
+          <a class='dropdown-toggle' href='#' role='button' id='farmMenu' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
+            <i class='fas fa-ellipsis-v fa-sm fa-fw text-gray-400'></i>
+          </a>
+          <div class='dropdown-menu dropdown-menu-right shadow animated--fade-in' aria-labelledby='farmMenu'>
+            <div class='dropdown-header'>Actions:</div>
+            <a id="refreshFarmInfo" class='dropdown-item' href='#'>Refresh</a>
+          </div>
+        </div>
       </div>
       <?php
         if(count($overviewData["farminfos"]) > 0){
@@ -377,8 +404,17 @@
 <div class="row">
   <div class="col">
     <div class="card mb-4">
-      <div class="card-header py-3">
+      <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
           <h6 class="m-0 font-weight-bold text-primary">Harvester Overview</h6>
+          <div class='dropdown no-arrow'>
+            <a class='dropdown-toggle' href='#' role='button' id='harvesterMenu' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
+              <i class='fas fa-ellipsis-v fa-sm fa-fw text-gray-400'></i>
+            </a>
+            <div class='dropdown-menu dropdown-menu-right shadow animated--fade-in' aria-labelledby='haresterMenu'>
+              <div class='dropdown-header'>Actions:</div>
+              <a id="refreshHarvesterInfo" class='dropdown-item' href='#'>Refresh</a>
+            </div>
+          </div>
       </div>
       <?php
       if(count($overviewData["harvesterinfos"]) > 0){

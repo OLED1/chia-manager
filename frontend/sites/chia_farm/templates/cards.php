@@ -3,6 +3,7 @@
 
   use ChiaMgmt\Login\Login_Api;
   use ChiaMgmt\Chia_Farm\Chia_Farm_Api;
+  use ChiaMgmt\Nodes\Nodes_Api;
   require __DIR__ . '/../../../../vendor/autoload.php';
 
   $login_api = new Login_Api();
@@ -14,6 +15,8 @@
   }
 
   $chia_farm_api = new Chia_Farm_Api();
+  $nodes_api = new Nodes_Api();
+  $nodes_states = $nodes_api->queryNodesServicesStatus()["data"];
   $farm_api_data = $chia_farm_api->getFarmData();
   $challenges = $chia_farm_api->getAllChallenges();
 
@@ -28,8 +31,25 @@
         <h6 class='m-0 font-weight-bold text-primary'>Farmdata for host <?php echo $farmdata["hostname"]; ?> with id <?php echo $nodeid; ?>&nbsp;
         <?php if(is_null($farmdata["farming_status"])){ ?>
           <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-danger'>No data found</span>
-        <?php }else{ ?>
-          <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-secondary'>Querying service status</span>
+        <?php
+          }else{
+            if($nodes_states[$nodeid]["onlinestatus"] == 0){
+              $statustext = "Node not reachable.";
+              $statusicon = "badge-danger";
+            }else if($nodes_states[$nodeid]["onlinestatus"] == 1){
+              if($nodes_states[$nodeid]["farmerstatus"] == 0){
+                $statustext = "Farmer service not running.";
+                $statusicon = "badge-danger";
+              }else if($nodes_states[$nodeid]["farmerstatus"] == 1){
+                $statustext = "Farmer service running.";
+                $statusicon = "badge-success";
+              }else{
+                $statustext = "Querying service status";
+                $statusicon = "badge-secondary";
+              }
+            }
+        ?>
+          <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge <?php echo $statusicon; ?>'><?php echo $statustext; ?></span>
         <?php } ?>
         </h6>
         <div class='dropdown no-arrow'>

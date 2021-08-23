@@ -2,9 +2,10 @@
   namespace ChiaMgmt\Chia_Wallet;
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\Logging\Logging_Api;
+  use ChiaMgmt\Nodes\Nodes_Api;
 
   class Chia_Wallet_Api{
-    private $db_api, $logging_api;
+    private $db_api, $logging_api, $nodes_api;
 
     public function __construct(){
       $this->ciphering = "AES-128-CTR";
@@ -15,6 +16,7 @@
 
       $this->db_api = new DB_Api();
       $this->logging_api = new Logging_Api($this);
+      $this->nodes_api = new Nodes_Api();
     }
 
     public function updateWalletData(array $data, array $loginData = NULL){
@@ -80,6 +82,8 @@
       try{
         $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryptAuthhash($loginData["authhash"])));
         $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
+
+        $this->nodes_api->setNodeServiceStats(["type" => 5, "stat" => ($data["status"] == 0 ? 1 : 0), "nodeid" => $nodeid]);
 
         $data["data"] = $nodeid;
         return array("status" =>0, "message" => "Successfully queried wallet status information for node $nodeid.", "data" => $data);

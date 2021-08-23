@@ -1,8 +1,6 @@
 setServiceCount();
 queryAllNodeStates();
 
-console.log(overviewInfos);
-
 function setServiceCount(){
   var critServices = $("#sitecontent .badge-danger").length;
   var okServices = $("#sitecontent .badge-success").length;
@@ -92,31 +90,30 @@ function messagesTrigger(data){
   if(data[key]["status"] == 0){
     if(key == "walletStatus"){
       setServiceBadge("Wallet", data[key]["data"]["data"], data[key]["data"]["status"]);
-      queryNodeData("Wallet", data[key]["data"]["data"]);
     }else if(key == "farmerStatus"){
       setServiceBadge("Farmer", data[key]["data"]["data"], data[key]["data"]["status"]);
-      queryNodeData("Farm", data[key]["data"]["data"]);
     }else if(key == "harvesterStatus"){
       setServiceBadge("Harvester", data[key]["data"]["data"], data[key]["data"]["status"]);
     }else if(key == "updateWalletData"){
       var nodeid = data[key]["data"]["nodeid"];
       var data = data[key]["data"]["data"][nodeid];
       overviewInfos["walletinfos"][nodeid] = data;
+      updateWalletData();
 
       $.each(data, function(walletid, walletdata){
         $("#syncstatus_" + nodeid + "_" + walletid).removeClass("badge-success").removeClass("badge-danger").addClass((walletdata["syncstatus"] == "Synced" ? "badge-success" : "badge-danger")).text(walletdata["syncstatus"] + " (Height: " + walletdata["walletheight"] + ")");
       });
 
-      updateWalletData();
     }else if(key == "updateFarmData"){
       var nodeid = data[key]["data"]["nodeid"];
       var data = data[key]["data"]["data"][nodeid];
       overviewInfos["farminfos"][nodeid] = data;
 
       console.log(data[key]);
+      var targetelement = $("#farmingstatus_" + nodeid);
+      updateFarmData();
 
       $("#farmingstatus_" + nodeid).removeClass("badge-success").removeClass("badge-danger").addClass((data["farming_status"] == "Farming" ? "badge-success" : "badge-danger")).text(data["farming_status"]);
-      updateFarmData();
     }
   }else{
     if(data[key]["status"] == "014003001"){

@@ -82,7 +82,12 @@ function queryFarmStatus(nodeid){
     }
   }
 
-  sendToWSS("messageSpecificNode", "", "", "queryFarmerStatus", datafornode);
+  data = [
+    {"nodeid" : nodeid, "nodeauthhash" : chiaFarmData[nodeid]["nodeauthhash"]}
+  ];
+
+  //sendToWSS("messageSpecificNode", "", "", "queryFarmerStatus", datafornode);
+  sendToWSS("ownRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryNodesServicesStatus", data);
 }
 
 function setFarmerBadge(data){
@@ -98,6 +103,8 @@ function setFarmerBadge(data){
 
 function messagesTrigger(data){
   var key = Object.keys(data);
+
+  console.log(data);
 
   if(data[key]["status"] == 0){
     if(key == "updateFarmData"){

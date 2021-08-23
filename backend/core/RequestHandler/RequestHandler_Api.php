@@ -25,11 +25,11 @@
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
     }
 
-    public function processRequest(array $loginData, array $backendInfo, array $data){
+    public function processRequest(array $loginData, array $backendInfo, array $data, $server = NULL){
       if(class_exists($backendInfo['namespace']) && method_exists($backendInfo['namespace'], $backendInfo['method'])){
         try{
           $this_class = new $backendInfo['namespace']();
-          $return = $this_class->{$backendInfo['method']}($data, $loginData);
+          $return = $this_class->{$backendInfo['method']}($data, $loginData, $server);
           //sleep(1);
           return array($backendInfo['method'] => $return);
         }catch(Exception $e){
@@ -114,6 +114,9 @@
               if($sqldata["authtype"] == 1){ //Authtype = 1 means there must be username and session string stated
                 if(array_key_exists("userid", $data) && array_key_exists("sessionid", $data)){
                   $authenticated = $this->login_api->checklogin($data["sessionid"], $data["userid"]);
+                  $authenticated["nodeinfo"]["nodedata"]["userid"] = $data["userid"];
+                  $authenticated["nodeinfo"]["nodedata"]["sessionid"] = $data["sessionid"];
+                  $authenticated["nodeinfo"]["nodedata"]["authhash"] = $data["authhash"];
                   $authenticated["nodeinfo"]["type"] = $sqldata["nodetype"];
 
                   return $authenticated;
@@ -126,12 +129,18 @@
                 return $returndata;
               }else if($sqldata["authtype"] == 2){ //Authtype = 2 means that this node needs an accepted IP address and authhash
                 $authenticated = array("status" => 0, "message" => "This node is allowed to connect to the api.");
+                $authenticated["nodeinfo"]["nodedata"]["nodeid"] = $sqldata["id"];
+                $authenticated["nodeinfo"]["nodedata"]["authhash"] = $data["authhash"];
                 $authenticated["nodeinfo"]["type"] = $sqldata["nodetype"];
 
                 return $authenticated;
               }else if($sqldata["authtype"] == 3){ //Authtype = 3 means that this node needs no further login information only the authhash. Usage only for backendClient!
                 if($sqldata["nodetype"] == "backendClient" && $nodeip == "localhost"){
-                  return array("status" => 0, "message" => "This node is allowed to connect.", "nodeinfo" => array("type" => $sqldata["nodetype"]));
+                  $authenticated = array("status" => 0, "message" => "This node is allowed to connect.");
+                  $authenticated["nodeinfo"]["nodedata"]["authhash"] = $data["authhash"];
+                  $authenticated["nodeinfo"]["type"] = $sqldata["nodetype"];
+
+                  return $authenticated;
                 }else{
                   return $this->logging->getErrormessage("004");
                 }
@@ -147,7 +156,7 @@
               return $this->logging->getErrormessage("003");
             }
           }else if((count($sqldata) == 1 || count($sqldata) == 0) && !$ipaddressvalid || !is_null($nodeip)){
-            $sql = $this->db_api->execute("SELECT ipaddress, nodeauthhash FROM nodes WHERE hostname = ?", array($nodeinfo["hostname"]));
+            $sql = $this->db_api->execute("SELECT id, ipaddress, nodeauthhash FROM nodes WHERE hostname = ?", array($nodeinfo["hostname"]));
             $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
 
             if(count($sqdata) == 0){
@@ -160,6 +169,7 @@
                                             array($encryptedauthhash));
 
               $returndata = $this->logging->getErrormessage("006");
+              $returndata["data"]["nodeid"] = $sqdata[0]["id"];
               $returndata["data"]["newauthhash"] = $newnodeauthhash;
               return $returndata;
             }else if(count($sqdata) == 1){
@@ -168,6 +178,7 @@
                 if(strlen(trim($data["authhash"])) == 0) $data = $this->logging->getErrormessage("013");
                 else $data = $this->logging->getErrormessage("007");
 
+                $data["data"]["nodeid"] = $sqdata[0]["id"];
                 $data["data"]["newauthhash"] = $this->decryptAuthhash($sqdata[0]["nodeauthhash"]);
 
                 return $data;
