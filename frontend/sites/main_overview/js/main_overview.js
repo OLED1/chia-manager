@@ -87,6 +87,8 @@ function updateFarmData(){
 function messagesTrigger(data){
   var key = Object.keys(data);
 
+  console.log(data);
+
   if(data[key]["status"] == 0){
     if(key == "walletStatus"){
       setServiceBadge("Wallet", data[key]["data"]["data"], data[key]["data"]["status"]);
@@ -110,6 +112,8 @@ function messagesTrigger(data){
       var nodeid = data[key]["data"]["nodeid"];
       var data = data[key]["data"]["data"][nodeid];
       overviewInfos["farminfos"][nodeid] = data;
+
+      console.log(data[key]);
 
       $("#farmingstatus_" + nodeid).removeClass("badge-success").removeClass("badge-danger").addClass((data["farming_status"] == "Farming" ? "badge-success" : "badge-danger")).text(data["farming_status"]);
       updateFarmData();

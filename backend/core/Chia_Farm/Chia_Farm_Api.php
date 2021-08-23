@@ -52,7 +52,7 @@
           return $this->logging->getErrormessage("001", $e);
         }
 
-        return array("status" => 0, "message" => "Successfully updated farm information for node $nodeid.", "data" => ["nodeid" => $nodeid, "data" => $this->getFarmData($data, $loginData, $nodeid)]);
+        return array("status" => 0, "message" => "Successfully updated farm information for node $nodeid.", "data" => ["nodeid" => $nodeid, "data" => $this->getFarmData($data, $loginData, $nodeid)["data"]]);
       }else{
         //TODO Implement correct status code
         return array("status" =>1, "message" => "Not all data stated.");
