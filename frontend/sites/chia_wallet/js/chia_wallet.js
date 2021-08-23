@@ -1,4 +1,3 @@
-queryAllWalletStatus();
 initRefreshWalletInfo();
 initRestartWalletService();
 
@@ -7,12 +6,6 @@ $("#queryAllNodes").on("click", function(){
     queryWalletData(nodeid);
   });
 });
-
-function queryAllWalletStatus(){
-  $.each(chiaWalletData, function(nodeid, nodedata) {
-    queryWalletStatus(nodeid);
-  });
-}
 
 function initRefreshWalletInfo(){
   $(".refreshWalletInfo").off("click");
@@ -64,22 +57,11 @@ function queryWalletData(nodeid){
 }
 
 function queryWalletStatus(nodeid){
-  var authhash = chiaWalletData[nodeid][Object.keys(chiaWalletData[nodeid])]["nodeauthhash"];
+  data = [
+    {"nodeid" : nodeid, "nodeauthhash" : chiaWalletData[nodeid][Object.keys(chiaWalletData[nodeid])]["nodeauthhash"]}
+  ];
 
-  var datafornode = {
-    "nodeinfo":{
-      "authhash": authhash
-    },
-    "data" : {
-      "queryWalletStatus" : {
-        "status" : 0,
-        "message" : "Query Wallet running status.",
-        "data": {}
-      }
-    }
-  }
-
-  sendToWSS("messageSpecificNode", "", "", "queryWalletStatus", datafornode);
+  sendToWSS("ownRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryWalletStatus", data);
 }
 
 function setWalletBadge(data){
@@ -103,7 +85,6 @@ function messagesTrigger(data){
       $('#walletcontainer').load(frontend + "/sites/chia_wallet/templates/cards.php");
 
       initRefreshWalletInfo();
-      queryAllWalletStatus();
       initRefreshWalletInfo();
       initRestartWalletService();
     }else if(key == "walletStatus"){

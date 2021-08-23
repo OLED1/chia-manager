@@ -1,6 +1,7 @@
 <?php
   use ChiaMgmt\Login\Login_Api;
   use ChiaMgmt\Chia_Harvester\Chia_Harvester_Api;
+  use ChiaMgmt\Nodes\Nodes_Api;
   require __DIR__ . '/../../../../vendor/autoload.php';
 
   $login_api = new Login_Api();
@@ -12,6 +13,8 @@
   }
 
   $chia_harvester_api = new Chia_Harvester_Api();
+  $nodes_api = new Nodes_Api();
+  $nodes_states = $nodes_api->queryNodesServicesStatus()["data"];
   $harvesterdata = $chia_harvester_api->getHarvesterData();
 
   echo "<script> var siteID = 7; </script>";
@@ -29,8 +32,25 @@
         <?php
         if(is_null($harvesterinfos["plotdirs"][array_key_first($harvesterinfos["plotdirs"])]["finalplotsdir"])){ ?>
           <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-danger'>No data found</span>
-        <?php }else{ ?>
-          <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-secondary'>Querying service status</span>
+          <?php
+              }else{
+                if($nodes_states[$nodeid]["onlinestatus"] == 0){
+                  $statustext = "Node not reachable.";
+                  $statusicon = "badge-danger";
+                }else if($nodes_states[$nodeid]["onlinestatus"] == 1){
+                  if($nodes_states[$nodeid]["farmerstatus"] == 0){
+                    $statustext = "Harvester service not running.";
+                    $statusicon = "badge-danger";
+                  }else if($nodes_states[$nodeid]["farmerstatus"] == 1){
+                    $statustext = "Harvester service running.";
+                    $statusicon = "badge-success";
+                  }else{
+                    $statustext = "Querying service status";
+                    $statusicon = "badge-secondary";
+                  }
+                }
+            ?>
+            <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge <?php echo $statusicon; ?>'><?php echo $statustext; ?></span>
         <?php } ?>
         </h6>
         <div class='dropdown no-arrow'>

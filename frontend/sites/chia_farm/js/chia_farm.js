@@ -1,19 +1,12 @@
 initRefreshFarmInfos();
 initRestartFarmerService();
 initChallengesTables();
-initAllFarmStatus();
 
 $("#queryAllNodes").on("click", function(){
   $.each(chiaFarmData, function(nodeid, farmdata) {
       queryFarmData(nodeid);
   });
 });
-
-function initAllFarmStatus(){
-  $.each(chiaFarmData, function(nodeid, farmdata) {
-    queryFarmStatus(nodeid);
-  });
-}
 
 function initRefreshFarmInfos(){
   $(".refreshFarmInfo").off("click");
@@ -69,24 +62,10 @@ function queryFarmData(nodeid){
 }
 
 function queryFarmStatus(nodeid){
-  var datafornode = {
-    "nodeinfo":{
-      "authhash": chiaFarmData[nodeid]["nodeauthhash"]
-    },
-    "data" : {
-      "queryFarmerStatus" : {
-        "status" : 0,
-        "message" : "Query Farmer running status.",
-        "data": {}
-      }
-    }
-  }
-
   data = [
     {"nodeid" : nodeid, "nodeauthhash" : chiaFarmData[nodeid]["nodeauthhash"]}
   ];
 
-  //sendToWSS("messageSpecificNode", "", "", "queryFarmerStatus", datafornode);
   sendToWSS("ownRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryNodesServicesStatus", data);
 }
 
@@ -115,7 +94,6 @@ function messagesTrigger(data){
       initRefreshFarmInfos();
       initRestartFarmerService();
       initChallengesTables();
-      initAllFarmStatus();
     }else if(key == "farmerStatus"){
       setFarmerBadge(data[key]["data"]);
     }else if(key == "farmerServiceRestart"){

@@ -3,6 +3,7 @@
   use ChiaMgmt\Chia_Wallet\Chia_Wallet_Api;
   use ChiaMgmt\Chia_Overall\Chia_Overall_Api;
   use ChiaMgmt\Exchangerates\Exchangerates_Api;
+  use ChiaMgmt\Nodes\Nodes_Api;
   require __DIR__ . '/../../../../vendor/autoload.php';
 
   $login_api = new Login_Api();
@@ -16,6 +17,8 @@
   $chia_wallet_api = new Chia_Wallet_Api();
   $chia_overall_api = new Chia_Overall_Api();
   $exchangerates_api = new Exchangerates_Api();
+  $nodes_api = new Nodes_Api();
+  $nodes_states = $nodes_api->queryNodesServicesStatus()["data"];
 
   $walletdata = $chia_wallet_api->getWalletData();
   $chia_overall_data = $chia_overall_api->queryOverallData();
@@ -45,10 +48,27 @@
     <div class='card shadow mb-4'>
       <div class='card-header py-3 d-flex flex-row align-items-center justify-content-between'>
         <h6 class='m-0 font-weight-bold text-primary'><?php echo "Host: {$thiswallet['hostname']}, Wallet (ID: {$walletid}), Type: {$thiswallet['wallettype']}"; ?>&nbsp;
-        <?php if(is_numeric($thiswallet['walletid'])){ ?>
-            <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-secondary'>Querying service status</span>
-        <?php }else{ ?>
+        <?php if(!is_numeric($thiswallet['walletid'])){ ?>
           <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-danger'>No data found</span>
+        <?php
+            }else{
+              if($nodes_states[$nodeid]["onlinestatus"] == 0){
+                $statustext = "Node not reachable.";
+                $statusicon = "badge-danger";
+              }else if($nodes_states[$nodeid]["onlinestatus"] == 1){
+                if($nodes_states[$nodeid]["farmerstatus"] == 0){
+                  $statustext = "Wallet service not running.";
+                  $statusicon = "badge-danger";
+                }else if($nodes_states[$nodeid]["farmerstatus"] == 1){
+                  $statustext = "Wallet service running.";
+                  $statusicon = "badge-success";
+                }else{
+                  $statustext = "Querying service status";
+                  $statusicon = "badge-secondary";
+                }
+              }
+          ?>
+          <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge <?php echo $statusicon; ?>'><?php echo $statustext; ?></span>
         <?php } ?>
         </h6>
         <div class='dropdown no-arrow'>

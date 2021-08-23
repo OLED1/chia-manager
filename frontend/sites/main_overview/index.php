@@ -5,6 +5,7 @@
   use ChiaMgmt\MainOverview\MainOverview_Api;
   use ChiaMgmt\Chia_Overall\Chia_Overall_Api;
   use ChiaMgmt\Exchangerates\Exchangerates_Api;
+  use ChiaMgmt\Nodes\Nodes_Api;
   require __DIR__ . '/../../../vendor/autoload.php';
 
   $login_api = new Login_Api();
@@ -18,11 +19,10 @@
   $main_overview_api = new MainOverview_Api();
   $chia_overall_api = new Chia_Overall_Api();
   $exchangerates_api = new Exchangerates_Api();
+  $nodes_api = new Nodes_Api();
 
   $overviewData = $main_overview_api->getAllOverviewData()["data"];
-  /*echo "<pre>";
-  print_r($overviewData);
-  echo "</pre>";*/
+  $nodes_states = $nodes_api->queryNodesServicesStatus()["data"];
 
   echo "<script> var siteID = 1; </script>";
   echo "<script> var overviewInfos = " . json_encode($overviewData) . "; </script>";
@@ -159,7 +159,8 @@
         if(count($overviewData["walletinfos"]) > 0){
           $hostchecks = "";
           foreach ($overviewData["walletinfos"] as $nodeid => $nodedata) {
-            $hostchecks .= "{$nodedata[array_key_first($nodedata)]["hostname"]}:&nbsp;<span id='servicestatus_wallet_{$nodeid}' data-nodeid={$nodeid} class='badge nodestatus " . (array_key_first($nodedata) > 0 ? "badge-secondary" : "badge-danger") . "'>" . (array_key_first($nodedata) > 0 ? "Querying service status" : "No data found") . "</span><br>";
+            $serviceStates = getServiceStates($nodes_states, $nodeid, "Wallet");
+            $hostchecks .= "{$nodedata[array_key_first($nodedata)]["hostname"]}:&nbsp;<span id='servicestatus_wallet_{$nodeid}' data-nodeid={$nodeid} class='badge nodestatus " . $serviceStates["statusicon"] . "'>" . $serviceStates["statustext"] . "</span><br>";
             foreach($nodedata AS $walletid => $walletdata){
               $walletsyncstatus .= "{$walletdata["hostname"]} - Wallet {$walletid}:&nbsp;<span id='syncstatus_{$nodeid}_{$walletid}' data-nodeid={$nodeid} data-walletid={$walletid} class='badge walletstatus " . ($walletid > 0 && $walletdata["syncstatus"] == "Synced" ? "badge-success" : "badge-danger") . "'>" . ($walletid > 0 ? $walletdata["syncstatus"]."&nbsp;(Height: {$walletdata["walletheight"]})" : "No data found"). "</span></br>";
               $totalxch += floatval($walletdata["totalbalance"]);
@@ -284,7 +285,8 @@
           $hostchecks = "";
 
           foreach($overviewData["farminfos"] AS $nodeid => $nodedata){
-            $hostchecks .= "{$nodedata["hostname"]}:&nbsp;<span id='servicestatus_farmer_{$nodeid}' data-nodeid={$nodeid} class='badge nodestatus " . (!is_null($nodedata["farming_status"]) ? "badge-secondary" : "badge-danger") . "'>" . (!is_null($nodedata["farming_status"]) ? "Querying service status" : "No data found") . "</span><br>";
+            $serviceStates = getServiceStates($nodes_states, $nodeid, "Farmer");
+            $hostchecks .= "{$nodedata["hostname"]}:&nbsp;<span id='servicestatus_farmer_{$nodeid}' data-nodeid={$nodeid} class='badge nodestatus " . $serviceStates["statusicon"] . "'>" . $serviceStates["statustext"] . "</span><br>";
             $farmingstatus .= "{$nodedata["hostname"]}:&nbsp;<span id='farmingstatus_{$nodeid}' data-nodeid={$nodeid} class='badge farmerstatus " . (!is_null($nodedata["farming_status"]) ? ($nodedata["farming_status"] == "Farming" ? "badge-success" : "badge-danger") : "badge-danger") . "'>" . (is_null($nodedata["farming_status"]) ? "No data found" : $nodedata["farming_status"]) . "</span></br>";
             $totalplotcount += intval($nodedata["plot_count"]);
             $plotinfoexpl = explode(" ",$nodedata["total_size_of_plots"]);
@@ -420,7 +422,8 @@
       if(count($overviewData["harvesterinfos"]) > 0){
         $hostchecks = "";
         foreach($overviewData["harvesterinfos"] AS $nodeid => $nodedata){
-          $hostchecks .= "{$nodedata["hostname"]}:&nbsp;<span id='servicestatus_harvester_{$nodeid}' data-nodeid={$nodeid} class='badge nodestatus " . (!array_key_exists("Unknown", $nodedata["plotdirs"]) ? "badge-secondary" : "badge-danger") . "'>" . (!array_key_exists("Unknown", $nodedata["plotdirs"]) ? "Querying service status" : "No data found") . "</span><br>";
+          $serviceStates = getServiceStates($nodes_states, $nodeid, "Harvester");
+          $hostchecks .= "{$nodedata["hostname"]}:&nbsp;<span id='servicestatus_harvester_{$nodeid}' data-nodeid={$nodeid} class='badge nodestatus " . $serviceStates["statusicon"] . "'>" . $serviceStates["statustext"] . "</span><br>";
           $nodes = array();
           foreach($nodedata["plotdirs"] AS $finalplotsdir => $plotdata){
             if(is_null($plotdata["devname"]) && $finalplotsdir != "Unknown"){
@@ -494,5 +497,29 @@
     </div>
   </div>
 </div>
+
+<?php
+  function getServiceStates($nodes_states, $nodeid, $type){
+    $statusname = strtolower($type)."status";
+
+    if($nodes_states[$nodeid]["onlinestatus"] == 0){
+      $statustext = "Node not reachable.";
+      $statusicon = "badge-danger";
+    }else if($nodes_states[$nodeid]["onlinestatus"] == 1){
+      if($nodes_states[$nodeid][$statusname] == 0){
+        $statustext = "{$type} service not running.";
+        $statusicon = "badge-danger";
+      }else if($nodes_states[$nodeid][$statusname] == 1){
+        $statustext = "{$type} service running.";
+        $statusicon = "badge-success";
+      }else{
+        $statustext = "Querying service status";
+        $statusicon = "badge-secondary";
+      }
+    }
+
+    return array("statustext" => $statustext, "statusicon" => $statusicon);
+  }
+?>
 
 <script src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/main_overview/js/main_overview.js"?>></script>

@@ -1,6 +1,4 @@
 <?php
-  session_start();
-
   use ChiaMgmt\Login\Login_Api;
   use ChiaMgmt\Chia_Farm\Chia_Farm_Api;
   use ChiaMgmt\Nodes\Nodes_Api;

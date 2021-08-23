@@ -1,5 +1,4 @@
 setServiceCount();
-queryAllNodeStates();
 
 function setServiceCount(){
   var critServices = $("#sitecontent .badge-danger").length;
@@ -7,30 +6,6 @@ function setServiceCount(){
 
   $("#ok-service-count").text(okServices);
   $("#crit-service-count").text(critServices);
-}
-
-function queryAllNodeStates(){
-  $.each(overviewInfos["nodesinfos"], function(nodeid, nodeinfo){
-    if(nodeinfo["nodetype"] != "webClient" && nodeinfo["nodetype"] != "backendClient"){
-      $.each(nodeinfo["nodetype"].split(", "), function(arrkey, nodetype){
-        var datafornode = {
-          "nodeinfo":{
-            "authhash": nodeinfo["nodeauthhash"]
-          },
-          "data" : {
-          }
-        }
-
-        datafornode["data"]["query" + nodetype + "Status"] = {
-          "status" : 0,
-          "message" : "Query " + nodetype + " Status.",
-          "data": {}
-        };
-
-        sendToWSS("messageSpecificNode", "", "", "query" + nodetype + "Status", datafornode);
-      });
-    }
-  });
 }
 
 function queryNodeData(nodetype, nodeid){

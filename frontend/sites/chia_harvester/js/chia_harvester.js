@@ -1,6 +1,6 @@
 initRefreshHarvesterInfos();
 initRestartHarvesterService();
-initAllHarvesterStatus();
+initAllDatatables();
 
 $("#queryAllNodes").on("click", function(){
   $.each(chiaHarvesterData, function(nodeid, farmdata) {
@@ -8,17 +8,14 @@ $("#queryAllNodes").on("click", function(){
   });
 });
 
-function initAllHarvesterStatus(){
+function initAllDatatables(){
   $.each(chiaHarvesterData, function(nodeid, farmdata) {
-    queryHarvesterStatus(nodeid);
     initDataTable(nodeid);
   });
 }
 
 function initDataTable(nodeid){
   $("#plotstable_" + nodeid).DataTable();
-
-  console.log($("#plotstable_" + nodeid));
 }
 
 function initRefreshHarvesterInfos(){
@@ -71,20 +68,11 @@ function queryHarvesterData(nodeid){
 }
 
 function queryHarvesterStatus(nodeid){
-  var datafornode = {
-    "nodeinfo":{
-      "authhash": chiaHarvesterData[nodeid]["nodeauthhash"]
-    },
-    "data" : {
-      "queryHarvesterStatus" : {
-        "status" : 0,
-        "message" : "Query Harvester running status.",
-        "data": {}
-      }
-    }
-  }
+  data = [
+    {"nodeid" : nodeid, "nodeauthhash" : chiaHarvesterData[nodeid]["nodeauthhash"]}
+  ];
 
-  sendToWSS("messageSpecificNode", "", "", "queryHarvesterStatus", datafornode);
+  sendToWSS("ownRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryHarvesterStatus", data);
 }
 
 function setHarvesterBadge(data){
@@ -109,7 +97,7 @@ function messagesTrigger(data){
 
       initRefreshHarvesterInfos();
       initRestartHarvesterService();
-      initAllHarvesterStatus();
+      initAllDatatables();
     }else if(key == "harvesterStatus"){
       setHarvesterBadge(data[key]["data"]);
     }else if(key == "harvesterServiceRestart"){
