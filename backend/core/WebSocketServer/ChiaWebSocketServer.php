@@ -85,9 +85,9 @@ class ChiaWebSocketServer implements MessageComponentInterface {
             }
 
             foreach(explode(",", $type) AS $arrkey => $this_type){
-              $siteID = $this->subscription[trim($this_type)][$from->resourceId]["siteID"];
+              if(trim($this_type) == "webClient") $siteID = $this->subscription[trim($this_type)][$from->resourceId]["siteID"];
               $this->subscription[trim($this_type)][$from->resourceId] = $requesterLogin["nodeinfo"]["nodedata"];
-              $this->subscription[trim($this_type)][$from->resourceId]["siteID"] = $siteID;
+              if(trim($this_type) == "webClient") $this->subscription[trim($this_type)][$from->resourceId]["siteID"] = $siteID;
             }
           }
 
