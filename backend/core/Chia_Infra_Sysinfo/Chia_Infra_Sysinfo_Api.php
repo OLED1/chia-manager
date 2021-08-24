@@ -38,7 +38,7 @@
       }
     }
 
-    public function getSystemInfo(aarray $data = NULL, array $loginData = NULL, int $nodeid = NULL){
+    public function getSystemInfo(array $data = NULL, array $loginData = NULL, $server = NULL, int $nodeid = NULL){
         try{
           if(is_null($nodeid)){
             $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, cif.timestamp, cif.load_1min, cif.load_5min, cif.load_15min, cif.filesystem, cif.memory_total, cif.memory_free, cif.memory_buffers, cif.memory_cached, cif.swap_total, cif.swap_free, cif.cpu_count, cif.cpu_cores, cif.cpu_model

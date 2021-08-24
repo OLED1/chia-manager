@@ -142,5 +142,26 @@
         return array("status" => 1, "message" => "An error occured.");
       }
     }
+
+    public function getUserExchangeData(array $data, array $loginData = NULL){
+      if(array_key_exists("userid", $data)){
+        $defaultCurrency = $this->getUserDefaultCurrency($data["userid"]);
+        if($defaultCurrency["status"] == 0) $defaultCurrency = $defaultCurrency["data"]["currency_code"];
+        else $defaultCurrency = "usd";
+
+        $exchangerate = $this->queryExchangeRatesData($defaultCurrency);
+        if($exchangerate["status"] == 0 && array_key_exists($defaultCurrency, $exchangerate["data"])){
+          $exchangerate = $exchangerate["data"][$defaultCurrency]["currency_rate"];
+        }else{
+          $defaultCurrency = "usd";
+          $exchangerate = 1;
+        }
+
+        return array("defaultCurrency" => $defaultCurrency, "exchangerate" => $exchangerate);
+      }else{
+        //TODO Implement correct status code
+        return array("status" => 1, "message" => "Not all data stated.");
+      }
+    }
   }
 ?>

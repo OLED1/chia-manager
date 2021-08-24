@@ -50,7 +50,6 @@ function queryHarvesterData(nodeid){
   }
 
   sendToWSS("backendRequest", "ChiaMgmt\\Chia_Harvester\\Chia_Harvester_Api", "Chia_Harvester_Api", "queryHarvesterData", dataforclient);
-
 }
 
 function queryHarvesterStatus(nodeid){

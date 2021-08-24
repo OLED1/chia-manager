@@ -85,9 +85,14 @@ class ChiaWebSocketServer implements MessageComponentInterface {
             }
 
             foreach(explode(",", $type) AS $arrkey => $this_type){
-              if(trim($this_type) == "webClient") $siteID = $this->subscription[trim($this_type)][$from->resourceId]["siteID"];
+              $siteID = NULL;
+              if(trim($this_type) == "webClient" && array_key_exists(trim($this_type), $this->subscription) &&
+                array_key_exists($from->resourceId, $this->subscription[trim($this_type)]) && array_key_exists("siteID", $this->subscription[trim($this_type)][$from->resourceId]))
+                $siteID = $this->subscription[trim($this_type)][$from->resourceId]["siteID"];
+
               $this->subscription[trim($this_type)][$from->resourceId] = $requesterLogin["nodeinfo"]["nodedata"];
-              if(trim($this_type) == "webClient") $this->subscription[trim($this_type)][$from->resourceId]["siteID"] = $siteID;
+
+              if(!is_null($siteID)) $this->subscription[trim($this_type)][$from->resourceId]["siteID"] = $siteID;
             }
           }
 
@@ -134,6 +139,8 @@ class ChiaWebSocketServer implements MessageComponentInterface {
             case "messageSpecificNode":
               $this->users[$from->resourceId]->send(json_encode($this->messageSpecificNode($reqData)));
               break;
+            case "messageAllNodes" :
+              $this->users[$from->resourceId]->send(json_encode($this->messageAllNodes($reqData)));
             case "queryCronData":
               echo "[{$this->getDate()}] INFO: Querying cron data.\n";
               $this->users[$from->resourceId]->send(json_encode($this->messageAllNodes($nodeInfo, $reqData)));
@@ -274,30 +281,40 @@ class ChiaWebSocketServer implements MessageComponentInterface {
       }
     }
 
-    private function messageAllNodes(array $nodeInfo, array $data){
+    public function messageAllNodes(array $data){
       $alreadyinformed = [];
+
+      echo "---->";
+      print_r($data);
+      echo "<----";
 
       foreach($this->subscription as $nodetype => $nodedata) {
         if(!in_array("webClient", explode(",", $nodetype)) && !in_array("backendClient", explode(",", $nodetype))){
           foreach ($nodedata as $connid => $nodeinfos) {
             if(!in_array($nodeinfos["authhash"], $alreadyinformed)){
               echo "[{$this->getDate()}] INFO: Informing $connid about changes.\n";
-              $this->users[$connid]->send(json_encode(array($nodeInfo["socketaction"] => array("status" => 0, "message" => "Process command received {$nodeInfo["socketaction"]}."))));
+              $this->users[$connid]->send(json_encode($data["data"]));
               array_push($alreadyinformed, $nodeinfos["authhash"]);
             }
           }
         }
       }
 
+      foreach($this->requests AS $authhash => $requesterinfo){
+        if(!in_array($authhash, $alreadyinformed) && $data["nodeinfo"]["authhash"] == $authhash){
+          echo "[{$this->getDate()}] INFO: Informing {$requesterinfo['resid']} about changes.\n";
+          $this->users[$requesterinfo["resid"]]->send(json_encode($data["data"]));
+          array_push($alreadyinformed, $authhash);
+        }
+      }
+
       $informedcount = count($alreadyinformed);
       if($informedcount > 0){
-        return array($nodeInfo["socketaction"] => array("status" => 0, "message" => "Successfully queryied cron request to {$informedcount} node(s)."));
+        return array("messageSpecificNode" => array("status" => 0, "message" => "Successfully queryied cron request to {$informedcount} node(s)."));
       }else{
-        //return array($nodeInfo["socketaction"] => array("status" => 0, "message" => "No nodes online to inform."));
         $data = $this->logging->getErrormessage("001");
         $data["data"]["informed"] = $alreadyinformed;
-        //Add Node ID to data as data
-        return array($nodeInfo["socketaction"] => $data);
+        return array("messageSpecificNode" => $data);
       }
     }
 

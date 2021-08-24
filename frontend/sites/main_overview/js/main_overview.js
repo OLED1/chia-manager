@@ -1,22 +1,27 @@
 setServiceCount();
 
+function refreshOverallInfo(){
+  sendToWSS("backendRequest", "ChiaMgmt\\Chia_Overall\\Chia_Overall_Api", "Chia_Overall_Api", "queryOverallData", {});
+}
+
+function refreshWalletInfo(){
+  sendToWSS("backendRequest", "ChiaMgmt\\Chia_Wallet\\Chia_Wallet_Api", "Chia_Wallet_Api", "queryWalletData", {})
+}
+
+function refreshFarmInfo(){
+  sendToWSS("backendRequest", "ChiaMgmt\\Chia_Farm\\Chia_Farm_Api", "Chia_Farm", "queryFarmData", {});
+}
+
+function refreshHarvesterInfo(){
+  sendToWSS("backendRequest", "ChiaMgmt\\Chia_Harvester\\Chia_Harvester_Api", "Chia_Harvester_Api", "queryHarvesterData", {});
+}
+
 function setServiceCount(){
   var critServices = $("#sitecontent .badge-danger").length;
   var okServices = $("#sitecontent .badge-success").length;
 
   $("#ok-service-count").text(okServices);
   $("#crit-service-count").text(critServices);
-}
-
-function queryNodeData(nodetype, nodeid){
-  var authhash = overviewInfos["nodesinfos"][nodeid]["nodeauthhash"];
-
-  var dataforclient = {
-    "nodeid" : nodeid,
-    "authhash": authhash
-  }
-
-  sendToWSS("backendRequest", "ChiaMgmt\\Chia_" + nodetype + "\\Chia_" + nodetype + "_Api", "Chia_" + nodetype + "_Api", "query" + nodetype + "Data", dataforclient);
 }
 
 function setServiceBadge(nodetype, nodeid, code){
@@ -27,26 +32,6 @@ function setServiceBadge(nodetype, nodeid, code){
   }else{
     targetelement.addClass("badge-danger").text(nodetype + " service not running.");
   }
-}
-
-function updateWalletData(){
-  console.log("UpdateWallet:");
-  console.log(overviewInfos["walletinfos"]);
-
-  var totalxch = 0.0;
-  $.each(overviewInfos["walletinfos"], function(nodeid, nodedata){
-    $.each(nodedata, function(walletid, walletdata){
-      if($.isNumeric(walletdata["totalbalance"])) totalxch += parseFloat(walletdata["totalbalance"]);
-    });
-  });
-
-  console.log(totalxch);
-  var totalincurr = totalxch * parseFloat(overviewInfos["chia-overall"]["price_usd"]) * parseFloat(overviewInfos["currency"]["exchangerate"]);
-  console.log(totalincurr);
-}
-
-function updateFarmData(){
-  console.log(overviewInfos["farminfos"]);
 }
 
 function messagesTrigger(data){
@@ -62,25 +47,13 @@ function messagesTrigger(data){
     }else if(key == "harvesterStatus"){
       setServiceBadge("Harvester", data[key]["data"]["data"], data[key]["data"]["status"]);
     }else if(key == "updateWalletData"){
-      var nodeid = data[key]["data"]["nodeid"];
-      var data = data[key]["data"]["data"][nodeid];
-      overviewInfos["walletinfos"][nodeid] = data;
-      updateWalletData();
-
-      $.each(data, function(walletid, walletdata){
-        $("#syncstatus_" + nodeid + "_" + walletid).removeClass("badge-success").removeClass("badge-danger").addClass((walletdata["syncstatus"] == "Synced" ? "badge-success" : "badge-danger")).text(walletdata["syncstatus"] + " (Height: " + walletdata["walletheight"] + ")");
-      });
-
+      $('#card-wallet').load(frontend + "/sites/main_overview/templates/card-wallet.php");
     }else if(key == "updateFarmData"){
-      var nodeid = data[key]["data"]["nodeid"];
-      var data = data[key]["data"]["data"][nodeid];
-      overviewInfos["farminfos"][nodeid] = data;
-
-      console.log(data[key]);
-      var targetelement = $("#farmingstatus_" + nodeid);
-      updateFarmData();
-
-      $("#farmingstatus_" + nodeid).removeClass("badge-success").removeClass("badge-danger").addClass((data["farming_status"] == "Farming" ? "badge-success" : "badge-danger")).text(data["farming_status"]);
+      $('#card-farm').load(frontend + "/sites/main_overview/templates/card-farm.php");
+    }else if(key == "updateHarvesterData"){
+        $('#card-harvester').load(frontend + "/sites/main_overview/templates/card-harvester.php");
+    }else if(key == "queryOverallData"){
+      $('#card-overall').load(frontend + "/sites/main_overview/templates/card-overall.php");
     }
   }else{
     if(data[key]["status"] == "014003001"){

@@ -99,13 +99,18 @@
         "message" => "Query Wallet data.",
         "data"=> array()
       );
-      $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+
+      $callfunction = "messageAllNodes";
+      if(array_key_exists("nodeinfo", $querydata) && array_key_exists("authhash", $querydata["nodeinfo"])){
+        $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+        $callfunction = "messageSpecificNode";
+      }
 
       if(!is_null($server)){
-        return $server->messageSpecificNode($querydata);
+        return $server->$callfunction($querydata);
       }else{
         $this->websocket_api = new WebSocket_Api();
-        return $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
+        return $this->websocket_api->sendToWSS($callfunction, $querydata);
       }
     }
 

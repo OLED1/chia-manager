@@ -12,7 +12,7 @@
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
     }
 
-    public function queryOverallData(DateTime $fromtime = NULL){
+    public function queryOverallData(array $data = NULL, array $loginData = NULL, $server = NULL, DateTime $fromtime = NULL){
       if(array_key_exists("netspace_api", $this->ini) && array_key_exists("market_api", $this->ini)){
         $netspace_api = $this->ini["netspace_api"];
         $market_api = $this->ini["market_api"];

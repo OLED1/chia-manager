@@ -65,8 +65,8 @@
                         <canvas id="ram_chart_<?php echo "{$sysinfo["id"]}"; ?>"></canvas>
                       </div>
                       <div class="mt-4 text-center small">
-                        <span class="mr-2"><i class="fas fa-circle ram-swap-free"></i> RAM free</span>
-                        <span class="mr-2"><i class="fas fa-circle ram-swap-used"></i> RAM used</span>
+                        <span class="mr-2"><i class="fas fa-circle ram-swap-free" style="color: #26C59B;"></i> RAM free</span>
+                        <span class="mr-2"><i class="fas fa-circle ram-swap-used" style="color: #428AEC;"></i> RAM used</span>
                       </div>
                     </div>
                     <div class="col-6">
@@ -75,8 +75,8 @@
                         <canvas id="swap_chart_<?php echo "{$sysinfo["id"]}"; ?>"></canvas>
                       </div>
                       <div class="mt-4 text-center small">
-                        <span class="mr-2">  <i class="fas fa-circle ram-swap-free"></i> SWAP free</span>
-                        <span class="mr-2"><i class="fas fa-circle ram-swap-used"></i> SWAP used</span>
+                        <span class="mr-2">  <i class="fas fa-circle ram-swap-free" style="color: #26C59B;"></i> SWAP free</span>
+                        <span class="mr-2"><i class="fas fa-circle ram-swap-used" style="color: #428AEC;"></i> SWAP used</span>
                       </div>
                     </div>
                   </div>
