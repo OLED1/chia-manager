@@ -17,7 +17,7 @@
           $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryptAuthhash($loginData["authhash"])));
           $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
 
-          $sql = $this->db_api->execute("INSERT INTO nodes_systeminfo (id, nodeid, load_1min, load_5min, load_15min, filesystem, memory_total, memory_free, memory_buffers, memory_cached, swap_total, swap_free, cpu_count, cpu_cores, cpu_model) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          $sql = $this->db_api->execute("INSERT INTO chia_infra_sysinfo (id, nodeid, load_1min, load_5min, load_15min, filesystem, memory_total, memory_free, memory_buffers, memory_cached, swap_total, swap_free, cpu_count, cpu_cores, cpu_model) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           array($nodeid, $data["system"]["load"]["1min"], $data["system"]["load"]["5min"], $data["system"]["load"]["15min"],
                 json_encode($data["system"]["filesystem"]),
                 $data["system"]["memory"]["total"], $data["system"]["memory"]["free"], $data["system"]["memory"]["buffers"], $data["system"]["memory"]["cached"],
@@ -59,5 +59,23 @@
           return $this->logging->getErrormessage("001", $e);
         }
     }
+
+    public function querySystemInfo(array $data = NULL, array $loginData = NULL, $server = NULL){
+      $querydata = [];
+      $querydata["data"]["querySystemInfo"] = array(
+        "status" => 0,
+        "message" => "Query systeminfo data.",
+        "data"=> array()
+      );
+      $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+
+      if(!is_null($server)){
+        return $server->messageSpecificNode($querydata);
+      }else{
+        $this->websocket_api = new WebSocket_Api();
+        return $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
+      }
+    }
   }
+
 ?>

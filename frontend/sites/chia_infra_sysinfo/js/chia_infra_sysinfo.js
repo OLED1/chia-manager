@@ -17,20 +17,12 @@ function initSysinfoRefresh(){
 
     var nodeid = $(this).attr("data-nodeid");
     var authhash = configuredNodes[nodeid]["nodeauthhash"];
-    var datafornode = {
-      "nodeinfo":{
-        "authhash": authhash
-      },
-      "data" : {
-        "querySystemInfo" : {
-          "status" : 0,
-          "message" : "Query Sysinfo data.",
-          "data": {}
-        }
-      }
+    var dataforclient = {
+      "nodeid" : nodeid,
+      "authhash": authhash
     }
 
-    sendToWSS("messageSpecificNode", "", "", "querySystemInfo", datafornode);
+    sendToWSS("backendRequest", "ChiaMgmt\\Chia_Infra_Sysinfo\\Chia_Infra_Sysinfo_Api", "Chia_Infra_Sysinfo_Api", "querySystemInfo", dataforclient);
   });
 }
 
@@ -172,9 +164,12 @@ function initAndDrawLoadChart(nodeid){
 function messagesTrigger(data){
   var key = Object.keys(data);
 
-  /*$('#all_node_sysinfo_container').load(frontend + "/sites/chia_infra_sysinfo/templates/cards.php");
-  reloadTables();*/
+  console.log(data);
 
   if(data[key]["status"] == 0){
+    if(key == "updateSystemInfo"){
+      $('#all_node_sysinfo_container').load(frontend + "/sites/chia_infra_sysinfo/templates/cards.php");
+      reloadTables();
+    }
   }
 }
