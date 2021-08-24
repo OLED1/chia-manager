@@ -49,8 +49,6 @@
         return array("status" => 0, "message" => "Sucessfully loaded all client data.", "data" => $returnarray);
       }
       catch(Exception $e){
-        /*print_r($e);
-        return array("status" => 1, "message" => "An error occured.");*/
         return $this->logging->getErrormessage("001", $e);
       }
     }
@@ -67,22 +65,32 @@
 
         return array("status" => 0, "message" => "Sucessfully loaded all available nodetypes.", "data" => $returndata);
       }catch(Exception $e){
-        /*print_r($e);
-        return array("status" => 1, "message" => "An error occured.");*/
         return $this->logging->getErrormessage("001", $e);
       }
     }
 
-    public function acceptIPChange(array $data){
-      if(array_key_exists("nodeid", $data)){
-        $nodeid = $data["nodeid"];
+    public function acceptIPChange(array $data, array $loginData = NULL, $server = NULL){
+      if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data)){
         try{
-          $sql = $this->db_api->execute("UPDATE nodes SET ipaddress = changedIP, changedIP = ? WHERE id = ?", array("", $nodeid));
+          $sql = $this->db_api->execute("UPDATE nodes SET ipaddress = changedIP, changedIP = ? WHERE id = ?", array("", $data["nodeid"]));
 
-          return array("status" => 0, "message" => "IP Change saved.");
+          $querydata = [];
+          $querydata["data"]["acceptIPChange"] = array(
+            "status" => 0,
+            "message" => "IP Change saved accepted.",
+            "data"=> array()
+          );
+
+          $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+          if(!is_null($server)){
+            $server->messageSpecificNode($querydata);
+          }else{
+            $this->websocket_api = new WebSocket_Api();
+            $activeSubscriptions = $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
+          }
+
+          return array("status" => 0, "message" => "IP Change saved for node {$data["nodeid"]}.");
         }catch(Exception $e){
-          /*print_r($e);
-          return array("status" => 1, "message" => "An error occured.");*/
           return $this->logging->getErrormessage("001", $e);
         }
       }
@@ -114,16 +122,12 @@
 
             return array("status" => 0, "message" => "Successfully allowed connection for node with ID {$data["id"]}.");
           }else{
-            //return array("status" => 1, "message" => "The configured nodetypes are not compatible to each other.");
             return $this->logging->getErrormessage("001");
           }
         }catch(Exception $e){
-          /*print_r($e);
-          return array("status" => 1, "message" => "An error occured.");*/
           return $this->logging->getErrormessage("002", $e);
         }
       }else{
-        //return array("status" => 1, "message" => "Not all data stated.");
         return $this->logging->getErrormessage("003");
       }
     }
@@ -135,12 +139,9 @@
 
           return array("status" =>0, "message" => "Successfully declined connection for id {$data["id"]}.");
         }catch(Exception $e){
-          /*print_r($e);
-          return array("status" =>1, "message" => "An error occured.");*/
           return $this->logging->getErrormessage("001", $e);
         }
       }else{
-        //return array("status" => 1, "message" => "Not all data stated.");
         return $this->logging->getErrormessage("002");
       }
     }
@@ -158,12 +159,9 @@
 
           return array("status" => 0, "method" => "loginStatus", "message" => "This node is logged in.", "data" => $sqldata);
         }catch(Exception $e){
-          /*print_r($e);
-          return array("status" => 1, "message" => "An error occured.");*/
           return $this->logging->getErrormessage("001", $e);
         }
       }else{
-        //return array("status" => 1, "message" => "Not all data stated.");
         return $this->logging->getErrormessage("002");
       }
     }
@@ -175,12 +173,9 @@
 
           return array("status" =>0, "message" => "Successfully updated version.");
         }catch(Exception $e){
-          /*print_r($e);
-          return array("status" => 1, "message" => "An error occured.");*/
           return $this->logging->getErrormessage("001", $e);
         }
       }else{
-        //return array("status" => 1, "message" => "Not all data stated.");
         return $this->logging->getErrormessage("002");
       }
     }
@@ -201,8 +196,6 @@
 
           return array("status" => 0, "message" => "Successfully updated system information for node $nodeid.", "data" => ["nodeid" => $nodeid]);
         }catch(Exception $e){
-          /*print_r($e);
-          return array("status" => 1, "message" => "An error occured.");*/
           return $this->logging->getErrormessage("001", $e);
         }
       }
@@ -219,12 +212,9 @@
 
           return array("status" =>0, "message" => "Successfully loaded latest system information for node {$data["nodeid"]}.", "data" => $sql->fetchAll(\PDO::FETCH_ASSOC));
         }catch(Exception $e){
-          /*print_r($e);
-          return array("status" => 1, "message" => "An error occured.");*/
           return $this->logging->getErrormessage("001", $e);
         }
       }else{
-        //return array("status" => 1, "message" => "Not all data stated.");
         return $this->logging->getErrormessage("002");
       }
     }
@@ -236,8 +226,6 @@
 
         return array("status" => 0, "message" => "Successfully queried node update status", "data" => array("nodeid" => $nodeid, "status" => $data));
       }catch(Exception $e){
-        /*print_r($e);
-        return array("status" => 1, "message" => "An error occured.");*/
         return $this->logging->getErrormessage("001", $e);
       }
     }

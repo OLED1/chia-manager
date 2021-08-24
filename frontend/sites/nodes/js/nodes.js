@@ -266,24 +266,11 @@ function initAllowIPChange(){
     $("#saveIPChange").on("click", function(){
       var authhash = configuredNodes[nodeid]["nodeauthhash"];
       var dataforclient = {
-        "nodeid" : nodeid
-      }
-
-      var datafornode = {
-        "nodeinfo":{
-          "authhash": authhash
-        },
-        "data" : {
-          "acceptIPChange" : {
-            "status" : 0,
-            "message" : "IP Address change accepted.",
-            "data": {}
-          }
-        }
+        "nodeid" : nodeid,
+        "authhash": authhash
       }
 
       sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "acceptIPChange", dataforclient);
-      sendToWSS("messageSpecificNode", "", "", "acceptIPChange", datafornode);
     });
   });
 }

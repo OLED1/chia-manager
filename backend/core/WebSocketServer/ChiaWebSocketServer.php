@@ -78,16 +78,16 @@ class ChiaWebSocketServer implements MessageComponentInterface {
         if(array_key_exists("status", $requesterLogin) && $requesterLogin["status"] == 0){
           foreach(explode(",", $requesterLogin["nodeinfo"]["type"]) AS $arrkey => $type){
             if($type != "backendClient" && (!array_key_exists($type, $this->subscription) || !array_key_exists($from->resourceId, $this->subscription[$type]))){
-                echo "[{$this->getDate()}] INFO: Newly connected {$type} client connected.\n";
-                foreach(explode(",", $type) AS $arrkey => $this_type){
-                  $this->subscription[trim($this_type)][$from->resourceId] = $requesterLogin["nodeinfo"]["nodedata"];
-                }
-                $this->messageFrontendClients(array("siteID" => 2), $this->requestHandler->processNodeConnectionChanged($this->subscription));
+              echo "[{$this->getDate()}] INFO: Newly connected {$type} client connected.\n";
+              $this->messageFrontendClients(array("siteID" => 2), $this->requestHandler->processNodeConnectionChanged($this->subscription));
             }else{
               echo "[{$this->getDate()}] INFO: Detected backend Client or existing connection.\n";
-              foreach(explode(",", $type) AS $arrkey => $this_type){
-                $this->subscription[trim($this_type)][$from->resourceId] = $requesterLogin["nodeinfo"]["nodedata"];
-              }
+            }
+
+            foreach(explode(",", $type) AS $arrkey => $this_type){
+              $siteID = $this->subscription[trim($this_type)][$from->resourceId]["siteID"];
+              $this->subscription[trim($this_type)][$from->resourceId] = $requesterLogin["nodeinfo"]["nodedata"];
+              $this->subscription[trim($this_type)][$from->resourceId]["siteID"] = $siteID;
             }
           }
 
