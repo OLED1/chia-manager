@@ -2,6 +2,14 @@ reloadTables();
 initSysinfoRefresh();
 initSysinfoNodeActions();
 
+$("#queryAllNodes").off("click");
+$("#queryAllNodes").on("click", function(){
+  $.each(configuredNodes, function(nodeid, farmdata) {
+      querySystemInfo(nodeid);
+  });
+});
+
+
 function reloadTables(){
   $.each(sysinfodata, function(nodeid, sysinfo){
     initAndDrawRAMorSWAPChart(nodeid, "ram");
@@ -14,16 +22,18 @@ function initSysinfoRefresh(){
   $(".sysinfo-refresh").off("click");
   $(".sysinfo-refresh").on("click", function(e){
     e.preventDefault();
-
     var nodeid = $(this).attr("data-nodeid");
-    var authhash = configuredNodes[nodeid]["nodeauthhash"];
-    var dataforclient = {
-      "nodeid" : nodeid,
-      "authhash": authhash
-    }
+    querySystemInfo(nodeid)  });
+}
 
-    sendToWSS("backendRequest", "ChiaMgmt\\Chia_Infra_Sysinfo\\Chia_Infra_Sysinfo_Api", "Chia_Infra_Sysinfo_Api", "querySystemInfo", dataforclient);
-  });
+function querySystemInfo(nodeid){
+  var authhash = configuredNodes[nodeid]["nodeauthhash"];
+  var dataforclient = {
+    "nodeid" : nodeid,
+    "authhash": authhash
+  }
+
+  sendToWSS("backendRequest", "ChiaMgmt\\Chia_Infra_Sysinfo\\Chia_Infra_Sysinfo_Api", "Chia_Infra_Sysinfo_Api", "querySystemInfo", dataforclient);
 }
 
 function initSysinfoNodeActions(){
@@ -45,15 +55,15 @@ function initAndDrawRAMorSWAPChart(nodeid, type){
     //var cached = parseInt(infodata["memory_cached"]) + parseInt(infodata["memory_sreclaimable"]) - parseInt(infodata["memory_shmem"]);
     var cached = parseInt(infodata["memory_cached"]);
     var totalfree = cached + parseInt(infodata["memory_free"]);
-    totalfree = totalfree/1024/1024;
-    totalused = totalused/1024/1024;
-    cached = cached/1024/1024;
+    totalfree = totalfree/1024/1024/1024;
+    totalused = totalused/1024/1024/1024;
+    cached = cached/1024/1024/1024;
 
     var labels = ["RAM used", "RAM free"];
     var data = [(totalused-cached).toFixed(2), totalfree.toFixed(2)];
   }else if(type == "swap"){
-    var available = (parseInt(infodata["swap_total"]) - parseInt(infodata["swap_free"]))/1024/1024;
-    var free = parseInt(infodata["swap_free"])/1024/1024;
+    var available = (parseInt(infodata["swap_total"]) - parseInt(infodata["swap_free"]))/1024/1024/1024;
+    var free = parseInt(infodata["swap_free"])/1024/1024/1024;
 
     var labels = ["SWAP used", "SWAP free"];
     var data = [available.toFixed(2), free.toFixed(2)];
@@ -163,8 +173,6 @@ function initAndDrawLoadChart(nodeid){
 
 function messagesTrigger(data){
   var key = Object.keys(data);
-
-  console.log(data);
 
   if(data[key]["status"] == 0){
     if(key == "updateSystemInfo"){

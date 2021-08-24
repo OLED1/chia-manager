@@ -7,6 +7,12 @@
     private $db_api, $logging_api;
 
     public function __construct(){
+      $this->ciphering = "AES-128-CTR";
+      $this->iv_length = openssl_cipher_iv_length($this->ciphering);
+      $this->options = 0;
+      $this->encryption_iv = '1234567891011121';
+      $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
+
       $this->db_api = new DB_Api();
       $this->logging_api = new Logging_Api($this);
     }
@@ -75,6 +81,14 @@
         $this->websocket_api = new WebSocket_Api();
         return $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
       }
+    }
+
+    private function encryptAuthhash(string $encryptedauthhash){
+      return openssl_encrypt($encryptedauthhash, $this->ciphering, $this->ini["serversalt"], $this->options, $this->encryption_iv);
+    }
+
+    public function decryptAuthhash(string $encryptedauthhash){
+      return openssl_decrypt($encryptedauthhash, $this->ciphering, $this->ini["serversalt"], $this->options, $this->encryption_iv);
     }
   }
 

@@ -10,21 +10,13 @@ function setServiceCount(){
 
 function queryNodeData(nodetype, nodeid){
   var authhash = overviewInfos["nodesinfos"][nodeid]["nodeauthhash"];
-  var datafornode = {
-    "nodeinfo":{
-      "authhash": authhash
-    },
-    "data" : {
-    }
+
+  var dataforclient = {
+    "nodeid" : nodeid,
+    "authhash": authhash
   }
 
-  datafornode["data"]["query" + nodetype + "Data"] = {
-    "status" : 0,
-    "message" : "Query " + nodetype + " data.",
-    "data": {}
-  };
-
-  sendToWSS("messageSpecificNode", "", "", "query" + nodetype + "Data", datafornode);
+  sendToWSS("backendRequest", "ChiaMgmt\\Chia_" + nodetype + "\\Chia_" + nodetype + "_Api", "Chia_" + nodetype + "_Api", "query" + nodetype + "Data", dataforclient);
 }
 
 function setServiceBadge(nodetype, nodeid, code){

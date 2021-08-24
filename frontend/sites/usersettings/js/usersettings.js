@@ -56,8 +56,6 @@ $(function(){
       gui_mode : $(this).val()
     }
 
-    console.log(data);
-
     sendToWSS("ownRequest", "ChiaMgmt\\UserSettings\\UserSettings_Api", "UserSettings_Api", "setGuiMode", data);
   });
 

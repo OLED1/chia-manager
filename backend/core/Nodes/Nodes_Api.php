@@ -49,7 +49,7 @@
         return array("status" => 0, "message" => "Sucessfully loaded all client data.", "data" => $returnarray);
       }
       catch(Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 
@@ -65,7 +65,7 @@
 
         return array("status" => 0, "message" => "Sucessfully loaded all available nodetypes.", "data" => $returndata);
       }catch(Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 
@@ -91,13 +91,13 @@
 
           return array("status" => 0, "message" => "IP Change saved for node {$data["nodeid"]}.");
         }catch(Exception $e){
-          return $this->logging->getErrormessage("001", $e);
+          return $this->logging_api->getErrormessage("001", $e);
         }
       }
     }
 
-    public function acceptNodeRequest(array $data){
-      if(array_key_exists("id", $data) && array_key_exists("nodetypes", $data)){
+    public function acceptNodeRequest(array $data, array $loginData = NULL, $server = NULL){
+      if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data) && array_key_exists("nodetypes", $data)){
         try{
           $sql = $this->db_api->execute("SELECT id, allowed_authtype, nodetype FROM nodetypes_avail WHERE selectable = 1 AND id IN ({$data["nodetypes"]})", array());
           $sqreturn = $sql->fetchAll(\PDO::FETCH_ASSOC);
@@ -111,7 +111,8 @@
 
           if(count($types) == 1 && count($allowed_authtype) == 1){
             $authtype = $sqreturn[0]["allowed_authtype"];
-            $nodeid = $data["id"];
+            $nodeid = $data["nodeid"];
+            $authhash = $data["authhash"];
 
             $sql = $this->db_api->execute("UPDATE nodes SET conallow = 1, authtype = ? WHERE id = ?", array($authtype, $nodeid));
             $sql = $this->db_api->execute("DELETE FROM nodetype WHERE nodeid = ?", array($nodeid));
@@ -120,29 +121,53 @@
               $sql = $this->db_api->execute("INSERT INTO nodetype (id, nodeid, code) VALUES(NULL, ?, ?)", array($nodeid, $nodetype));
             }
 
-            return array("status" => 0, "message" => "Successfully allowed connection for node with ID {$data["id"]}.");
+            $returnmessage = array("status" => 0, "message" => "Successfully allowed connection for node with ID {$data["nodeid"]}.");
+            $querydata = [];
+            $querydata["data"]["acceptNodeRequest"] = $returnmessage;
+            $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+
+            if(!is_null($server)){
+              $server->messageSpecificNode($querydata);
+            }else{
+              $this->websocket_api = new WebSocket_Api();
+              $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
+            }
+
+            return $returnmessage;
           }else{
-            return $this->logging->getErrormessage("001");
+            return $this->logging_api->getErrormessage("001");
           }
         }catch(Exception $e){
-          return $this->logging->getErrormessage("002", $e);
+          return $this->logging_api->getErrormessage("002", $e);
         }
       }else{
-        return $this->logging->getErrormessage("003");
+        return $this->logging_api->getErrormessage("003");
       }
     }
 
-    public function declineNodeRequest(array $data){
-      if(array_key_exists("id", $data)){
+    public function declineNodeRequest(array $data, array $loginData = NULL, $server = NULL){
+      if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data)){
         try{
-          $sql = $this->db_api->execute("UPDATE nodes SET conallow = 0 WHERE id = ?", array($data["id"]));
+          $sql = $this->db_api->execute("UPDATE nodes SET conallow = 0 WHERE id = ?", array($data["nodeid"]));
 
-          return array("status" =>0, "message" => "Successfully declined connection for id {$data["id"]}.");
+          $returnmessage = array("status" => 0, "message" => "Successfully declined connection for id {$data["nodeid"]}.");
+          $querydata = [];
+          $querydata["data"]["declineNodeRequest"] = $returnmessage;
+          $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+
+          if(!is_null($server)){
+            print_r($server->messageSpecificNode($querydata));
+          }else{
+            $this->websocket_api = new WebSocket_Api();
+            print_r($this->websocket_api->sendToWSS("messageSpecificNode", $querydata));
+          }
+
+          return $returnmessage;
         }catch(Exception $e){
-          return $this->logging->getErrormessage("001", $e);
+          return $this->logging_api->getErrormessage("001", $e);
         }
       }else{
-        return $this->logging->getErrormessage("002");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
@@ -159,10 +184,10 @@
 
           return array("status" => 0, "method" => "loginStatus", "message" => "This node is logged in.", "data" => $sqldata);
         }catch(Exception $e){
-          return $this->logging->getErrormessage("001", $e);
+          return $this->logging_api->getErrormessage("001", $e);
         }
       }else{
-        return $this->logging->getErrormessage("002");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
@@ -173,10 +198,10 @@
 
           return array("status" =>0, "message" => "Successfully updated version.");
         }catch(Exception $e){
-          return $this->logging->getErrormessage("001", $e);
+          return $this->logging_api->getErrormessage("001", $e);
         }
       }else{
-        return $this->logging->getErrormessage("002");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
@@ -186,7 +211,7 @@
           $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryptAuthhash($loginData["authhash"])));
           $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
 
-          $sql = $this->db_api->execute("INSERT INTO nodes_systeminfo (id, nodeid, load_1min, load_5min, load_15min, filesystem, memory_total, memory_free, memory_buffers, memory_cached, swap_total, swap_free, cpu_count, cpu_cores, cpu_model) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          $sql = $this->db_api->execute("INSERT INTO chia_infra_sysinfo (id, nodeid, load_1min, load_5min, load_15min, filesystem, memory_total, memory_free, memory_buffers, memory_cached, swap_total, swap_free, cpu_count, cpu_cores, cpu_model) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           array($nodeid, $data["system"]["load"]["1min"], $data["system"]["load"]["5min"], $data["system"]["load"]["15min"],
                 json_encode($data["system"]["filesystem"]),
                 $data["system"]["memory"]["total"], $data["system"]["memory"]["free"], $data["system"]["memory"]["buffers"], $data["system"]["memory"]["cached"],
@@ -196,7 +221,7 @@
 
           return array("status" => 0, "message" => "Successfully updated system information for node $nodeid.", "data" => ["nodeid" => $nodeid]);
         }catch(Exception $e){
-          return $this->logging->getErrormessage("001", $e);
+          return $this->logging_api->getErrormessage("001", $e);
         }
       }
     }
@@ -212,10 +237,10 @@
 
           return array("status" =>0, "message" => "Successfully loaded latest system information for node {$data["nodeid"]}.", "data" => $sql->fetchAll(\PDO::FETCH_ASSOC));
         }catch(Exception $e){
-          return $this->logging->getErrormessage("001", $e);
+          return $this->logging_api->getErrormessage("001", $e);
         }
       }else{
-        return $this->logging->getErrormessage("002");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
@@ -226,7 +251,7 @@
 
         return array("status" => 0, "message" => "Successfully queried node update status", "data" => array("nodeid" => $nodeid, "status" => $data));
       }catch(Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 

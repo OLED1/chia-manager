@@ -60,7 +60,7 @@
                   <h6 class="m-0 font-weight-bold text-primary">RAM and SWAP</h6>
                   <div class="row">
                     <div class="col-6">
-                      <h7 class="m-0 font-weight-bold text-primary">RAM (<?php echo number_format(floatval($sysinfo["memory_total"])/1024/1024, 2) . "GB"; ?>)</h7>
+                      <h7 class="m-0 font-weight-bold text-primary">RAM (<?php echo number_format(floatval($sysinfo["memory_total"])/1024/1024/1024, 2) . "GB"; ?>)</h7>
                       <div class="chart-pie pt-4 pb-2">
                         <canvas id="ram_chart_<?php echo "{$sysinfo["id"]}"; ?>"></canvas>
                       </div>
@@ -70,7 +70,7 @@
                       </div>
                     </div>
                     <div class="col-6">
-                      <h7 class="m-0 font-weight-bold text-primary">SWAP (<?php echo number_format(floatval($sysinfo["swap_total"])/1024/1024, 2) . "GB"; ?>)</h7>
+                      <h7 class="m-0 font-weight-bold text-primary">SWAP (<?php echo number_format(floatval($sysinfo["swap_total"])/1024/1024/1024, 2) . "GB"; ?>)</h7>
                       <div class="chart-pie pt-4 pb-2">
                         <canvas id="swap_chart_<?php echo "{$sysinfo["id"]}"; ?>"></canvas>
                       </div>

@@ -72,14 +72,17 @@ function multiselectChanged(){
 $("#acceptNodeRequest").on("click", function(){
   if($('#nodetypes-options option:selected').length > 0){
     var nodearr = [];
-    var confid = $("#acceptNodeRequestModal").attr("data-conf-id");
+    var nodeid = $("#acceptNodeRequestModal").attr("data-conf-id");
+    var authhash = $("#acceptNodeRequestModal").attr("data-authhash");
     $.each($('#nodetypes-options option:selected'), function(){
       nodearr.push($(this).val());
     });
     var data = {
-      id : confid,
+      nodeid : nodeid,
+      authhash : authhash,
       nodetypes : nodearr.join()
     }
+
     sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "acceptNodeRequest", data);
   }else{
     showMessage(1, "No nodes are selected.");
@@ -200,9 +203,7 @@ function initAllowConnect(){
           }else if(configuredNodes[nodeid]["authtype"] == 2){
             $("#type_chianode").attr("checked", true);
           }
-
           $(".nodedefinition").trigger("change");
-          //getNodeTypesInt(configuredNodes[nodeid]["nodetype"]);
 
           $.each(configuredNodes[nodeid]["nodetype"].split(","), function(key, value){
             var id = nodetypes["by-desc"][value.trim()]["id"];
@@ -244,7 +245,8 @@ function initDenyConnect(){
     $("#decline-node").off("click");
     $("#decline-node").on("click", function(){
       data = {
-        id: nodeid
+        nodeid: nodeid,
+        authhash: authhash
       };
 
       sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "declineNodeRequest", data);
@@ -337,130 +339,17 @@ function messagesTrigger(data){
     }else if(key == "acceptIPChange"){
       $("#allowIPModal").modal("hide");
       sendToWSS("ownRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getConfiguredNodes", {});
-      sendToWSS("messageSpecificNode", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getConfiguredNodes", {});
     }else if(key == "acceptNodeRequest"){
       sendToWSS("ownRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getConfiguredNodes", {});
-      data = {
-        "nodeinfo" : {
-          "authhash" : $("#acceptNodeRequestModal").attr("data-authhash")
-        },
-        "data" : data
-      }
-      sendToWSS("messageSpecificNode", "", "", "", data);
       $("#acceptNodeRequestModal").modal("hide");
     }else if(key == "declineNodeRequest"){
       sendToWSS("ownRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getConfiguredNodes", {});
-      data = {
-        "nodeinfo" : {
-          "authhash" : $("#declineNodeRequestModal").attr("data-authhash")
-        },
-        "data" : data
-      }
-
-      sendToWSS("messageSpecificNode", "", "", "", data);
       $("#declineNodeRequestModal").modal("hide");
     }else if(key == "updateSystemInfo"){
       if(data[key]["data"]["nodeid"] in sysinfodata){
         sendToWSS("ownRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getSystemInfo", { "nodeid": data[key]["data"]["nodeid"] });
       }
       reinit = false;
-    }else if(key == "getUpdateChannels"){
-      updatechannels = data[key]["data"];
-
-      $("#updatenode").prop("disabled",true);
-      $("#selectedchannel").text("None");
-      $("#selectedversion").text("None");
-      $("#versionfilename").text("None");
-
-      $("#updatechannels-modal").children().remove();
-      $.each(updatechannels, function(channelname, versions){
-        $("#updatechannels-modal").append("<button class='updatechannel-item dropdown-item' type='button'>" + channelname + "</button>");
-      });
-      $("#nodeactionmodal").modal("show");
-
-      $(".updatechannel-item").off("click");
-      $(".updatechannel-item").on("click", function(){
-        $("#selectedchannel").text($(this).text());
-
-        $("#updateversions-modal").children().remove();
-        $.each(updatechannels[$(this).text()], function(version, link){
-          $("#updateversions-modal").append("<button class='versionchannel-item dropdown-item' data-link='" + link + "' type='button'>" + version + "</button>");
-          $("#updateversionMenu").prop("disabled", false);
-        });
-
-        $(".versionchannel-item").off("click");
-        $(".versionchannel-item").on("click", function(){
-          $("#selectedversion").text($(this).text());
-          $("#versionfilename").text($(this).attr("data-link"));
-          $("#updatenode").prop("disabled",false);
-        });
-      });
-
-      $("#updatenode").off("click");
-      $("#updatenode").on("click", function(){
-        var id = $("#nodeactionmodal").attr("data-nodeid");
-        var authhash = configuredNodes[id]["nodeauthhash"];
-        var link = packageslink + $("#versionfilename").text();
-
-        var data = {
-          "nodeinfo":{
-            "authhash":authhash
-          },
-          "data" : {
-            "updateNode" : {
-              "status" : 0,
-              "message" : "Update node with ID: " + id,
-              "data": {
-                "link" : link,
-                "version" : $("#selectedversion").text()
-              }
-            }
-          }
-        }
-
-        $("#action_node_status").children().remove();
-        sendToWSS("messageSpecificNode", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "updateNode", data);
-
-        setTimeout(function(){
-          var data = {
-            "nodeinfo":{
-              "authhash":authhash
-            },
-            "data" : {
-              "nodeUpdateStatus" : {
-                "status" : 0,
-                "message" : "Get update status from node: " + id,
-                "data": {}
-              }
-            }
-          }
-          sendToWSS("messageSpecificNode", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "nodeUpdateStatus", data);
-        }, 1000);
-
-        $("#updatenode").attr("disabled","disabled");
-        $("#action_node_status").html("Processing&nbsp;" + getStatusIcon(2));
-      });
-    }else if(key == "nodeUpdateStatus"){
-      var updateStatus = data[key]["data"];
-      var modalnodeid = $("#nodeactionmodal").attr("data-nodeid");
-
-      if(modalnodeid == data[key]["data"]["nodeid"]){
-        $("#action_node_log").children().remove(),
-        $.each(updateStatus["status"], function(step, data){
-          if($.isNumeric(step)){
-            $("#action_node_log").append("<p>" + data["message"] + "<br>Status: " + data["status"] + getStatusIcon(data["status"]) + "</p>");
-          }
-        });
-
-        if(updateStatus["status"]["overall"] == 2){
-          $("#action_node_status").html("Processing&nbsp;" + getStatusIcon(2));
-          sendToWSS("messageSpecificNode", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "nodeUpdateStatus", data);
-        }else if(updateStatus["status"]["overall"] == 0){
-          $("#action_node_status").html("Finished&nbsp;" + getStatusIcon(0));
-        }else if(updateStatus["status"]["overall"] == 1){
-          $("#action_node_status").html("Finished&nbsp;" + getStatusIcon(1));
-        }
-      }
     }
     if(reinit){
       recreateConfiguredClients();

@@ -62,7 +62,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
 
         if($requesterLogin["status"] == "008005006" || $requesterLogin["status"] == "008005007" ||
           $requesterLogin["status"] == "008005012" || $requesterLogin["status"] == "008005002" ||
-          $requesterLogin["status"] == "008005011"
+          $requesterLogin["status"] == "008005011" || $requesterLogin["status"] == "008005013"
         ){
           echo "[{$this->getDate()}] INFO: Send new connection request to frontend.\n";
           $requesterLogin["data"]["resid"] = $from->resourceId;
