@@ -1,20 +1,30 @@
 initRefreshWalletInfo();
 initRestartWalletService();
 
+$("#queryAllNodes").on("click", function(){
+  $.each(chiaWalletData, function(nodeid, farmdata) {
+      queryWalletData(nodeid);
+  });
+});
+
+function queryWalletData(nodeid){
+  var walletid = $(this).attr("data-wallet-id");
+  var authhash = chiaWalletData[nodeid][Object.keys(chiaWalletData[nodeid])]["nodeauthhash"];
+
+  var dataforclient = {
+    "nodeid" : nodeid,
+    "authhash": authhash
+  }
+
+  sendToWSS("backendRequest", "ChiaMgmt\\Chia_Wallet\\Chia_Wallet_Api", "Chia_Wallet_Api", "queryWalletData", dataforclient);
+}
+
 function initRefreshWalletInfo(){
   $(".refreshWalletInfo").off("click");
   $(".refreshWalletInfo").on("click", function(e){
     e.preventDefault();
     var nodeid = $(this).attr("data-node-id");
-    var walletid = $(this).attr("data-wallet-id");
-    var authhash = chiaWalletData[nodeid][walletid]["nodeauthhash"];
-
-    var dataforclient = {
-      "nodeid" : nodeid,
-      "authhash": authhash
-    }
-
-    sendToWSS("backendRequest", "ChiaMgmt\\Chia_Wallet\\Chia_Wallet_Api", "Chia_Wallet_Api", "queryWalletData", dataforclient);
+    queryWalletData(nodeid);
   });
 }
 
