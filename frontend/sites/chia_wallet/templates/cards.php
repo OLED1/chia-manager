@@ -77,8 +77,8 @@
           </a>
           <div class='dropdown-menu dropdown-menu-right shadow animated--fade-in' aria-labelledby='dropdownMenuLink_<?php echo $thiswallet['nodeid']; ?>'>
             <div class='dropdown-header'>Actions:</div>
-            <a data-node-id='<?php echo $nodeid; ?>' class='dropdown-item refreshWalletInfo' href='#'>Refresh</a>
-            <a data-node-id='<?php echo $nodeid; ?>' class='dropdown-item restartWalletService' href='#'>Restart wallet service</a>
+            <a data-node-id='<?php echo $nodeid; ?>' data-wallet-id='<?php echo $thiswallet['walletid']; ?>' class='dropdown-item refreshWalletInfo' href='#'>Refresh</a>
+            <a data-node-id='<?php echo $nodeid; ?>' data-wallet-id='<?php echo $thiswallet['walletid']; ?>' class='dropdown-item restartWalletService' href='#'>Restart wallet service</a>
           </div>
         </div>
       </div>
@@ -211,3 +211,5 @@
   </div>
 </div>
 <?php } ?>
+
+<script src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_wallet/js/chia_wallet.js"?>></script>

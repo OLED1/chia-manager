@@ -48,7 +48,7 @@
       }
     }
 
-    public function getWalletData(array $data = NULL, array $loginData = NULL, int $nodeid = NULL){
+    public function getWalletData(array $data = NULL, array $loginData = NULL, $server = NULL, int $nodeid = NULL){
       try{
         if(is_null($nodeid)){
           $sql = $this->db_api->execute("SELECT cw.walletid, nt.nodeid, n.nodeauthhash, n.hostname, cw.walletaddress, cw.walletheight, cw.syncstatus, cw.wallettype, cw.totalbalance, cw.pendingtotalbalance, cw.spendable, cw.querydate
@@ -89,6 +89,40 @@
         return array("status" =>0, "message" => "Successfully queried wallet status information for node $nodeid.", "data" => $data);
       }catch(Exception $e){
         return $this->logging->getErrormessage("001", $e);
+      }
+    }
+
+    public function queryWalletData(array $data = NULL, array $loginData = NULL, $server = NULL){
+      $querydata = [];
+      $querydata["data"]["queryWalletData"] = array(
+        "status" => 0,
+        "message" => "Query Wallet data.",
+        "data"=> array()
+      );
+      $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+
+      if(!is_null($server)){
+        return $server->messageSpecificNode($querydata);
+      }else{
+        $this->websocket_api = new WebSocket_Api();
+        return $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
+      }
+    }
+
+    public function restartWalletService(array $data = NULL, array $loginData = NULL, $server = NULL){
+      $querydata = [];
+      $querydata["data"]["restartWalletService"] = array(
+        "status" => 0,
+        "message" => "Restart wallet service.",
+        "data"=> array()
+      );
+      $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+
+      if(!is_null($server)){
+        return $server->messageSpecificNode($querydata);
+      }else{
+        $this->websocket_api = new WebSocket_Api();
+        return $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
       }
     }
 

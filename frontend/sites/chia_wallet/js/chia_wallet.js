@@ -1,17 +1,20 @@
 initRefreshWalletInfo();
 initRestartWalletService();
 
-$("#queryAllNodes").on("click", function(){
-  $.each(chiaWalletData, function(nodeid, nodedata) {
-    queryWalletData(nodeid);
-  });
-});
-
 function initRefreshWalletInfo(){
   $(".refreshWalletInfo").off("click");
   $(".refreshWalletInfo").on("click", function(e){
     e.preventDefault();
-    queryWalletData($(this).attr("data-node-id"));
+    var nodeid = $(this).attr("data-node-id");
+    var walletid = $(this).attr("data-wallet-id");
+    var authhash = chiaWalletData[nodeid][walletid]["nodeauthhash"];
+
+    var dataforclient = {
+      "nodeid" : nodeid,
+      "authhash": authhash
+    }
+
+    sendToWSS("backendRequest", "ChiaMgmt\\Chia_Wallet\\Chia_Wallet_Api", "Chia_Wallet_Api", "queryWalletData", dataforclient);
   });
 }
 
@@ -19,41 +22,17 @@ function initRestartWalletService(){
   $(".restartWalletService").off("click");
   $(".restartWalletService").on("click", function(e){
     e.preventDefault();
-    var node = $(this).attr("data-node-id");
-    var authhash = chiaWalletData[walletid]["nodeauthhash"];
-    var datafornode = {
-      "nodeinfo":{
-        "authhash": authhash
-      },
-      "data" : {
-        "restartWalletService" : {
-          "status" : 0,
-          "message" : "Restart farmer service.",
-          "data": {}
-        }
-      }
-    }
+    var nodeid = $(this).attr("data-node-id");
+    var walletid = $(this).attr("data-wallet-id");
+    var authhash = chiaWalletData[nodeid][walletid]["nodeauthhash"];
 
-    sendToWSS("messageSpecificNode", "", "", "restartWalletService", datafornode);
-  });
-}
-
-function queryWalletData(nodeid){
-  var authhash = chiaWalletData[nodeid][Object.keys(chiaWalletData[nodeid])]["nodeauthhash"];
-  var datafornode = {
-    "nodeinfo":{
+    var dataforclient = {
+      "nodeid" : nodeid,
       "authhash": authhash
-    },
-    "data" : {
-      "queryWalletData" : {
-        "status" : 0,
-        "message" : "Query Wallet data.",
-        "data": {}
-      }
     }
-  }
 
-  sendToWSS("messageSpecificNode", "", "", "queryWalletData", datafornode);
+    sendToWSS("backendRequest", "ChiaMgmt\\Chia_Wallet\\Chia_Wallet_Api", "Chia_Wallet_Api", "restartWalletService", dataforclient);
+  });
 }
 
 function queryWalletStatus(nodeid){
@@ -66,6 +45,7 @@ function queryWalletStatus(nodeid){
 
 function setWalletBadge(data){
   var targetbadge = $("#servicestatus_" + data["data"]);
+
   targetbadge.removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-danger");
   if(data["status"] == 0){
     targetbadge.addClass("badge-success");
@@ -77,20 +57,21 @@ function setWalletBadge(data){
 
 function messagesTrigger(data){
   var key = Object.keys(data);
+  console.log(data);
 
   if(data[key]["status"] == 0){
     if(key == "updateWalletData"){
-      sendToWSS("backendRequest", "ChiaMgmt\\Chia_Wallet\\Chia_Wallet_Api", "Chia_Wallet_Api", "getWalletData", {});
-    }else if(key == "getWalletData"){
       $('#walletcontainer').load(frontend + "/sites/chia_wallet/templates/cards.php");
 
       initRefreshWalletInfo();
       initRefreshWalletInfo();
       initRestartWalletService();
     }else if(key == "walletStatus"){
-      setWalletBadge(data[key]["data"]);
+      setTimeout(function(){
+        setWalletBadge(data[key]["data"]);
+      }, 1000);
     }else if(key == "walletServiceRestart"){
-      setWalletBadge(data[key]["data"]);
+      setWalletBadge(data[key]["data"]["data"]);
     }
   }else if(data[key]["status"] == "014003001"){
     $(".statusbadge").each(function(){

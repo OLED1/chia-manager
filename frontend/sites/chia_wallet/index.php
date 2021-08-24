@@ -42,5 +42,3 @@
 <div id="walletcontainer">
 <?php include("templates/cards.php"); ?>
 </div>
-
-<script src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_wallet/js/chia_wallet.js"?>></script>
