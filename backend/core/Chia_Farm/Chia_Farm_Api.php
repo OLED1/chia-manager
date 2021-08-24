@@ -61,7 +61,7 @@
       }
     }
 
-    public function getFarmData(array $data = NULL, array $loginData = NULL, int $nodeid = NULL){
+    public function getFarmData(array $data = NULL, array $loginData = NULL, $server = NULL, int $nodeid = NULL){
       try{
         if(is_null($nodeid)){
           $sql = $this->db_api->execute("SELECT nt.nodeid, cf.farming_status, n.hostname, n.nodeauthhash, cf.total_chia_farmed, cf.user_transaction_fees, cf.block_rewards, cf.last_height_farmed, cf.plot_count, cf.total_size_of_plots, cf.estimated_network_space, cf.expected_time_to_win, cf.querydate
@@ -102,6 +102,40 @@
         return array("status" => 0, "message" => "Successfully queried farmer status information for node $nodeid.", "data" => $data);
       }catch(Exception $e){
         return $this->logging->getErrormessage("001", $e);
+      }
+    }
+
+    public function queryFarmData(array $data = NULL, array $loginData = NULL, $server = NULL){
+      $querydata = [];
+      $querydata["data"]["queryFarmData"] = array(
+        "status" => 0,
+        "message" => "Query Farm data.",
+        "data"=> array()
+      );
+      $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+
+      if(!is_null($server)){
+        return $server->messageSpecificNode($querydata);
+      }else{
+        $this->websocket_api = new WebSocket_Api();
+        return $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
+      }
+    }
+
+    public function restartFarmerService(array $data = NULL, array $loginData = NULL, $server = NULL){
+      $querydata = [];
+      $querydata["data"]["restartFarmerService"] = array(
+        "status" => 0,
+        "message" => "Restart farmer service.",
+        "data"=> array()
+      );
+      $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+
+      if(!is_null($server)){
+        return $server->messageSpecificNode($querydata);
+      }else{
+        $this->websocket_api = new WebSocket_Api();
+        return $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
       }
     }
 

@@ -2,6 +2,7 @@ initRefreshFarmInfos();
 initRestartFarmerService();
 initChallengesTables();
 
+$("#queryAllNodes").off("click");
 $("#queryAllNodes").on("click", function(){
   $.each(chiaFarmData, function(nodeid, farmdata) {
       queryFarmData(nodeid);
@@ -22,20 +23,12 @@ function initRestartFarmerService(){
     e.preventDefault();
     var nodeid = $(this).attr("data-node-id");
     var authhash = chiaFarmData[nodeid]["nodeauthhash"];
-    var datafornode = {
-      "nodeinfo":{
-        "authhash": authhash
-      },
-      "data" : {
-        "restartFarmerService" : {
-          "status" : 0,
-          "message" : "Restart farmer service.",
-          "data": {}
-        }
-      }
+    var dataforclient = {
+      "nodeid" : nodeid,
+      "authhash": authhash
     }
 
-    sendToWSS("messageSpecificNode", "", "", "restartFarmerService", datafornode);
+    sendToWSS("backendRequest", "ChiaMgmt\\Chia_Farm\\Chia_Farm_Api", "Chia_Farm", "restartFarmerService", dataforclient);
   });
 }
 
@@ -45,20 +38,12 @@ function initChallengesTables(nodeid){
 
 function queryFarmData(nodeid){
   var authhash = chiaFarmData[nodeid]["nodeauthhash"];
-  var datafornode = {
-    "nodeinfo":{
-      "authhash": authhash
-    },
-    "data" : {
-      "queryFarmData" : {
-        "status" : 0,
-        "message" : "Query Farm data.",
-        "data": {}
-      }
-    }
+  var dataforclient = {
+    "nodeid" : nodeid,
+    "authhash": authhash
   }
 
-  sendToWSS("messageSpecificNode", "", "", "queryFarmData", datafornode);
+  sendToWSS("backendRequest", "ChiaMgmt\\Chia_Farm\\Chia_Farm_Api", "Chia_Farm", "queryFarmData", dataforclient);
 }
 
 function queryFarmStatus(nodeid){
@@ -87,9 +72,7 @@ function messagesTrigger(data){
 
   if(data[key]["status"] == 0){
     if(key == "updateFarmData"){
-      sendToWSS("backendRequest", "ChiaMgmt\\Chia_Farm\\Chia_Farm_Api", "Chia_Farm_Api", "getFarmData", {});
-    }else if(key == "getFarmData"){
-      $('#walletcontainer').load(frontend + "/sites/chia_farm/templates/cards.php");
+      $('#farminfocards').load(frontend + "/sites/chia_farm/templates/cards.php");
 
       initRefreshFarmInfos();
       initRestartFarmerService();

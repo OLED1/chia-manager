@@ -43,5 +43,3 @@
 </div>
 <!-- <h5>Last Attempted Proof</h5>
 <h5>Last Block Challenges</h5>-->
-
-<script src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_farm/js/chia_farm.js"?>></script>

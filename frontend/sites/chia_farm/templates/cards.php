@@ -220,3 +220,5 @@
     </div>
   </div>
 </div>
+
+<script src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_farm/js/chia_farm.js"?>></script>
