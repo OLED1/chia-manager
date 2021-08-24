@@ -1,6 +1,7 @@
 initRefreshWalletInfo();
 initRestartWalletService();
 
+$("#queryAllNodes").off("click");
 $("#queryAllNodes").on("click", function(){
   $.each(chiaWalletData, function(nodeid, farmdata) {
       queryWalletData(nodeid);
@@ -67,7 +68,6 @@ function setWalletBadge(data){
 
 function messagesTrigger(data){
   var key = Object.keys(data);
-  console.log(data);
 
   if(data[key]["status"] == 0){
     if(key == "updateWalletData"){
