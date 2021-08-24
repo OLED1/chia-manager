@@ -67,11 +67,13 @@
             $this->updateFoundPlots($plotsfound, $finalplotsdir, $nodeid);
           }
 
-          foreach($harvesterdbdata["data"][$nodeid]["plotdirs"] AS $finalplotsdir => $mointpointdata){
-            if(!array_key_exists($finalplotsdir, $harvesterdata)){
-              $sql = $this->db_api->execute("DELETE FROM chia_plots_directories WHERE nodeid = ? AND finalplotsdir = ?", array($nodeid, $finalplotsdir));
-              $this->removePlots($nodeid, $finalplotsdir);
-            }
+          if(array_key_exists($nodeid, $harvesterdbdata["data"])){
+            foreach($harvesterdbdata["data"][$nodeid]["plotdirs"] AS $finalplotsdir => $mointpointdata){
+              if(!array_key_exists($finalplotsdir, $harvesterdata)){
+                $sql = $this->db_api->execute("DELETE FROM chia_plots_directories WHERE nodeid = ? AND finalplotsdir = ?", array($nodeid, $finalplotsdir));
+                $this->removePlots($nodeid, $finalplotsdir);
+              }
+            }  
           }
         }catch(Exception $e){
           return $this->logging->getErrormessage("001", $e);
@@ -157,7 +159,7 @@
       }
     }
 
-    public function getHarvesterData(array $data = NULL, array $loginData = NULL, int $nodeid = NULL, bool $getPlots = true){
+    public function getHarvesterData(array $data = NULL, array $loginData = NULL, $server = NULL, int $nodeid = NULL, bool $getPlots = true){
       try{
         if(is_null($nodeid)){
           $sql = $this->db_api->execute("SELECT cp.id, nt.nodeid, n.nodeauthhash, n.hostname, cp.devname, cp.mountpoint, cp.finalplotsdir, cp.totalsize, cp.totalused, cp.totalusedpercent, cp.plotcount, cp.querydate
@@ -190,6 +192,40 @@
         return array("status" =>0, "message" => "Successfully loaded chia harvester information.", "data" => $returndata);
       }catch(Exception $e){
         return $this->logging->getErrormessage("001", $e);
+      }
+    }
+
+    public function queryHarvesterData(array $data = NULL, array $loginData = NULL, $server = NULL){
+      $querydata = [];
+      $querydata["data"]["queryHarvesterData"] = array(
+        "status" => 0,
+        "message" => "Query harvester data.",
+        "data"=> array()
+      );
+      $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+
+      if(!is_null($server)){
+        return $server->messageSpecificNode($querydata);
+      }else{
+        $this->websocket_api = new WebSocket_Api();
+        return $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
+      }
+    }
+
+    public function restartHarvesterService(array $data = NULL, array $loginData = NULL, $server = NULL){
+      $querydata = [];
+      $querydata["data"]["restartHarvesterService"] = array(
+        "status" => 0,
+        "message" => "Restart harvester service.",
+        "data"=> array()
+      );
+      $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+
+      if(!is_null($server)){
+        return $server->messageSpecificNode($querydata);
+      }else{
+        $this->websocket_api = new WebSocket_Api();
+        return $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
       }
     }
 

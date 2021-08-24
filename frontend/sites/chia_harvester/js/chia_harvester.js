@@ -2,6 +2,7 @@ initRefreshHarvesterInfos();
 initRestartHarvesterService();
 initAllDatatables();
 
+$("#queryAllNodes").off("click");
 $("#queryAllNodes").on("click", function(){
   $.each(chiaHarvesterData, function(nodeid, farmdata) {
       queryHarvesterData(nodeid);
@@ -32,39 +33,24 @@ function initRestartHarvesterService(){
     e.preventDefault();
     var nodeid = $(this).attr("data-node-id");
     var authhash = chiaHarvesterData[nodeid]["nodeauthhash"];
-    var datafornode = {
-      "nodeinfo":{
-        "authhash": authhash
-      },
-      "data" : {
-        "restartHarvesterService" : {
-          "status" : 0,
-          "message" : "Restart harvester service.",
-          "data": {}
-        }
-      }
+    var dataforclient = {
+      "nodeid" : nodeid,
+      "authhash": authhash
     }
 
-    sendToWSS("messageSpecificNode", "", "", "restartHarvesterService", datafornode);
+    sendToWSS("backendRequest", "ChiaMgmt\\Chia_Harvester\\Chia_Harvester_Api", "Chia_Harvester_Api", "restartHarvesterService", dataforclient);
   });
 }
 
 function queryHarvesterData(nodeid){
   var authhash = chiaHarvesterData[nodeid]["nodeauthhash"];
-  var datafornode = {
-    "nodeinfo":{
-      "authhash": authhash
-    },
-    "data" : {
-      "queryHarvesterData" : {
-        "status" : 0,
-        "message" : "Query Harvester data.",
-        "data": {}
-      }
-    }
+  var dataforclient = {
+    "nodeid" : nodeid,
+    "authhash": authhash
   }
 
-  sendToWSS("messageSpecificNode", "", "", "queryHarvesterData", datafornode);
+  sendToWSS("backendRequest", "ChiaMgmt\\Chia_Harvester\\Chia_Harvester_Api", "Chia_Harvester_Api", "queryHarvesterData", dataforclient);
+
 }
 
 function queryHarvesterStatus(nodeid){
@@ -91,8 +77,6 @@ function messagesTrigger(data){
 
   if(data[key]["status"] == 0){
     if(key == "updateHarvesterData"){
-      sendToWSS("backendRequest", "ChiaMgmt\\Chia_Harvester\\Chia_Harvester_Api", "Chia_Harvester_Api", "getHarvesterData", {});
-    }else if(key == "getHarvesterData"){
       $('#harvesterinfocards').load(frontend + "/sites/chia_harvester/templates/cards.php");
 
       initRefreshHarvesterInfos();
