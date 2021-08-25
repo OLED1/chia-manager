@@ -79,10 +79,9 @@
           return $this->logging->getErrormessage("001", $e);
         }
 
-        return array("status" =>0, "message" => "Successfully updated farmer information for node $nodeid.", "data" => ["nodeid" => $nodeid, "data" => $this->getHarvesterData($data, $loginData, $nodeid, false)["data"]]);
+        return array("status" => 0, "message" => "Successfully updated farmer information for node $nodeid.", "data" => ["nodeid" => $nodeid, "data" => $this->getHarvesterData($data, $loginData, $nodeid, false)["data"]]);
       }else{
-        //TODO Implement correct status code
-        return array("status" =>1, "message" => "Not all data stated.");
+        return $this->logging->getErrormessage("002");
       }
     }
 
@@ -239,7 +238,7 @@
         $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryptAuthhash($loginData["authhash"])));
         $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
 
-        $this->nodes_api->setNodeServiceStats(["type" => 4, "stat" => ($data["status"] == 0 ? 1 : 0), "nodeid" => $nodeid]);
+        $this->nodes_api->setNodeServiceStats(["type" => 4, "stat" => ($data["status"] == 0 ? 0 : 1), "nodeid" => $nodeid]);
 
         $data["data"] = $nodeid;
         return array("status" =>0, "message" => "Successfully queried harvester status information for node $nodeid.", "data" => $data);

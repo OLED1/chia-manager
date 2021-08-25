@@ -1,0 +1,22 @@
+{
+  "functioncodes" : {
+    "queryOverallData" : "001",
+    "getOverallChiaData" : "002",
+    "getDataFromExtApi" : "003"
+  },
+  "errormessages" : {
+    "queryOverallData" : {
+      "001" : [2, "An error occured."],
+      "002" : [1, "API values not set in configuration file."]
+    },
+    "getOverallChiaData" : {
+      "001" : [2, "No rows returned from database. Something does not work correctly."],
+      "002" : [2, "An error occured."]
+    },
+    "getDataFromExtApi" : {
+      "001" : [2, "External api returned an error."],
+      "002" : [2, "External api returned an error."],
+      "003" : [2, "Could not query data from external api please check the log for more information."]
+    }
+  }
+}

@@ -53,13 +53,10 @@
 
           return $this->getExchangerate($currency_code);
         }catch(Exception $e){
-          //TODO Implement correct status code
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
+          return $this->logging->getErrormessage("001", $e);
         }
       }else{
-        //TODO Implement correct status code
-        return array("status" => 1, "message" => "API values not set in configuration file");
+        return $this->logging->getErrormessage("002");
       }
     }
 
@@ -69,8 +66,7 @@
 
         return array("status" => 0, "message" => "Successfully loaded all available currencies.", "data" => $sql->fetchAll(\PDO::FETCH_ASSOC));
       }catch(Exception $e){
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
+        return $this->logging->getErrormessage("001", $e);
       }
     }
 
@@ -93,12 +89,10 @@
 
           return array("status" => 0, "message" => "Successfully loaded all available currencies.", "data" => $returndata);
         }catch(Exception $e){
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
+          return $this->logging->getErrormessage("001", $e);
         }
       }else{
-        //TODO Implement correct status code
-        return array("status" => 1, "message" => "Wrong userid.");
+        return $this->logging->getErrormessage("002");
       }
     }
 
@@ -116,13 +110,10 @@
 
           return array("status" => 0, "message" => "Successfully set default currency to {$data["currency_code"]}.", "data" => $data["currency_code"]);
         }catch(Exception $e){
-          //TODO Implement correct status code
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
+          return $this->logging->getErrormessage("001", $e);
         }
       }else{
-        //TODO Implement correct status code
-        return array("status" => 1, "message" => "Not all data stated.");
+        return $this->logging->getErrormessage("002");
       }
     }
 
@@ -134,12 +125,10 @@
         if(array_key_exists("0", $sqdata)){
           return array("status" => 0, "message" => "Successfully loaded exchangerate from usd to {$currency_code}.", "data" => array($currency_code => $sqdata[0]));
         }else{
-          return array("status" => 1, "message" => "Currency {$currency_code} not found or not existing.");
+          return $this->logging->getErrormessage("001", "Currency {$currency_code} not found or not existing.");
         }
       }catch(Exception $e){
-        //TODO Implement correct status code
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
+        return $this->logging->getErrormessage("002", $e);
       }
     }
 
@@ -159,8 +148,7 @@
 
         return array("defaultCurrency" => $defaultCurrency, "exchangerate" => $exchangerate);
       }else{
-        //TODO Implement correct status code
-        return array("status" => 1, "message" => "Not all data stated.");
+        return $this->logging->getErrormessage("001");
       }
     }
   }

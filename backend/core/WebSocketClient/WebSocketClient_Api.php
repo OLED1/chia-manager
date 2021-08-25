@@ -23,10 +23,8 @@
           $result = $this->sendToWSS("wssonlinestatus", array("command" => "onlineStatus"));
 
           if($result["status"] == 0) return $result;
-          //else return array("status" => 1, "message" => "Could not connect to Websocket Server.");
           else return $this->logging->getErrormessage("001");
         }else{
-          //return array("status" => 1, "message" => "Could not connect to Websocket Server.");
           return $this->logging->getErrormessage("002");
         }
       }
@@ -58,7 +56,6 @@
           }
           return $promise;
         }catch(Exception $e){
-          //return array("status" => 1, "message" => "An error occured.");
           return $this->logging->getErrormessage("001", $e);
         }
       }

@@ -3,11 +3,14 @@
     "updateFarmData" : "001",
     "getFarmData" : "002",
     "farmerStatus" : "003",
-    "farmerServiceRestart" : "004"
+    "farmerServiceRestart" : "004",
+    "updateChallenges" : "005",
+    "getAllChallenges" : "006"
   },
   "errormessages" : {
     "updateFarmData" : {
-      "001" : [2, "An error occured."]
+      "001" : [2, "An error occured."],
+      "002" : [1, "Not all data stated."]
     },
     "getFarmData" : {
       "001" : [2, "An error occured."]
@@ -16,6 +19,13 @@
       "001" : [2, "An error occured."]
     },
     "farmerServiceRestart" : {
+      "001" : [2, "An error occured."]
+    },
+    "updateChallenges" : {
+      "001" : [2, "An error occured."],
+      "002" : [1, "Not all data stated."]
+    },
+    "getAllChallenges" : {
       "001" : [2, "An error occured."]
     }
   }

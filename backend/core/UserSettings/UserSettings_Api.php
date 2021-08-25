@@ -28,17 +28,13 @@
 
             return array("status" => 0, "message" => "Successfully set gui mode to {$data["gui_mode"]}.", "data" => $data["gui_mode"]);
           }catch(Exception $e){
-            //TODO Implement correct status code
-            print_r($e);
-            return array("status" => 1, "message" => "An error occured.");
+            return $this->logging->getErrormessage("001", $e);
           }
         }else{
-          //TODO Implement correct status code
-          return array("status" => 1, "message" => "Gui Mode {$data["gui_mode"]} not supported.");
+          return $this->logging->getErrormessage("002", "Gui Mode {$data["gui_mode"]} not supported.");
         }
       }else{
-        //TODO Implement correct status code
-        return array("status" => 1, "message" => "Not all data stated.");
+        return $this->logging->getErrormessage("003");
       }
     }
 
@@ -61,12 +57,10 @@
 
           return array("status" => 0, "message" => "Successfully loaded gui mode for user.", "data" => $returndata);
         }catch(Exception $e){
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
+          return $this->logging->getErrormessage("001", $e);
         }
       }else{
-        //TODO Implement correct status code
-        return array("status" => 1, "message" => "Wrong userid.");
+        return $this->logging->getErrormessage("002");
       }
     }
 

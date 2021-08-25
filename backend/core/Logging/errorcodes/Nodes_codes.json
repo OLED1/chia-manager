@@ -9,7 +9,9 @@
     "updateScriptVersion" : "007",
     "updateSystemInfo" : "008",
     "getSystemInfo" : "009",
-    "nodeUpdateStatus" : "010"
+    "nodeUpdateStatus" : "010",
+    "queryNodesServicesStatus" : "011",
+    "setNodeServiceStats" : "012"
   },
   "errormessages" : {
     "getConfiguredNodes" : {
@@ -46,6 +48,16 @@
       "002" : [1, "Not all data stated."]
     },
     "nodeUpdateStatus" : {
+      "001" : [2, "An error occured."]
+    },
+    "queryNodesServicesStatus" : {
+      "001" : [2, "An error occured."]
+    },
+    "setNodeServiceStats" : {
+      "001" : [1, "Requested state no known."],
+      "002" : [1, "Not all data stated."]
+    },
+    "getNodeStatus" : {
       "001" : [2, "An error occured."]
     }
   }

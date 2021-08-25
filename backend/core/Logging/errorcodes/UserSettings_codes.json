@@ -1,0 +1,17 @@
+{
+  "functioncodes" : {
+    "setGuiMode" : "001",
+    "getGuiMode" : "002"
+  },
+  "errormessages" : {
+    "setGuiMode" : {
+      "001" : [2, "An error occured."],
+      "002" : [1, "Requested Gui Mode not supported."],
+      "003" : [1, "Not all data stated."]
+    },
+    "getGuiMode" : {
+      "001" : [2, "An error occured."],
+      "002" : [1, "Wrong userid."]
+    }
+  }
+}

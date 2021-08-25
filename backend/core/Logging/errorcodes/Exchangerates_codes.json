@@ -1,0 +1,34 @@
+{
+  "functioncodes" : {
+    "queryExchangeRatesData" : "001",
+    "getAllCurrencies" : "002",
+    "getUserDefaultCurrency" : "003",
+    "setUserDefaultCurrency" : "004",
+    "getExchangerate" : "005",
+    "getUserExchangeData" : "006"
+  },
+  "errormessages" : {
+    "queryExchangeRatesData" : {
+      "001" : [2, "An error occured."],
+      "002" : [1, "API values not set in configuration file."]
+    },
+    "getAllCurrencies" : {
+      "001" : [2, "An error occured."]
+    },
+    "getUserDefaultCurrency" : {
+      "001" : [2, "An error occured."],
+      "002" : [1, "Wrong userid."]
+    },
+    "setUserDefaultCurrency" : {
+      "001" : [2, "An error occured."],
+      "002" : [1, "Not all data stated."]
+    },
+    "getExchangerate" : {
+      "001" : [1, "Requested currency not found or not existing."],
+      "002" : [2, "An error occured."]
+    },
+    "getUserExchangeData" : {
+      "001" : [1, "Not all data stated."]
+    }
+  }
+}

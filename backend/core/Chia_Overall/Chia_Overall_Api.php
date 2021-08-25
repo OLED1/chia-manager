@@ -43,13 +43,10 @@
 
           return $this->getOverallChiaData($fromtime);
         }catch(Exception $e){
-          //TODO Implement correct status code
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
+          return $this->logging->getErrormessage("001", $e);
         }
       }else{
-        //TODO Implement correct status code
-        return array("status" => 1, "message" => "API values not set in configuration file");
+        return $this->logging->getErrormessage("002");
       }
     }
 
@@ -62,16 +59,13 @@
           if(array_key_exists("0", $sqdata)){
             return array("status" => 0, "message" => "Successfully queried chia overall data.", "data" => $sqdata[0]);
           }else{
-            //TODO Implement correct status code
-            return array("status" => 1, "message" => "No rows returned from database. Something does not work correctly");
+            return $this->logging->getErrormessage("001");
           }
         }else{
           //Return historical data
         }
       }catch(Exception $e){
-        //TODO Implement correct status code
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
+        return $this->logging->getErrormessage("002", $e);
       }
     }
 
@@ -94,14 +88,12 @@
 
       if(!$netspace_result["success"]){
         $overall = false;
-        //TODO Implement correct status code and log to file
-        print_r(array("status" => 1, "message" => "The external api {$this->ini["netspace_api"]} returned an error."));
+        $this->logging->getErrormessage("001", "The external api {$this->ini["netspace_api"]} returned an error.");
       }
 
       if(!$market_result["success"]){
         $overall = false;
-        //TODO Implement correct status code and log to file
-        print_r(array("status" => 1, "message" => "The external api {$this->ini["market_api"]} returned an error."));
+        $this->logging->getErrormessage("002", "The external api {$this->ini["market_api"]} returned an error.");
       }
 
       if($overall){
@@ -117,8 +109,7 @@
 
         return array("status" => 0, "message" => "Data from external api queried successfully.", "data" => array("netspace" => $netspace_result, "market" => $market_result));
       }else{
-        //TODO Implement correct status code
-        return array("status" => 1, "message" => "Could not query data from external api please check the log for more information.");
+        $this->logging->getErrormessage("003");
       }
     }
   }

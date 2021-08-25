@@ -10,7 +10,8 @@
   },
   "errormessages" : {
     "updateHarvesterData" : {
-      "001" : [2, "An error occured."]
+      "001" : [2, "An error occured."],
+      "002" : [1, "Not all data stated."]
     },
     "updateFoundPlots" : {
       "001" : [2, "An error occured."]

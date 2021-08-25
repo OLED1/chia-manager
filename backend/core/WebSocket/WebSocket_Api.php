@@ -16,8 +16,6 @@
       try{
         return $this->wsclient->testConnection();
       }catch(Exception $e){
-        /*print_r($e);
-        return array("status" => 1, "An error occured");*/
         return $this->logging->getErrormessage("001", $e);
       }
     }
@@ -31,7 +29,6 @@
           return $con_test;
         }
       }else{
-        //return array("status" => 1, "message" => "SiteID not valid.");
         return $this->logging->getErrormessage("001");
       }
     }
@@ -54,11 +51,9 @@
         if($wssstatus["status"] == 0){
           return $wssstatus;
         }else{
-          //return array("status" => 1, "message" => "Cannot start websocket server.");
           return $this->logging->getErrormessage("001");
         }
       }else{
-        //return array("status" => 1, "message" => "Websocket server running. Cannot start.");
         return $this->logging->getErrormessage("002");
       }
     }
@@ -73,11 +68,9 @@
         if($wssstatus["status"] == "013001001" || $wssstatus["status"] == "013001002"){
           return array("status" => 0, "message" => "Websocket server stopped.");
         }else{
-          //return array("status" => 1, "message" => "Cannot stop websocket server.");
           return $this->logging->getErrormessage("001");
         }
       }else{
-        //return array("status" => 1, "message" => "Websocket server not running. Cannot stop.");
         return $this->logging->getErrormessage("002");
       }
     }
