@@ -260,13 +260,13 @@
       return array("status" =>0, "message" => "Successfully loaded all updatechannels.", "data" => json_decode($channels, true));
     }
 
-    public function queryNodesServicesStatus(array $data = [], array $loginData = NULL, $server = NULL, $ignoreDate = false){
+    public function queryNodesServicesStatus(array $data = [], array $loginData = NULL, $server = NULL){
       $allNodeStatus = $this->getNodeStatus($data);
       if($allNodeStatus["status"] > 0) return $allNodeStatus;
 
       $allNodeStatus = $allNodeStatus["data"];
       if(!is_null($server)){
-        $activeSubscriptions = $server->getActiveSubscriptions($loginData);
+        $activeSubscriptions = $server->getActiveSubscriptions($loginData)["getActiveSubscriptions"];
       }else{
         $this->websocket_api = new WebSocket_Api();
         $activeSubscriptions = $this->websocket_api->sendToWSS("getActiveSubscriptions")["getActiveSubscriptions"];
@@ -293,15 +293,15 @@
       //Onlinestatus: 0 = Disconnected, 1 = Connected, 2 = Querying
       foreach($allNodeStatus AS $arrkey => $nodedata){
         if(in_array($nodedata["nodeid"], $foundnode)){
-          $onlinestatus = 1;
+          $onlinestatus = 0;
           $walletstatus = 2;
           $farmerstatus = 2;
           $harvesterstatus = 2;
         }else{
-          $onlinestatus = 0;
-          $walletstatus = 0;
-          $farmerstatus = 0;
-          $harvesterstatus = 0;
+          $onlinestatus = 1;
+          $walletstatus = 1;
+          $farmerstatus = 1;
+          $harvesterstatus = 1;
         }
 
         try{
@@ -309,7 +309,8 @@
             $querytime = new \DateTime($allNodeStatus[$nodedata["nodeid"]]["querytime"]);
             $querytime->modify('+30 seconds');
 
-            if($now > $querytime || $ignoreDate){
+            //If the previous node status is not the current node state, safe new state
+            if($now > $querytime || $allNodeStatus[$nodedata["nodeid"]]["onlinestatus"] != $onlinestatus){
               $this->queryDataFromNode($nodedata, $server);
 
               $sql = $this->db_api->execute("UPDATE nodes_status SET onlinestatus = ?, walletstatus = ?, farmerstatus = ?, harvesterstatus = ?, querytime = ? WHERE nodeid = ?",
@@ -323,9 +324,7 @@
                                             array($nodedata["nodeid"], $onlinestatus, $walletstatus, $farmerstatus, $harvesterstatus, $now->format("Y-m-d H:i:s")));
           }
         }catch(Exception $e){
-          //TODO Implement correct status code
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
+          return $this->logging_api->getErrormessage("001", $e);
         }
       }
 
@@ -347,12 +346,10 @@
 
           return array("status" => 0, "message" => "Successfully updated $updateCol for node {$data["nodeid"]}.");
         }else{
-          //TODO Implement correct status code
-          return array("status" => 1, "message" => "Stat {$data["stat"]} no known.");
+          return $this->logging_api->getErrormessage("001", "Stat {$data["stat"]} no known.");
         }
       }else{
-        //TODO Implement correct status code
-        return array("status" => 1, "message" => "Not all data stated.");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
@@ -385,9 +382,7 @@
 
         return array("status" => 0, "message" => "Successfully loaded requested node status.", "data" => $sqreturn);
       }catch(Exception $e){
-        //TODO Implement correct status code
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 

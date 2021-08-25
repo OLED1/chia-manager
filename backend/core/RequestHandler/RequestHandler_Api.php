@@ -1,6 +1,5 @@
 <?php
   namespace ChiaMgmt\RequestHandler;
-  use ChiaMgmt\Nodes\Nodes_Api;
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\Login\Login_Api;
   use ChiaMgmt\System\System_Api;
@@ -81,8 +80,8 @@
       }
     }
 
-    public function processNodeConnectionChanged(array $subscriptions){
-      return array("connectedNodesChanged" => array("status" => 0, "message" => "Successfully handeled connection request.", "data" => $subscriptions));
+    public function processNodeConnectionChanged(array $subscriptions, array $changedtypes, int $connstatus){
+      return array("connectedNodesChanged" => array("status" => 0, "message" => "Successfully handeled connection request.", "data" => ["subscriptions" => $subscriptions, "changedtypes" => $changedtypes, "connstatus" => $connstatus]));
     }
 
     public function processConnectionRequest(array $requests){

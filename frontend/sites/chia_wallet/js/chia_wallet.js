@@ -54,16 +54,17 @@ function queryWalletStatus(nodeid){
   sendToWSS("ownRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryWalletStatus", data);
 }
 
-function setWalletBadge(data){
-  var targetbadge = $("#servicestatus_" + data["data"]);
-
+function setWalletBadge(nodeid, status, message){
+  var targetbadge = $("#servicestatus_" + nodeid);
   targetbadge.removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-danger");
-  if(data["status"] == 0){
+  if(status == 0){
     targetbadge.addClass("badge-success");
-  }else{
+  }else if(status == 1){
     targetbadge.addClass("badge-danger");
+  }else if(status == 2){
+    targetbadge.addClass("badge-secondary");
   }
-  targetbadge.html(data["message"]);
+  targetbadge.text(message);
 }
 
 function messagesTrigger(data){
@@ -78,10 +79,18 @@ function messagesTrigger(data){
       initRestartWalletService();
     }else if(key == "walletStatus"){
       setTimeout(function(){
-        setWalletBadge(data[key]["data"]);
+        setWalletBadge(data[key]["data"]["data"], data[key]["data"]["status"], data[key]["data"]["message"]);
       }, 1000);
     }else if(key == "walletServiceRestart"){
-      setWalletBadge(data[key]["data"]["data"]);
+      setWalletBadge(data[key]["data"]["data"], data[key]["data"]["status"], data[key]["data"]["message"]);
+    }else if(key == "connectedNodesChanged"){
+      sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryNodesServicesStatus", {});
+    }else if(key == "queryNodesServicesStatus"){
+      $.each(data[key]["data"], function(nodeid, condata){
+        if(condata["onlinestatus"] == 1){
+          setFarmerBadge(nodeid, condata["onlinestatus"], "Node not reachable");
+        }
+      });
     }
   }else if(data[key]["status"] == "014003001"){
     $(".statusbadge").each(function(){

@@ -5,7 +5,7 @@ function refreshOverallInfo(){
 }
 
 function refreshWalletInfo(){
-  sendToWSS("backendRequest", "ChiaMgmt\\Chia_Wallet\\Chia_Wallet_Api", "Chia_Wallet_Api", "queryWalletData", {})
+  sendToWSS("backendRequest", "ChiaMgmt\\Chia_Wallet\\Chia_Wallet_Api", "Chia_Wallet_Api", "queryWalletData", {});
 }
 
 function refreshFarmInfo(){
@@ -24,28 +24,28 @@ function setServiceCount(){
   $("#crit-service-count").text(critServices);
 }
 
-function setServiceBadge(nodetype, nodeid, code){
+function setServiceBadge(nodetype, nodeid, code, message){
   var targetelement = $("#servicestatus_" + nodetype.toLowerCase() + "_" + nodeid);
   targetelement.removeClass("badge-secondary").removeClass("badge-danger").removeClass("badge-success");
   if(code == 0){
-    targetelement.addClass("badge-success").text(nodetype + " service running.");
-  }else{
-    targetelement.addClass("badge-danger").text(nodetype + " service not running.");
+    targetelement.addClass("badge-success").text(message);
+  }else if(code == 1){
+    targetelement.addClass("badge-danger").text(message);
+  }else if(code == 2){
+    targetelement.addClass("badge-secondary").text(message);
   }
 }
 
 function messagesTrigger(data){
   var key = Object.keys(data);
 
-  console.log(data);
-
   if(data[key]["status"] == 0){
     if(key == "walletStatus"){
-      setServiceBadge("Wallet", data[key]["data"]["data"], data[key]["data"]["status"]);
+      setServiceBadge("Wallet", data[key]["data"]["data"], data[key]["data"]["status"], data[key]["data"]["message"]);
     }else if(key == "farmerStatus"){
-      setServiceBadge("Farmer", data[key]["data"]["data"], data[key]["data"]["status"]);
+      setServiceBadge("Farmer", data[key]["data"]["data"], data[key]["data"]["status"], data[key]["data"]["message"]);
     }else if(key == "harvesterStatus"){
-      setServiceBadge("Harvester", data[key]["data"]["data"], data[key]["data"]["status"]);
+      setServiceBadge("Harvester", data[key]["data"]["data"], data[key]["data"]["status"], data[key]["data"]["message"]);
     }else if(key == "updateWalletData"){
       $('#card-wallet').load(frontend + "/sites/main_overview/templates/card-wallet.php");
     }else if(key == "updateFarmData"){
@@ -54,6 +54,16 @@ function messagesTrigger(data){
         $('#card-harvester').load(frontend + "/sites/main_overview/templates/card-harvester.php");
     }else if(key == "queryOverallData"){
       $('#card-overall').load(frontend + "/sites/main_overview/templates/card-overall.php");
+    }else if(key == "connectedNodesChanged"){
+      sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryNodesServicesStatus", {});
+    }else if(key == "queryNodesServicesStatus"){
+      $.each(data[key]["data"], function(nodeid, condata){
+        if(condata["onlinestatus"] == 1){
+          setServiceBadge("Wallet", nodeid, condata["walletstatus"], "Node not reachable");
+          setServiceBadge("Farmer", nodeid, condata["walletstatus"], "Node not reachable");
+          setServiceBadge("Harvester", nodeid, condata["walletstatus"], "Node not reachable");
+        }
+      });
     }
   }else{
     if(data[key]["status"] == "014003001"){

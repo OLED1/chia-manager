@@ -83,7 +83,7 @@
         $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryptAuthhash($loginData["authhash"])));
         $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
 
-        $this->nodes_api->setNodeServiceStats(["type" => 5, "stat" => ($data["status"] == 0 ? 1 : 0), "nodeid" => $nodeid]);
+        $this->nodes_api->setNodeServiceStats(["type" => 5, "stat" => ($data["status"] == 0 ? 0 : 1), "nodeid" => $nodeid]);
 
         $data["data"] = $nodeid;
         return array("status" =>0, "message" => "Successfully queried wallet status information for node $nodeid.", "data" => $data);
