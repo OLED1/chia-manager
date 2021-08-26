@@ -2,14 +2,16 @@
   namespace ChiaMgmt\UserSettings;
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\Exchangerates\Exchangerates_Api;
+  use ChiaMgmt\Logging\Logging_Api;
 
   class UserSettings_Api{
-    private $db_api, $ini, $exchangerates_api;
+    private $db_api, $ini, $exchangerates_api, $logging_api;
 
     public function __construct(){
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
       $this->db_api = new DB_Api();
       $this->exchangerates_api = new Exchangerates_Api();
+      $this->logging_api = new Logging_Api($this);
     }
 
     //0 = Auto, 1 = Light, 2 = Dark
@@ -28,13 +30,13 @@
 
             return array("status" => 0, "message" => "Successfully set gui mode to {$data["gui_mode"]}.", "data" => $data["gui_mode"]);
           }catch(Exception $e){
-            return $this->logging->getErrormessage("001", $e);
+            return $this->logging_api->getErrormessage("001", $e);
           }
         }else{
-          return $this->logging->getErrormessage("002", "Gui Mode {$data["gui_mode"]} not supported.");
+          return $this->logging_api->getErrormessage("002", "Gui Mode {$data["gui_mode"]} not supported.");
         }
       }else{
-        return $this->logging->getErrormessage("003");
+        return $this->logging_api->getErrormessage("003");
       }
     }
 
@@ -57,10 +59,10 @@
 
           return array("status" => 0, "message" => "Successfully loaded gui mode for user.", "data" => $returndata);
         }catch(Exception $e){
-          return $this->logging->getErrormessage("001", $e);
+          return $this->logging_api->getErrormessage("001", $e);
         }
       }else{
-        return $this->logging->getErrormessage("002");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
