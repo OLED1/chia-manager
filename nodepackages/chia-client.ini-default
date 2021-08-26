@@ -1,0 +1,11 @@
+[ScriptInfo]
+version = 0.1.1-alpha
+
+[Connection]
+server =
+port =
+socketdir =
+type = wss
+
+[NodeInfo]
+authhash =
