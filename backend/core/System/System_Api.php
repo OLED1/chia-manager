@@ -34,7 +34,7 @@
             $sql = $this->db_api->execute("UPDATE system_settings SET settingvalue = ?, confirmed = ? WHERE settingtype = ?", array(json_encode($data[$settingtype]), 0, $settingtype));
           }
 
-          return array("status" => 0, "message" => "Successfully updated system settings for settingtype $settingtype.", "data" => $settingkey);
+          return array("status" => 0, "message" => "Successfully updated system settings for settingtype $settingtype.", "data" => $settingtype);
         }catch(Exception $e){
           return $this->logging->getErrormessage("001", $e);
         }

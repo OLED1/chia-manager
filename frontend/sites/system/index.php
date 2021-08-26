@@ -206,7 +206,7 @@
             </form>
             <div class="row">
               <div id="settingtype_mailing" class="col mb-4">
-                <?php if(!is_null($mailsettings) && count($mailsettings) > 0){ ?>
+                <?php if(count($mailsettings) == 11){ ?>
                   <div class="card <?php echo ($mailsettings["confirmed"] ? "bg-success" : "bg-warning"); ?> text-white shadow">
                       <div class="card-body">
                         Your setting are currently <?php echo ($mailsettings["confirmed"] ? "confirmed" : "not confirmed"); ?>.

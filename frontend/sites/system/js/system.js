@@ -182,6 +182,8 @@ function settingConfirmHandler(){
 function messagesTrigger(data){
   var key = Object.keys(data);
 
+  console.log(data);
+
   if(data[key]["status"] == 0){
     if (key == "setSystemSettings"){
       if(data[key]["data"] == "mailing"){

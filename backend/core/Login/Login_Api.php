@@ -46,12 +46,14 @@
         if($session["status"] == 0){
           try{
             $security = $this->system_api->getSpecificSystemSetting("security");
+            $mailing = $this->system_api->getSpecificSystemSetting("mailing");
             $authkeypassed = 1;
             $sendauthkey = false;
 
             if($security["status"] == 0 && array_key_exists("security", $security["data"]) &&
-                $security["data"]["security"]["TOTP"]["value"] == 1){
-
+                $security["data"]["security"]["TOTP"]["value"] == 1 && $mailing["status"] == 0 &&
+                array_key_exists("mailing", $security["data"] && $mailing["data"]["mailing"]["confirmed"] == 1)
+              ){
                 $authkeypassed = 0;
                 $sendauthkey = true;
             }
@@ -59,9 +61,12 @@
             $sql = $this->dbcon->execute("Insert INTO users_sessions (id, userid, sessid, authkeypassed, deviceinfo, validuntil) VALUES (NULL, ?, ?, ?, ?, ?)",
                                           array($session["data"]["userid"], $session["data"]["sessid"], $authkeypassed, $_SERVER['HTTP_USER_AGENT'], $validuntil));
 
-            if($sendauthkey) $this->generateAndsendAuthKey($session["data"]["userid"], $session["data"]["sessid"]);
+            if($sendauthkey){
+              $this->generateAndsendAuthKey($session["data"]["userid"], $session["data"]["sessid"]);
+              return $this->logging->getErrormessage("001");
+            }
 
-            return $this->logging->getErrormessage("001");
+            return array("status" => "0", "message" => "Logged in.");
           }catch(Exception $e){
             return $this->logging->getErrormessage("002", $e);
           }
