@@ -49,7 +49,7 @@
           if(count($sqdata) == 0){
             $guiModeStatus = $this->setGuiMode(array("gui_mode" => 0), array("userid" => $userid));
             if($guiModeStatus["status"] == 0){
-              $returndata = array("gui_mode" => 0);
+              $returndata = array("gui_mode" => 1);
             }else{
               return $guiModeStatus;
             }
