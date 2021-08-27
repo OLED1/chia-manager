@@ -360,30 +360,32 @@
       }
 
       $nodeids = [];
-      if(count($nodedata) > 0) $or_statement = "WHERE ";
-      for($i = 0; $i < count($nodedata); $i++){
-        if(array_key_exists($i+1, $nodedata)){
-          $or_statement .= "nodeid = ? OR ";
-        }else{
-          $or_statement .= "nodeid = ?";
-        }
-        array_push($nodeids, $nodedata[$i]["nodeid"]);
-      }
-
-      try{
-        $sql = $this->db_api->execute("SELECT nodeid, onlinestatus, walletstatus, farmerstatus, harvesterstatus, querytime FROM nodes_status WHERE $or_statement", $nodeids);
-        $sqreturn = $sql->fetchAll(\PDO::FETCH_ASSOC);
-
-
-        for($i = 0; $i < count($sqreturn); $i++){
-          $sqreturn[$sqreturn[$i]["nodeid"]] = $sqreturn[$i];
-          unset($sqreturn[$i]);
+      if(count($nodedata) > 0){
+        $or_statement = "WHERE ";
+        for($i = 0; $i < count($nodedata); $i++){
+          if(array_key_exists($i+1, $nodedata)){
+            $or_statement .= "nodeid = ? OR ";
+          }else{
+            $or_statement .= "nodeid = ?";
+          }
+          array_push($nodeids, $nodedata[$i]["nodeid"]);
         }
 
-        return array("status" => 0, "message" => "Successfully loaded requested node status.", "data" => $sqreturn);
-      }catch(Exception $e){
-        return $this->logging_api->getErrormessage("001", $e);
+        try{
+          $sql = $this->db_api->execute("SELECT nodeid, onlinestatus, walletstatus, farmerstatus, harvesterstatus, querytime FROM nodes_status $or_statement", $nodeids);
+          $sqreturn = $sql->fetchAll(\PDO::FETCH_ASSOC);
+
+          for($i = 0; $i < count($sqreturn); $i++){
+            $sqreturn[$sqreturn[$i]["nodeid"]] = $sqreturn[$i];
+            unset($sqreturn[$i]);
+          }
+        }catch(Exception $e){
+          return $this->logging_api->getErrormessage("001", $e);
+        }
+      }else{
+        $sqreturn = [];
       }
+      return array("status" => 0, "message" => "Successfully loaded requested node status.", "data" => $sqreturn);
     }
 
     private function queryDataFromNode(array $nodedata, $server = NULL){
