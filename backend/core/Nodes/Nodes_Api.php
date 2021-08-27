@@ -360,7 +360,7 @@
       }
 
       $nodeids = [];
-      $or_statement = "";
+      if(count($nodedata) > 0) $or_statement = "WHERE ";
       for($i = 0; $i < count($nodedata); $i++){
         if(array_key_exists($i+1, $nodedata)){
           $or_statement .= "nodeid = ? OR ";
