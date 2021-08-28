@@ -21,6 +21,9 @@
   if(array_key_exists("TOTP", $security) && array_key_exists("value", $security["TOTP"])) $security = filter_var($security["TOTP"]["value"], FILTER_VALIDATE_BOOLEAN);
   else $security = false;
 
+  $updates = $system_api->checkForUpdates();
+  print_r($updates);
+
   echo "<script> var siteID = 3; </script>";
 ?>
 <!-- Page Heading -->
@@ -93,6 +96,34 @@
             <div class="custom-control custom-checkbox">
                 <input type="checkbox" class="custom-control-input" id="enableTOTP" <?php echo( $security ? "checked" : ""); ?> >
                 <label class="custom-control-label" for="enableTOTP">Enable and enforce TOTP via E-Mail</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <div class="card shadow mb-4">
+          <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Version</h6>
+          </div>
+          <div class="card-body">
+            <h4>Chia Mgmt <?php echo $updates["data"]["localversion"]; ?></h4>
+            <?php if($updates["data"]["updateavail"]) { ?>
+            <h5><span class="badge badge-warning">Your version is out of date. Version <?php echo $updates["data"]["remoteversion"]; ?> is available. Please update soon.</span></h5>
+            <?php }else{ ?>
+            <h5><span class="badge badge-success">Your version is up to date.</span></h5>
+            <?php } ?>
+            <h4>Update Channel</h4>
+            <div class="dropdown">
+              <a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Dropdown link
+              </a>
+              <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                <!--<a class="dropdown-item" data-branch="main" href="#">Stable</a>-->
+                <!--<a class="dropdown-item updatechannel" data-branch="staging" href="#">Staging</a>-->
+                <a class="dropdown-item updatechannel" data-branch="dev" href="#">Development</a>
+              </div>
             </div>
           </div>
         </div>

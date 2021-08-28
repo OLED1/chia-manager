@@ -1,5 +1,5 @@
 $(function(){
-  if(loggedinstatus == "004008002"){
+  if(loggedinstatus == "007008002"){
     showAuthKeyWindow();
   }
 
@@ -146,7 +146,7 @@ $(function(){
             $(location).attr('href',frontend + '/index.php');
           }
         }else{
-          if(result["status"] == "004001001"){
+          if(result["status"] == "007001001"){
             showAuthKeyWindow();
             showMessage("alert-warning", result["message"]);
           }else{

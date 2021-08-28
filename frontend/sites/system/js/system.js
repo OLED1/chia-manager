@@ -99,6 +99,19 @@ $(function(){
     window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "setSystemSettings", datatosend);
   });
 
+  $(".updatechannel").on("click", function(e){
+    e.preventDefault();
+
+    var branch = $(this).attr("data-branch");
+    console.log($(this));
+    datatosend = {};
+    datatosend["updatechannel"] = {};
+    datatosend["updatechannel"]["branch"] = {};
+    datatosend["updatechannel"]["branch"]["value"] = branch;
+
+    window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "setSystemSettings", datatosend);
+  });
+
   function showErrorMessage(messageid,message){
     $("#"+messageid).text(message).show();
     setInterval(function() {

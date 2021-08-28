@@ -52,7 +52,7 @@
 
             if($security["status"] == 0 && array_key_exists("security", $security["data"]) &&
                 $security["data"]["security"]["TOTP"]["value"] == 1 && $mailing["status"] == 0 &&
-                array_key_exists("mailing", $security["data"] && $mailing["data"]["mailing"]["confirmed"] == 1)
+                array_key_exists("mailing", $mailing["data"]) && $mailing["data"]["mailing"]["confirmed"] == 1
               ){
                 $authkeypassed = 0;
                 $sendauthkey = true;
@@ -110,7 +110,7 @@
       if($loginstatus == 0){
         return array("status" => 0, "message" => "You are currently logged in. No need to send authkey.");
 
-      }else if($loginstatus == "004008002"){
+      }else if($loginstatus == "007008002"){
 
         if(array_key_exists("user_id", $_COOKIE) || !is_null($userid)){
           if(array_key_exists('user_id', $_COOKIE)) $userid = $_COOKIE['user_id'];

@@ -72,6 +72,41 @@
       return array("status" => 0, "message" => "Successfully loaded all system settings.", "data" => $this->formatSetting($sql->fetchAll(\PDO::FETCH_ASSOC)));
     }
 
+    public function testConnection(){
+      $this->websocket_api = new WebSocket_Api();
+      return $this->websocket_api->testConnection();
+    }
+
+    public function checkForUpdates(){
+      $updatechannel = $this->getSpecificSystemSetting("updatechannel");
+      if(array_key_exists("updatechannel", $updatechannel["data"])){
+        $updatechannel = $updatechannel["data"]["updatechannel"]["branch"]["value"];
+      }else{ $updatechannel = "main"; }
+
+      $url = "https://files.chiamgmt.edtmair.at/server/versions.json";
+      $json = file_get_contents($url);
+      $json_data = json_decode($json, true);
+
+      if(array_key_exists($updatechannel, $json_data)){
+        if(array_key_exists("0", $json_data[$updatechannel])){
+          $myversion = $this->ini["versnummer"];
+          $remoteversion = $json_data[$updatechannel][0]["version"];
+
+          if(version_compare($myversion, $remoteversion) < 0) $updateavailable = true;
+          else $updateavailable = false;
+
+          return array("status" => 0, "message" => "Successfully loaded updatedata and versions.", "data" => array("localversion" => $myversion, "remoteversion" => $remoteversion, "updateavail" => $updateavailable));
+        }else{
+          //TODO Implement correct status code
+          return array("status" => 1, "message" => "No versions available {$json_data[$updatechannel]}.");
+        }
+      }else{
+        echo "Branch not found.";
+        //TODO Implement correct status code
+        return array("status" => 1, "message" => "Updatechannel {$updatechannel} not found.");
+      }
+    }
+
     private function formatSetting(array $settings){
       foreach($settings AS $key => $value){
         $returndata[$value["settingtype"]] = json_decode($value["settingvalue"], true);
@@ -83,11 +118,6 @@
       }
 
       return $returndata;
-    }
-
-    public function testConnection(){
-      $this->websocket_api = new WebSocket_Api();
-      return $this->websocket_api->testConnection();
     }
 
     private function encryptPassword(string $password){
