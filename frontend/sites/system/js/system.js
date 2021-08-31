@@ -103,13 +103,34 @@ $(function(){
     e.preventDefault();
 
     var branch = $(this).attr("data-branch");
-    console.log($(this));
+    $("#updateDropdownMenu").text($(this).text());
     datatosend = {};
     datatosend["updatechannel"] = {};
     datatosend["updatechannel"]["branch"] = {};
     datatosend["updatechannel"]["branch"]["value"] = branch;
 
     window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "setSystemSettings", datatosend);
+  });
+
+  $("#check-for-updates").on("click", function(e){
+    e.preventDefault();
+
+    window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "checkForUpdates", {});
+  });
+
+  $("#start-update").on("click", function(e){
+    e.preventDefault();
+    $("#confirm-update-process").removeAttr("disabled").find("i").hide();
+    $("#updatelogcontainer").children().remove();
+    $("#updater_modal").modal("show");
+  });
+
+  $("#confirm-update-process").on("click", function(e){
+    e.preventDefault();
+    //$(".update-close-button").hide();
+    $("#confirm-update-process").attr("disabled","disabled").find("i").show();
+    $(".updatelogcontainer").children().hide("slow").remove();
+    window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "processUpdate", {});
   });
 
   function showErrorMessage(messageid,message){
@@ -223,11 +244,36 @@ function messagesTrigger(data){
             "</div>" +
         "</div>"
       );
+    }else if(key == "checkForUpdates"){
+      $("#updateversionbadge").removeClass("badge-success").removeClass("badge-warning");
+      if(data[key]["data"]["updateavail"]){
+        $("#updateversionbadge").addClass("badge-warning").text("Your version is out of date. Version " + data[key]["data"]["remoteversion"]);
+      }else{
+        $("#updateversionbadge").addClass("badge-success").text("Your version is up to date.");
+      }
+    }else if(key == "processUpdate"){
+      $("#confirm-update-process").removeAttr("disabled").find("i").hide();
+      $(".update-close-button").show();
     }
   }else{
     showMessage(2, data["message"]);
     if (key == "setSystemSettings"){
       showErrorMessage("mailsetuperror",data[key]["message"]);
+    }else if(key == "checkForUpdates"){
+      $("#updateversionbadge").removeClass("badge-success").removeClass("badge-warning");
+      $("#updateversionbadge").addClass("badge-warning").text(data[key]["message"]);
+    }else if(key == "processUpdate"){
+      $("#confirm-update-process").removeAttr("disabled").find("i").hide();
+      $(".update-close-button").show();
+      $(".updatelogcontainer").append("<span><i class='fas fa-times-circle text-danger'></i>Update failed. Please resolve the issues and redo the update.</span>");
+    }
+  }
+
+  if(key == "processingUpdate"){
+    console.log(data[key]);
+    if(data[key]["step"] != undefined){
+      var message = "<i class='fas " + (data[key]["processing-status"] == 0 ? "fa-check-circle text-success" : (data[key]["processing-status"] == 1 ? "fa-times-circle text-danger" : "fa-circle text-secondary")) + "'></i>&nbsp;" + data[key]["message"];
+      $("#updatelogcontainer").append("<span id='step-" + data[key]["step"] + "'>" + message + "</span><br>").show('slow');
     }
   }
 }

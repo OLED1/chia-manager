@@ -22,6 +22,14 @@
   else $security = false;
 
   $updates = $system_api->checkForUpdates();
+
+  if($updates["data"]["updatechannel"] == "dev"){
+    $updatechannelname = "Development";
+  }else if($updates["data"]["updatechannel"] == "staging"){
+    $updatechannelname = "Staging";
+  }else{
+    $updatechannelname = "Stable";
+  }
   print_r($updates);
 
   echo "<script> var siteID = 3; </script>";
@@ -109,20 +117,32 @@
           </div>
           <div class="card-body">
             <h4>Chia Mgmt <?php echo $updates["data"]["localversion"]; ?></h4>
-            <?php if($updates["data"]["updateavail"]) { ?>
-            <h5><span class="badge badge-warning">Your version is out of date. Version <?php echo $updates["data"]["remoteversion"]; ?> is available. Please update soon.</span></h5>
-            <?php }else{ ?>
-            <h5><span class="badge badge-success">Your version is up to date.</span></h5>
-            <?php } ?>
+            <?php if(array_key_exists("updateavail", $updates["data"]) && $updates["data"]["updateavail"]) { ?>
+            <h5><span id="updateversionbadge" class="badge badge-warning">Your version is out of date. Version <?php echo $updates["data"]["remoteversion"]; ?> is available. Please update soon.</span></h5>
+          <?php }else if(array_key_exists("updateavail", $updates["data"])){ ?>
+            <h5><span id="updateversionbadge" class="badge badge-success">Your version is up to date.</span></h5>
+          <?php }else{ ?>
+            <h5><span id="updateversionbadge" class="badge badge-warning"><?php echo $updates["message"]; ?></span></h5>
+          <?php }?>
             <h4>Update Channel</h4>
-            <div class="dropdown">
-              <a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                Dropdown link
-              </a>
-              <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-                <!--<a class="dropdown-item" data-branch="main" href="#">Stable</a>-->
-                <!--<a class="dropdown-item updatechannel" data-branch="staging" href="#">Staging</a>-->
-                <a class="dropdown-item updatechannel" data-branch="dev" href="#">Development</a>
+            <div class="row">
+              <div class="col mb-4">
+                <div class="dropdown">
+                  <a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="updateDropdownMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <?php echo $updatechannelname; ?>
+                  </a>
+                  <div class="dropdown-menu" aria-labelledby="updateDropdownMenu">
+                    <a class="dropdown-item updatechannel" data-branch="main" href="#">Stable</a>
+                    <a class="dropdown-item updatechannel" data-branch="staging" href="#">Staging</a>
+                    <a class="dropdown-item updatechannel" data-branch="dev" href="#">Development</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col">
+                <button type="button" class="btn btn-secondary" id="check-for-updates">Check for updates<i class="fas fa-spinner fa-spin" style="display: none;"></i></button>
+                <button type="button" class="btn btn-warning" id="start-update">Start update</button>
               </div>
             </div>
           </div>
@@ -265,7 +285,7 @@
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title"><span class="fas fa-exclamation-triangle"></span>Module verify log</h5>
+        <h5 class="modal-title"><span class="fas fa-paper-plane"></span>&nbsp;Send Testmail</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -293,5 +313,45 @@
     </div>
   </div>
 </div>
+
+<div id="updater_modal" data-verified="false" class="modal" tabindex="-1" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><span class="fas fa-caret-square-up"></span>&nbsp;System Update</h5>
+        <button type="button" class="close update-close-button" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="updater-taskslog">
+        <div class="row">
+          <div class="col mb-4">
+              <div class="card bg-warning text-white shadow">
+                  <div class="card-body">
+                      Please do not reload this page or force a close of this window during update process!
+                  </div>
+              </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <div class="card" style="height: 20em; width: 100%; overflow: auto;">
+              <div class="card-body">
+                <h5>Updatelog</h5>
+                <div id="updatelogcontainer">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="confirm-update-process">Process update<i class="fas fa-spinner fa-spin" style="display: none;"></i></button>
+        <button type="button" class="btn btn-secondary update-close-button" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <script src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/system/js/system.js"?>></script>

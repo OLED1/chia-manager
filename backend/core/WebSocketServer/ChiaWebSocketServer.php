@@ -206,7 +206,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
       return date("d.m.Y H:i:s");
     }
 
-    private function messageFrontendClients(array $loginData, array $datatosend, int $mycon = NULL, array $backendInfo = NULL){
+    public function messageFrontendClients(array $loginData, array $datatosend, int $mycon = NULL, array $backendInfo = NULL){
       if(is_null($backendInfo) && array_key_exists("siteID", $loginData) && $loginData["siteID"] > 0){
         $siteID = $this->sites_data["by-id"][$loginData["siteID"]]["sitestoinform"];
       }else if(!is_null($backendInfo) && array_key_exists("namespace", $backendInfo) && $backendInfo["namespace"] != ""){

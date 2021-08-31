@@ -2,9 +2,10 @@
   namespace ChiaMgmt\System;
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\WebSocket\WebSocket_Api;
+  use ChiaMgmt\System_Update\System_Update_Api;
 
   class System_Api{
-    private $db_api, $ini, $ciphering, $iv_length, $options, $encryption_iv, $websocket_api;
+    private $db_api, $ini, $ciphering, $iv_length, $options, $encryption_iv, $websocket_api, $system_update_api;
     public function __construct(){
       //Variables for pw encrypting and decrypting
       $this->ciphering = "AES-128-CTR";
@@ -13,6 +14,7 @@
       $this->encryption_iv = '1234567891011121';
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
       $this->db_api = new DB_Api();
+      $this->system_update_api = new System_Update_Api();
     }
 
     public function setSystemSettings(array $data, array $loginData = NULL){
@@ -77,7 +79,7 @@
       return $this->websocket_api->testConnection();
     }
 
-    public function checkForUpdates(){
+    public function checkForUpdates(array $data = [], array $loginData = NULL){
       $updatechannel = $this->getSpecificSystemSetting("updatechannel");
       if(array_key_exists("updatechannel", $updatechannel["data"])){
         $updatechannel = $updatechannel["data"]["updatechannel"]["branch"]["value"];
@@ -95,16 +97,20 @@
           if(version_compare($myversion, $remoteversion) < 0) $updateavailable = true;
           else $updateavailable = false;
 
-          return array("status" => 0, "message" => "Successfully loaded updatedata and versions.", "data" => array("localversion" => $myversion, "remoteversion" => $remoteversion, "updateavail" => $updateavailable));
+          return array("status" => 0, "message" => "Successfully loaded updatedata and versions.", "data" => array("localversion" => $myversion, "remoteversion" => $remoteversion, "updateavail" => $updateavailable, "updatechannel" => $updatechannel));
         }else{
           //TODO Implement correct status code
-          return array("status" => 1, "message" => "No versions available {$json_data[$updatechannel]}.");
+          return array("status" => 1, "message" => "No versions available.", "data" => array("localversion" => $this->ini["versnummer"], "updatechannel" => $updatechannel));
         }
       }else{
         echo "Branch not found.";
         //TODO Implement correct status code
-        return array("status" => 1, "message" => "Updatechannel {$updatechannel} not found.");
+        return array("status" => 1, "message" => "Updatechannel {$updatechannel} not found.", "data" => array("localversion" => $this->ini["versnummer"], "updatechannel" => $updatechannel));
       }
+    }
+
+    public function processUpdate(array $data, array $loginData = NULL, $server = NULL){
+      return $this->system_update_api->processUpdate($data, $loginData, $server);
     }
 
     private function formatSetting(array $settings){
