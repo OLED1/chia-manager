@@ -78,50 +78,50 @@ $(function(){
         action: action
       },
       success: function (result, status, xhr) {
-          if(result["status"] == 0){
-            $("#sitecontent").load(frontend+href, function(response, status, xhr) {
-              if ( status == "error" ) {
-                showMessage(2, "Site " + href + " is not existing or has an error.");
-                loadPage("/sites/notfound/","Site not found");
-              }else if(result["status"] == "001005005"){
-                $(location).attr('href',frontend + '/login.php');
+        if(result["status"] == 0){
+          $("#sitecontent").load(frontend+href, function(response, status, xhr) {
+            if(status == "error"){
+              showMessage(2, "Site " + href + " is not existing or has an error.");
+              loadPage("/sites/notfound/","Site not found");
+            }else if(result["status"] == "001005005"){
+              $(location).attr('href',frontend + '/login.php');
+            }else{
+              $("#accordionSidebar .active").removeClass("active");
+              if(clickeditem != undefined){
+                clickeditem.closest(".nav-item").addClass("active");
               }else{
-                $("#accordionSidebar .active").removeClass("active");
-                if(clickeditem != undefined){
-                  clickeditem.closest(".nav-item").addClass("active");
-                }else{
-                  $(".nav-item").first().addClass("active");
+                $(".nav-item").first().addClass("active");
+              }
+
+              /*if(typeof siteID != 'undefined'){
+                var currmenupoint = $("#site_" + siteID);
+                if(currmenupoint.hasClass("subpage")){
+                  var parent = currmenupoint.attr("data-parent");
+                  $("#"+parent).addClass("active");
+                  currmenupoint.addClass("active");
+                }else if(currmenupoint.hasClass("mastersite")){
+                  currmenupoint.addClass("active");
                 }
 
-                /*if(typeof siteID != 'undefined'){
-                  var currmenupoint = $("#site_" + siteID);
-                  if(currmenupoint.hasClass("subpage")){
-                    var parent = currmenupoint.attr("data-parent");
-                    $("#"+parent).addClass("active");
-                    currmenupoint.addClass("active");
-                  }else if(currmenupoint.hasClass("mastersite")){
-                    currmenupoint.addClass("active");
-                  }
+                window.setNewSite();
+              }else{
+                //loadPage("/sites/main_overview/","Main Overview");
+              }*/
 
-                  window.setNewSite();
-                }else{
-                  //loadPage("/sites/main_overview/","Main Overview");
-                }*/
-
-                //var sitename = "Chia Mgmt. - " + $(".sb-sidenav-menu .nav-link.active").last().attr("data-sitename");
-                $('head title', window.parent.document).text("Chia Manager - " + sitename);
-                if (history.pushState) window.history.pushState("", "Chia Manager - " + sitename, frontend + "/index.php" + href);
-              }
-              //setTimeout( function(){ hideLoadingDialog(); }, 500);
-              var data = {
-                userID : userID,
-                siteID : siteID
-              }
-              sendToWSS("updateFrontendViewingSite", "", "", "", data);
-            });
-          }else{
-            //$(location).attr('href',frontend);
-          }
+              //var sitename = "Chia Mgmt. - " + $(".sb-sidenav-menu .nav-link.active").last().attr("data-sitename");
+              $('head title', window.parent.document).text("Chia Manager - " + sitename);
+              if (history.pushState) window.history.pushState("", "Chia Manager - " + sitename, frontend + "/index.php" + href);
+            }
+            //setTimeout( function(){ hideLoadingDialog(); }, 500);
+            var data = {
+              userID : userID,
+              siteID : siteID
+            }
+            sendToWSS("updateFrontendViewingSite", "", "", "", data);
+          });
+        }else{
+          //$(location).attr('href',frontend);
+        }
       },
       error:function(xhr, status, error){
           showMessage(2, error);

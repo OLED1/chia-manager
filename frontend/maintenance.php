@@ -15,8 +15,6 @@
     $sec = "10";
     header("Refresh: $sec; url=$page");
   }
-
-  print_r()
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -40,7 +38,7 @@
       <link href="frameworks/bootstrap/css/sb-admin-2.min.css" rel="stylesheet">
   </head>
   <body class="bg-gradient-primary">
-    <div class="container">
+    <div class="container" style="display: none;">
       <div class="row justify-content-center">
         <div class="col-xl-5 col-lg-6 col-md-6">
           <div class="card o-hidden border-0 shadow-lg my-5">
@@ -51,7 +49,8 @@
                     <div class="text-center">
                       <i class="fas fa-hard-hat 9px" style="font-size: 3em"></i>
                       <h2>Maintenance</h2>
-                      <p>This instance is currently in maintenance mode. Please check back later.</p>
+                      <p>This instance is currently in maintenance mode. Please check back later.<br>
+                      The site will be reloaded as soon as the maintenance ends.</p>
                     </div>
                   </div>
                 </div>
@@ -62,4 +61,14 @@
       </div>
     </div>
   </body>
+  <script src="frameworks/bootstrap/vendor/jquery/jquery.min.js"></script>
+  <script>
+    $(function(){
+      if($("#maintenance_mode_modal").length > 0 && $("#update_routines").length == 0){
+        $("#maintenance_mode_modal").modal("show");
+      }else if($("#update_routines").length == 0){
+        $(".container").show();
+      }
+    });
+  </script>
 </html>

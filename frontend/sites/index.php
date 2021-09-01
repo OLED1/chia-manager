@@ -10,17 +10,17 @@
   $ini = parse_ini_file(__DIR__.'/../../backend/config/config.ini.php');
   $loggedin = $login_api->checklogin();
 
+  $frontendurl = $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"];
   if($loggedin["status"] > 0){
-    header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/login.php");
+    header("Location: {$frontendurl}/login.php");
   }
 
   $system_update_api = new System_Update_Api();
   $system_update_state = $system_update_api->checkUpdateRoutine();
 
-  if($system_update_state["data"]["db_update_needed"] > 0){
-    header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/execupdateroutine.php");
-  }else if($system_update_state["data"]["maintenance_mode"] == 1){
-    header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/maintenance.php");
+  $showupdatemodal = false;
+  if($system_update_state["data"]["db_update_needed"] < 0 && $system_update_state["data"]["userid_updating"] == $_COOKIE["user_id"] && $system_update_state["data"]["maintenance_mode"] == 1){
+    $showupdatemodal = true;
   }
 
   $users_api = new Users_Api();
@@ -54,14 +54,14 @@
     <link rel="icon" type="image/png" href="<?php echo $ini["frontend_url"]."/img/favicon.png"?>" sizes="96x96">
 
     <!-- Custom fonts for this template-->
-    <link href="../frameworks/bootstrap/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
-    <link href="../css/google_fonts/nunito/nunito-font.css" rel="stylesheet">
+    <link href="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="<?php echo $ini["frontend_url"]; ?>/css/google_fonts/nunito/nunito-font.css" rel="stylesheet">
     <!-- Custom styles for this template-->
-    <link href="../frameworks/bootstrap/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-    <link href="../frameworks/bootstrap/css/sb-admin-2.min.css" rel="stylesheet">
-    <link href="../css/custom.css" rel="stylesheet">
-    <link href="../css/gui-modes/dark-mode.css" rel="stylesheet">
-    <link href="../frameworks/davidstutz-multiselect/css/bootstrap-multiselect.min.css" rel="stylesheet">
+    <link href="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="<?php echo $frontendurl; ?>/frameworks/bootstrap/css/sb-admin-2.min.css" rel="stylesheet">
+    <link href="<?php echo $frontendurl; ?>/css/custom.css" rel="stylesheet">
+    <link href="<?php echo $frontendurl; ?>/css/gui-modes/dark-mode.css" rel="stylesheet">
+    <link href="<?php echo $frontendurl; ?>/frameworks/davidstutz-multiselect/css/bootstrap-multiselect.min.css" rel="stylesheet">
 </head>
 
 <body id="page-top" class="gui-mode-elem <?php echo $gui_mode_string; ?>" style="overflow: auto;">
@@ -327,31 +327,114 @@
                   But if you want to support us and this project you can contribute some Mojos to this address: (Coming soon).</p>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Close</button>
+                  <button class="btn btn-secondary" type="button" data-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
     </div>
-
+    <div class="modal fade" id="maintenance_mode_modal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+      <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 30em;">
+        <div class="modal-content">
+          <div class="modal-body">
+            <div class="p-5">
+              <div class="text-center">
+                <i class="fas fa-hard-hat 9px" style="font-size: 3em"></i>
+                <h2>Maintenance</h2>
+                <p>This instance is currently in maintenance mode.<br>
+                The site will be reloaded as soon as the maintenance ends.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <?php if($showupdatemodal){ ?>
+    <div class="modal fade" id="update_routines" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+      <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 30em;">
+        <div class="modal-content">
+          <div class="modal-body">
+            <div class="p-5">
+              <div class="text-center">
+                <div class="row">
+                  <div class="col mb-4">
+                    <i class="fas fa-hard-hat 9px" style="font-size: 3em"></i>
+                    <h2>Finish Update</h2>
+                    <span id="update_text">
+                      <p>The previous update process was finished successfully. Now the database needs to be updated. Press the button bellow to finish the update.</p>
+                    </span>
+                    <span id="update_success" style="display: none;">
+                      <i class="fas fa-check-circle text-success" style="font-size: 6em;"></i>
+                      <div class="row">
+                        <div class="col mb-4">
+                          <h5>Success! The maintenance mode has been stopped.<br>The window will now be reloaded.</h5>
+                        </div>
+                      </div>
+                      <div class="row">
+                        <div class="col mb-4">
+                          <div class="card bg-warning text-white shadow">
+                            <div class="card-body">
+                              Please do not forget to restart the websocket server.
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="row">
+                        <div class="col">
+                          <button id="success_reload" class="btn btn-success" type="button">Reload</button>
+                        </div>
+                      </div>
+                    </span>
+                    <span id="update_failed" style="display: none;">
+                      <i class="fas fa-times-circle text-danger" style="font-size: 6em;"></i>
+                      <h5>Failed with the following error:<br><span id="error_message"></span><br>You have one of the following options:</h5>
+                      <div class="row">
+                        <div class="col mb-4">
+                          <button id="error_retry" class="btn btn-primary" type="button">Retry update</button>
+                        </div>
+                      </div>
+                      <div class="row">
+                        <div class="col">
+                          <button id="error_disable_maintenance" class="btn btn-secondary" type="button">Disable maintenance mode and finish with error</button>
+                        </div>
+                      </div>
+                    </span>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col">
+                    <button id="finish_update_btn" class="btn btn-success" type="button" style="display: none;">Finish update<i class="fas fa-spinner fa-spin" style="display: none;"></i></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <?php } ?>
 
     <!-- Bootstrap core JavaScript-->
-    <script src="../frameworks/bootstrap/vendor/jquery/jquery.min.js"></script>
-    <script src="../frameworks/bootstrap/vendor/bootstrap/__old/js/bootstrap.bundle.min.js"></script>
+    <script src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/jquery/jquery.min.js"></script>
+    <script src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/bootstrap/__old/js/bootstrap.bundle.min.js"></script>
 
     <!-- Core plugin JavaScript-->
-    <script src="../frameworks/bootstrap/vendor/jquery-easing/jquery.easing.min.js"></script>
-    <script src="../frameworks/davidstutz-multiselect/js/bootstrap-multiselect.min.js"></script>
+    <script src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/jquery-easing/jquery.easing.min.js"></script>
+    <script src="<?php echo $frontendurl; ?>/frameworks/davidstutz-multiselect/js/bootstrap-multiselect.min.js"></script>
 
     <!-- Custom scripts for all pages-->
-    <script src="../frameworks/bootstrap/js/sb-admin-2.min.js"></script>
+    <script src="<?php echo $frontendurl; ?>/frameworks/bootstrap/js/sb-admin-2.min.js"></script>
 
     <!-- Page level plugins -->
-    <script src="../frameworks/bootstrap/vendor/datatables/jquery.dataTables.min.js"></script>
-    <script src="../frameworks/bootstrap/vendor/datatables/dataTables.bootstrap4.min.js"></script>
+    <script src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/datatables/jquery.dataTables.min.js"></script>
+    <script src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/datatables/dataTables.bootstrap4.min.js"></script>
 
-    <script src="../js/sitewrapper/load_pages.js"></script>
-    <script src="../js/sitewrapper/transfer.js"></script>
-    <script src="../js/sitewrapper/sitewrapper.js"></script>
+    <script src="<?php echo $frontendurl; ?>/js/sitewrapper/load_pages.js"></script>
+    <script src="<?php echo $frontendurl; ?>/js/sitewrapper/transfer.js"></script>
+    <script src="<?php echo $frontendurl; ?>/js/sitewrapper/sitewrapper.js"></script>
+
+    <?php if($showupdatemodal){ ?>
+      <script src="<?php echo $frontendurl; ?>/js/sitewrapper/finish_update.js"></script>
+    <?php } ?>
 </body>
 
 </html>

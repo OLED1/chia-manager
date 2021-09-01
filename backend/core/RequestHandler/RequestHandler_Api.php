@@ -27,7 +27,7 @@
     }
 
     public function processRequest(array $loginData, array $backendInfo, array $data, $server = NULL){
-      if($this->system_update_api->checkUpdateRoutine()["data"]["maintenance_mode"] == 1){
+      if($this->system_update_api->checkUpdateRoutine()["data"]["maintenance_mode"] == 1 && $backendInfo["method"] != "finishUpdate" && $backendInfo["method"] != "disableMaintenanceMode"){
         return $this->logging->getErrormessage("001");
       }
 
@@ -35,7 +35,7 @@
         try{
           $this_class = new $backendInfo['namespace']();
           $return = $this_class->{$backendInfo['method']}($data, $loginData, $server);
-          //sleep(1);
+
           return array($backendInfo['method'] => $return);
         }catch(Exception $e){
           return $this->logging->getErrormessage("002", "Class {$backendInfo['namespace']} or function {$backendInfo['method']} not existing.");

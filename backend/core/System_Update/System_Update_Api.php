@@ -20,7 +20,7 @@
 
     public function checkUpdateRoutine(){
       try{
-        $sql = $this->db_api->execute("SELECT dbversion, lastsucupdate, maintenance_mode FROM system_infos", array());
+        $sql = $this->db_api->execute("SELECT dbversion, userid_updating, lastsucupdate, maintenance_mode FROM system_infos", array());
         $returndata = $sql->fetchAll(\PDO::FETCH_ASSOC)[0];
         $returndata["db_update_needed"] = version_compare($returndata["dbversion"], $this->ini["versnummer"]);
 
@@ -48,6 +48,51 @@
         return array("status" => 1, "message" => "Update process failed.");
       }else{
         return array("status" => 0, "message" => "Update process success.");
+      }
+    }
+
+    public function finishUpdate(array $data, array $loginData = NULL){
+      $db_update_file = file_get_contents(__DIR__ . "/db_update.json");
+      $db_update_json = json_decode($db_update_file, true);
+
+      if(array_key_exists("versions", $db_update_json)){
+        try{
+          $db_system = $this->checkUpdateRoutine();
+
+          if($db_system["data"]["db_update_needed"] < 0){
+            foreach($db_update_json["versions"] AS $arrkey => $dbstatements){
+              foreach ($dbstatements as $arrkey1 => $statement) {
+                $sql = $this->db_api->execute($statement, array());
+              }
+            }
+          }
+
+          $now = new \DateTime("now");
+          $sql = $this->db_api->execute("UPDATE system_infos SET dbversion = ?, userid_updating = ?, lastsucupdate = ?, maintenance_mode = ?",
+                                        array($this->ini["versnummer"], 0, $now->format("Y-m-d H:i:s"), 0));
+        }catch(Exception $e){
+          //TODO Implement correct status code
+          print_r($e);
+          return array("status" => 1, "message" => "A database error occured.");
+        }
+
+        return array("status" => 0, "message" => "Successfully finished update to version {$this->ini["versnummer"]}.");
+      }else{
+        //TODO Implement correct status code
+        return array("status" => 1, "message" => "An error occured, db_update.json could not be found!");
+      }
+    }
+
+    public function disableMaintenanceMode(array $data, array $loginData = NULL){
+      try{
+        $sql = $this->db_api->execute("UPDATE system_infos SET maintenance_mode = ?",
+                                      array(0));
+
+        return array("status" => 0, "message" => "Successfully disabled maintenance mode.");
+      }catch(Exception $e){
+        //TODO Implement correct status code
+        print_r($e);
+        return array("status" => 1, "message" => "A database error occured.");
       }
     }
 
