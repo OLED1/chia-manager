@@ -5,6 +5,7 @@
   use ChiaMgmt\System\System_Api;
   use ChiaMgmt\Mailing\Mailing_Api;
   use ChiaMgmt\Logging\Logging_Api;
+  use ChiaMgmt\System_Update\System_Update_Api;
 
   require __DIR__ . '/../../../vendor/autoload.php';
 
@@ -21,10 +22,15 @@
       $this->login_api = new Login_Api();
       $this->db_api = new DB_Api();
       $this->logging = new Logging_Api($this);
+      $this->system_update_api = new System_Update_Api();
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
     }
 
     public function processRequest(array $loginData, array $backendInfo, array $data, $server = NULL){
+      if($this->system_update_api->checkUpdateRoutine()["data"]["maintenance_mode"] == 1){
+        return $this->logging->getErrormessage("001");
+      }
+
       if(class_exists($backendInfo['namespace']) && method_exists($backendInfo['namespace'], $backendInfo['method'])){
         try{
           $this_class = new $backendInfo['namespace']();
@@ -32,11 +38,11 @@
           //sleep(1);
           return array($backendInfo['method'] => $return);
         }catch(Exception $e){
-          return $this->logging->getErrormessage("001", "Class {$backendInfo['namespace']} or function {$backendInfo['method']} not existing.");
+          return $this->logging->getErrormessage("002", "Class {$backendInfo['namespace']} or function {$backendInfo['method']} not existing.");
         }
       }else{
         return array("status" => 1, "message" => "Class {$backendInfo['namespace']} or function {$backendInfo['method']} not existing.");
-        return $this->logging->getErrormessage("002", "Class {$backendInfo['namespace']} or function {$backendInfo['method']} not existing.");
+        return $this->logging->getErrormessage("003", "Class {$backendInfo['namespace']} or function {$backendInfo['method']} not existing.");
       }
     }
 

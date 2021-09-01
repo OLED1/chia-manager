@@ -18,6 +18,20 @@
       $this->preverror = false;
     }
 
+    public function checkUpdateRoutine(){
+      try{
+        $sql = $this->db_api->execute("SELECT dbversion, lastsucupdate, maintenance_mode FROM system_infos", array());
+        $returndata = $sql->fetchAll(\PDO::FETCH_ASSOC)[0];
+        $returndata["db_update_needed"] = version_compare($returndata["dbversion"], $this->ini["versnummer"]);
+
+        return array("status" => 0, "message" => "Successfully queried system update state.", "data" => $returndata);
+      }catch(Exception $e){
+        //TODO Implement correct status code
+        print_r($e);
+        return array("status" => 1, "message" => "An error occured");
+      }
+    }
+
     public function processUpdate(array $data, array $loginData = NULL, $server = NULL){
       $this->server = $server;
       $now = new \DateTime();
@@ -207,13 +221,13 @@
       $new_content = '';
       foreach ($config_data as $section => $section_content) {
           $section_content = array_map(function($value, $key) {
-              return "$key=$value";
+              return "$key='$value'";
           }, array_values($section_content), array_keys($section_content));
           $section_content = implode("\n", $section_content);
           $new_content .= "[$section]\n$section_content\n\n";
       }
 
-      $new_content = ";<?php\n;die(); // For further security;\n/*\n{$new_content};*/";
+      $new_content = ";<?php\n;die(); // For further security;\n;/*\n{$new_content};*/";
       file_put_contents($config_file, $new_content);
 
       $tempini = parse_ini_file($config_file);

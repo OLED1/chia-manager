@@ -127,10 +127,14 @@ $(function(){
 
   $("#confirm-update-process").on("click", function(e){
     e.preventDefault();
-    //$(".update-close-button").hide();
+    $(".update-close-button").hide();
     $("#confirm-update-process").attr("disabled","disabled").find("i").show();
-    $(".updatelogcontainer").children().hide("slow").remove();
+    $("#updatelogcontainer").children().hide("slow").remove();
     window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "processUpdate", {});
+  });
+
+  $("#proceed-update-routine").on("click", function(e){
+    location.reload();
   });
 
   function showErrorMessage(messageid,message){
@@ -252,8 +256,8 @@ function messagesTrigger(data){
         $("#updateversionbadge").addClass("badge-success").text("Your version is up to date.");
       }
     }else if(key == "processUpdate"){
-      $("#confirm-update-process").removeAttr("disabled").find("i").hide();
-      $(".update-close-button").show();
+      $("#confirm-update-process").hide();
+      $("#proceed-update-routine").show();
     }
   }else{
     showMessage(2, data["message"]);

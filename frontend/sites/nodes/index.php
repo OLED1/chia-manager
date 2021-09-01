@@ -1,27 +1,12 @@
 <?php
-  session_start();
+  include("../standard_headers.php");
 
-  use ChiaMgmt\Login\Login_Api;
   use ChiaMgmt\Nodes\Nodes_Api;
-  require __DIR__ . '/../../../vendor/autoload.php';
-
-  $login_api = new Login_Api();
-  $ini = parse_ini_file(__DIR__.'/../../../backend/config/config.ini.php');
-  $loggedin = $login_api->checklogin();
-
-  if($loggedin["status"] > 0){
-    header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/login.php");
-  }
-
   $nodes_api = new Nodes_Api();
   $configuredNodes = $nodes_api->getConfiguredNodes();
   $activeSubscriptions = $nodes_api->getActiveSubscriptions();
   $activeRequests = $nodes_api->getActiveRequests();
   $nodetypes = $nodes_api->getNodeTypes();
-
-  //echo "<pre>";
-  //print_r($configuredNodes);
-  //echo "</pre>";
 
   if(array_key_exists("data", $configuredNodes)) $configuredNodes = $configuredNodes["data"];
   if(array_key_exists("data", $activeSubscriptions)) $activeSubscriptions = $activeSubscriptions["data"];

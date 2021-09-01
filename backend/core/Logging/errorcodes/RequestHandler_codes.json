@@ -8,8 +8,9 @@
   },
   "errormessages" : {
     "processRequest" : {
-      "001" : [1, "Class or function not found."],
-      "002" : [1, "Class or function not found."]
+      "001" : [1, "This system is currently in maintenance."],
+      "002" : [1, "Class or function not found."],
+      "003" : [1, "Class or function not found."]
     },
     "processGetActiveSubscriptions" : {
       "001" : [1, "You are not allowed to query this information."]

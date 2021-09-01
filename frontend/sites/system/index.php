@@ -1,20 +1,8 @@
 <?php
-  session_start();
-
-  use ChiaMgmt\Login\Login_Api;
+  include("../standard_headers.php");
   use ChiaMgmt\System\System_Api;
-  require __DIR__ . '/../../../vendor/autoload.php';
-
-  $login_api = new Login_Api();
-  $ini = parse_ini_file(__DIR__.'/../../../backend/config/config.ini.php');
-  $loggedin = $login_api->checklogin();
-
-  if($loggedin["status"] > 0){
-    header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/login.php");
-  }
 
   $system_api = new System_Api();
-
   $all_settings = $system_api->getAllSystemSettings()["data"];
   $mailsettings = $all_settings["mailing"];
   $security = $all_settings["security"];
@@ -347,6 +335,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-primary" id="confirm-update-process">Process update<i class="fas fa-spinner fa-spin" style="display: none;"></i></button>
+        <button type="button" class="btn btn-primary" id="proceed-update-routine" kstyle="display: none;">Proceed update routing</button>
         <button type="button" class="btn btn-secondary update-close-button" data-dismiss="modal">Close</button>
       </div>
     </div>

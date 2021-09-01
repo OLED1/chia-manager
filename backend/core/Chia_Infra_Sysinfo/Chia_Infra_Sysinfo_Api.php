@@ -46,7 +46,7 @@
                                             LEFT JOIN chia_infra_sysinfo cif ON cif.nodeid = n.id AND cif.timestamp = (SELECT max(cif1.timestamp) FROM chia_infra_sysinfo cif1 WHERE cif1.nodeid = n.id)
                                             WHERE n.id = (
                                                 SELECT nt.nodeid FROM nodetype nt WHERE nt.code >= 3 AND nt.code <= 5 AND nt.nodeid = n.id LIMIT 1
-                                            )", array($data["nodeid"]));
+                                            )", array());
           }else{
             $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, cif.timestamp, cif.load_1min, cif.load_5min, cif.load_15min, cif.filesystem, cif.memory_total, cif.memory_free, cif.memory_buffers, cif.memory_cached, cif.swap_total, cif.swap_free, cif.cpu_count, cif.cpu_cores, cif.cpu_model
                                             FROM nodes n
@@ -60,7 +60,7 @@
             $returnarray[$sysinfodata["id"]] = $sysinfodata;
           }
 
-          return array("status" =>0, "message" => "Successfully loaded latest system information for node {$data["nodeid"]}.", "data" => $returnarray);
+          return array("status" => 0, "message" => "Successfully loaded latest system information.", "data" => $returnarray);
         }catch(Exception $e){
           return $this->logging->getErrormessage("001", $e);
         }
