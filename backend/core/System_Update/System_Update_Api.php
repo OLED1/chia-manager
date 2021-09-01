@@ -153,7 +153,12 @@
             $zip->close();
 
             $this->full_copy("{$tmpdir}/chia-web-gui-{$updatechannel}/", "../../../..{$this->ini["system_root"]}/");
-            $this->sendStatus(0, 4, 0, $message);
+            $newversion = $version_file_data[$updatechannel][0]["version"];
+            if($this->updateConfigFile($newversion)){
+              $this->sendStatus(0, 4, 0, $message);
+            }else{
+              $this->sendStatus(0, 4, 1, "{$message}. Could not set new version. Please enter it manually: {$newversion}");
+            }
           }else{
             $this->preverror = true;
             $this->sendStatus(0, 4, 1, "{$message}. Could not open {$tmpfiledir}.");
@@ -187,6 +192,35 @@
             copy($item, $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
           }
         }
+      }
+    }
+
+    private function updateConfigFile($newversion){
+      $config_file = __DIR__.'/../../config/config.ini.php';
+      $config_data = parse_ini_file($config_file, true);
+      print_r($config_data);
+      $key = "application";
+      $section = "versnummer";
+      $value = $newversion;
+
+      $config_data[$key][$section] = $value;
+      $new_content = '';
+      foreach ($config_data as $section => $section_content) {
+          $section_content = array_map(function($value, $key) {
+              return "$key=$value";
+          }, array_values($section_content), array_keys($section_content));
+          $section_content = implode("\n", $section_content);
+          $new_content .= "[$section]\n$section_content\n\n";
+      }
+
+      $new_content = ";<?php\n;die(); // For further security;\n/*\n{$new_content};*/";
+      file_put_contents($config_file, $new_content);
+
+      $tempini = parse_ini_file($config_file);
+      if(array_key_exists("versnummer", $tempini) && $tempini["versnummer"] == $newversion){
+        return true;
+      }else {
+        return false;
       }
     }
 
