@@ -197,8 +197,6 @@
       }else{ $updatechannel = "main"; }
 
       if(!is_null($version_file_data) && array_key_exists($updatechannel, $version_file_data)){
-        print_r($version_file_data);
-
         $updateurl = $version_file_data[$updatechannel][0]["link"];
         $tmpdir = "/tmp";
         if(is_dir($tmpdir)){
