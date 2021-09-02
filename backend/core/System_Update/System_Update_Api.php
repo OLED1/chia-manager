@@ -3,9 +3,10 @@
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\WebSocket\WebSocket_Api;
   use ChiaMgmt\System\System_Api;
+  use ChiaMgmt\Logging\Logging_Api;
 
   class System_Update_Api{
-    private $db_api, $ini, $ciphering, $iv_length, $options, $encryption_iv, $websocket_api;
+    private $db_api, $ini, $ciphering, $iv_length, $options, $encryption_iv, $websocket_api, $logging_api;
 
     public function __construct(){
       $this->ciphering = "AES-128-CTR";
@@ -16,6 +17,7 @@
       $this->db_api = new DB_Api();
       $this->server = NULL;
       $this->preverror = false;
+      $this->logging_api = new Logging_Api($this);
     }
 
     public function checkUpdateRoutine(){
@@ -26,7 +28,7 @@
 
         return array("status" => 0, "message" => "Successfully queried system update state.", "data" => $returndata);
       }catch(Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 
@@ -43,7 +45,7 @@
       if(!$this->preverror) $this->downloadUpdateData("Downloading and installing update");
 
       if($this->preverror){
-        return $this->logging->getErrormessage("001");
+        return $this->logging_api->getErrormessage("001");
       }else{
         return array("status" => 0, "message" => "Update process success.");
       }
@@ -69,12 +71,12 @@
           $sql = $this->db_api->execute("UPDATE system_infos SET dbversion = ?, userid_updating = ?, lastsucupdate = ?, maintenance_mode = ?",
                                         array($this->ini["versnummer"], 0, $now->format("Y-m-d H:i:s"), 0));
         }catch(Exception $e){
-          return $this->logging->getErrormessage("001", $e);
+          return $this->logging_api->getErrormessage("001", $e);
         }
 
         return array("status" => 0, "message" => "Successfully finished update to version {$this->ini["versnummer"]}.");
       }else{
-        return $this->logging->getErrormessage("002");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
@@ -85,7 +87,7 @@
 
         return array("status" => 0, "message" => "Successfully disabled maintenance mode.");
       }catch(Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 
@@ -94,7 +96,7 @@
         $sql = $this->db_api->execute("UPDATE system_infos SET userid_updating = ?, maintenance_mode = ?",
                                       array($userid, 1));
       }catch(Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 

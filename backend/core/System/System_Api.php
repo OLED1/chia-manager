@@ -3,9 +3,10 @@
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\WebSocket\WebSocket_Api;
   use ChiaMgmt\System_Update\System_Update_Api;
+  use ChiaMgmt\Logging\Logging_Api;
 
   class System_Api{
-    private $db_api, $ini, $ciphering, $iv_length, $options, $encryption_iv, $websocket_api, $system_update_api;
+    private $db_api, $ini, $ciphering, $iv_length, $options, $encryption_iv, $websocket_api, $system_update_api, $logging_api;
     public function __construct(){
       //Variables for pw encrypting and decrypting
       $this->ciphering = "AES-128-CTR";
@@ -15,6 +16,7 @@
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
       $this->db_api = new DB_Api();
       $this->system_update_api = new System_Update_Api();
+      $this->logging_api = new Logging_Api($this);
     }
 
     public function setSystemSettings(array $data, array $loginData = NULL){
@@ -38,7 +40,7 @@
 
           return array("status" => 0, "message" => "Successfully updated system settings for settingtype $settingtype.", "data" => $settingtype);
         }catch(Exception $e){
-          return $this->logging->getErrormessage("001", $e);
+          return $this->logging_api->getErrormessage("001", $e);
         }
       }
     }
@@ -49,7 +51,7 @@
 
         return array("status" => 0, "message" => "Successfully loaded all system settings.", "data" => $this->formatSetting($sql->fetchAll(\PDO::FETCH_ASSOC)));
       }catch(Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 
@@ -61,10 +63,10 @@
 
           return array("status" => 0, "message" => "Successfully confirmed settingtype $settingtype.", "data" => array("settingtype" => $settingtype));
         }catch(Exception $e){
-          return $this->logging->getErrormessage("001", $e);
+          return $this->logging_api->getErrormessage("001", $e);
         }
       }else{
-        return $this->logging->getErrormessage("002");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
@@ -99,12 +101,12 @@
 
           return array("status" => 0, "message" => "Successfully loaded updatedata and versions.", "data" => array("localversion" => $myversion, "remoteversion" => $remoteversion, "updateavail" => $updateavailable, "updatechannel" => $updatechannel));
         }else{
-          $returndata = $this->logging->getErrormessage("001");
+          $returndata = $this->logging_api->getErrormessage("001");
           $returndata["data"] = array("localversion" => $this->ini["versnummer"], "updatechannel" => $updatechannel);
           return $returndata;
         }
       }else{
-        return $this->logging->getErrormessage("002", "Updatechannel {$updatechannel} not found.");
+        return $this->logging_api->getErrormessage("002", "Updatechannel {$updatechannel} not found.");
       }
     }
 
@@ -112,7 +114,7 @@
       if($this->checkForUpdates()["updateavail"]){
         return $this->system_update_api->processUpdate($data, $loginData, $server);
       }else{
-        return $this->logging->getErrormessage("001");
+        return $this->logging_api->getErrormessage("001");
       }
     }
 
