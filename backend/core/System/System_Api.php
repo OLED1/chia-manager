@@ -117,6 +117,7 @@
     }
 
     private function formatSetting(array $settings){
+      $returndata = [];
       foreach($settings AS $key => $value){
         $returndata[$value["settingtype"]] = json_decode($value["settingvalue"], true);
         foreach($returndata[$value["settingtype"]] AS $settingkey => $settingvalue){
