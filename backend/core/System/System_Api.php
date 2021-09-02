@@ -104,7 +104,7 @@
           return $returndata;
         }
       }else{
-        return $this->logging->getErrormessage("002", "Updatechannel {$updatechannel} not found.")
+        return $this->logging->getErrormessage("002", "Updatechannel {$updatechannel} not found.");
       }
     }
 
