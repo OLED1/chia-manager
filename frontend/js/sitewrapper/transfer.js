@@ -28,14 +28,11 @@ function initWsclient(){
       }else if($.isFunction(window.messagesTrigger)){
         window.messagesTrigger(data);
 
-        if("status" in data && data["status"] == 0){
-          showMessage(0, data["message"]);
-        }else if(key in data && "status" in data[key] && data[key]["status"] == 0){
+        var status = data[key]["status"];
+        if(status == 0 && data[key]["message"] != undefined){
           showMessage(0, data[key]["message"]);
-        }else if("status" in data && data["status"] != 0){
-          showMessage(data["loglevel"], data["message"]);
-        }else if(key in data && "status" in data[key] && data["status"] != 0){
-          showMessage(data[key]["loglevel"], data[key]["message"]);
+        }else if(status != 0 && data[key]["message"] != undefined){
+          showMessage(1, data[key]["status"] + ": " + data[key]["message"]);
         }
       }
     };

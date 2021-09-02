@@ -1,0 +1,27 @@
+{
+  "functioncodes" : {
+    "checkUpdateRoutine" : "001",
+    "processUpdate" : "002",
+    "finishUpdate" : "003",
+    "disableMaintenanceMode" : "004",
+    "enableUpdateMode" : "005"
+  },
+  "errormessages" : {
+    "checkUpdateRoutine" : {
+      "001" : [2, "An error occured."]
+    },
+    "processUpdate" : {
+      "001" : [2, "Update process failed."]
+    },
+    "finishUpdate" : {
+      "001" : [2, "A database error occured."],
+      "002" : [2, "An error occured, db_update.json could not be found!"]
+    },
+    "disableMaintenanceMode" : {
+      "001" : [2, "A database error occured."]
+    },
+    "enableUpdateMode" : {
+      "001" : [2, "An error occured."]
+    }
+  }
+}

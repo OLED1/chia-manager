@@ -252,8 +252,10 @@ function messagesTrigger(data){
       $("#updateversionbadge").removeClass("badge-success").removeClass("badge-warning");
       if(data[key]["data"]["updateavail"]){
         $("#updateversionbadge").addClass("badge-warning").text("Your version is out of date. Version " + data[key]["data"]["remoteversion"]);
+        $("#check-for-updates").show();
       }else{
         $("#updateversionbadge").addClass("badge-success").text("Your version is up to date.");
+        $("#check-for-updates").hide();
       }
     }else if(key == "processUpdate"){
       $("#confirm-update-process").hide();

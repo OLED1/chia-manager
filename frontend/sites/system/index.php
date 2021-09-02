@@ -18,7 +18,6 @@
   }else{
     $updatechannelname = "Stable";
   }
-  print_r($updates);
 
   echo "<script> var siteID = 3; </script>";
 ?>
@@ -130,7 +129,7 @@
             <div class="row">
               <div class="col">
                 <button type="button" class="btn btn-secondary" id="check-for-updates">Check for updates<i class="fas fa-spinner fa-spin" style="display: none;"></i></button>
-                <button type="button" class="btn btn-warning" id="start-update">Start update</button>
+                <button type="button" class="btn btn-warning" id="start-update" style="<?php echo ($updates["data"]["updateavail"] ? "" : "display: none;") ?>">Start update</button>
               </div>
             </div>
           </div>
@@ -335,7 +334,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-primary" id="confirm-update-process">Process update<i class="fas fa-spinner fa-spin" style="display: none;"></i></button>
-        <button type="button" class="btn btn-primary" id="proceed-update-routine" kstyle="display: none;">Proceed update routing</button>
+        <button type="button" class="btn btn-primary" id="proceed-update-routine" style="display: none;">Finish update</button>
         <button type="button" class="btn btn-secondary update-close-button" data-dismiss="modal">Close</button>
       </div>
     </div>

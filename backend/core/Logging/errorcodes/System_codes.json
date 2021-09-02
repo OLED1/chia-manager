@@ -2,7 +2,9 @@
   "functioncodes" : {
     "setSystemSettings" : "001",
     "getAllSystemSettings" : "002",
-    "confirmSetting" : "003"
+    "confirmSetting" : "003",
+    "checkForUpdates" : "004",
+    "processUpdate" : "005"
   },
   "errormessages" : {
     "setSystemSettings" : {
@@ -14,6 +16,13 @@
     "confirmSetting" : {
       "001" : [2, "An error occured."],
       "002" : [1, "No settingtype stated."]
+    },
+    "checkForUpdates" : {
+      "001" : [2, "No versions available."],
+      "002" : [2, "Configured updatechannel not found."]
+    },
+    "processUpdate" : {
+      "001" : [0, "No update needed."]
     }
   }
 }

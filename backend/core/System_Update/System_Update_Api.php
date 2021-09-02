@@ -26,9 +26,7 @@
 
         return array("status" => 0, "message" => "Successfully queried system update state.", "data" => $returndata);
       }catch(Exception $e){
-        //TODO Implement correct status code
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured");
+        return $this->logging->getErrormessage("001", $e);
       }
     }
 
@@ -38,14 +36,14 @@
       $now = $now->format("Y-m-d H:i:s");
 
       $this->sendStatus(0, 0, 2, "Starting update");
+      $this->enableUpdateMode($loginData["userid"]);
       $this->createBackupdirs("Creating backup directories", $now);
       if(!$this->preverror) $this->backupSystemData("Backing up system data", $now);
       if(!$this->preverror) $this->backupSystemDatabase("Backing up databasedata", $now);
       if(!$this->preverror) $this->downloadUpdateData("Downloading and installing update");
 
       if($this->preverror){
-        //TODO Implement correct status code
-        return array("status" => 1, "message" => "Update process failed.");
+        return $this->logging->getErrormessage("001");
       }else{
         return array("status" => 0, "message" => "Update process success.");
       }
@@ -71,15 +69,12 @@
           $sql = $this->db_api->execute("UPDATE system_infos SET dbversion = ?, userid_updating = ?, lastsucupdate = ?, maintenance_mode = ?",
                                         array($this->ini["versnummer"], 0, $now->format("Y-m-d H:i:s"), 0));
         }catch(Exception $e){
-          //TODO Implement correct status code
-          print_r($e);
-          return array("status" => 1, "message" => "A database error occured.");
+          return $this->logging->getErrormessage("001", $e);
         }
 
         return array("status" => 0, "message" => "Successfully finished update to version {$this->ini["versnummer"]}.");
       }else{
-        //TODO Implement correct status code
-        return array("status" => 1, "message" => "An error occured, db_update.json could not be found!");
+        return $this->logging->getErrormessage("002");
       }
     }
 
@@ -90,9 +85,16 @@
 
         return array("status" => 0, "message" => "Successfully disabled maintenance mode.");
       }catch(Exception $e){
-        //TODO Implement correct status code
-        print_r($e);
-        return array("status" => 1, "message" => "A database error occured.");
+        return $this->logging->getErrormessage("001", $e);
+      }
+    }
+
+    private function enableUpdateMode(int $userid){
+      try{
+        $sql = $this->db_api->execute("UPDATE system_infos SET userid_updating = ?, maintenance_mode = ?",
+                                      array($userid, 1));
+      }catch(Exception $e){
+        return $this->logging->getErrormessage("001", $e);
       }
     }
 

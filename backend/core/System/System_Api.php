@@ -99,18 +99,21 @@
 
           return array("status" => 0, "message" => "Successfully loaded updatedata and versions.", "data" => array("localversion" => $myversion, "remoteversion" => $remoteversion, "updateavail" => $updateavailable, "updatechannel" => $updatechannel));
         }else{
-          //TODO Implement correct status code
-          return array("status" => 1, "message" => "No versions available.", "data" => array("localversion" => $this->ini["versnummer"], "updatechannel" => $updatechannel));
+          $returndata = $this->logging->getErrormessage("001");
+          $returndata["data"] = array("localversion" => $this->ini["versnummer"], "updatechannel" => $updatechannel);
+          return $returndata;
         }
       }else{
-        echo "Branch not found.";
-        //TODO Implement correct status code
-        return array("status" => 1, "message" => "Updatechannel {$updatechannel} not found.", "data" => array("localversion" => $this->ini["versnummer"], "updatechannel" => $updatechannel));
+        return $this->logging->getErrormessage("002", "Updatechannel {$updatechannel} not found.")
       }
     }
 
     public function processUpdate(array $data, array $loginData = NULL, $server = NULL){
-      return $this->system_update_api->processUpdate($data, $loginData, $server);
+      if($this->checkForUpdates()["updateavail"]){
+        return $this->system_update_api->processUpdate($data, $loginData, $server);
+      }else{
+        return $this->logging->getErrormessage("001");
+      }
     }
 
     private function formatSetting(array $settings){

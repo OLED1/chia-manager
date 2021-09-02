@@ -89,6 +89,7 @@ function getCurrentDate(){
 //alert-primary, alert-secondary, alert-success, alert-danger, alert-warning, alert-info, alert-light, alert-dark
 //are available options (messagetypes)
 function showMessage(messagetype, message){
+  if(message == undefined) return;
   if($.isNumeric(messagetype)){
     switch (messagetype) {
       case 0:
