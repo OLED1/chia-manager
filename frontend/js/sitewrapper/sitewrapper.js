@@ -163,3 +163,34 @@ function getVisible() {
 
   return visibleBottom - visibleTop - $("footer").outerHeight();
 }
+
+function showLoadingModal(){
+  $("#loadingModal").modal("show");
+}
+
+function hideLoadingModal(){
+  $("#loadingModal").modal("hide");
+}
+
+function toggleWSSLoading(tasklist){
+  var keys = Object.keys(tasklist);
+
+  if(keys.length > 0){
+    $("#wssloading .wssloadingcount").text(keys.length);
+    if(!$("#wssloading").is(":visible")){
+      $("#wssloading").show();
+    }
+  }else{
+    if($("#wssloading").is(":visible")){
+      $("#wssloading").hide();
+    }
+  }
+}
+
+function disableWSButtons(){
+  $(".wsbutton").attr("disabled","disabled");
+}
+
+function enableWSButtons(){
+  $(".wsbutton").removeAttr("disabled");
+}

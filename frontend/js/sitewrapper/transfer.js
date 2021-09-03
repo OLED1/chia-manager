@@ -4,6 +4,7 @@ $(function(){
 
 let socket;
 let alreadyreconnecting = false;
+var tasklist = [];
 
 function initWsclient(){
   try{
@@ -28,36 +29,43 @@ function initWsclient(){
       }else if($.isFunction(window.messagesTrigger)){
         window.messagesTrigger(data);
 
-        var status = data[key]["status"];
-        if(status == 0 && data[key]["message"] != undefined){
-          showMessage(0, data[key]["message"]);
-        }else if(status != 0 && data[key]["message"] != undefined){
-          showMessage(1, data[key]["status"] + ": " + data[key]["message"]);
+        if("loglevel" in data[key] && "message" in data[key]){
+          showMessage(data[key]["loglevel"], data[key]["message"]);
         }
       }
+
+      delete tasklist[key];
+      toggleWSSLoading(tasklist);
     };
 
     socket.onopen = function(evt) {
-      $("#wsstatus").text("Socket: Connected.").removeClass("badge-danger").addClass("badge-success");
+      $("#wsstatus").text("Socket: Connected.").removeClass("badge-danger").addClass("badge-success").attr("data-connected",1);
       sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "loginStatus", {});
+      enableWSButtons();
     };
 
     socket.onclose = function(msg){
-      $("#wsstatus").text("Socket: Not connected. Trying to reconnect.").removeClass("badge-success").addClass("badge-danger");
+      $("#wsstatus").text("Socket: Not connected. Trying to reconnect.").removeClass("badge-success").addClass("badge-danger").attr("data-connected",2);
       socket.close();
       if(!alreadyreconnecting){
         alreadyreconnecting = true;
         setTimeout(function() { initWsclient();   alreadyreconnecting = false; }, 1000);
       }
+      tasklist = {};
+      toggleWSSLoading(tasklist);
+      disableWSButtons();
     };
 
     socket.onerror = (msg) => {
-      $("#wsstatus").text("Socket: Not connected. Trying to reconnect.").removeClass("badge-success").addClass("badge-danger");
+      $("#wsstatus").text("Socket: Not connected. Trying to reconnect.").removeClass("badge-success").addClass("badge-danger").attr("data-connected",2);
       socket.close();
       if(!alreadyreconnecting){
         alreadyreconnecting = true;
         setTimeout(function() { initWsclient();   alreadyreconnecting = false; }, 1000);
       }
+      tasklist = {};
+      toggleWSSLoading(tasklist);
+      disableWSButtons();
     }
   }catch(ex){
     showMessage(2, ex);
@@ -88,5 +96,14 @@ function sendToWSS(requestType, namespace, classname, method, data){
   reqdata["request"]["backendInfo"]["class"] = classname;
   reqdata["request"]["backendInfo"]["method"] = method;
 
-  if(socket != undefined && socket.readyState != undefined && socket.readyState) socket.send(JSON.stringify(reqdata));
+
+  if(socket != undefined && socket.readyState != undefined && socket.readyState){
+    if(method.trim().length > 0){
+      tasklist[method] = reqdata;
+      toggleWSSLoading(tasklist);
+    }
+    socket.send(JSON.stringify(reqdata));
+  }else{
+    showMessage(2, "Websocket not connected!");
+  }
 }

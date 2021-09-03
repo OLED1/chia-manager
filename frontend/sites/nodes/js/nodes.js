@@ -109,10 +109,10 @@ function recreateConfiguredClients(){
 function getButtonsConfClients(id, conallow, changeable){
   var button = "";
   if((conallow == 0 || conallow == 2) && changeable == 1){
-    button += "<button type='button' data-conf-id=" + id + " class='allow-connect btn btn-success'><i class='far fa-check-circle'></i></button>&nbsp";
+    button += "<button type='button' data-conf-id=" + id + " class='allow-connect btn btn-success wsbutton'><i class='far fa-check-circle'></i></button>&nbsp";
   }
   if((conallow == 1 || conallow == 2) && changeable == 1){
-    button += "<button type='button' data-conf-id=" + id + " class='decline-connect btn btn-danger'><i class='far fa-times-circle'></i></button>";
+    button += "<button type='button' data-conf-id=" + id + " class='decline-connect btn btn-danger wsbutton'><i class='far fa-times-circle'></i></button>";
   }
 
   /*if(conallow == 1 && changeable == 1){
@@ -127,7 +127,7 @@ function formatIP(ipaddress, changedIP, id){
   if(changedIP == ""){
     return ipaddress;
   }else{
-    button += "<button type='button' data-conf-id=" + id + " class='ip-changed-allow btn btn-warning'><i class='far fa-check-circle'></i></button>&nbsp";
+    button += "<button type='button' data-conf-id=" + id + " class='ip-changed-allow btn btn-warning wsbutton'><i class='far fa-check-circle'></i></button>&nbsp";
     return ipaddress + "<br>IP changed to " + changedIP + "<br>" + button;
   }
 }

@@ -77,6 +77,9 @@ $(function(){
       data: {
         action: action
       },
+      beforeSend: function(){
+        showLoadingModal();
+      },
       success: function (result, status, xhr) {
         if(result["status"] == 0){
           $("#sitecontent").load(frontend+href, function(response, status, xhr) {
@@ -93,38 +96,28 @@ $(function(){
                 $(".nav-item").first().addClass("active");
               }
 
-              /*if(typeof siteID != 'undefined'){
-                var currmenupoint = $("#site_" + siteID);
-                if(currmenupoint.hasClass("subpage")){
-                  var parent = currmenupoint.attr("data-parent");
-                  $("#"+parent).addClass("active");
-                  currmenupoint.addClass("active");
-                }else if(currmenupoint.hasClass("mastersite")){
-                  currmenupoint.addClass("active");
-                }
-
-                window.setNewSite();
-              }else{
-                //loadPage("/sites/main_overview/","Main Overview");
-              }*/
-
-              //var sitename = "Chia Mgmt. - " + $(".sb-sidenav-menu .nav-link.active").last().attr("data-sitename");
               $('head title', window.parent.document).text("Chia Manager - " + sitename);
               if (history.pushState) window.history.pushState("", "Chia Manager - " + sitename, frontend + "/index.php" + href);
             }
-            //setTimeout( function(){ hideLoadingDialog(); }, 500);
+
             var data = {
               userID : userID,
               siteID : siteID
             }
+
             sendToWSS("updateFrontendViewingSite", "", "", "", data);
+            setTimeout( function(){ hideLoadingModal(); }, 600);
+            if($("#wsstatus").attr("data-connected") == 1){
+              enableWSButtons();
+            }else{
+              disableWSButtons();
+            }
           });
-        }else{
-          //$(location).attr('href',frontend);
         }
       },
-      error:function(xhr, status, error){
-          showMessage(2, error);
+      error: function(xhr, status, error){
+        showMessage(2, error);
+        hideLoadingModal();
       }
     });
   }

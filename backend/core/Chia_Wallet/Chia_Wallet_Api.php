@@ -48,6 +48,10 @@
       }
     }
 
+    public function updateWalletTransactions(array $data = NULL, array $loginData = NULL){
+
+    }
+
     public function getWalletData(array $data = NULL, array $loginData = NULL, $server = NULL, int $nodeid = NULL){
       try{
         if(is_null($nodeid)){
@@ -76,6 +80,32 @@
       }catch(Exception $e){
         return $this->logging->getErrormessage("001", $e);
       }
+    }
+
+    public function getWalletTransactions(array $data = NULL, array $loginData = NULL){
+      $returndata = [];
+      try{
+        if(is_null($data)){
+          $sql = $this->db_api->execute("SELECT id, nodeid, walletid, transaction, status, amount, to_address, created_at FROM chia_wallets_transactions", array());
+        }else if(!is_null($data) && array_key_exists("nodeid", $data) && array_key_exists("walletid", $data)){
+          $sql = $this->db_api->execute("SELECT id, nodeid, walletid, transaction, status, amount, to_address, created_at FROM chia_wallets_transactions WHERE nodeid = ? AND walletid = ?", array($data["nodeid"], $data["walletid"]));
+        }else{
+          //TODO Implement correct status codes
+          return array("status" => 1, "message" => "No data found.");
+        }
+
+        foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $walletdata){
+          $returndata[$walletdata["nodeid"]][$walletdata["walletid"]] = $walletdata;
+        }
+
+        return array("status" =>0, "message" => "Successfully loaded chia wallet information.", "data" => $returndata);
+      }catch(Exception $e){
+        //TODO Implement correct status codes
+        print_r($e);
+        return array("status" => 1, "message" => "An error occured.");
+      }
+
+      return array("status" =>0, "message" => "Successfully loaded chia wallet information.", "data" => $returndata);
     }
 
     public function walletStatus(array $data = NULL, array $loginData = NULL){

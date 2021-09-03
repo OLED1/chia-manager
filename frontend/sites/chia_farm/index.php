@@ -22,7 +22,7 @@
   <div class="col">
     <div class="card shadow mb-4">
       <div class="card-body">
-        <button id="queryAllNodes" type="button" class="btn btn-secondary">Query farm information from all nodes</button>
+        <button id="queryAllNodes" type="button" class="btn btn-secondary wsbutton">Query farm information from all nodes</button>
       </div>
     </div>
   </div>

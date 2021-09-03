@@ -28,7 +28,7 @@
         </a>
         <div class='dropdown-menu dropdown-menu-right shadow animated--fade-in' aria-labelledby='haresterMenu'>
           <div class='dropdown-header'>Actions:</div>
-          <a id="refreshHarvesterInfo" class='dropdown-item' href='#' onclick="refreshHarvesterInfo()">Refresh</a>
+          <button id="refreshHarvesterInfo" class='dropdown-item wsbutton' href='#' onclick="refreshHarvesterInfo()">Refresh</button>
         </div>
       </div>
   </div>

@@ -26,7 +26,7 @@
       <a class="dropdown-toggle" href="#" role="button" id="sysinfodropdown<?php echo "{$sysinfo["id"]}"; ?>" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i></a>
       <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="sysinfodropdown<?php echo "{$sysinfo["id"]}"; ?>">
         <div class="dropdown-header">Actions:</div>
-        <a class="sysinfo-refresh dropdown-item" data-nodeid="<?php echo "{$sysinfo["id"]}"; ?>" href="#">Refresh Data</a>
+        <button class="sysinfo-refresh dropdown-item wsbutton" data-nodeid="<?php echo "{$sysinfo["id"]}"; ?>" href="#">Refresh Data</button>
       </div>
     </div>
   </div>
@@ -59,6 +59,7 @@
                 <div class="card-body">
                   <h6 class="m-0 font-weight-bold text-primary">RAM and SWAP</h6>
                   <div class="row">
+                    <?php if(floatval($sysinfo["memory_total"]) > 0){ ?>
                     <div class="col-6">
                       <h7 class="m-0 font-weight-bold text-primary">RAM (<?php echo number_format(floatval($sysinfo["memory_total"])/1024/1024/1024, 2) . "GB"; ?>)</h7>
                       <div class="chart-pie pt-4 pb-2">
@@ -69,6 +70,8 @@
                         <span class="mr-2"><i class="fas fa-circle ram-swap-used" style="color: #428AEC;"></i> RAM used</span>
                       </div>
                     </div>
+                    <?php } ?>
+                    <?php if(floatval($sysinfo["swap_total"]) > 0){ ?>
                     <div class="col-6">
                       <h7 class="m-0 font-weight-bold text-primary">SWAP (<?php echo number_format(floatval($sysinfo["swap_total"])/1024/1024/1024, 2) . "GB"; ?>)</h7>
                       <div class="chart-pie pt-4 pb-2">
@@ -79,6 +82,7 @@
                         <span class="mr-2"><i class="fas fa-circle ram-swap-used" style="color: #428AEC;"></i> SWAP used</span>
                       </div>
                     </div>
+                    <?php } ?>
                   </div>
                 </div>
               </div>

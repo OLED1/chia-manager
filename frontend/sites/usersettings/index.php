@@ -54,7 +54,7 @@
                       <div class="invalid-feedback">Passwords does not match</div>
                     </div>
                   </div>
-                  <button id="resetpwbtn" class="btn btn-primary btn-block" href="#" disabled>Reset Password</button>
+                  <button id="resetpwbtn" class="btn btn-primary btn-block wsbutton" href="#" disabled>Reset Password</button>
                 </form>
               </div>
           </div>
@@ -90,7 +90,7 @@
                   </div>
                   <input type="text" id="username" name="username" class="form-control personinput" value="<?php echo $userData['username']; ?>" required="required">
                 </div>
-                <button id="savepersdata" class="btn btn-primary btn-block" href="#" disabled>Save</button>
+                <button id="savepersdata" class="btn btn-primary btn-block wsbutton" href="#" disabled>Save</button>
               </div>
           </div>
       </div>
@@ -104,7 +104,7 @@
           <div class="card-body">
             <?php $gui_mode = $user_settings_api->getGuiMode($_COOKIE["user_id"])["data"]["gui_mode"]; ?>
             <div class="form-group">
-              <select class="form-control" id="gui-color-scheme_select">
+              <select class="form-control wsbutton" id="gui-color-scheme_select">
                 <option value=1 <?php echo ($gui_mode == 1 ? "selected" : ""); ?>>Light</option>
                 <option value=2 <?php echo ($gui_mode == 2 ? "selected" : ""); ?>>Dark</option>
               </select>
@@ -120,7 +120,7 @@
           <div class="card-body" id="regionalsettings">
             <div class="form-group">
               <label for="currency_select">Currency</label>
-              <select class="form-control" id="currency_select">
+              <select class="form-control wsbutton" id="currency_select">
                 <?php
                   $currencies = $exchangerates_api->getAllCurrencies();
                   if($currencies["status"] == 0 && count($currencies["data"]) > 0){
@@ -151,7 +151,7 @@
             <div class="input-group mb-3">
               <input type="text" id="backupkey" name="name" class="form-control personinput" value="<?php echo $users_api->getBackupKey($_COOKIE["user_id"])["data"]; ?>" readonly>
             </div>
-            <button id="generateNewBackupKey" class="btn btn-primary btn-block" href="#">Generate New</button>
+            <button id="generateNewBackupKey" class="btn btn-primary btn-block wsbutton" href="#">Generate New</button>
           </div>
         </div>
       </div>
@@ -182,7 +182,7 @@
                 foreach ($devices["data"] as $key => $value) {
                   echo "<tr id='device_{$value["id"]}'>
                           <td>{$value["deviceinfo"]}</td>
-                          <td><button data-device-id='{$value["id"]}' class='logoutdevice btn btn-secondary btn-block# href='#'>Logout</button></td>
+                          <td><button data-device-id='{$value["id"]}' class='logoutdevice btn btn-secondary btn-block wsbutton' href='#'>Logout</button></td>
                         </tr>";
                 }
                 ?>

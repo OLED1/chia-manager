@@ -270,10 +270,10 @@ class ChiaWebSocketServer implements MessageComponentInterface {
         }else{
           $data = $this->logging->getErrormessage("001");
           $data["data"]["informed"] = $alreadyinformed;
-          return array("messageSpecificNode" => $data);
+          return $data;
         }
       }else{
-        return array("messageSpecificNode" => $this->logging->getErrormessage("002", json_encode($data)));
+        return $this->logging->getErrormessage("002", json_encode($data));
       }
     }
 
@@ -306,7 +306,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
       }else{
         $data = $this->logging->getErrormessage("001");
         $data["data"]["informed"] = $alreadyinformed;
-        return array("messageSpecificNode" => $data);
+        return $data;
       }
     }
 

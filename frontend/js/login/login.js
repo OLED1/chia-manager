@@ -35,6 +35,7 @@ $(function(){
       var data = {
         "authkey" : authkey
       }
+      $(this).attr("disabled","disabled").find("i").show();
       sendToAPI(url, action, type, data);
     }else{
       showMessage("alert-danger", "Authkey not valid or empty.");
@@ -55,7 +56,7 @@ $(function(){
         password: password,
         stayloggedin: stayloggedin
       };
-
+      beginLogin();
       sendToAPI(url, action, type, data);
     }else{
       if(username == "" && password == ""){
@@ -82,6 +83,22 @@ $(function(){
       }
     }
   });
+
+  function beginLogin(){
+    $("#loginbutton").attr("disabled", "disabled").find("i").show();
+    $("#inputLogin").attr("disabled", "disabled");
+    $("#inputPassword").attr("disabled", "disabled");
+    $("#stayloggedin").attr("disabled", "disabled");
+    $("#remeberMe").attr("disabled", "disabled");
+  }
+
+  function finishLogin(){
+    $("#loginbutton").removeAttr("disabled").find("i").hide();
+    $("#inputLogin").removeAttr("disabled");
+    $("#inputPassword").removeAttr("disabled");
+    $("#stayloggedin").removeAttr("disabled");
+    $("#remeberMe").removeAttr("disabled");
+  }
 
   function showMessage(messagetype, message){
     setTimeout(function () {
@@ -152,9 +169,13 @@ $(function(){
           }else{
             showMessage("alert-danger", result["message"]);
           }
+          finishLogin();
+          $("#authkeybutton").removeAttr("disabled").find("i").hide();
         }
       },
       error:function(xhr, status, error){
+        finishLogin();
+        $("#authkeybutton").removeAttr("disabled").find("i").hide();
         showMessage("alert-danger", error);
       }
     });

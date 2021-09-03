@@ -27,7 +27,7 @@
         </a>
         <div class='dropdown-menu dropdown-menu-right shadow animated--fade-in' aria-labelledby='overallMenu'>
           <div class='dropdown-header'>Actions:</div>
-          <a id="refreshOverallInfo" class='dropdown-item' href='#' onclick='refreshOverallInfo()'>Refresh</a>
+          <button id="refreshOverallInfo" class='dropdown-item wsbutton' href='#' onclick='refreshOverallInfo()'>Refresh</button>
         </div>
       </div>
   </div>

@@ -86,9 +86,7 @@
                                                 <label class="custom-control-label" for="remeberMe">Remember Me</label>
                                             </div>
                                         </div>
-                                        <a id="loginbutton" href="index.html" class="btn btn-primary btn-user btn-block">
-                                            Login
-                                        </a>
+                                        <button id="loginbutton" href="index.html" class="btn btn-primary btn-user btn-block">Login&nbsp;<i class="fas fa-spinner fa-spin" style="display: none;"></i></button>
                                     </form>
                                     <hr>
                                     <div class="text-center">
@@ -110,7 +108,8 @@
                                               id="inputAuthkey" placeholder="Authkey">
                                         </div>
                                           <button id="authkeybutton" href="#" class="btn btn-primary btn-user btn-block" disabled>
-                                            Check authkey and login
+                                            Check authkey and login&nbsp;
+                                            <i class="fas fa-spinner fa-spin" style="display: none;"></i>
                                           </button>
                                         <hr>
                                         <div class="text-center">

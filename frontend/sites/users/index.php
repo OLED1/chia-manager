@@ -28,12 +28,11 @@
   <div class="col">
     <div class="card shadow mb-4">
       <div class="card-body">
-        <button type="button" id="addUser" class="btn btn-success">Add User</button>
+        <button type="button" id="addUser" class="btn btn-success wsbutton">Add User</button>
       </div>
     </div>
   </div>
 </div>
-
 <div class="row">
     <div class="col">
         <div class="card shadow mb-4">

@@ -77,8 +77,8 @@
           </a>
           <div class='dropdown-menu dropdown-menu-right shadow animated--fade-in' aria-labelledby='dropdownMenuLink_<?php echo $thiswallet['nodeid']; ?>'>
             <div class='dropdown-header'>Actions:</div>
-            <a data-node-id='<?php echo $nodeid; ?>' data-wallet-id='<?php echo $thiswallet['walletid']; ?>' class='dropdown-item refreshWalletInfo' href='#'>Refresh</a>
-            <a data-node-id='<?php echo $nodeid; ?>' data-wallet-id='<?php echo $thiswallet['walletid']; ?>' class='dropdown-item restartWalletService' href='#'>Restart wallet service</a>
+            <button data-node-id='<?php echo $nodeid; ?>' data-wallet-id='<?php echo $thiswallet['walletid']; ?>' class='dropdown-item refreshWalletInfo wsbutton' href='#'>Refresh</button>
+            <button data-node-id='<?php echo $nodeid; ?>' data-wallet-id='<?php echo $thiswallet['walletid']; ?>' class='dropdown-item restartWalletService wsbutton' href='#'>Restart wallet service</button>
           </div>
         </div>
       </div>
@@ -160,11 +160,33 @@
                     </div>
                   </div>
                 </div>
+                <?php
+                  $transactiondta = $chia_wallet_api->getWalletTransactions(["nodeid" => $nodeid, "walletid" => $thiswallet['walletid']]);
+                  //print_r($transactiondta);
+                  if($transactiondta["status"] == 0){
+                    if(count($transactiondta["data"]) > 0){
+
+                    }else{
+                      $message = "<div class='card bg-warning text-white shadow'>
+                                    <div class='card-body'>
+                                      There are currently no transactions to show.
+                                    </div>
+                                </div>";
+                    }
+                  }else{
+                    $message = "<div class='card bg-warning text-white shadow'>
+                                  <div class='card-body'>
+                                    {$transactiondta["message"]}
+                                  </div>
+                              </div>";
+                  }
+                ?>
                 <div class='row'>
                   <div class='col'>
                     <div class='card shadow mb-4'>
                       <div class='card-body'>
                         <h6>Transactions Chart</h6>
+                        <?php echo $message; ?>
                       </div>
                     </div>
                   </div>
@@ -174,6 +196,7 @@
                     <div class='card shadow mb-4'>
                       <div class='card-body'>
                         <h6>Transactions Table</h6>
+                        <?php echo $message; ?>
                       </div>
                     </div>
                   </div>

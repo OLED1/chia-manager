@@ -119,17 +119,17 @@
                     <?php echo $updatechannelname; ?>
                   </a>
                   <div class="dropdown-menu" aria-labelledby="updateDropdownMenu">
-                    <a class="dropdown-item updatechannel" data-branch="main" href="#">Stable</a>
-                    <a class="dropdown-item updatechannel" data-branch="staging" href="#">Staging</a>
-                    <a class="dropdown-item updatechannel" data-branch="dev" href="#">Development</a>
+                    <button class="dropdown-item updatechannel wsbutton" data-branch="main" href="#">Stable</button>
+                    <button class="dropdown-item updatechannel wsbutton" data-branch="staging" href="#">Staging</button>
+                    <button class="dropdown-item updatechannel wsbutton" data-branch="dev" href="#">Development</button>
                   </div>
                 </div>
               </div>
             </div>
             <div class="row">
               <div class="col">
-                <button type="button" class="btn btn-secondary" id="check-for-updates">Check for updates<i class="fas fa-spinner fa-spin" style="display: none;"></i></button>
-                <button type="button" class="btn btn-warning" id="start-update" style="<?php echo ($updates["data"]["updateavail"] ? "" : "display: none;") ?>">Start update</button>
+                <button type="button" class="btn btn-secondary wsbutton" id="check-for-updates">Check for updates<i class="fas fa-spinner fa-spin" style="display: none;"></i></button>
+                <button type="button" class="btn btn-warning wsbutton" id="start-update" style="<?php echo ($updates["data"]["updateavail"] ? "" : "display: none;") ?>">Start update</button>
               </div>
             </div>
           </div>
@@ -249,7 +249,7 @@
                       <div class="card-body">
                         Your setting are currently <?php echo ($mailsettings["confirmed"] ? "confirmed" : "not confirmed"); ?>.
                         <br>
-                        <?php if(!$mailsettings["confirmed"]) echo "<button type='button' class='btn btn-secondary setting-confirm' data-settingtype='mailing'>Confirm</button>"; ?>
+                        <?php if(!$mailsettings["confirmed"]) echo "<button type='button' class='btn btn-secondary setting-confirm wsbutton' data-settingtype='mailing'>Confirm</button>"; ?>
                       </div>
                   </div>
                 <?php } ?>
@@ -257,8 +257,8 @@
             </div>
             <div class="row">
               <div class="col smtp">
-                <button type="button" class="btn btn-primary" id="save-mail-settings">Save settings<i class="fas fa-spinner fa-spin" style="display: none;"></i></button>
-                <button type="button" class="btn btn-success" id="send-testmail" <?php if($mailsettings["sendmethod"]["value"] == NULL) echo "disabled"; ?>>Send Testmail</button>
+                <button type="button" class="btn btn-primary wsbutton" id="save-mail-settings">Save settings<i class="fas fa-spinner fa-spin" style="display: none;"></i></button>
+                <button type="button" class="btn btn-success wsbutton" id="send-testmail" <?php if($mailsettings["sendmethod"]["value"] == NULL) echo "disabled"; ?>>Send Testmail</button>
               </div>
             </div>
           </div>

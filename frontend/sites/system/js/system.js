@@ -84,6 +84,7 @@ $(function(){
       var datatosend = {};
       datatosend["mailing"] = data;
 
+      $("#send-testmail").removeAttr("disabled");
       window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "setSystemSettings", datatosend);
     }
   });
@@ -220,8 +221,6 @@ function settingConfirmHandler(){
 function messagesTrigger(data){
   var key = Object.keys(data);
 
-  console.log(data);
-
   if(data[key]["status"] == 0){
     if (key == "setSystemSettings"){
       if(data[key]["data"] == "mailing"){
@@ -235,6 +234,7 @@ function messagesTrigger(data){
           "</div>" +
           "</div>"
         );
+        $("#send-testmail").removeAttr("disabled");
         settingConfirmHandler();
       }
     }else if(key == "sendTestMail"){
@@ -252,10 +252,10 @@ function messagesTrigger(data){
       $("#updateversionbadge").removeClass("badge-success").removeClass("badge-warning");
       if(data[key]["data"]["updateavail"]){
         $("#updateversionbadge").addClass("badge-warning").text("Your version is out of date. Version " + data[key]["data"]["remoteversion"]);
-        $("#check-for-updates").show();
+        $("#start-update").show();
       }else{
         $("#updateversionbadge").addClass("badge-success").text("Your version is up to date.");
-        $("#check-for-updates").hide();
+        $("#start-update").hide();
       }
     }else if(key == "processUpdate"){
       $("#confirm-update-process").hide();

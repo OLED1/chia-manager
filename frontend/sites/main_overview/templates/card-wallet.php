@@ -36,7 +36,7 @@
         </a>
         <div class='dropdown-menu dropdown-menu-right shadow animated--fade-in' aria-labelledby='walletMenu'>
           <div class='dropdown-header'>Actions:</div>
-          <a id="refreshWalletInfo" class='dropdown-item' href='#' onclick="refreshWalletInfo()">Refresh</a>
+          <button id="refreshWalletInfo" class='dropdown-item wsbutton' href='#' onclick="refreshWalletInfo()">Refresh</button>
         </div>
       </div>
   </div>

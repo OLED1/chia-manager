@@ -16,13 +16,13 @@ $.each(userData, function(key, value){
 });
 
 function getButtons(usrid){
-  return "<button type='button' data-usrid=" + usrid + " class='edit-user btn btn-primary'><i class='fas fa-edit'></i></button>&nbsp" +
-         (usrid != userID ? "<button type='button' data-usrid=" + usrid + " class='disable-user btn btn-warning'><i class='fas fa-user-minus'></i></button>" : "" ) + "&nbsp" +
-         (usrid != userID ? "<button type='button' data-usrid=" + usrid + " class='send-invitation-mail btn btn-secondary'><i class='fas fa-paper-plane'></i></button>" : "" );
+  return "<button type='button' data-usrid=" + usrid + " class='edit-user btn btn-primary wsbutton'><i class='fas fa-edit'></i></button>&nbsp" +
+         (usrid != userID ? "<button type='button' data-usrid=" + usrid + " class='disable-user btn btn-warning wsbutton'><i class='fas fa-user-minus'></i></button>" : "" ) + "&nbsp" +
+         (usrid != userID ? "<button type='button' data-usrid=" + usrid + " class='send-invitation-mail btn btn-secondary wsbutton'><i class='fas fa-paper-plane'></i></button>" : "" );
 }
 
 function getEnableButton(usrid){
-  return  "<button type='button' data-usrid=" + usrid + " class='enable-user btn btn-secondary'><i class='fas fas fa-user-plus'></i></button>";
+  return  "<button type='button' data-usrid=" + usrid + " class='enable-user btn btn-secondary wsbutton'><i class='fas fas fa-user-plus'></i></button>";
 }
 
 initEditUser();

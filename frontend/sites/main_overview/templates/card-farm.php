@@ -28,7 +28,7 @@
       </a>
       <div class='dropdown-menu dropdown-menu-right shadow animated--fade-in' aria-labelledby='farmMenu'>
         <div class='dropdown-header'>Actions:</div>
-        <a id="refreshFarmInfo" class='dropdown-item' href='#' onclick="refreshFarmInfo()">Refresh</a>
+        <button id="refreshFarmInfo" class='dropdown-item wsbutton' href='#' onclick="refreshFarmInfo()">Refresh</button>
       </div>
     </div>
   </div>

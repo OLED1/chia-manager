@@ -4,7 +4,7 @@ initSysinfoNodeActions();
 
 $("#queryAllNodes").off("click");
 $("#queryAllNodes").on("click", function(){
-  $.each(configuredNodes, function(nodeid, farmdata) {
+  $.each(sysinfodata, function(nodeid, farmdata) {
       querySystemInfo(nodeid);
   });
 });
@@ -27,7 +27,7 @@ function initSysinfoRefresh(){
 }
 
 function querySystemInfo(nodeid){
-  var authhash = configuredNodes[nodeid]["nodeauthhash"];
+  var authhash = sysinfodata[nodeid]["nodeauthhash"];
   var dataforclient = {
     "nodeid" : nodeid,
     "authhash": authhash
@@ -69,44 +69,51 @@ function initAndDrawRAMorSWAPChart(nodeid, type){
     var data = [available.toFixed(2), free.toFixed(2)];
   }
 
-  ctx = document.getElementById(type + "_chart_" + nodeid).getContext("2d");
-  new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: labels,
-      datasets: [{
-        data: data,
-        backgroundColor: ['#428AEC', '#26C59B'],
-        hoverBackgroundColor: ['#4F42EC', '#26C54B'],
-        hoverBorderColor: "rgba(234, 236, 244, 1)",
-      }],
-    },
-    options: {
-      maintainAspectRatio: false,
-      tooltips: {
-        backgroundColor: "rgb(255,255,255)",
-        bodyFontColor: "#858796",
-        borderColor: '#dddfeb',
-        borderWidth: 1,
-        xPadding: 15,
-        yPadding: 15,
-        displayColors: false,
-        caretPadding: 10,
-        callbacks: {
-          label: function(tooltipItem, data){
-            var label = data.labels[tooltipItem.index];
-            var dataset = data.datasets[tooltipItem.datasetIndex];
-            var currentValue = dataset.data[tooltipItem.index];
-            return label + ": " + currentValue + "GB";
+  var target = $("#" + type + "_chart_" + nodeid);
+  if(target.length > 0){
+    ctx = document.getElementById(type + "_chart_" + nodeid).getContext("2d");
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: ['#428AEC', '#26C59B'],
+          hoverBackgroundColor: ['#4F42EC', '#26C54B'],
+          hoverBorderColor: "rgba(234, 236, 244, 1)",
+        }],
+      },
+      options: {
+        maintainAspectRatio: false,
+        cutoutPercentage: 0,
+        library : {
+          tooltips: {
+            backgroundColor: "rgb(255,255,255)",
+            bodyFontColor: "#858796",
+            borderColor: '#dddfeb',
+            borderWidth: 1,
+            xPadding: 15,
+            yPadding: 15,
+            displayColors: false,
+            caretPadding: 10,
+            callbacks: {
+              label: function(tooltipItem, data){
+                var label = data.labels[tooltipItem.index];
+                var dataset = data.datasets[tooltipItem.datasetIndex];
+                var currentValue = dataset.data[tooltipItem.index];
+                return label + ": " + currentValue + "GB";
+              }
+            }
           }
-        }
+        },
+        legend: {
+          display: false
+        },
+        cutoutPercentage: 80,
       },
-      legend: {
-        display: false
-      },
-      cutoutPercentage: 80,
-    },
-  });
+    });
+
+  }
 }
 
 function initAndDrawLoadChart(nodeid){

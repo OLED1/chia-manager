@@ -190,10 +190,17 @@
                               </form>
                             </div>
                         </li>
-
+                        <li class="nav-item no-arrow mx-1">
+                          <span id="wssloading" class="nav-link" style="display: none;">
+                            <span class="wssloadingcount badge badge-secondary badge-counter" style="z-index: 1;">0</span>
+                            <div class="wssloadingspinner spinner-border text-secondary" role="status">
+                              <span class="sr-only">Loading...</span>
+                            </div>
+                          </span>
+                        </liv>
                         <li class="nav-item no-arrow mx-1">
                           <span class="nav-link">
-                            <span id="wsstatus" class="badge badge-secondary"></span>
+                            <span id="wsstatus" data-connected="0" class="badge badge-secondary"></span>
                             <span class="mr-2 d-none d-lg-inline text-gray-600 small">
                             </span>
                           </span>
@@ -343,6 +350,17 @@
                 <p>This instance is currently in maintenance mode.<br>
                 The site will be reloaded as soon as the maintenance ends.</p>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="loadingModal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+      <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content" style="background: transparent; border-color: transparent;">
+          <div class="modal-body">
+            <div class="text-center">
+              <i class="fas fa-spinner fa-spin fa-9x"></i>
             </div>
           </div>
         </div>
