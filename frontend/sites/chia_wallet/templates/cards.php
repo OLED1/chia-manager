@@ -39,7 +39,6 @@
 
   if(array_key_exists("data", $walletdata) && count($walletdata["data"]) > 0){
     echo "<script> var chiaWalletData = " . json_encode($walletdata["data"]) . "; </script>";
-
     foreach($walletdata["data"] AS $nodeid => $nodedata){
       foreach($nodedata as $walletid => $thiswallet){
 ?>
@@ -205,6 +204,9 @@
             </div>
           </div>
         </div>
+      </div>
+      <div class="card-footer">
+        Data queried at: <span id="querydate_<?php echo "{$thiswallet["nodeid"]}"; ?>"><?php echo "{$thiswallet["querydate"]}"; ?></span>
       </div>
     <?php }else{ ?>
       <div class="card-body">

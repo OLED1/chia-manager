@@ -146,6 +146,9 @@
           </div>
         </div>
       </div>
+      <div class="card-footer">
+        Data queried at: <span id="querydate_<?php echo "{$nodeid}"; ?>"><?php echo "{$dirinfos["querydate"]}"; ?></span>
+      </div>
       <?php } ?>
     </div>
   </div>
