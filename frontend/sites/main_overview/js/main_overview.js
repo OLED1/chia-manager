@@ -1,5 +1,9 @@
 setServiceCount();
 
+function refreshSystemInfo(){
+  $("#card-system").load(frontend + "/sites/main_overview/templates/card-system.php");
+}
+
 function refreshOverallInfo(){
   sendToWSS("backendRequest", "ChiaMgmt\\Chia_Overall\\Chia_Overall_Api", "Chia_Overall_Api", "queryOverallData", {});
 }

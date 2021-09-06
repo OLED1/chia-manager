@@ -4,7 +4,8 @@
     "getAllSystemSettings" : "002",
     "confirmSetting" : "003",
     "checkForUpdates" : "004",
-    "processUpdate" : "005"
+    "getSystemMessages" : "005",
+    "processUpdate" : "006"
   },
   "errormessages" : {
     "setSystemSettings" : {
@@ -20,6 +21,9 @@
     "checkForUpdates" : {
       "001" : [2, "No versions available."],
       "002" : [2, "Configured updatechannel not found."]
+    },
+    "getSystemMessages" : {
+      "001" : [2, "An error occured."]
     },
     "processUpdate" : {
       "001" : [0, "No update needed."]

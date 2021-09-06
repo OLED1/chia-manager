@@ -90,7 +90,7 @@
           </div>
         </div>
         <div class="row">
-          <div class="col-6">
+          <div class="col col-md-6 col-lg-6 col-xl-6">
             <div id="cpu_load_container_<?php echo "{$sysinfo["id"]}"; ?>">
               <div class="card shadow mb-4">
                 <div class="card-header py-3">

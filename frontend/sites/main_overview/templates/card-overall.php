@@ -89,5 +89,10 @@
       </div>
       <?php } ?>
     </div>
+    <div class="row">
+      <div class="col">
+        Data queried: <?php echo $overallData["querydate"]; ?>
+      </div>
+    </div>
   </div>
 </div>

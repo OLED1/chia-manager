@@ -39,6 +39,13 @@
   </div>
 </div>
 <div class="row">
+  <div id="card-system" class="col">
+    <?php
+      include("templates/card-system.php");
+    ?>
+  </div>
+</div>
+<div class="row">
   <div id="card-overall" class="col">
     <?php
       include("templates/card-overall.php");

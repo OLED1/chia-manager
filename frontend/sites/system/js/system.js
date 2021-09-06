@@ -43,7 +43,7 @@ $(function(){
     }
 
     $("#confirm-testmail-option i").show();
-      sendToWSS("ownRequest", "ChiaMgmt\\Mailing\\Mailing_Api", "Mailing_Api", "sendTestMail", data);
+    sendToWSS("ownRequest", "ChiaMgmt\\Mailing\\Mailing_Api", "Mailing_Api", "sendTestMail", data);
   });
 
   $("#startWSS").on("click", function(){
@@ -98,6 +98,12 @@ $(function(){
     datatosend["security"]["TOTP"]["value"] = $(this).prop("checked") ? "1" : "0";
 
     window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "setSystemSettings", datatosend);
+
+    if($(this).prop("checked") == 1){
+      setTimeout(function() {
+        window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "confirmSetting", {"settingtype" : "security"});
+      }, 500);
+    }
   });
 
   $(".updatechannel").on("click", function(e){
@@ -111,6 +117,9 @@ $(function(){
     datatosend["updatechannel"]["branch"]["value"] = branch;
 
     window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "setSystemSettings", datatosend);
+    setTimeout(function() {
+      window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "confirmSetting", {"settingtype" : "updatechannel"});
+    }, 500);
   });
 
   $("#check-for-updates").on("click", function(e){
@@ -251,7 +260,7 @@ function messagesTrigger(data){
     }else if(key == "checkForUpdates"){
       $("#updateversionbadge").removeClass("badge-success").removeClass("badge-warning");
       if(data[key]["data"]["updateavail"]){
-        $("#updateversionbadge").addClass("badge-warning").text("Your version is out of date. Version " + data[key]["data"]["remoteversion"] + " is available.");
+        $("#updateversionbadge").addClass("badge-warning").text("Your version is out of date. Version " + data[key]["data"]["remoteversion"] + " is available. Please update soon.");
         $("#start-update").show();
       }else{
         $("#updateversionbadge").addClass("badge-success").text("Your version is up to date.");

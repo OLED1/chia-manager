@@ -118,6 +118,48 @@
       }
     }
 
+    public function getSystemMessages(array $data = [], array $loginData = NULL, $server = NULL){
+      $returndata = [];
+      $returndata["found"] = [];
+      $returndata["count"] = 0;
+
+      //Checking if install.php is existing
+      if(file_exists(__DIR__."/../../../installer.php")){
+        $returndata["found"]["installer"] = "The installer file (installer.php) were found. Please remove it as soon as possible.";
+        $returndata["count"] = $returndata["count"] + 1;
+      }
+
+      //Checking if updates are available
+      $systemupdate = $this->checkForUpdates()["data"];
+      if($systemupdate["updateavail"]){
+        $returndata["found"]["updateavail"] = "There is an system update to version {$systemupdate["remoteversion"]} available.";
+        $returndata["count"] = $returndata["count"] + 1;
+      }
+
+      //Checking if websocket server is running
+      if($this->testConnection()["status"] != 0){
+        $returndata["found"]["websocket"] = "Websocket Server not running. Please start it otherwise you cannot use this system proberly.";
+        $returndata["count"] = $returndata["count"] + 1;
+      }
+
+      //Checking if all system relevant security features are activated
+      try{
+        $sql = $this->db_api->execute("SELECT settingtype, settingvalue, confirmed FROM system_settings", array());
+        $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
+
+        foreach($sqdata AS $arrkey => $setting){
+          if($setting["confirmed"] == 0){
+            $returndata["found"][$setting["settingtype"]] = "Setting {$setting["settingtype"]} is not set or not confirmed.";
+            $returndata["count"] = $returndata["count"] + 1;
+          }
+        }
+
+        return array("status" => 0, "message" => "Successfully queried system messages.", "data" => $returndata);
+      }catch(Exception $e){
+        $returndata = $this->logging_api->getErrormessage("001", $e);
+      }
+    }
+
     private function formatSetting(array $settings){
       $returndata = [];
       foreach($settings AS $key => $value){
