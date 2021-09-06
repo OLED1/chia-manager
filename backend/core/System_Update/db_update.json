@@ -1,4 +1,30 @@
 {
-  "versions" : [  
-  ]
+  "table_structures" : {
+    "chia_wallets_transactions" : {
+      "existing" : {
+        "id" : "int NOT NULL AUTO_INCREMENT",
+        "nodeid" : "int NOT NULL",
+        "walletid" : "int NOT NULL",
+        "transaction" : "varchar(100) COLLATE utf8mb4_general_ci NOT NULL",
+        "status" : "varchar(20) COLLATE utf8mb4_general_ci NOT NULL",
+        "amount" : "float NOT NULL",
+        "to_address" : "varchar(62) COLLATE utf8mb4_general_ci NOT NULL",
+        "created_at" : "datetime NOT NULL"
+      },
+      "notexisting" : [
+        "CREATE TABLE `chia_wallets_transactions` (
+          `id` int NOT NULL AUTO_INCREMENT,
+          `nodeid` int NOT NULL,
+          `walletid` int NOT NULL,
+          `transaction` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+          `status` varchar(20) COLLATE utf8mb4_general_ci NOT NULL,
+          `amount` float NOT NULL,
+          `to_address` varchar(62) COLLATE utf8mb4_general_ci NOT NULL,
+          `created_at` datetime NOT NULL,
+          PRIMARY KEY (`id`),
+          KEY `NodeIDWalletTrans` (`nodeid`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;"
+      ]
+    }
+  }
 }

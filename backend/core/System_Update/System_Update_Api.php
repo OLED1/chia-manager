@@ -60,9 +60,20 @@
           $db_system = $this->checkUpdateRoutine();
 
           if($db_system["data"]["db_update_needed"] < 0){
-            foreach($db_update_json["versions"] AS $arrkey => $dbstatements){
-              foreach ($dbstatements as $arrkey1 => $statement) {
-                $sql = $this->db_api->execute($statement, array());
+            foreach($db_update_json["table_structures"] AS $tablename => $tablechecks){
+              try{
+                $this->db_api->execute("SELECT 1 FROM {$tablename}", array());
+
+                foreach($tablechecks["existing"] AS $columnname => $columndata){
+                  $sql = $this->db_api->execute("SHOW COLUMNS FROM {$tablename} WHERE Field = ?", array($columnname));
+                  if(count($sql->fetchAll(\PDO::FETCH_ASSOC)) == 0){
+                    $this->db_api->execute("ALTER TABLE {$tablename} ADD {$columnname} {$columndata}", array());
+                  }
+                }
+              }catch(Exception $e){
+                foreach($tablechecks["notexisting"] AS $arrkey => $statement){
+                  $this->db_api->execute("{$statement}", array());
+                }
               }
             }
           }
