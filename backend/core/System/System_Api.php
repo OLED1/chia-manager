@@ -111,7 +111,7 @@
     }
 
     public function processUpdate(array $data, array $loginData = NULL, $server = NULL){
-      if($this->checkForUpdates()["updateavail"]){
+      if($this->checkForUpdates()["data"]["updateavail"]){
         return $this->system_update_api->processUpdate($data, $loginData, $server);
       }else{
         return $this->logging_api->getErrormessage("001");

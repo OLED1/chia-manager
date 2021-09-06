@@ -113,7 +113,7 @@
 
     private function createBackupdirs(string $message, string $timestamp){
       $this->sendStatus(0, 1, 2, $message);
-      $backupdir = "../../../..{$this->ini["backup_root"]}";
+      $backupdir = "../../..{$this->ini["backup_root"]}";
 
       if(!file_exists($backupdir)) {
         if(!mkdir($backupdir, 0777, true)){
@@ -155,15 +155,15 @@
 
     private function backupSystemData(string $message, string $timestamp){
       $this->sendStatus(0, 2, 2, $message);
-      $source = "../../../..{$this->ini["system_root"]}";
-      $dest = "../../../..{$this->ini["backup_root"]}/{$timestamp}/files/";
+      $source = "../../..{$this->ini["system_root"]}";
+      $dest = "../../..{$this->ini["backup_root"]}/{$timestamp}/files/";
       $this->zipBackup($source, $dest, $timestamp);
       $this->sendStatus(0, 2, 0, $message);
     }
 
     private function backupSystemDatabase(string $message, string $timestamp){
       $this->sendStatus(0, 3, 2, $message);
-      $targetdir = "../../../..{$this->ini["backup_root"]}/{$timestamp}/db/mysq_backup.sql";
+      $targetdir = "../../..{$this->ini["backup_root"]}/{$timestamp}/db/mysq_backup.sql";
       print_r($targetdir);
 
       exec("mysqldump --user={$this->ini["db_user"]} --password={$this->ini["db_password"]} --host={$this->ini["db_host"]} {$this->ini["db_name"]} --result-file='{$targetdir}' 2>&1", $output, $exitCode);
