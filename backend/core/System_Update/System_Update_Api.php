@@ -224,7 +224,7 @@
             $zip->extractTo($tmpdir);
             $zip->close();
 
-            $this->full_copy("{$tmpdir}/chia-web-gui-{$updatechannel}/", "../../../..{$this->ini["system_root"]}/");
+            $this->full_copy("{$tmpdir}/chia-web-gui-{$updatechannel}/", "../../..{$this->ini["system_root"]}/");
             $newversion = $version_file_data[$updatechannel][0]["version"];
             if($this->updateConfigFile($newversion)){
               $this->sendStatus(0, 4, 0, $message);
