@@ -55,22 +55,22 @@
       $db_update_file = file_get_contents(__DIR__ . "/db_update.json");
       $db_update_json = json_decode($db_update_file, true);
 
-      if(array_key_exists("versions", $db_update_json)){
+      if(array_key_exists("table_structures", $db_update_json)){
         try{
           $db_system = $this->checkUpdateRoutine();
 
           if($db_system["data"]["db_update_needed"] < 0){
             foreach($db_update_json["table_structures"] AS $tablename => $tablechecks){
-              try{
-                $this->db_api->execute("SELECT 1 FROM {$tablename}", array());
+              $sql = $this->db_api->execute("SHOW TABLES LIKE '{$tablename}'", array());
 
+              if(count($sql->fetchAll(\PDO::FETCH_ASSOC)) > 0){
                 foreach($tablechecks["existing"] AS $columnname => $columndata){
                   $sql = $this->db_api->execute("SHOW COLUMNS FROM {$tablename} WHERE Field = ?", array($columnname));
                   if(count($sql->fetchAll(\PDO::FETCH_ASSOC)) == 0){
                     $this->db_api->execute("ALTER TABLE {$tablename} ADD {$columnname} {$columndata}", array());
                   }
                 }
-              }catch(Exception $e){
+              }else{
                 foreach($tablechecks["notexisting"] AS $arrkey => $statement){
                   $this->db_api->execute("{$statement}", array());
                 }

@@ -9,19 +9,8 @@ $(function(){
 
 $("#finish_update_btn").on("click", function(){
   $(this).find("i").show();
-  //finish update
-  /*$("#update_text").hide();
-  $("#update_success").show();
-  $("#finish_update_btn").hide();
-  setTimeout(function() {
-    location.reload();
-  }, 2000);*/
-  //failed update
-  //$("#update_text").hide();
-  //$("#update_failed").show();
-  //$("#finish_update_btn").hide();
 
-  sendToWSS("backendRequest", "ChiaMgmt\\System_Update\\System_Update_Api", "System_Update_Api", "finishUpdate", {});
+  sendToWSS("ownRequest", "ChiaMgmt\\System_Update\\System_Update_Api", "System_Update_Api", "finishUpdate", {});
 });
 
 $("#error_retry").on("click", function(){
@@ -38,8 +27,6 @@ $("#success_reload").on("click", function(){
 
 function messagesTrigger(data){
   var key = Object.keys(data);
-
-  console.log(data);
 
   if(key == "disableMaintenanceMode"){
     location.reload();
