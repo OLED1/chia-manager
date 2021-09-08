@@ -1,23 +1,22 @@
 # chia-web-gui
 ## Branch: Dev, Introduction
-This is the dev branch of the Chia Mgmt Gui. It is primary made for developers.
-So if you want to decide to install this branch be always afraid of untested content and bugs.
+This is the dev branch of the **Chia Mgmt Web-GUI**. This branch is primary made for **developers**.
+So if you want to decide to install this branch be always afraid of **untested content** and **bugs**.
 
-This project is made for Chia Farmer.
-The main goal is to make monitoring and managing the chia infrastructure and the needed nodes more efficient and easy.
+This project is made for **Chia Farmer**.
+The main goal is to make monitoring and managing the Chia Infrastructure and the needed nodes more **efficient and easy**.
 
 ### Why should i use it?
-If you have a mid sized or large chia infrastructure which is heavy to monitor and you want to be always sure everythings is working fine and every node makes his work you are good to go.
+This project should make it more easy to use, manage and monitor your Chia Nodes and to be sure every node makes his work and you are good to go.
 
-If you have a small sized chia infrastructure you can use it too.
-Some future features like autoplotting might be interesting for you.
+Some of the upcomming feature like autoplotting via Madmax plotter will excite you.
 
 Furthermore this project (will) offer(s) nearly everthing like the chia electron gui.
-Read more in the section "features" and "upcomming features".
+Read more in the following sections.
 
 ### What can i do with it?
 ### Monitoring
-You are able to monitor the upstatus and service of every node.
+You are able to monitor the **up-status** and **service(s)** of every node.
 Every node will be checked if it is up running and if the (farmer/harvester/wallet/etc.) service is working correctly.
 
 ### Managing
@@ -29,29 +28,31 @@ Currently you are able to view the following read-only information partially rec
 - Wallet Information (Syncstatus, Owning XCH, etc.)
 - Farm Information (Farminstatus and every corresponding information)
 - Harvester Information (Configures Plot directories and used space, Plots you are currently owning)
-- Many more features will be offered in future realeses.
+- Many more features will be offered in future releases.
 
 ## How does this project work? - From where does the webgui get the data?
-This project consists of two mainparts. The so-called node-client and the web-gui.
-To be able to query current data from your infrastructure you need to install the python based node-client on every node in your infrastructure. This node-client will connect to the api via a bidirectional websocket connection.
+This project consists of two main parts. The so-called **node-client** and the **Web-GUI**.
+The **node-client** gets his data with the help of **Chia Blockchain CLI** and formats them for the Web-GUI.
+**No electron GUI needed!**
+To be able to query current data from your infrastructure you need to install the python based node-client on every node in your infrastructure. This node-client will connect to the API which is offered through a **bidirectional and encrypted web-socket** connection.
 
-Currently all node data will be queried from the websocket server, but should be changed in one of the upcoming versions.
-In future the node client will automatically detect changes and informs the web-gui.
-So every data you will see are real live data.
+Currently all node data will be queried from the web-socket server, but should be changed in one of the upcoming versions.
+In future the node client will **automatically** detect changes and informs the web-gui with new data.
+So every data you will see are **real live** data.
 
-The web-gui should always show up-to-date and live queried data, if available.
+The Web-GUI should always show up-to-date and live queried data, if available.
 We are working hard to make a real live web based application.
 
 ## WTF?! Why only Linux?
-We developers have only Linux desktops and we decided to make the really first version of the node-client only for linux.
+We developers have only Linux desktops and we decided to make the really first version of the node-client only for Linux.
 Otherwise we were not able to release the first version of this project just in time.
 
 But it is planning, promised!
 
-The webgui should run on a Linux server anyway.
+The web-gui should run on a Linux server anyway.
 
-## Current features
-- Almost read only management via webgui
+## Current (key)features
+- Almost read only management via web-gui
   - Only a certain service restart is possible at the moment
   - Dashboard
     - System and Security
@@ -59,43 +60,66 @@ The webgui should run on a Linux server anyway.
     - Wallet(s) overall information like Node/Service stats, Sync status, etc.
     - Farm overview like Node/Service stats, Farming Status, Plot count, and total size
     - Harvester overview like Node/service stats and a list of not mounted directories
+    - Your assets are converted into your preferred currency
   - Nodes Page
     - Manage your Chia Nodes. Accept and deny node requests. Update the node client script fully automatically.
   - Infra Sysinfo
-    - Get the latest available system information from you host systems. Filesystem spaces, RAM and SWAP, Load information
+    - Get the latest available system information from you host systems. **Filesystem spaces**, **RAM and SWAP** and **Load information**.
+  - Wallet
+    - All available wallets and information in one view inclusive all past transactions
+  - Farmer
+    - Get all available information about your farm like **Farmingstatus**, **XCH Block Rewards** and so on.
+  - Harvester
+    - A brief overview of your configured plotting directories and used capacity. A list of all found plots.
 
 
 ## Upcoming features
 - Full management via webgui
   - Update and restart the host system
   - Update your chia version fully automatically
-  - Send and receive money via second factor
+  - Send and receive money via the Web-GUI secured through a second factor
   - Detect and check your plots periodically
-  - Manage windows systems too
-  - ...
+  - Manage Windows systems too
 - Complete monitoring
   - Get an email if a service or server is not running or recently died
-  - be able to detect immediately if you might lose money
-  - ...
+  - Be able to detect immediately if you might lose money
+  - Setup and manage different alerting levels to be fully informed just in moment something unexpected is happening
 - Full autoplotting with madmax plotter integration
-  - Select an empty or not fully plotted directory and let chiamgmt autoplot all your directories
-  - ...
-- Security at its best
+  - Select an empty or not fully plotted directory and let Chia Mgmt **autoplot** all your directories
+- Security
   - Second factor via ubikey, two factor app, etc.
-  - ...
-- And further more!
-- ...
+- And much more!
 
 Do you have any further ideas of features you want to see? Just make a feature request or mail us!
 
 ### Roadmap
+- Version 0.2
+  - Planned Date: 10/21
+- Version 0.3
+  - Planned Date: 11/21
+- Version 0.4
+  - Planned Date: 12/21
+- Version 0.5
+  - Planned Date: 01/22
+- Version 0.6
+  - Planned Date: 02/22
+- Version 0.7
+  - Planned Date: 03/22
+- Version 0.8
+  - Planned Date: 04/22
+- Version 0.9
+  - Planned Date: 05/22
+- Version 1.0
+  - Planned Date: 06/22
 
+If the feature list stays as long as currently, version 1.0 might be reached much faster.
+Version 1.0 will be released if every planned main features are implemented.
 
-## We need you!
-Currently we are two contributors. Lucaaust, an occupational python programmer and me, a hobby php programmer.
+## We need your help!
+Currently we are two contributors. **Lucaaust**, an occupational python programmer and **OLED1**, an occupational Linux Sysadmin and hobby programmer.
 
 You can help us out with testing and if you want with code contribution.
-We want to offer a free, stable and overall chia management software.
+We want to offer a free, open source and stable Chia Farm Management Software.
 
 ## Installation and Usage
 ### Installation
