@@ -42,13 +42,13 @@ So every data you will see are real live data.
 The web-gui should always show up-to-date and live queried data, if available.
 We are working hard to make a real live web based application.
 
-## WTF?! Why only linux?
-We developers have only linux desctops and we decided to make the really first version of the node-client only for linux.
+## WTF?! Why only Linux?
+We developers have only Linux desktops and we decided to make the really first version of the node-client only for linux.
 Otherwise we were not able to release the first version of this project just in time.
 
 But it is planning, promised!
 
-The webgui should run on a linux server anyway.
+The webgui should run on a Linux server anyway.
 
 ## Current features
 - Almost read only management via webgui
@@ -73,20 +73,16 @@ The webgui should run on a linux server anyway.
   - Detect and check your plots periodically
   - Manage windows systems too
   - ...
-
 - Complete monitoring
  - Get an email if a service or server is not running or recently died
  - be able to detect immediately if you might lose money
  - ...
-
 - Full autoplotting with madmax plotter integration
   - Select an empty or not fully plotted directory and let chiamgmt autoplot all your directories
   - ...
-
 - Security at its best
  - Second factor via ubikey, two factor app, etc.
  - ...
-
 - And further more!
 - ...
 
