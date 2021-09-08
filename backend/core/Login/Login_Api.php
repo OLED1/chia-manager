@@ -201,7 +201,7 @@
         setcookie(
           'PHPSESSID',//name
           $sessionID,//value
-          0,//expires at end of session
+          strtotime('+30 days'),//expires at end of session
           "/",//path
           $currentCookieParams['domain'],//domain
           true, //secure
@@ -211,7 +211,7 @@
         setcookie(
           'user_id',//name
           $userid,//value
-          0,//expires at end of session
+          strtotime('+30 days'),//expires at end of session
           "/",//path
           $currentCookieParams['domain'],//domain
           true, //secure

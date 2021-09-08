@@ -32,10 +32,14 @@
       $returndata = array();
 
       try{
-        $sql = $this->db_api->execute("SELECT n.id, GROUP_CONCAT(nta.description SEPARATOR ', ') AS nodetype, n.nodeauthhash, n.authtype, n.conallow, n.hostname, n.scriptversion, n.ipaddress, n.changeable, n.changedIP
+        $sql = $this->db_api->execute("SELECT n.id, GROUP_CONCAT(nta.description SEPARATOR ', ') AS nodetype, n.nodeauthhash, n.authtype,
+                                        n.conallow, n.hostname, n.scriptversion, n.chiaversion, n.chiapath, n.ipaddress,
+                                        n.changeable, n.changedIP, MAX(cis.memory_total) AS memory_total, MAX(cis.swap_total) AS swap_total,
+                                        MAX(cis.cpu_cores) AS cpu_cores, MAX(cis.cpu_count) AS cpu_count, MAX(cis.cpu_model) AS cpu_model
                                        FROM nodes n
                                        JOIN nodetype nt ON nt.nodeid = n.id
                                        JOIN nodetypes_avail nta ON nta.code = nt.code
+                                       LEFT JOIN chia_infra_sysinfo cis ON cis.timestamp = (SELECT MAX(timestamp) FROM chia_infra_sysinfo WHERE nodeid = n.id) AND cis.nodeid = n.id
                                        GROUP BY n.id", array());
 
         $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
@@ -255,9 +259,39 @@
       }
     }
 
-    public function getUpdateChannels(array $data, array $loginData = NULL){
-      $channels = file_get_contents(__DIR__ . "/../../../nodepackages/versions.json");
-      return array("status" =>0, "message" => "Successfully loaded all updatechannels.", "data" => json_decode($channels, true));
+    public function checkUpdatesAndChannels(array $data = [], array $loginData = NULL){
+      $updatepackagepath = "https://files.chiamgmt.edtmair.at/client/";
+      $version_file_json = file_get_contents("{$updatepackagepath}/versions.json");
+      $version_file_data = json_decode($version_file_json, true);
+      $returndata = [];
+      $returndata["available_channels"] = array_keys($version_file_data);
+      $returndata["updateinfos"] = [];
+
+
+      try{
+        if(array_key_exists("nodeid", $data) && is_numeric($data["nodeid"])){
+          $sql = $this->db_api->execute("SELECT id, hostname, scriptversion, updatechannel, chiaversion FROM nodes WHERE authtype = 2 AND id = ?", array($data["nodeid"]));
+        }else{
+          $sql = $this->db_api->execute("SELECT id, hostname, scriptversion, updatechannel, chiaversion FROM nodes WHERE authtype = 2", array());
+        }
+
+        foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $nodedata){
+          $returndata["updateinfos"][$nodedata["id"]] = $nodedata;
+
+          $returndata["updateinfos"][$nodedata["id"]]["updateavailable"] = 0;
+          if(array_key_exists($nodedata["updatechannel"], $version_file_data)){
+            $returndata["updateinfos"][$nodedata["id"]]["updateavailable"] = version_compare($nodedata["scriptversion"], $version_file_data[$nodedata["updatechannel"]][0]["version"]);
+            $returndata["updateinfos"][$nodedata["id"]]["remoteversion"] = $version_file_data[$nodedata["updatechannel"]][0]["version"];
+          }
+        }
+
+        return array("status" =>0, "message" => "Successfully loaded all requested data.", "data" => $returndata);
+      }catch(Exception $e){
+        //TODO Implement correct status code
+        print_r($e);
+        return array("status" => 1, "message" => "An error occured.");
+      }
+
     }
 
     public function queryNodesServicesStatus(array $data = [], array $loginData = NULL, $server = NULL){

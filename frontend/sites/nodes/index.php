@@ -7,16 +7,19 @@
   $activeSubscriptions = $nodes_api->getActiveSubscriptions();
   $activeRequests = $nodes_api->getActiveRequests();
   $nodetypes = $nodes_api->getNodeTypes();
+  $scriptupdatesavail = $nodes_api->checkUpdatesAndChannels();
 
   if(array_key_exists("data", $configuredNodes)) $configuredNodes = $configuredNodes["data"];
   if(array_key_exists("data", $activeSubscriptions)) $activeSubscriptions = $activeSubscriptions["data"];
   if(array_key_exists("data", $activeRequests)) $activeRequests = $activeRequests["data"];
   if(array_key_exists("data", $nodetypes)) $nodetypes = $nodetypes["data"];
+  if(array_key_exists("data", $scriptupdatesavail)) $scriptupdatesavail = $scriptupdatesavail["data"];
 
   echo "<script> var configuredNodes = " . json_encode($configuredNodes) . "; </script>";
   echo "<script> var activeSubscriptions = " . json_encode($activeSubscriptions) . "; </script>";
   echo "<script> var activeRequests = " . json_encode($activeRequests) . "; </script>";
   echo "<script> var nodetypes = " . json_encode($nodetypes) . "; </script>";
+  echo "<script> var scriptupdatesavail = " . json_encode($scriptupdatesavail) . "; </script>";
   echo "<script> var siteID = 2; </script>";
   echo "<script> var packageslink = '" . $ini["app_protocol"]."://".$ini["app_domain"].$ini["packages_url"] . "'; </script>";
 ?>
@@ -364,51 +367,153 @@
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Send Action</h5>
+        <h5 class="modal-title">Node Information</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
       <div class="modal-body">
-        <div class="card shadow mb-4">
-          <div
-              class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-              <h6 class="m-0 font-weight-bold text-primary">Update Node <strong id="actionmodal-nodename"></strong></h6>
+        <nav>
+          <div class="nav nav-tabs" id="nav-tab" role="tablist">
+            <a class="nav-item nav-link active" id="node-infos-tab" data-toggle="tab" href="#node-infos" role="tab" aria-controls="node-infos" aria-selected="true">Node Info</a>
+            <a class="nav-item nav-link" id="node-commands-tab" data-toggle="tab" href="#node-commands" role="tab" aria-controls="node-commands" aria-selected="false">Update Node</a>
           </div>
-          <div id="all_node_sysinfo_container" class="card-body">
-            <div class="dropdown">
-              <button class="btn btn-secondary dropdown-toggle" type="button" id="updatechannelsMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                Update Channel
-              </button>
-              <div id="updatechannels-modal" class="dropdown-menu" aria-labelledby="updatechannelsMenu">
+        </nav>
+        <div class="tab-content" id="nav-tabContent" style="min-height: 30em; margin-top: 1em;">
+          <!--Node infos-->
+          <div class="tab-pane fade show active" id="node-infos" role="tabpanel" aria-labelledby="node-infos-tab">
+            <div class="row">
+              <div class="col mb-4">
+                <div class="text-center">
+                  <i class="fab fa-linux fa-5x"></i>
+                </div>
               </div>
             </div>
-            <hr/>
-            <div class="dropdown">
-              <button class="btn btn-secondary dropdown-toggle" type="button" id="updateversionMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" disabled>
-                Available Versions
-              </button>
-              <div id="updateversions-modal" class="dropdown-menu" aria-labelledby="updateversionMenu">
+            <div class="row">
+              <div class="col">
+                <div class="container">
+                  <div class="row">
+                    <div class="col">
+                      <b>System:</b>
+                    </div>
+                    <div id="osinfo" class="col" style="text-align: right;">
+                      Linux
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col">
+                      <b>Hostname:</b>
+                    </div>
+                    <div id="hostname" class="col infotext" style="text-align: right;">
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col">
+                      <b>Client Scriptversion:</b>
+                    </div>
+                    <div id="scriptversion" class="col infotext" style="text-align: right;">
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col">
+                      <b>Client Node Config:</b>
+                    </div>
+                    <div id="nodetype" class="col infotext" style="text-align: right;">
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col">
+                      <b>Chia Version:</b>
+                    </div>
+                    <div id="chiaversion" class="col infotext" style="text-align: right;">
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col">
+                      <b>Chia activate path:</b>
+                    </div>
+                    <div id="chiapath" class="col infotext" style="text-align: right;">
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col">
+                      <b>CPU Model:</b>
+                    </div>
+                    <div id="cpu_model" class="col infotext" style="text-align: right;">
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col">
+                      <b>CPU Cores / Threads:</b>
+                    </div>
+                    <div id="cpu_cores_threads" class="col infotext" style="text-align: right;">
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col">
+                      <b>Installed RAM / Swap:</b>
+                    </div>
+                    <div id="ram_swap_size" class="col infotext" style="text-align: right;">
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col">
+                      <b>Local IP:</b>
+                    </div>
+                    <div id="localIP" class="col infotext" style="text-align: right;">
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col">
+                      <b>Remote IP:</b>
+                    </div>
+                    <div id="ipaddress" class="col infotext" style="text-align: right;">
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <hr />
-            <p>Update Channel: <span id="selectedchannel">None</span>
-            <br>Version: <span id="selectedversion">None</span>
-            <br>Filename: <span id="versionfilename">None</span></p>
-            <hr />
-            <button class="btn btn-success" type="button" id="updatenode" disabled>Update Node</button>
           </div>
-        </div>
-        <div class="card shadow mb-4">
-          <div
-              class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-              <h6 class="m-0 font-weight-bold text-primary">Node Command Log</h6>
-          </div>
-          <div id="action_node_log" class="card-body">
+          <!--Node commands-->
+          <div class="tab-pane fade" id="node-commands" role="tabpanel" aria-labelledby="node-commands-tab">
+            <div class="card shadow mb-4">
+              <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Update Node <strong id="actionmodal-nodename"></strong></h6>
+              </div>
+              <div id="all_node_sysinfo_container" class="card-body">
+                <div class="dropdown">
+                  <button class="btn btn-secondary dropdown-toggle" type="button" id="updatechannelsMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
+                  <label for="updatechannelsMenu">Update Channel</label>
+                  <div id="updatechannels-modal" class="dropdown-menu" aria-labelledby="updatechannelsMenu">
+                    <?php foreach($scriptupdatesavail["available_channels"] AS $arrkey => $channelname){
+                      echo "<button class='dropdown-item' data-branch='{$channelname}' href='#'>" . getFullNameFromBranch($channelname) . "</button>";
+                    }
 
-          </div>
-          <div class='card-footer'>
-            Status: <span id='action_node_status'></span>
+                    function getFullNameFromBranch($channelname){
+                      switch ($channelname){
+                        case "dev":
+                          return "Development";
+                        case "staging":
+                          return "Staging";
+                        case "main":
+                          return "Productive";
+                        default:
+                          return "Not set";
+                      }
+                    }
+                    ?>
+                  </div>
+                </div>
+                <hr/>
+                <p>Current Version: <span id="current_version" class="infotext">None</span>
+                  <br>Remote Version: <span id="remote_version" class="infotext">None</span>
+                  <br>Update Available: <span id="update_available" class="infotext">None</span>
+                </p>
+                <hr />
+                <button class="btn btn-secondary" type="button" id="check-for-updates">Check for updates</button>
+                <button class="btn btn-warning" type="button" id="updatenode">Update Node</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -21,8 +21,8 @@ $(function(){
     if(e.which === 116 || (e.which === 82 && e.ctrlKey)) {
       var currentsite = document.location.href.split("sites")[1];
       href = "/sites" + currentsite;
-      sitename = $(".active span").text();
-      clickeditem = $(".active .nav-link");
+      sitename = $("#accordionSidebar .active span").text();
+      clickeditem = $("#accordionSidebar .active .nav-link");
       loadPage(href, sitename, clickeditem);
       return false;
     }

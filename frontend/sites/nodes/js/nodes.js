@@ -97,11 +97,21 @@ function recreateConfiguredClients(){
 
   $.each(configuredNodes, function(arrkey, value){
     var rowNode = configuredClients
-    .row.add( [ value["id"], value["nodetype"], value["nodeauthhash"], getAuthtypeString(value["authtype"]), getConallowString(value["conallow"]), value["hostname"], (value["scriptversion"] != null ? value["scriptversion"] : "-"), formatIP(value["ipaddress"], value["changedIP"], value["id"]), getClientCount(value["nodeauthhash"]), getButtonsConfClients(value["id"], value["conallow"], value["changeable"]) ] )
+    .row.add( [ value["id"], value["nodetype"], value["nodeauthhash"], getAuthtypeString(value["authtype"]), getConallowString(value["conallow"]), value["hostname"], formatScriptInfoWithUpdate(value["id"]), formatIP(value["ipaddress"], value["changedIP"], value["id"]), getClientCount(value["nodeauthhash"]), getButtonsConfClients(value["id"], value["conallow"], value["changeable"]) ] )
     .draw()
     .node().id = "confnode_" + value["id"];
   });
 }
+
+function formatScriptInfoWithUpdate(nodeid){
+  if(nodeid in scriptupdatesavail["updateinfos"]){
+    var nodeupdate = scriptupdatesavail["updateinfos"][nodeid];
+    return nodeupdate["scriptversion"] + "<br><span id='table_updateavail_" + nodeid + "'>" + getUpdateAvailableBadge(nodeupdate["updateavailable"]) + "</span>";
+  }else{
+    return "-";
+  }
+}
+
 
 //Conallow = 0 Node not allowed to connect
 //Conallow = 1 Node is allowed to connect
@@ -115,9 +125,9 @@ function getButtonsConfClients(id, conallow, changeable){
     button += "<button type='button' data-conf-id=" + id + " class='decline-connect btn btn-danger wsbutton'><i class='far fa-times-circle'></i></button>";
   }
 
-  /*if(conallow == 1 && changeable == 1){
-    button += "<button type='button' data-conf-id=" + id + " class='connection-info btn btn-warning'><i class='fas fa-info-circle'></i></button>";
-  }*/
+  if(conallow == 1 && changeable == 1){
+    button += "&nbsp;<button type='button' data-conf-id=" + id + " class='connection-info btn btn-warning'><i class='fas fa-info-circle'></i></button>";
+  }
 
   return button;
 }
@@ -288,8 +298,65 @@ function initShowNodeInfo(){
 
   $(".connection-info").off("click");
   $(".connection-info").on("click", function(){
-    console.log($(this));
+    $(".infotext").text("N/A");
+
+    var nodeid = $(this).attr("data-conf-id");
+    var nodeinfo = configuredNodes[nodeid];
+    var available_channels = scriptupdatesavail["available_channels"];
+    var updateinfo = scriptupdatesavail["updateinfos"][nodeid];
+    $.each(nodeinfo, function(key, value){
+      $("#"+key).text(value);
+    });
+
+    $("#cpu_cores_threads").text(nodeinfo["cpu_count"] + " Core(s) / " + (nodeinfo["cpu_count"]*nodeinfo["cpu_cores"]) + " Thread(s)");
+    $("#ram_swap_size").text((nodeinfo["memory_total"]/1024/1024/1024).toFixed(2) + "GB / " + (nodeinfo["swap_total"]/1024/1024/1024).toFixed(2) + "GB");
+
+    $("#updatechannelsMenu").text(getFullNameFromBranch(updateinfo["updatechannel"]));
+    $("#current_version").text(updateinfo["scriptversion"]);
+    $("#remote_version").text(updateinfo["remoteversion"]);
+    $("#update_available").html(getUpdateAvailableBadge(updateinfo["updateavailable"]));
+
+    $("#updatenode").hide();
+    if(updateinfo["updateavailable"] < 0){
+      $("#updatenode").show();
+    }
+    $("#nodeactionmodal .tab-pane.active").removeClass("active").removeClass("show");
+    $("#nodeactionmodal .nav-item.active").removeClass("active");
+
+
+    $("#nav-tab .nav-item").first().addClass("active");
+    $("#nodeactionmodal .tab-pane").first().addClass("active").addClass("show");
+
+    $("#nodeactionmodal").modal("show").attr("data-nodeid", nodeid);
+
+    $("#check-for-updates").off("click");
+    $("#check-for-updates").on("click", function(){
+      sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "checkUpdatesAndChannels", {"nodeid" : nodeid});
+    });
   });
+}
+
+function getFullNameFromBranch(channelname){
+  switch (channelname){
+    case "dev":
+      return "Development";
+    case "staging":
+      return "Staging";
+    case "main":
+      return "Productive";
+    default:
+      return "Not set";
+  }
+}
+
+function getUpdateAvailableBadge(updateavailable){
+  if(updateavailable >= 0){
+    return "<span class='badge badge-success'>Node script up to date.</span>";
+  }else if(updateavailable < 0){
+    return "<span class='badge badge-warning'>Update available.</span>";
+  }else{
+    return "<span class='badge badge-warning'>No updatedata available.</span>";
+  }
 }
 
 function checkNodeConnected(nodeid, authhash){
@@ -350,12 +417,27 @@ function messagesTrigger(data){
         sendToWSS("ownRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getSystemInfo", { "nodeid": data[key]["data"]["nodeid"] });
       }
       reinit = false;
+    }else if(key == "checkUpdatesAndChannels"){
+      var nodeupdatedata = data[key]["data"]["updateinfos"];
+      $.each(nodeupdatedata, function(nodeid, updatedata){
+        if($("#nodeactionmodal[data-nodeid='" + nodeid + "']").length > 0){
+          $("#update_available").html(getUpdateAvailableBadge(updatedata["updateavailable"]));
+          $("#updatenode").hide();
+          if(updatedata["updateavailable"] < 0){
+            $("#updatenode").show();
+          }
+
+          scriptupdatesavail["updateinfos"][nodeid] = updatedata;
+          reinit = true;
+        }
+      });
     }
     if(reinit){
       recreateConfiguredClients();
       initAllowConnect();
       initDenyConnect();
       initAllowIPChange();
+      initShowNodeInfo();
     }
   }
 }

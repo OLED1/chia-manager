@@ -14,6 +14,25 @@
       "notexisting" : [
         "CREATE TABLE `chia_wallets_transactions` ( `id` int NOT NULL AUTO_INCREMENT, `nodeid` int NOT NULL, `walletid` int NOT NULL, `transaction` varchar(100) COLLATE utf8mb4_general_ci NOT NULL, `status` varchar(20) COLLATE utf8mb4_general_ci NOT NULL, `amount` float NOT NULL, `to_address` varchar(62) COLLATE utf8mb4_general_ci NOT NULL, `created_at` datetime NOT NULL, PRIMARY KEY (`id`), KEY `NodeIDWalletTrans` (`nodeid`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;"
       ]
+    },
+    "nodes" : {
+      "existing" : {
+        "id" : "int NOT NULL AUTO_INCREMENT",
+        "nodeauthhash" : "varchar(100) COLLATE utf8mb4_general_ci NOT NULL",
+        "hostname" : "varchar(100) COLLATE utf8mb4_general_ci NOT NULL",
+        "scriptversion" : "varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL",
+        "updatechannel" : "varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL",
+        "chiaversion" : "varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL",
+        "chiapath" : "varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL",
+        "conallow" : "tinyint(1) NOT NULL",
+        "authtype" : "int NOT NULL",
+        "ipaddress" : "varchar(15) COLLATE utf8mb4_general_ci NOT NULL",
+        "changedIP" : "varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT ''",
+        "changeable" : "tinyint(1) NOT NULL DEFAULT '1'",
+        "lastseen" : "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP"
+      },
+      "notexisting" : [
+      ]
     }
   }
 }
