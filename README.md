@@ -95,22 +95,37 @@ Do you have any further ideas of features you want to see? Just make a feature r
 ### Roadmap
 - Version 0.2
   - Planned Date: 10/21
+  - Planned Features:
+    - Pool Data via "plotnft" command
+    - Pool API Integration from pools which offers an open API
+    - Second factor via ubikey, second factor app, etc.
+    - Smart Node Client implementation
 - Version 0.3
   - Planned Date: 11/21
+  - Planned Features:
+    - Extended Monitoring and messages via email
+    - More charts which offers more past information
 - Version 0.4
   - Planned Date: 12/21
+  - Planned Features:
 - Version 0.5
   - Planned Date: 01/22
+  - Planned Features:
 - Version 0.6
   - Planned Date: 02/22
+  - Planned Features:
 - Version 0.7
   - Planned Date: 03/22
+  - Planned Features:
 - Version 0.8
   - Planned Date: 04/22
+  - Planned Features:
 - Version 0.9
   - Planned Date: 05/22
+  - Planned Features:
 - Version 1.0
   - Planned Date: 06/22
+  - Planned Features:
 
 If the feature list stays as long as currently, version 1.0 might be reached much faster.
 Version 1.0 will be released if every planned main features are implemented.
@@ -123,10 +138,10 @@ We want to offer a free, open source and stable Chia Farm Management Software.
 
 ## Installation and Usage
 ### Installation
-At first you need a self hosted system where you can run the php based webgui and the needed mysql database.
+At first you need a self hosted system where you can run the PHP based Web-GUI and the needed Mysql database.
 
 #### Install PHP
-At least PHP 7.4 is needed to run the webuig. PHP 8 is currently not supported/tested.
+At least PHP 7.4 is needed to run the Web-GUI. PHP 8 is currently not supported/tested.
 
 ##### Debian based systems (Ubuntu 20.04)
 This application is currently tested on Ubuntu 20.04 LTS.
@@ -144,14 +159,14 @@ FLUSH PRIVILEGES;
 ```
 
 #### Setup a vhost
-You can download an example vhost config for apache from here:
+You can download an example Vhost config for apache webservers from here:
 https://files.chiamgmt.edtmair.at/server/Example_Configs/
 
 #### Download the installer
 ```
 cd /path/to/your/desired/directory
 
-Download you desired package install package from
+Download your desired install package from
 https://files.chiamgmt.edtmair.at/server/install-packages/
 
 unzip chia-web-gui-dev
@@ -163,5 +178,9 @@ rm -rf chia-web-gui-dev*
 Go to https://your.chiamgmtwebgui.com/installer.php and follow the steps.
 After successfull instalation do not forget to remove the installer.php - file.
 
-###Disclaimer
+#### Node client Installation
+Just follow the instructions in the Web-GUI unter the point "Nodes".
+Select your desired system OS. (Only Linux is currently supported)
+
+### Disclaimer
 CHIA NETWORK INC, CHIA™, the CHIA BLOCKCHAIN™, the CHIA PROTOCOL™, CHIALISP™ and the “leaf Logo” (including the leaf logo alone when it refers to or indicates Chia), are trademarks or registered trademarks of Chia Network, Inc., a Delaware corporation. There is no affliation between this Chia Mgmt project and the main Chia Network project.
