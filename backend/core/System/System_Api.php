@@ -4,9 +4,10 @@
   use ChiaMgmt\WebSocket\WebSocket_Api;
   use ChiaMgmt\System_Update\System_Update_Api;
   use ChiaMgmt\Logging\Logging_Api;
+  use ChiaMgmt\Nodes\Nodes_Api;
 
   class System_Api{
-    private $db_api, $ini, $ciphering, $iv_length, $options, $encryption_iv, $websocket_api, $system_update_api, $logging_api;
+    private $db_api, $ini, $ciphering, $iv_length, $options, $encryption_iv, $websocket_api, $system_update_api, $logging_api, $nodes_api;
     public function __construct(){
       //Variables for pw encrypting and decrypting
       $this->ciphering = "AES-128-CTR";
@@ -17,6 +18,7 @@
       $this->db_api = new DB_Api();
       $this->system_update_api = new System_Update_Api();
       $this->logging_api = new Logging_Api($this);
+      $this->nodes_api = new Nodes_Api();
     }
 
     public function setSystemSettings(array $data, array $loginData = NULL){
@@ -135,12 +137,23 @@
         $returndata["found"]["updateavail"] = "There is an system update to version {$systemupdate["remoteversion"]} available.";
         $returndata["count"] = $returndata["count"] + 1;
       }
+      $nodeupdates = $this->nodes_api->checkUpdatesAndChannels()["data"];
+      $nodesupdatesavail = [];
+      foreach($nodeupdates["updateinfos"] AS $arrkey => $nodeupdatedata){
+        if($nodeupdatedata["updateavailable"] < 0) array_push($nodesupdatesavail, $nodeupdatedata["hostname"]);
+      }
+
+      if(count($nodesupdatesavail) > 0){
+        $returndata["found"]["updateavail"] = "There are node updates available for the following nodes: " . implode(", ", $nodesupdatesavail) . ". Please update soon.";
+        $returndata["count"] = $returndata["count"] + 1;
+      }
 
       //Checking if websocket server is running
       if($this->testConnection()["status"] != 0){
         $returndata["found"]["websocket"] = "Websocket Server not running. Please start it otherwise you cannot use this system proberly.";
         $returndata["count"] = $returndata["count"] + 1;
       }
+
 
       //Checking if all system relevant security features are activated
       try{

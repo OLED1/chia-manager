@@ -68,6 +68,8 @@ function messagesTrigger(data){
           setServiceBadge("Harvester", nodeid, condata["walletstatus"], "Node not reachable");
         }
       });
+    }else if(key == "checkUpdatesAndChannels"){
+      $('#card-system').load(frontend + "/sites/main_overview/templates/card-system.php");
     }
   }else{
     if(data[key]["status"] == "014003001"){
