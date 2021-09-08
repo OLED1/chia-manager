@@ -426,10 +426,9 @@ function messagesTrigger(data){
           if(updatedata["updateavailable"] < 0){
             $("#updatenode").show();
           }
-
-          scriptupdatesavail["updateinfos"][nodeid] = updatedata;
-          reinit = true;
         }
+        scriptupdatesavail["updateinfos"][nodeid] = updatedata;
+        reinit = true;
       });
     }
     if(reinit){
