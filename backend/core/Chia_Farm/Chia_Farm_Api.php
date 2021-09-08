@@ -159,9 +159,12 @@
       if(array_key_exists("challenges", $data)){
         try{
           $now = new \DateTime("now");
+
+          $sql = $this->db_api->execute("DELETE FROM chia_farm_challenges", array());
+
           foreach ($data["challenges"] as $arrkey => $challenge) {
             $exploded = explode(" ", $challenge);
-            $sql = $this->db_api->execute("REPLACE INTO chia_farm_challenges (id, date, hash, hash_index) VALUES (NULL, ?, ?, ?)",
+            $sql = $this->db_api->execute("INSERT INTO chia_farm_challenges (id, date, hash, hash_index) VALUES (NULL, ?, ?, ?)",
                                           array($now->format("Y-m-d H:i:s"), $exploded[1], $exploded[3]));
           }
 
