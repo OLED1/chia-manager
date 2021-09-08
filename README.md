@@ -16,14 +16,14 @@ Furthermore this project (will) offer(s) nearly everthing like the chia electron
 Read more in the section "features" and "upcomming features".
 
 ### What can i do with it?
-###Monitoring
+### Monitoring
 You are able to monitor the upstatus and service of every node.
 Every node will be checked if it is up running and if the (farmer/harvester/wallet/etc.) service is working correctly.
 
-###Managing
+### Managing
 At the moment you are able to restart a certain service if it is not running correctly right from the webgui.
 
-###Overview
+### Overview
 Currently you are able to view the following read-only information partially reclined on the chia electron gui:
 - Node system information (Filesystems, RAM and SWAP information and System Load)
 - Wallet Information (Syncstatus, Owning XCH, etc.)
@@ -31,7 +31,7 @@ Currently you are able to view the following read-only information partially rec
 - Harvester Information (Configures Plot directories and used space, Plots you are currently owning)
 - Many more features will be offered in future realeses.
 
-##How does this project work? - From where does the webgui get the data?
+## How does this project work? - From where does the webgui get the data?
 This project consists of two mainparts. The so-called node-client and the web-gui.
 To be able to query current data from your infrastructure you need to install the python based node-client on every node in your infrastructure. This node-client will connect to the api via a bidirectional websocket connection.
 
@@ -42,7 +42,7 @@ So every data you will see are real live data.
 The web-gui should always show up-to-date and live queried data, if available.
 We are working hard to make a real live web based application.
 
-##WTF?! Why only linux?
+## WTF?! Why only linux?
 We developers have only linux desctops and we decided to make the really first version of the node-client only for linux.
 Otherwise we were not able to release the first version of this project just in time.
 
@@ -50,7 +50,7 @@ But it is planning, promised!
 
 The webgui should run on a linux server anyway.
 
-##Current features
+## Current features
 - Almost read only management via webgui
   - Only a certain service restart is possible at the moment
   - Dashboard
@@ -65,7 +65,7 @@ The webgui should run on a linux server anyway.
     - Get the latest available system information from you host systems. Filesystem spaces, RAM and SWAP, Load information
 
 
-##Upcoming features
+## Upcoming features
 - Full management via webgui
   - Update and restart the host system
   - Update your chia version fully automatically
@@ -92,29 +92,29 @@ The webgui should run on a linux server anyway.
 
 Do you have any further ideas of features you want to see? Just make a feature request or mail us!
 
-###Roadmap
+### Roadmap
 
 
-##We need you!
+## We need you!
 Currently we are two contributors. Lucaaust, an occupational python programmer and me, a hobby php programmer.
 
 You can help us out with testing and if you want with code contribution.
 We want to offer a free, stable and overall chia management software.
 
-##Installation and Usage
-###Installation
+## Installation and Usage
+### Installation
 At first you need a self hosted system where you can run the php based webgui and the needed mysql database.
 
-####Install PHP
+#### Install PHP
 At least PHP 7.4 is needed to run the webuig. PHP 8 is currently not supported/tested.
 
-#####Debian based systems (Ubuntu 20.04)
+##### Debian based systems (Ubuntu 20.04)
 This application is currently tested on Ubuntu 20.04 LTS.
 ```
 apt-get install apt install php php-cli php-fpm php-json php-common php-mysql php-zip php-gd php-mbstring php-curl php-xml php-pear php-bcmath
 ```
 
-####Setup a Mysql database
+#### Setup a Mysql database
 ```
 mysql -u root -p
 CREATE DATABASE chiamgmt_db;
@@ -123,11 +123,11 @@ GRANT ALL PRIVILEGES ON chiamgmt_db TO 'chiamgmt_user'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
-####Setup a vhost
+#### Setup a vhost
 You can download an example vhost config for apache from here:
 https://files.chiamgmt.edtmair.at/server/Example_Configs/
 
-####Download the installer
+#### Download the installer
 ```
 cd /path/to/your/desired/directory
 
@@ -139,7 +139,7 @@ mv chia-web-gui-dev/installer.php /path/to/your/desired/directory
 rm -rf chia-web-gui-dev*
 ```
 
-####Execute the installer
+#### Execute the installer
 Go to https://your.chiamgmtwebgui.com/installer.php and follow the steps.
 After successfull instalation do not forget to remove the installer.php - file.
 
