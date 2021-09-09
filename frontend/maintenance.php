@@ -61,8 +61,8 @@
       </div>
     </div>
   </body>
-  <script src="frameworks/bootstrap/vendor/jquery/jquery.min.js"></script>
-  <script>
+  <script nonce=<?php echo $ini["nonce_key"]; ?> src="frameworks/bootstrap/vendor/jquery/jquery.min.js"></script>
+  <script nonce=<?php echo $ini["nonce_key"]; ?>>
     $(function(){
       if($("#maintenance_mode_modal").length > 0 && $("#update_routines").length == 0){
         $("#maintenance_mode_modal").modal("show");

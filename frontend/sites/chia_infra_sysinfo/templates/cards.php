@@ -15,7 +15,7 @@
   $sysinfos = $chia_infra_sysinfo_api->getSystemInfo();
 
   if(array_key_exists("data", $sysinfos) && count($sysinfos["data"]) > 0){
-    echo "<script> var sysinfodata = " . json_encode($sysinfos["data"]) . "; </script>";
+    echo "<script nonce={$ini["nonce_key"]}> var sysinfodata = " . json_encode($sysinfos["data"]) . "; </script>";
 
     foreach($sysinfos["data"] AS $nodeid => $sysinfo){
 ?>
@@ -126,5 +126,5 @@
   </div>
 </div>
 <?php } ?>
-<script src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/frameworks/bootstrap/vendor/chart.js/Chart.js"?>></script>
-<script src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_infra_sysinfo/js/chia_infra_sysinfo.js"?>></script>
+<script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/frameworks/bootstrap/vendor/chart.js/Chart.js"?>></script>
+<script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_infra_sysinfo/js/chia_infra_sysinfo.js"?>></script>

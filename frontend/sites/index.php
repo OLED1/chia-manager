@@ -32,7 +32,7 @@
   $userData = array();
   if(array_key_exists("user_id", $_COOKIE)) $userData = $users_api->getOwnUserData($_COOKIE["user_id"]);
 
-  echo "<script> var backend = '". $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["backend_url"]."';" .
+  echo "<script nonce={$ini["nonce_key"]} > var backend = '". $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["backend_url"]."';" .
         "var frontend = '". $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."';" .
         "var websocket = '". $ini["socket_protocol"]."://".$ini["socket_domain"]."".$ini["socket_listener"]."';" .
         "var authhash = '". $ini["web_client_auth_hash"]."';" .
@@ -432,26 +432,26 @@
     <?php } ?>
 
     <!-- Bootstrap core JavaScript-->
-    <script src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/jquery/jquery.min.js"></script>
-    <script src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/bootstrap/__old/js/bootstrap.bundle.min.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/jquery/jquery.min.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/bootstrap/__old/js/bootstrap.bundle.min.js"></script>
 
     <!-- Core plugin JavaScript-->
-    <script src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/jquery-easing/jquery.easing.min.js"></script>
-    <script src="<?php echo $frontendurl; ?>/frameworks/davidstutz-multiselect/js/bootstrap-multiselect.min.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/jquery-easing/jquery.easing.min.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/davidstutz-multiselect/js/bootstrap-multiselect.min.js"></script>
 
     <!-- Custom scripts for all pages-->
-    <script src="<?php echo $frontendurl; ?>/frameworks/bootstrap/js/sb-admin-2.min.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/bootstrap/js/sb-admin-2.min.js"></script>
 
     <!-- Page level plugins -->
-    <script src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/datatables/jquery.dataTables.min.js"></script>
-    <script src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/datatables/dataTables.bootstrap4.min.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/datatables/jquery.dataTables.min.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/datatables/dataTables.bootstrap4.min.js"></script>
 
-    <script src="<?php echo $frontendurl; ?>/js/sitewrapper/load_pages.js"></script>
-    <script src="<?php echo $frontendurl; ?>/js/sitewrapper/transfer.js"></script>
-    <script src="<?php echo $frontendurl; ?>/js/sitewrapper/sitewrapper.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/js/sitewrapper/load_pages.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/js/sitewrapper/transfer.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/js/sitewrapper/sitewrapper.js"></script>
 
     <?php if($showupdatemodal){ ?>
-      <script src="<?php echo $frontendurl; ?>/js/sitewrapper/finish_update.js"></script>
+      <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/js/sitewrapper/finish_update.js"></script>
     <?php } ?>
 </body>
 

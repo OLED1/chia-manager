@@ -1,6 +1,6 @@
 <?php
   include("../standard_headers.php");
-  echo "<script> var siteID = 1; </script>";
+  echo "<script nonce={$ini["nonce_key"]}> var siteID = 1; </script>";
 ?>
 <!-- Page Heading -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -74,4 +74,4 @@
   </div>
 </div>
 
-<script src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/main_overview/js/main_overview.js"?>></script>
+<script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/main_overview/js/main_overview.js"?>></script>

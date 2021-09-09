@@ -15,13 +15,13 @@
   if(array_key_exists("data", $nodetypes)) $nodetypes = $nodetypes["data"];
   if(array_key_exists("data", $scriptupdatesavail)) $scriptupdatesavail = $scriptupdatesavail["data"];
 
-  echo "<script> var configuredNodes = " . json_encode($configuredNodes) . "; </script>";
-  echo "<script> var activeSubscriptions = " . json_encode($activeSubscriptions) . "; </script>";
-  echo "<script> var activeRequests = " . json_encode($activeRequests) . "; </script>";
-  echo "<script> var nodetypes = " . json_encode($nodetypes) . "; </script>";
-  echo "<script> var scriptupdatesavail = " . json_encode($scriptupdatesavail) . "; </script>";
-  echo "<script> var siteID = 2; </script>";
-  echo "<script> var packageslink = '" . $ini["app_protocol"]."://".$ini["app_domain"].$ini["packages_url"] . "'; </script>";
+  echo "<script nonce={$ini["nonce_key"]} > var configuredNodes = " . json_encode($configuredNodes) . "; </script>";
+  echo "<script nonce={$ini["nonce_key"]} > var activeSubscriptions = " . json_encode($activeSubscriptions) . "; </script>";
+  echo "<script nonce={$ini["nonce_key"]} > var activeRequests = " . json_encode($activeRequests) . "; </script>";
+  echo "<script nonce={$ini["nonce_key"]} > var nodetypes = " . json_encode($nodetypes) . "; </script>";
+  echo "<script nonce={$ini["nonce_key"]} > var scriptupdatesavail = " . json_encode($scriptupdatesavail) . "; </script>";
+  echo "<script nonce={$ini["nonce_key"]} > var siteID = 2; </script>";
+  echo "<script nonce={$ini["nonce_key"]} > var packageslink = '" . $ini["app_protocol"]."://".$ini["app_domain"].$ini["packages_url"] . "'; </script>";
 ?>
 <link href="<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/nodes/css/nodes.css"?>" rel="stylesheet">
 
@@ -62,7 +62,7 @@
                 <li class="list-group-item">
                     <strong>Download and install the client:</strong><br>
                     cd /path/to/your/installation<br>
-                    wget <?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["packages_url"]."/packages/chia_python_client_install.zip"?><br>
+                    wget ...<br>
                     unzip chia_python_client_install.zip
                 </li>
                 <li class="list-group-item">
@@ -524,5 +524,5 @@
   </div>
 </div>
 
-<script src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/frameworks/bootstrap/vendor/chart.js/Chart.js"?>></script>
-<script src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/nodes/js/nodes.js"?>></script>
+<script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/frameworks/bootstrap/vendor/chart.js/Chart.js"?>></script>
+<script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/nodes/js/nodes.js"?>></script>

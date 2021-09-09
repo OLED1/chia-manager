@@ -21,9 +21,9 @@
     header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/maintenance.php");
   }
 
-  echo "<script> var backend = '". $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["backend_url"]."'; </script>";
-  echo "<script> var frontend = '". $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."'; </script>";
-  echo "<script> var loggedinstatus = '" . $loggedin["status"] . "'; </script>";
+  echo "<script nonce={$ini["nonce_key"]}> var backend = '". $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["backend_url"]."'; </script>";
+  echo "<script nonce={$ini["nonce_key"]}> var frontend = '". $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."'; </script>";
+  echo "<script nonce={$ini["nonce_key"]}> var loggedinstatus = '" . $loggedin["status"] . "'; </script>";
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -102,7 +102,7 @@
                                         <h1 class="h4 text-gray-900 mb-4">Authkey check</h1>
                                         <p>We sent you a authkey to your accounts setup email.</p>
                                     </div>
-                                    <form class="user">
+                                    <form class="check-authkey">
                                         <div class="form-group">
                                           <input type="text" class="form-control form-control-user"
                                               id="inputAuthkey" placeholder="Authkey">
@@ -136,17 +136,16 @@
     </div>
 
     <!-- Bootstrap core JavaScript-->
-    <script src="frameworks/bootstrap/vendor/jquery/jquery.min.js"></script>
-    <script src="frameworks/bootstrap/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="frameworks/bootstrap/vendor/jquery/jquery.min.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="frameworks/bootstrap/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
     <!-- Core plugin JavaScript-->
-    <script src="frameworks/bootstrap/vendor/jquery-easing/jquery.easing.min.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="frameworks/bootstrap/vendor/jquery-easing/jquery.easing.min.js"></script>
 
     <!-- Custom scripts for all pages-->
-    <script src="frameworks/bootstrap/js/sb-admin-2.min.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="frameworks/bootstrap/js/sb-admin-2.min.js"></script>
 
-    <script src="js/login/login.js"></script>
-
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="js/login/login.js"></script>
 </body>
 
 </html>

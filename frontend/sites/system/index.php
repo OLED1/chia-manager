@@ -19,7 +19,7 @@
     $updatechannelname = "Stable";
   }
 
-  echo "<script> var siteID = 3; </script>";
+  echo "<script nonce={$ini["nonce_key"]}> var siteID = 3; </script>";
 ?>
 <!-- Page Heading -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -342,4 +342,4 @@
 </div>
 
 
-<script src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/system/js/system.js"?>></script>
+<script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/system/js/system.js"?>></script>

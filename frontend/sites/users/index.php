@@ -5,9 +5,9 @@
   $users_api = new Users_Api();
   $users = $users_api->getUserData()["data"];
 
-  echo "<script> var userData = " . json_encode($users) . "; </script>";
-  echo "<script> var userID = " . $_COOKIE["user_id"] . "; </script>";
-  echo "<script> var siteID = 4; </script>";
+  echo "<script nonce={$ini["nonce_key"]}> var userData = " . json_encode($users) . "; </script>";
+  echo "<script nonce={$ini["nonce_key"]}> var userID = " . $_COOKIE["user_id"] . "; </script>";
+  echo "<script nonce={$ini["nonce_key"]}> var siteID = 4; </script>";
 ?>
 <!-- Page Heading -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -177,4 +177,4 @@
   </div>
 </div>
 
-<script src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/users/js/users.js"?>></script>
+<script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/users/js/users.js"?>></script>

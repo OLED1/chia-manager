@@ -38,7 +38,7 @@
   $chiapriceindefcurr = number_format(floatval($chia_overall_data["data"]["price_usd"]) * floatval($exchangerate), 2);
 
   if(array_key_exists("data", $walletdata) && count($walletdata["data"]) > 0){
-    echo "<script> var chiaWalletData = " . json_encode($walletdata["data"]) . "; </script>";
+    echo "<script nonce={$ini["nonce_key"]}> var chiaWalletData = " . json_encode($walletdata["data"]) . "; </script>";
     foreach($walletdata["data"] AS $nodeid => $nodedata){
       foreach($nodedata as $walletid => $thiswallet){
 ?>
@@ -237,4 +237,4 @@
 </div>
 <?php } ?>
 
-<script src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_wallet/js/chia_wallet.js"?>></script>
+<script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_wallet/js/chia_wallet.js"?>></script>

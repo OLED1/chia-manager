@@ -17,10 +17,10 @@
   $nodes_states = $nodes_api->queryNodesServicesStatus()["data"];
   $harvesterdata = $chia_harvester_api->getHarvesterData();
 
-  echo "<script> var siteID = 7; </script>";
+  echo "<script nonce={$ini["nonce_key"]}> var siteID = 7; </script>";
 
   if(array_key_exists("data", $harvesterdata) && count($harvesterdata["data"]) > 0){
-    echo "<script> var chiaHarvesterData = " . json_encode($harvesterdata["data"]) . "; </script>";
+    echo "<script nonce={$ini["nonce_key"]}> var chiaHarvesterData = " . json_encode($harvesterdata["data"]) . "; </script>";
 
     foreach($harvesterdata["data"] AS $nodeid => $harvesterinfos){
 ?>
@@ -169,4 +169,4 @@
 </div>
 <?php } ?>
 
-<script src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_harvester/js/chia_harvester.js"?>></script>
+<script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_harvester/js/chia_harvester.js"?>></script>

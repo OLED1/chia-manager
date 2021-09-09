@@ -13,12 +13,12 @@
   if(array_key_exists("user_id", $_COOKIE)) $userData = $users_api->getOwnUserData($_COOKIE["user_id"]);
   if(array_key_exists("data", $userData)) $userData = $userData["data"];
 
-  echo "<script>
+  echo "<script nonce={$ini["nonce_key"]}>
               var userid = '" . $_COOKIE["user_id"] . "';
               var sessid = '" . $_COOKIE["PHPSESSID"] . "';
               var userdata = " . json_encode($userData) . ";" .
      "</script>";
-     echo "<script> var siteID = 5; </script>";
+     echo "<script nonce={$ini["nonce_key"]}> var siteID = 5; </script>";
 ?>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">User settings</h1>
@@ -203,4 +203,4 @@
   </div>
 </div>
 
-<script src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/usersettings/js/usersettings.js"?>></script>
+<script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/usersettings/js/usersettings.js"?>></script>

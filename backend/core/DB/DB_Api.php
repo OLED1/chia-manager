@@ -30,12 +30,26 @@
       try{
         $con = $this->con;
         $sql=$con->prepare($statement);
-        $sql->execute($parameter);
+        $sql->execute($this->removeHTMLEntities($parameter));
 
         return $sql;
       }catch(Exception $e){
         throw new Exception($e);
       }
+    }
+
+    /**
+     * This method prevents JavaScript Prevention before statements are put to database
+     * @param  array $parameter The mysql parameters list
+     * @return array            Returns the cleaned up parameters list
+     */
+    private function removeHTMLEntities(array $parameter){
+      $cleanedup = [];
+      foreach($parameter AS $arrkey => $parameter){
+        $cleanedup[$arrkey] = htmlentities($parameter, ENT_QUOTES);
+      }
+
+      return $cleanedup;
     }
   }
 ?>

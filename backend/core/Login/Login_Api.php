@@ -35,13 +35,6 @@
       if(isset($userdata["data"]["password"]) && $userdata["data"]["password"] == $salted_hash){
         $session = $this->setSession($userdata["data"]["id"]);
 
-        $validuntil = NULL;
-        if(!$stayloggedin){
-          $validuntil = new \DateTime();
-          $validuntil->modify("+30 minutes");
-          $validuntil = $validuntil->format("Y-m-d H:i:s");
-        }
-
         $this->logging->logtofile(0, 0, "User with ID " . $userdata["data"]["id"] . " logged in from " . $_SERVER['REMOTE_ADDR'] . ".;");
         if($session["status"] == 0){
           try{
@@ -58,8 +51,8 @@
                 $sendauthkey = true;
             }
 
-            $sql = $this->dbcon->execute("Insert INTO users_sessions (id, userid, sessid, authkeypassed, deviceinfo, validuntil) VALUES (NULL, ?, ?, ?, ?, ?)",
-                                          array($session["data"]["userid"], $session["data"]["sessid"], $authkeypassed, $_SERVER['HTTP_USER_AGENT'], $validuntil));
+            $sql = $this->dbcon->execute("Insert INTO users_sessions (id, userid, sessid, authkeypassed, deviceinfo, validuntil) VALUES (NULL, ?, ?, ?, ?, " . ($stayloggedin ? "NULL" : "DATE_ADD(now(), INTERVAL 30 MINUTE)" ) . ")",
+                                          array($session["data"]["userid"], $session["data"]["sessid"], $authkeypassed, $_SERVER['HTTP_USER_AGENT']));
 
             if($sendauthkey){
               $this->generateAndsendAuthKey($session["data"]["userid"], $session["data"]["sessid"]);
@@ -205,7 +198,7 @@
           "/",//path
           $currentCookieParams['domain'],//domain
           true, //secure
-          true //httponly
+          true//httponly
           );
 
         setcookie(
@@ -217,6 +210,8 @@
           true, //secure
           true //httponly
         );
+
+
 
         return array("status" => 0, "message" => "Session successfully set!", "data" => array("userid" => $userid, "sessid" => $sessionID));
       }catch(Exception $e){

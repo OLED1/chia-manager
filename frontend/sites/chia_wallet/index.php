@@ -1,6 +1,6 @@
 <?php
   include("../standard_headers.php");
-  echo "<script> var siteID = 5; </script>";
+  echo "<script nonce={$ini["nonce_key"]}> var siteID = 5; </script>";
 ?>
 <!-- Page Heading -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
