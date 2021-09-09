@@ -3,3 +3,4 @@ logs/
 *.log
 .ftpconfig
 frontend/frameworks/bootstrap-samples
+.ftpignore
