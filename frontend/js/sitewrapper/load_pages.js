@@ -61,6 +61,7 @@ $(function(){
       var siteID = 1;
     }
 
+
     $("#sitecontent").children().remove();
     $(".breadcrumb-item a").text(sitename);
 
@@ -94,7 +95,7 @@ $(function(){
             }else{
               $("#accordionSidebar .active").removeClass("active");
               if(clickeditem != undefined){
-                clickeditem.closest(".nav-item").addClass("active");
+                $("#" + clickeditem.attr("data-nav-target")).addClass("active");
               }else{
                 $(".nav-item").first().addClass("active");
               }

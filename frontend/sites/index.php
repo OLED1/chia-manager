@@ -79,8 +79,8 @@
 
             <hr class="sidebar-divider my-0">
 
-            <li class="nav-item active">
-                <a class="nav-link" data-siteid=1 href="/sites/main_overview/">
+            <li id="nav-dasboard" class="nav-item active">
+                <a class="nav-link" data-siteid=1 data-nav-target="nav-dasboard" href="/sites/main_overview/">
                   <i class="fas fa-fw fa-tachometer-alt"></i>
                   <span>Dashboard</span>
                 </a>
@@ -89,32 +89,32 @@
             <div class="sidebar-heading">
                 My Chia Infra
             </div>
-            <li class="nav-item">
-              <a class="nav-link" data-siteid=2 href="/sites/nodes">
+            <li id="nav-nodes" class="nav-item">
+              <a class="nav-link" data-siteid=2 data-nav-target="nav-nodes" href="/sites/nodes">
                 <i class="fas fa-sitemap"></i>
                 <span>Nodes</span>
               </a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link" data-siteid=8 href="/sites/chia_infra_sysinfo">
+            <li id="nav-infra-sysinfo" class="nav-item">
+              <a class="nav-link" data-siteid=8 data-nav-target="nav-infra-sysinfo" href="/sites/chia_infra_sysinfo">
                 <i class="fas fa-network-wired"></i>
                 <span>Infra Sysinfo</span>
               </a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link" data-siteid=5 href="/sites/chia_wallet">
+            <li id="nav-wallet" class="nav-item">
+              <a class="nav-link" data-siteid=5 data-nav-target="nav-wallet" href="/sites/chia_wallet">
                 <i class="fas fa-wallet"></i>
                 <span>Wallet</span>
               </a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link" data-siteid=6 href="/sites/chia_farm">
+            <li id="nav-farm" class="nav-item">
+              <a class="nav-link" data-siteid=6 data-nav-target="nav-farm" href="/sites/chia_farm">
                 <i class="fas fa-industry"></i>
                 <span>Farm</span>
               </a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link" data-siteid=7 href="/sites/chia_harvester">
+            <li id="nav-harvester" class="nav-item">
+              <a class="nav-link" data-siteid=7 data-nav-target="nav-harvester" href="/sites/chia_harvester">
                 <i class="fas fa-hdd"></i>
                 <span>Harvester</span>
               </a>
@@ -125,14 +125,14 @@
             <div class="sidebar-heading">
                 System
             </div>
-            <li class="nav-item">
-              <a class="nav-link" data-siteid=4 href="/sites/users">
+            <li id="nav-users" class="nav-item">
+              <a class="nav-link" data-siteid=4 data-nav-target="nav-users" href="/sites/users">
                 <i class="fas fa-users-cog"></i>
                 <span>Users</span>
               </a>
             </liv>
-            <li class="nav-item">
-              <a class="nav-link" data-siteid=3 href="/sites/system">
+            <li id="nav-system-settings" class="nav-item">
+              <a class="nav-link" data-siteid=3 data-nav-target="nav-system-settings"href="/sites/system">
                 <i class="fas fa-server"></i>
                 <span>Settings</span>
               </a>
@@ -143,7 +143,7 @@
             <div class="sidebar-heading">
                 Personal
             </div>
-            <li class="nav-item">
+            <li id="nav-personal-settings" class="nav-item">
               <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePersonal"
                   aria-expanded="true" aria-controls="collapsePersonal">
                   <i class="fas fa-user-cog"></i>
@@ -151,7 +151,7 @@
               </a>
               <div id="collapsePersonal" class="collapse" aria-labelledby="headingPages" data-parent="#accordionSidebar">
                   <div class="bg-white py-2 collapse-inner rounded">
-                      <a class="collapse-item" data-siteid=5 href="/sites/usersettings"><span>Profile & Settings</span></a>
+                      <a class="collapse-item" data-siteid=5 data-nav-target="nav-personal-settings" href="/sites/usersettings"><span>Profile & Settings</span></a>
                       <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">Logout</a>
                   </div>
               </div>
@@ -229,9 +229,9 @@
                             </a>
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="userDropdown">
-                                <a class="dropdown-item" data-siteid=5 href="/sites/usersettings">
+                                <a class="dropdown-item" data-siteid=5 data-nav-target="nav-personal-settings"href="/sites/usersettings">
                                     <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Profile & Settings
+                                    <span>Profile & Settings</span>
                                 </a>
                                 <a class="dropdown-item" href="#" data-toggle="modal" data-target="#versionNotesModal">
                                     <i class="fas fa-sticky-note fa-sm fa-fw mr-2 text-gray-400"></i>
