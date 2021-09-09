@@ -39,7 +39,7 @@
     }
 
     /**
-     * This method prevents JavaScript Prevention before statements are put to database
+     * This method prevents JavaScript injection before statements are put to database
      * @param  array $parameter The mysql parameters list
      * @return array            Returns the cleaned up parameters list
      */
