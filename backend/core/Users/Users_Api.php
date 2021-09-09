@@ -57,8 +57,6 @@
               $sql = $this->db_api->execute("INSERT INTO users (id, username, name, lastname, password, salt, email) VALUES (NULL, ?, ?, ?, ?, ?, ?)",
               array($data["username"], $data["name"], $data["lastname"], $new_salted_pw, $salt, $data["email"]));
 
-              $data["username"] = "admin1";
-
               $sql = $this->db_api->execute("SELECT id, username, name, lastname, email, enabled FROM users WHERE username = ?", array($data["username"]));
               foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $key => $value){
                 $newData[$value["id"]] = $value;
