@@ -55,20 +55,6 @@ $(".nodedefinition").on("change", function(){
   });
 });
 
-function multiselectChanged(){
-  var selectedOptions = $('#nodetypes-options option:selected');
-
-  $.each(selectedOptions, function(){
-    if($('#nodetypes-options option:selected').length > 0){
-      $("#acceptNodeRequest").removeAttr("disabled");
-      $("#authtype").text(getAuthtypeString(nodetypes["by-id"][$(this).val()]["allowed_authtype"]));
-    }else{
-      $("#acceptNodeRequest").attr("disabled","disabled");
-      $("#authtype").text(getAuthtypeString(""));
-    }
-  });
-}
-
 $("#acceptNodeRequest").on("click", function(){
   if($('#nodetypes-options option:selected').length > 0){
     var nodearr = [];
@@ -88,6 +74,27 @@ $("#acceptNodeRequest").on("click", function(){
     showMessage(1, "No nodes are selected.");
   }
 });
+
+$(".scriptbranchoption").on("click", function(){
+  var branch = $(this).attr("data-branch");
+  var nodeid = $("#nodeactionmodal").attr("data-nodeid");
+
+  sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "updateNodeBranch", {"nodeid" : nodeid, "branch" : branch});
+});
+
+function multiselectChanged(){
+  var selectedOptions = $('#nodetypes-options option:selected');
+
+  $.each(selectedOptions, function(){
+    if($('#nodetypes-options option:selected').length > 0){
+      $("#acceptNodeRequest").removeAttr("disabled");
+      $("#authtype").text(getAuthtypeString(nodetypes["by-id"][$(this).val()]["allowed_authtype"]));
+    }else{
+      $("#acceptNodeRequest").attr("disabled","disabled");
+      $("#authtype").text(getAuthtypeString(""));
+    }
+  });
+}
 
 function recreateConfiguredClients(){
   var rows = configuredClients
@@ -389,6 +396,8 @@ function messagesTrigger(data){
   var key = Object.keys(data);
   var reinit = true;
 
+  console.log(data);
+
   if(data[key]["status"] == 0){
     if(key == "connectedNodesChanged"){
       sendToWSS("ownRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getConfiguredNodes", {});
@@ -430,6 +439,9 @@ function messagesTrigger(data){
         scriptupdatesavail["updateinfos"][nodeid] = updatedata;
         reinit = true;
       });
+    }else if(key == "updateNodeBranch"){
+      $("#nodeactionmodal[data-nodeid='" + data[key]["data"]["nodeid"] + "'] #updatechannelsMenu ").text(getFullNameFromBranch(data[key]["data"]["branch"]));
+      scriptupdatesavail["updateinfos"][data[key]["data"]["nodeid"]]["updatechannel"] = data[key]["data"]["branch"];
     }
     if(reinit){
       recreateConfiguredClients();

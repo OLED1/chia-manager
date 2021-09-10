@@ -287,11 +287,27 @@
 
         return array("status" =>0, "message" => "Successfully loaded all requested data.", "data" => $returndata);
       }catch(Exception $e){
-        //TODO Implement correct status code
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
+        return $this->logging_api->getErrormessage("001", $e);
       }
+    }
 
+    public function updateNodeBranch(array $data, array $loginData = NULL){
+      if(array_key_exists("branch", $data) && array_key_exists("nodeid", $data)){
+        $allowedbranches = array("dev","staging","main");
+        if(in_array($data["branch"], $allowedbranches)){
+          try{
+            $sql = $this->db_api->execute("UPDATE nodes SET updatechannel = ? WHERE id = ?", array($data["branch"],$data["nodeid"]));
+
+            return array("status" => 0, "message" => "Successfully updated branch for node {$data["nodeid"]} to {$data["branch"]}.", "data" => ["branch" => $data["branch"], "nodeid" => $data["nodeid"]]);
+          }catch(Exception $e){
+            return $this->logging_api->getErrormessage("001", $e);
+          }
+        }else{
+          return $this->logging_api->getErrormessage("002", "Branch {$data["branch"]} not allowed.");
+        }
+      }else{
+        return $this->logging_api->getErrormessage("003");
+      }
     }
 
     public function queryNodesServicesStatus(array $data = [], array $loginData = NULL, $server = NULL){

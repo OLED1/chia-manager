@@ -486,7 +486,7 @@
                   <label for="updatechannelsMenu">Update Channel</label>
                   <div id="updatechannels-modal" class="dropdown-menu" aria-labelledby="updatechannelsMenu">
                     <?php foreach($scriptupdatesavail["available_channels"] AS $arrkey => $channelname){
-                      echo "<button class='dropdown-item' data-branch='{$channelname}' href='#'>" . getFullNameFromBranch($channelname) . "</button>";
+                      echo "<button class='dropdown-item scriptbranchoption wsbutton' data-branch='{$channelname}' href='#'>" . getFullNameFromBranch($channelname) . "</button>";
                     }
 
                     function getFullNameFromBranch($channelname){
@@ -510,8 +510,8 @@
                   <br>Update Available: <span id="update_available" class="infotext">None</span>
                 </p>
                 <hr />
-                <button class="btn btn-secondary" type="button" id="check-for-updates">Check for updates</button>
-                <button class="btn btn-warning" type="button" id="updatenode">Update Node</button>
+                <button class="btn btn-secondary wsbutton" type="button" id="check-for-updates">Check for updates</button>
+                <button class="btn btn-warning wsbutton" type="button" id="updatenode">Update Node</button>
               </div>
             </div>
           </div>

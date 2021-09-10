@@ -10,8 +10,10 @@
     "updateSystemInfo" : "008",
     "getSystemInfo" : "009",
     "nodeUpdateStatus" : "010",
-    "queryNodesServicesStatus" : "011",
-    "setNodeServiceStats" : "012"
+    "checkUpdatesAndChannels" : "011",
+    "updateNodeBranch" : "012",
+    "queryNodesServicesStatus" : "013",
+    "setNodeServiceStats" : "014"
   },
   "errormessages" : {
     "getConfiguredNodes" : {
@@ -49,6 +51,14 @@
     },
     "nodeUpdateStatus" : {
       "001" : [2, "An error occured."]
+    },
+    "checkUpdatesAndChannels" : {
+      "001" : [2, "An error occured."]
+    },
+    "updateNodeBranch" : {
+      "001" : [2, "An error occured."],
+      "002" : [1, "Selected branch not available."],
+      "003" : [1, "Not all data stated."]
     },
     "queryNodesServicesStatus" : {
       "001" : [2, "An error occured."]

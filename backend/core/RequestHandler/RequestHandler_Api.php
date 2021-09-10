@@ -38,11 +38,12 @@
 
           return array($backendInfo['method'] => $return);
         }catch(Exception $e){
-          return $this->logging->getErrormessage("002", "Class {$backendInfo['namespace']} or function {$backendInfo['method']} not existing.");
+          $returndata[$backendInfo['method']] = $this->logging->getErrormessage("002", "Class {$backendInfo['namespace']} or function {$backendInfo['method']} not existing.");
+          return $returndata;
         }
       }else{
-        return array("status" => 1, "message" => "Class {$backendInfo['namespace']} or function {$backendInfo['method']} not existing.");
-        return $this->logging->getErrormessage("003", "Class {$backendInfo['namespace']} or function {$backendInfo['method']} not existing.");
+        $returndata[$backendInfo['method']] = $this->logging->getErrormessage("003", "Class {$backendInfo['namespace']} or function {$backendInfo['method']} not existing.");
+        return $returndata;
       }
     }
 
