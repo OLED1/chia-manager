@@ -30,10 +30,10 @@
             $count = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["count"];
 
             if($count == 0){
-              $sql = $this->db_api->execute("INSERT INTO chia_wallets (id, nodeid, walletid, walletaddress, walletheight, syncstatus, wallettype, totalbalance, pendingtotalbalance, spendable) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+              $sql = $this->db_api->execute("INSERT INTO chia_wallets (id, nodeid, walletid, walletaddress, walletheight, syncstatus, wallettype, totalbalance, pendingtotalbalance, spendable, querydate) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, current_timestamp())",
               array($nodeid, $walletid, $walletdata["walletaddress"], $walletdata["walletheight"], $walletdata["syncstatus"], $walletdata["wallettype"], $walletdata["totalbalance"], $walletdata["pendingtotalbalance"], $walletdata["spendable"]));
             }else{
-              $sql = $this->db_api->execute("UPDATE chia_wallets SET  walletaddress = ?, walletheight = ?, syncstatus = ?, wallettype = ?, totalbalance = ?, pendingtotalbalance = ?, spendable = ? WHERE walletid = ? AND nodeid = ?",
+              $sql = $this->db_api->execute("UPDATE chia_wallets SET  walletaddress = ?, walletheight = ?, syncstatus = ?, wallettype = ?, totalbalance = ?, pendingtotalbalance = ?, spendable = ?, querydate = current_timestamp() WHERE walletid = ? AND nodeid = ?",
               array($walletdata["walletaddress"], $walletdata["walletheight"], $walletdata["syncstatus"], $walletdata["wallettype"], $walletdata["totalbalance"], $walletdata["pendingtotalbalance"], $walletdata["spendable"], $walletid, $nodeid));
             }
           }

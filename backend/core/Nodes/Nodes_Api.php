@@ -35,7 +35,7 @@
         $sql = $this->db_api->execute("SELECT n.id, GROUP_CONCAT(nta.description SEPARATOR ', ') AS nodetype, n.nodeauthhash, n.authtype,
                                         n.conallow, n.hostname, n.scriptversion, n.chiaversion, n.chiapath, n.ipaddress,
                                         n.changeable, n.changedIP, MAX(cis.memory_total) AS memory_total, MAX(cis.swap_total) AS swap_total,
-                                        MAX(cis.cpu_cores) AS cpu_cores, MAX(cis.cpu_count) AS cpu_count, MAX(cis.cpu_model) AS cpu_model
+                                        MAX(cis.cpu_cores) AS cpu_cores, MAX(cis.cpu_count) AS cpu_count, MAX(cis.cpu_model) AS cpu_model, lastseen
                                        FROM nodes n
                                        JOIN nodetype nt ON nt.nodeid = n.id
                                        JOIN nodetypes_avail nta ON nta.code = nt.code

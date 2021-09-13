@@ -235,6 +235,7 @@
                             <th>Scriptversion</th>
                             <th>IP Address</th>
                             <th>Connections</th>
+                            <th>Last seen</th>
                             <th>Actions</th>
                           </tr>
                       </thead>
@@ -251,6 +252,7 @@
                             <th>Scriptversion</th>
                             <th>IP Address</th>
                             <th>Connections</th>
+                            <th>Last seen</th>
                             <th>Actions</th>
                           </tr>
                       </tfoot>

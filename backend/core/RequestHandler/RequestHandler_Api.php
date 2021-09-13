@@ -117,6 +117,9 @@
             $sqldata = $sqldata[0];
 
             if($sqldata["conallow"] == 1){
+              if($sqldata["authtype"] == 1 || $sqldata["authtype"] == 2){
+                $sql = $this->db_api->execute("UPDATE nodes SET lastseen = current_timestamp() WHERE id = ?",array($sqldata["id"]));
+              }
               if($sqldata["authtype"] == 1){ //Authtype = 1 means there must be username and session string stated
                 if(array_key_exists("userid", $data) && array_key_exists("sessionid", $data)){
                   $authenticated = $this->login_api->checklogin($data["sessionid"], $data["userid"]);

@@ -104,7 +104,7 @@ function recreateConfiguredClients(){
 
   $.each(configuredNodes, function(arrkey, value){
     var rowNode = configuredClients
-    .row.add( [ value["id"], value["nodetype"], value["nodeauthhash"], getAuthtypeString(value["authtype"]), getConallowString(value["conallow"]), value["hostname"], formatScriptInfoWithUpdate(value["id"]), formatIP(value["ipaddress"], value["changedIP"], value["id"]), getClientCount(value["nodeauthhash"]), getButtonsConfClients(value["id"], value["conallow"], value["changeable"]) ] )
+    .row.add( [ value["id"], value["nodetype"], value["nodeauthhash"], getAuthtypeString(value["authtype"]), getConallowString(value["conallow"]), value["hostname"], formatScriptInfoWithUpdate(value["id"]), formatIP(value["ipaddress"], value["changedIP"], value["id"]), getClientCount(value["nodeauthhash"]), value["lastseen"], getButtonsConfClients(value["id"], value["conallow"], value["changeable"]) ] )
     .draw()
     .node().id = "confnode_" + value["id"];
   });
