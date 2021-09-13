@@ -62,7 +62,7 @@
                 <li class="list-group-item">
                     <strong>Download and install the client:</strong><br>
                     cd /path/to/your/installation<br>
-                    wget ...<br>
+                    wget https://files.chiamgmt.edtmair.at/client/&#60;your-desired-branch&#62;<br>
                     unzip chia_python_client_install.zip
                 </li>
                 <li class="list-group-item">
