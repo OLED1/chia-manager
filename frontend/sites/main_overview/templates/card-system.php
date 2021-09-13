@@ -25,7 +25,7 @@
         </a>
         <div class='dropdown-menu dropdown-menu-right shadow animated--fade-in' aria-labelledby='overallMenu'>
           <div class='dropdown-header'>Actions:</div>
-          <button id="refreshSystemInfo" class='dropdown-item wsbutton' href='#' onclick='refreshSystemInfo()'>Refresh</button>
+          <button id="refreshSystemInfo" class='dropdown-item wsbutton' href=''>Refresh</button>
         </div>
       </div>
   </div>
@@ -59,3 +59,4 @@
     </div>
   </div>
 </div>
+<script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/main_overview/js/card_system.js"?>></script>

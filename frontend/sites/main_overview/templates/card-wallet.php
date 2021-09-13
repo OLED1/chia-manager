@@ -36,7 +36,7 @@
         </a>
         <div class='dropdown-menu dropdown-menu-right shadow animated--fade-in' aria-labelledby='walletMenu'>
           <div class='dropdown-header'>Actions:</div>
-          <button id="refreshWalletInfo" class='dropdown-item wsbutton' href='#' onclick="refreshWalletInfo()">Refresh</button>
+          <button id="refreshWalletInfo" class='dropdown-item wsbutton' href=''>Refresh</button>
         </div>
       </div>
   </div>
@@ -149,3 +149,4 @@
   </div>
   <?php } ?>
 </div>
+<script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/main_overview/js/card_wallet.js"?>></script>

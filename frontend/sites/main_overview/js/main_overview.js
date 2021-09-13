@@ -1,25 +1,5 @@
 setServiceCount();
 
-function refreshSystemInfo(){
-  $("#card-system").load(frontend + "/sites/main_overview/templates/card-system.php");
-}
-
-function refreshOverallInfo(){
-  sendToWSS("backendRequest", "ChiaMgmt\\Chia_Overall\\Chia_Overall_Api", "Chia_Overall_Api", "queryOverallData", {});
-}
-
-function refreshWalletInfo(){
-  sendToWSS("backendRequest", "ChiaMgmt\\Chia_Wallet\\Chia_Wallet_Api", "Chia_Wallet_Api", "queryWalletData", {});
-}
-
-function refreshFarmInfo(){
-  sendToWSS("backendRequest", "ChiaMgmt\\Chia_Farm\\Chia_Farm_Api", "Chia_Farm", "queryFarmData", {});
-}
-
-function refreshHarvesterInfo(){
-  sendToWSS("backendRequest", "ChiaMgmt\\Chia_Harvester\\Chia_Harvester_Api", "Chia_Harvester_Api", "queryHarvesterData", {});
-}
-
 function setServiceCount(){
   var critServices = $("#sitecontent .badge-danger").length;
   var okServices = $("#sitecontent .badge-success").length;
