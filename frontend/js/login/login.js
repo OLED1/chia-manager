@@ -118,6 +118,7 @@ $(function(){
     if($("#authkeywindow").is(":hidden")){
       $("#loginwindow").hide(500);
       $("#authkeywindow").show(500);
+      $("#authkeybutton").attr("disabled","disabled");
     }
   }
 

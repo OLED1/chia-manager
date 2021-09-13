@@ -243,6 +243,8 @@
         if(is_null($userid)) $userid = $_COOKIE['user_id'];
         if(is_null($sessionid)) $sessionid = $_COOKIE['PHPSESSID'];
 
+        $this->invalidateAllNotLoggedin();
+
         try{
           $sql = $this->dbcon->execute("SELECT authkeypassed, validuntil FROM users_sessions WHERE userid = ? AND sessid = ? AND invalidated = 0",
           array($userid, $sessionid));
@@ -281,6 +283,25 @@
         }
       }else{
         return $this->logging->getErrormessage("004","", false);
+      }
+    }
+
+    public function invalidateAllNotLoggedin(string $sessionid = NULL, int $userid = NULL){
+      try{
+        $sql = $this->dbcon->execute("UPDATE users_sessions SET invalidated =
+                                        CASE
+                                          WHEN (invalidated = 0 AND validuntil IS NOT NULL AND validuntil <= DATE_ADD(NOW(), INTERVAL 5 MINUTE)) OR
+                                                (authkeypassed = 0 AND NOW() >= DATE_ADD(logindate, INTERVAL 1 HOUR) AND invalidated = 0) OR
+                                                (NOW() >= DATE_ADD(logindate, INTERVAL 30 DAY))
+                                          THEN 1
+                                          ELSE invalidated
+                                        END", array());
+
+        return array("status" => 0, "message" => "Successfully invalidated not logged in session.");
+      }catch(Exception $e){
+        //TODO Implement correct status code
+        print_r($e);
+        return  array("status" => 1, "message" => "An error occured.");
       }
     }
   }

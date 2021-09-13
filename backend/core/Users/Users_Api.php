@@ -328,9 +328,9 @@
     public function getLoggedInDevices(int $userID = NULL){
       try{
         if(is_null($userID)){
-          $sql = $this->db_api->execute("SELECT id, userid, deviceinfo from users_sessions WHERE invalidated = 0", array());
+          $sql = $this->db_api->execute("SELECT id, userid, logindate, deviceinfo from users_sessions WHERE invalidated = 0", array());
         }else{
-          $sql = $this->db_api->execute("SELECT id, userid, deviceinfo from users_sessions WHERE userid = ? AND invalidated = 0", array($userID));
+          $sql = $this->db_api->execute("SELECT id, userid, logindate, deviceinfo from users_sessions WHERE userid = ? AND invalidated = 0", array($userID));
         }
 
         $sqreturndata = array();

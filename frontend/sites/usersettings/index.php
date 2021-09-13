@@ -173,6 +173,7 @@
               <table class="table table-bordered" id="loggedInDevices" width="100%" cellspacing="0">
                 <thead>
                   <tr>
+                    <th>Logged in</th>
                     <th>Device Info</th>
                     <th>Action</th>
                   </tr>
@@ -181,6 +182,7 @@
                 <?php
                 foreach ($devices["data"] as $key => $value) {
                   echo "<tr id='device_{$value["id"]}'>
+                          <td>{$value["logindate"]}</td>
                           <td>{$value["deviceinfo"]}</td>
                           <td><button data-device-id='{$value["id"]}' class='logoutdevice btn btn-secondary btn-block wsbutton' href='#'>Logout</button></td>
                         </tr>";
