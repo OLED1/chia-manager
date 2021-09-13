@@ -11,7 +11,7 @@
     <h5>Explanation</h5>
     <div class="card shadow mb-4">
       <div class="card-body">
-        On this page you see an overview about your farm and information about it.
+        On this page you see an overview about your set-up nodes and information about it like used filesystem space, used and configured ram and swap and the current system load.
       </div>
     </div>
   </div>
