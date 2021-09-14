@@ -14,11 +14,11 @@
   if(array_key_exists("data", $userData)) $userData = $userData["data"];
 
   echo "<script nonce={$ini["nonce_key"]}>
-              var userid = '" . $_COOKIE["user_id"] . "';
-              var sessid = '" . $_COOKIE["PHPSESSID"] . "';
+              var siteID = 5;
+              var userid = '{$_COOKIE["user_id"]}';
+              var sessid = '{$_COOKIE["PHPSESSID"]}';
               var userdata = " . json_encode($userData) . ";" .
      "</script>";
-     echo "<script nonce={$ini["nonce_key"]}> var siteID = 5; </script>";
 ?>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">User settings</h1>

@@ -37,8 +37,8 @@
 
           \Amp\Loop::run(function () use ($returndata, $data) {
             $handshake = (new Handshake("ws://localhost:{$this->ini['socket_local_port']}"))
-            ->withHeader('Origin', 'https://monitoring.edtmair.at'); //TODO Implement instance domain from globals
-
+            ->withHeader('Origin', "{$this->ini['app_protocol']}://{$this->ini['app_domain']}");
+            
             $connection = yield connect($handshake);
             yield $connection->send(json_encode($data));
 

@@ -5,9 +5,11 @@
   $users_api = new Users_Api();
   $users = $users_api->getUserData()["data"];
 
-  echo "<script nonce={$ini["nonce_key"]}> var userData = " . json_encode($users) . "; </script>";
-  echo "<script nonce={$ini["nonce_key"]}> var userID = " . $_COOKIE["user_id"] . "; </script>";
-  echo "<script nonce={$ini["nonce_key"]}> var siteID = 4; </script>";
+  echo "<script nonce={$ini["nonce_key"]}>
+          var userData = " . json_encode($users) . ";
+          var userID = {$_COOKIE["user_id"]};
+          var siteID = 4;
+        </script>";
 ?>
 <!-- Page Heading -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">

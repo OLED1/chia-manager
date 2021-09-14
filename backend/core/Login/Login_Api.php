@@ -299,9 +299,7 @@
 
         return array("status" => 0, "message" => "Successfully invalidated not logged in session.");
       }catch(Exception $e){
-        //TODO Implement correct status code
-        print_r($e);
-        return  array("status" => 1, "message" => "An error occured.");
+        return $this->logging->getErrormessage("001",$e);
       }
     }
   }

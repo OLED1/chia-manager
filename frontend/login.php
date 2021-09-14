@@ -21,9 +21,11 @@
     header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/maintenance.php");
   }
 
-  echo "<script nonce={$ini["nonce_key"]}> var backend = '". $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["backend_url"]."'; </script>";
-  echo "<script nonce={$ini["nonce_key"]}> var frontend = '". $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."'; </script>";
-  echo "<script nonce={$ini["nonce_key"]}> var loggedinstatus = '" . $loggedin["status"] . "'; </script>";
+  echo "<script nonce={$ini["nonce_key"]}>
+          var backend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["backend_url"]}';
+          var frontend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}';
+          var loggedinstatus = '{$loggedin["status"]}';
+        </script>";
 ?>
 <!DOCTYPE html>
 <html lang="en">

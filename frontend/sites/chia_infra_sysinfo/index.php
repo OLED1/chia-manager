@@ -1,7 +1,9 @@
 <?php
   include("../standard_headers.php");
-  echo "<script nonce={$ini["nonce_key"]}> var siteID = 8; </script>";
-  echo "<script nonce={$ini["nonce_key"]}> var frontend_url = '" . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"] . "'; </script>";
+  echo "<script nonce={$ini["nonce_key"]}>
+          var siteID = 8;
+          var frontend_url = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}';
+        </script>";
 ?>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Chia Infra Sysinfo</h1>

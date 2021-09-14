@@ -15,13 +15,14 @@
   if(array_key_exists("data", $nodetypes)) $nodetypes = $nodetypes["data"];
   if(array_key_exists("data", $scriptupdatesavail)) $scriptupdatesavail = $scriptupdatesavail["data"];
 
-  echo "<script nonce={$ini["nonce_key"]} > var configuredNodes = " . json_encode($configuredNodes) . "; </script>";
-  echo "<script nonce={$ini["nonce_key"]} > var activeSubscriptions = " . json_encode($activeSubscriptions) . "; </script>";
-  echo "<script nonce={$ini["nonce_key"]} > var activeRequests = " . json_encode($activeRequests) . "; </script>";
-  echo "<script nonce={$ini["nonce_key"]} > var nodetypes = " . json_encode($nodetypes) . "; </script>";
-  echo "<script nonce={$ini["nonce_key"]} > var scriptupdatesavail = " . json_encode($scriptupdatesavail) . "; </script>";
-  echo "<script nonce={$ini["nonce_key"]} > var siteID = 2; </script>";
-  echo "<script nonce={$ini["nonce_key"]} > var packageslink = '" . $ini["app_protocol"]."://".$ini["app_domain"].$ini["packages_url"] . "'; </script>";
+  echo "<script nonce={$ini["nonce_key"]}> var configuredNodes = " . json_encode($configuredNodes) . ";
+          var siteID = 2;
+          var activeSubscriptions = " . json_encode($activeSubscriptions) . ";
+          var activeRequests = " . json_encode($activeRequests) . ";
+          var nodetypes = " . json_encode($nodetypes) . ";
+          var scriptupdatesavail = " . json_encode($scriptupdatesavail) . ";
+          var packageslink = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["packages_url"]}';
+        </script>";
 ?>
 <link href="<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/nodes/css/nodes.css"?>" rel="stylesheet">
 
