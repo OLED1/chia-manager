@@ -27,17 +27,21 @@
   $user_settings_api = new UserSettings_Api();
 
   $gui_mode = $user_settings_api->getGuiMode($_COOKIE["user_id"])["data"]["gui_mode"];
-  $gui_mode_string = ($gui_mode == 0 ? "gui-mode-auto" : ($gui_mode == 1 ? "gui-mode-light" : "gui-mode-dark"));
+  $gui_mode_string = ($gui_mode == 1 ? "gui-mode-light" : "gui-mode-dark");
 
   $userData = array();
   if(array_key_exists("user_id", $_COOKIE)) $userData = $users_api->getOwnUserData($_COOKIE["user_id"]);
 
-  echo "<script nonce={$ini["nonce_key"]} > var backend = '". $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["backend_url"]."';" .
-        "var frontend = '". $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."';" .
-        "var websocket = '". $ini["socket_protocol"]."://".$ini["socket_domain"]."".$ini["socket_listener"]."';" .
-        "var authhash = '". $ini["web_client_auth_hash"]."';" .
-        "var userdata = " . json_encode($userData["data"]) . ";" .
-        "var userID = " . $_COOKIE["user_id"] . "; var sessid = '" . $_COOKIE["PHPSESSID"] . "';</script>";
+  echo "<script nonce={$ini["nonce_key"]}>
+          var backend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["backend_url"]}';
+          var frontend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}';
+          var websocket = '{$ini["socket_protocol"]}://{$ini["socket_domain"]}{$ini["socket_listener"]}';
+          var authhash = '{$ini["web_client_auth_hash"]}';
+          var userdata = " . json_encode($userData["data"]) . ";
+          var userID = {$_COOKIE["user_id"]};
+          var sessid = '{$_COOKIE["PHPSESSID"]}';
+          var darkmode = {$gui_mode};
+        </script>";
 ?>
 <html lang="en">
 <head>

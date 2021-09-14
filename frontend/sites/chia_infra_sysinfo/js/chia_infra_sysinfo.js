@@ -2,6 +2,8 @@ reloadTables();
 initSysinfoRefresh();
 initSysinfoNodeActions();
 
+Chart.defaults.global.defaultFontColor = (darkmode == 1 ? "#858796" : "#fff");
+
 $("#queryAllNodes").off("click");
 $("#queryAllNodes").on("click", function(){
   $.each(sysinfodata, function(nodeid, farmdata) {

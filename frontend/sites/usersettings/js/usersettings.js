@@ -175,6 +175,7 @@ function messagesTrigger(data){
         .remove()
         .draw();
     }else if(key == "setGuiMode"){
+      darkmode = data[key]["data"];
       if(data[key]["data"] == 1){
         $(".gui-mode-elem").removeClass("gui-mode-dark").addClass("gui-mode-light");
       }else if(data[key]["data"] == 2){
