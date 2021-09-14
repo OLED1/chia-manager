@@ -4,6 +4,10 @@
    * The universal project db connector class.
    */
   class DB_Api{
+    /**
+     * Holds an instance to the database.
+     * @var PDO
+     */
     private $con;
 
     /**
@@ -39,9 +43,9 @@
     }
 
     /**
-     * This method prevents JavaScript injection before statements are put to database
-     * @param  array $parameter The mysql parameters list
-     * @return array            Returns the cleaned up parameters list
+     * This method prevents JavaScript injection before statements are put to database.
+     * @param  array $parameter The mysql parameters list.
+     * @return array            Returns the cleaned up parameters list.
      */
     private function removeHTMLEntities(array $parameter){
       $cleanedup = [];
