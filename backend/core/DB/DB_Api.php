@@ -50,7 +50,7 @@
     private function removeHTMLEntities(array $parameter){
       $cleanedup = [];
       foreach($parameter AS $arrkey => $parameter){
-        $cleanedup[$arrkey] = htmlentities($parameter, ENT_QUOTES);
+        $cleanedup[$arrkey] = htmlentities($parameter, ENT_NOQUOTES);
       }
 
       return $cleanedup;

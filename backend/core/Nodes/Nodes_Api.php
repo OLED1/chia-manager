@@ -209,45 +209,6 @@
       }
     }
 
-    public function updateSystemInfo(array $data, array $loginData = NULL){
-      if(array_key_exists("system", $data)){
-        try{
-          $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryptAuthhash($loginData["authhash"])));
-          $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
-
-          $sql = $this->db_api->execute("INSERT INTO chia_infra_sysinfo (id, nodeid, load_1min, load_5min, load_15min, filesystem, memory_total, memory_free, memory_buffers, memory_cached, swap_total, swap_free, cpu_count, cpu_cores, cpu_model) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-          array($nodeid, $data["system"]["load"]["1min"], $data["system"]["load"]["5min"], $data["system"]["load"]["15min"],
-                json_encode($data["system"]["filesystem"]),
-                $data["system"]["memory"]["total"], $data["system"]["memory"]["free"], $data["system"]["memory"]["buffers"], $data["system"]["memory"]["cached"],
-                $data["system"]["swap"]["total"], $data["system"]["swap"]["free"],
-                $data["system"]["cpu"]["count"], $data["system"]["cpu"]["cores"], $data["system"]["cpu"]["model"]
-          ));
-
-          return array("status" => 0, "message" => "Successfully updated system information for node $nodeid.", "data" => ["nodeid" => $nodeid]);
-        }catch(Exception $e){
-          return $this->logging_api->getErrormessage("001", $e);
-        }
-      }
-    }
-
-    public function getSystemInfo(array $data, array $loginData = NULL){
-      if(array_key_exists("nodeid", $data)){
-        try{
-          $sql = $this->db_api->execute("SELECT nodeid, timestamp, load_1min, load_5min, load_15min, filesystem, memory_total, memory_free, memory_buffers, memory_cached, swap_total, swap_free, cpu_count, cpu_cores, cpu_model
-                                         FROM nodes_systeminfo
-                                         WHERE nodeid = ?
-                                         ORDER BY timestamp DESC
-                                         LIMIT 1", array($data["nodeid"]));
-
-          return array("status" =>0, "message" => "Successfully loaded latest system information for node {$data["nodeid"]}.", "data" => $sql->fetchAll(\PDO::FETCH_ASSOC));
-        }catch(Exception $e){
-          return $this->logging_api->getErrormessage("001", $e);
-        }
-      }else{
-        return $this->logging_api->getErrormessage("002");
-      }
-    }
-
     public function nodeUpdateStatus(array $data, array $loginData = NULL){
       try{
         $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryptAuthhash($loginData["authhash"])));
