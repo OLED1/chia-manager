@@ -21,7 +21,6 @@
           var activeRequests = " . json_encode($activeRequests) . ";
           var nodetypes = " . json_encode($nodetypes) . ";
           var scriptupdatesavail = " . json_encode($scriptupdatesavail) . ";
-          var packageslink = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["packages_url"]}';
         </script>";
 ?>
 <link href="<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/nodes/css/nodes.css"?>" rel="stylesheet">
