@@ -160,10 +160,10 @@
                   </div>
                 </div>
                 <?php
-                  $transactiondta = $chia_wallet_api->getWalletTransactions(["nodeid" => $nodeid, "walletid" => $thiswallet['walletid']]);
+                  $transactiondata = $chia_wallet_api->getWalletTransactions(["nodeid" => $nodeid, "walletid" => $thiswallet['walletid']]);
                   //print_r($transactiondta);
-                  if($transactiondta["status"] == 0){
-                    if(count($transactiondta["data"]) > 0){
+                  if($transactiondata["status"] == 0){
+                    if(count($transactiondata["data"]) > 0){
 
                     }else{
                       $message = "<div class='card bg-warning text-white shadow'>
@@ -175,7 +175,7 @@
                   }else{
                     $message = "<div class='card bg-warning text-white shadow'>
                                   <div class='card-body'>
-                                    {$transactiondta["message"]}
+                                    {$transactiondata["message"]}
                                   </div>
                               </div>";
                   }

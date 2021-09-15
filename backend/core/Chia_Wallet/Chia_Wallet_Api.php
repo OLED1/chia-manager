@@ -94,7 +94,59 @@
      * @return array             [description]
      */
     public function updateWalletTransactions(array $data = NULL, array $loginData = NULL){
+      if(array_key_exists("transactions", $data) && count($data["transactions"]) > 0){
+        try{
+          print_r($data["transactions"]);
+        }catch(Exception $e){
+          //TODO Implement correct status code
+          print_r($e);
+          return array("status" => 1, "message" => "An error occured.");
+        }
+      }
 
+      return array("status" => 0, "message" => "Successfully added new transaction(s).");
+    }
+
+    /**
+     * [getLatestTransactionDate description]
+     * Function made for: Node Client
+     * @param  [type] $data                    [description]
+     * @param  [type] $loginData               [description]
+     * @return [type]            [description]
+     */
+    public function getLatestTransactionDate(array $data = NULL, array $loginData = NULL){
+      if(array_key_exists("wallet_ids", $data) && is_array($data["wallet_ids"]) && count($data["wallet_ids"]) > 0){
+        try{
+          $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
+          $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
+
+          $statement = "";
+          $statement_arr = [];
+          array_push($statement_arr, $nodeid);
+
+          foreach($data["wallet_ids"] AS $arrkey => $walletid){
+            if(array_key_exists($arrkey+1, $data["wallet_ids"])){
+              $statement .= "(wallet_id = ? AND created_at_time = (SELECT max(created_at_time) FROM chia_wallets_transactions WHERE wallet_id = ?)) OR ";
+            }else{
+              $statement .= "(wallet_id = ? AND created_at_time = (SELECT max(created_at_time) FROM chia_wallets_transactions WHERE wallet_id = ?))";
+            }
+            array_push($statement_arr, $walletid);
+            array_push($statement_arr, $walletid);
+          }
+
+          $returnarray = [];
+          if(count($statement_arr) > 0){
+            $sql = $this->db_api->execute("SELECT wallet_id, created_at_time FROM chia_wallets_transactions WHERE nodeid = ? AND $statement", $statement_arr);
+            $returnarray = $sql->fetchAll(\PDO::FETCH_ASSOC);
+          }
+
+          return array("status" => 0, "message" => "Successfully queried latest transaction date for wallet with id " . json_decode($data["wallet_id"]) .".", "data" => $returnarray);
+        }catch(Exception $e){
+          //TODO Implement correct status code
+          print_r($e);
+          return array("status" => 1, "message" => "An error occured.");
+        }
+      }
     }
 
     /**
@@ -152,16 +204,16 @@
       $returndata = [];
       try{
         if(is_null($data)){
-          $sql = $this->db_api->execute("SELECT id, nodeid, walletid, transaction, status, amount, to_address, created_at FROM chia_wallets_transactions", array());
+          $sql = $this->db_api->execute("SELECT id, nodeid, wallet_id, parent_coin_info, amount, amount, confirmed, confirmed_at_height, created_at_time, fee_amount, name, removals, sent, sent_to, spend_bundle, to_address, to_puzzle_hash, trade_id, type FROM chia_wallets_transactions", array());
         }else if(!is_null($data) && array_key_exists("nodeid", $data) && array_key_exists("walletid", $data)){
-          $sql = $this->db_api->execute("SELECT id, nodeid, walletid, transaction, status, amount, to_address, created_at FROM chia_wallets_transactions WHERE nodeid = ? AND walletid = ?", array($data["nodeid"], $data["walletid"]));
+          $sql = $this->db_api->execute("SELECT id, nodeid, wallet_id, parent_coin_info, amount, amount, confirmed, confirmed_at_height, created_at_time, fee_amount, name, removals, sent, sent_to, spend_bundle, to_address, to_puzzle_hash, trade_id, type FROM chia_wallets_transactions WHERE nodeid = ? AND wallet_id = ?", array($data["nodeid"], $data["walletid"]));
         }else{
           //TODO Implement correct status codes
           return array("status" => 1, "message" => "No data found.");
         }
 
         foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $walletdata){
-          $returndata[$walletdata["nodeid"]][$walletdata["walletid"]] = $walletdata;
+          $returndata[$walletdata["nodeid"]][$walletdata["wallet_id"]] = $walletdata;
         }
 
         return array("status" =>0, "message" => "Successfully loaded chia wallet information.", "data" => $returndata);
