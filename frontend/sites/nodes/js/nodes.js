@@ -432,6 +432,8 @@ function messagesTrigger(data){
         if($("#nodeactionmodal[data-nodeid='" + nodeid + "']").length > 0){
           $("#update_available").html(getUpdateAvailableBadge(updatedata["updateavailable"]));
           $("#updatenode").hide();
+          $("#remote_version").text(updatedata["remoteversion"]);
+          $("#current_version").text(updatedata["scriptversion"]);
           if(updatedata["updateavailable"] < 0){
             $("#updatenode").show();
           }
