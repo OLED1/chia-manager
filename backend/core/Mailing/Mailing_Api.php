@@ -7,13 +7,37 @@
   use PHPMailer\PHPMailer\SMTP;
   use PHPMailer\PHPMailer\Exception;
 
-  require __DIR__ . '/../../../vendor/autoload.php';
-
+  /**
+   * The Mailing_Api class enables the sending of mails using PHPMailer.
+   * @version 0.1.1
+   * @author OLED1 - Oliver Edtmair
+   * @since 0.1.0
+   * @copyright Copyright (c) 2021, Oliver Edtmair (OLED1), Luca Austelat (lucaust)
+   */
   class Mailing_Api{
-    private $mailer, $logging_api, $system_api, $ini;
+    /**
+     * Holds an instance to the PHPMailer Class.
+     * @var PHPMailer
+     */
+    private $mailer;
+    /**
+     * Holds an instance to the Logging Class.
+     * @var Logging_Api
+     */
+    private $logging_api;
+    /**
+     * Holds an instance to the System Class.
+     * @var System_Api
+     */
+    private $system_api;
+    /**
+     * Holds the system's config json array.
+     * @var array
+     */
+    private $ini;
 
     /**
-     * The constructor initializes all classes which are needed to work properly
+     * Initialises the needed and above stated private variables.
      */
     public function __construct(){
       $this->mailer = new PHPMailer(true);
@@ -24,6 +48,7 @@
 
   /**
    * Checks if the target mail server is available
+   * Function made for: Api/Backend
    * @param  array  $maildata The mailsettings
    * @return array            Returns a status code array
    */
@@ -42,6 +67,7 @@
 
     /**
      * Sends a testmail to a specific user's email
+     * Function made for: Api/Backend
      * @param  string $recepient The recepients email
      * @return array             Returns a status code array
      */
@@ -52,13 +78,14 @@
         $recpients = $data["receipients"];
         return $this->sendMail($recpients, $subject, $message);
       }else{
-        //return array("status" => 1, "message" => "Not all information stated.");
         return $this->logging_api->getErrormessage("001");
       }
     }
 
     /**
      * Sends emails to particular users
+     * Function made for: Api/Backend
+     * @throws Exception $e Throws an exception on PHPMailer errors.
      * @param  array  $recepients The recepients which should get this mail
      * @param  string $subject    The mail's subject
      * @param  string $message    The mail's message as html formatted

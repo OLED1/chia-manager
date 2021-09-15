@@ -54,10 +54,11 @@
     /**
      * The login method so a user is able to login.
      * Function made for: WebGUI/App
+     * @throws Exception $e          Throws an exception on db errors.
      * @param  string $username       The username (or socalled userid)
      * @param  string $password       The user's password
      * @param  bool $stayloggedin     If the user wants to stays logged in (max. 30 days). True = Stay logged in, False = Sessions ends after 30 minutes.
-     * @return array                  Returns a statuscode array
+     * @return array                  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
     public function login(string $username, string $password, bool $stayloggedin){
       $userdata = $this->getCurrentUserInfos($username);
@@ -106,10 +107,12 @@
     }
 
     /**
-     * [checkAuthKey description]
+     * Checks if the outkey is valid when second factor via e-mail is enabled.
+     * Furthermore it will be checked if the user already has valid cookies set. If the session does not exist the user will not be logged in.
      * Function made for: WebGUI/App
-     * @param  string $authkey               [description]
-     * @return [type]          [description]
+     * @throws Exception $e    Throws an exception on db errors.
+     * @param  string $authkey The stated outkey.
+     * @return array           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
     public function checkAuthKey(string $authkey){
       if(array_key_exists('user_id', $_COOKIE) && array_key_exists('PHPSESSID', $_COOKIE)){
@@ -139,6 +142,14 @@
       }
     }
 
+    /**
+     * Generates a uniqe outkey which will be directly send to the user which currently wants to login. Requires a valid set-up e-mail address.
+     * Function made for: WebGUI/App
+     * @throws Exception $e          Throws an exception on db errors.
+     * @param  int $userid      The user's id who wants to login.
+     * @param  string $sessid   The user's current session id.
+     * @return array            {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
+     */
     public function generateAndsendAuthKey(int $userid = NULL, string $sessid = NULL){
       $loginstatus = $this->checklogin($sessid, $userid)["status"];
 
@@ -179,6 +190,11 @@
       }
     }
 
+    /**
+     * Invalidates a certain session of a user. Will be called on logout action or when the user is in login screen and cancels authkey check with "go back".
+     * Function made for: WebGUI/App
+     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
+     */
     public function invalidateLogin(){
       if(array_key_exists('user_id', $_COOKIE) && array_key_exists('PHPSESSID', $_COOKIE)){
         $userid = $_COOKIE['user_id'];
@@ -201,8 +217,9 @@
 
     /**
      * Gets some user infos from a particular user ID (not db ID).
+     * Function made for: WebGUI/App
      * @param  string $username The username
-     * @return array           Returns a status code array with the needed data
+     * @return array            {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" => {[Found db stored userdata]}}
      */
     public function getCurrentUserInfos(string $username){
       try{
@@ -224,8 +241,9 @@
 
     /**
      * Sets the session after a user logged in successfully.
+     * Function made for: WebGUI/App
      * @param int $id The users id which logged in
-     * @return array  Return a status code array
+     * @return array  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : { "userid" : "[userid]", "sessid" : [session ID]}}
      */
     public function setSession(int $userid){
       try{
@@ -263,8 +281,9 @@
 
     /**
      * Logs a user out and removes his session ID from db.
+     * Function made for: WebGUI/App
      * @param  int $userid The user which should be logged out
-     * @return array       Returns a status code array
+     * @return array       {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
     public function logout(int $userid){
       try{
@@ -278,6 +297,13 @@
       }
     }
 
+    /**
+     * Checks if a user session is currently valid.
+     * Function made for: WebGUI/App
+     * @param  string $sessionid  Users's sessionid from which the loginstatus should be checked.
+     * @param  int $userid        Users's id from which the loginstatus should be checked.
+     * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
+     */
     public function checklogin(string $sessionid = NULL, int $userid = NULL){
       if((isset($_COOKIE['user_id']) || !is_null($userid)) &&
         (isset($_COOKIE['PHPSESSID']) || !is_null($sessionid))
@@ -328,7 +354,12 @@
       }
     }
 
-    public function invalidateAllNotLoggedin(string $sessionid = NULL, int $userid = NULL){
+    /**
+     * Invalidates all logins where the login process where not finished or the session interval (max 30 days) exceded.
+     * Function made for: Api/Backend
+     * @return array                {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
+     */
+    public function invalidateAllNotLoggedin(){
       try{
         $sql = $this->db_api->execute("UPDATE users_sessions SET invalidated =
                                         CASE

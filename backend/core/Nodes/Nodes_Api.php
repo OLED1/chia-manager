@@ -3,31 +3,77 @@
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\WebSocket\WebSocket_Api;
+  use ChiaMgmt\Encryption\Encryption_Api;
 
+  /**
+   * The Nodes_Api class contains every needed methods to manage all available nodes.
+   * The following nodes are valid: backend, webclient (app), farmer, harvester, wallet.
+   * The last stated types can be used at once.
+   * This class is used by the webclient to get data.
+   * The client can also be managed via this class.
+   * @version 0.1.1
+   * @author OLED1 - Oliver Edtmair
+   * @since 0.1.0
+   * @copyright Copyright (c) 2021, Oliver Edtmair (OLED1), Luca Austelat (lucaust)
+   */
   class Nodes_Api{
-    private $db_api, $logging_api, $websocket_api, $ciphering, $iv_length, $options, $encryption_iv, $ini;
+    /**
+     * Holds an instance to the WebSocket Class.
+     * @var WebSocket_Api
+     */
+    private $websocket_api;
+    /**
+     * Holds an instance to the Database Class.
+     * @var DB_Api
+     */
+    private $db_api;
+    /**
+     * Holds an instance to the Logging Class.
+     * @var Logging_Api
+     */
+    private $logging_api;
+    /**
+     * Holds an instance to the Encryption Class.
+     * @var Encryption_Api
+     */
+    private $encryption_api;
 
+    /**
+     * Initialises the needed and above stated private variables.
+     */
     public function __construct(){
-      $this->ciphering = "AES-128-CTR";
-      $this->iv_length = openssl_cipher_iv_length($this->ciphering);
-      $this->options = 0;
-      $this->encryption_iv = '1234567891011121';
-      $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
-
       $this->db_api = new DB_Api();
       $this->logging_api = new Logging_Api($this);
+      $this->encryption_api = new Encryption_Api();
     }
 
+    /**
+     * Returns a list of active subscriptions known to the websocket server which saves this data locally.
+     * Subscriptions contains a list of clients which are currently logged in and accepted by the api.
+     * Function made for: Backend / Web GUI
+     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[List of nodes of active subscriptions]}
+     */
     public function getActiveSubscriptions(){
       $this->websocket_api = new WebSocket_Api();
       return $this->websocket_api->sendToWSS("getActiveSubscriptions")["getActiveSubscriptions"];
     }
 
+    /**
+     * Returns a list of active requests known to the websocket server which saves this data locally.
+     * Requests contains a list of clients which are currently waiting to get accepted by the api.
+     * Function made for: Backend / Web GUI
+     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[List of nodes of active requests]}
+     */
     public function getActiveRequests(){
       $this->websocket_api = new WebSocket_Api();
       return $this->websocket_api->sendToWSS("getActiveRequests")["getActiveRequests"];
     }
 
+    /**
+     * Returns an array of all information available for all nodes.
+     * Function made for: Web GUI
+     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB stored node information]}
+     */
     public function getConfiguredNodes(){
       $returndata = array();
 
@@ -47,7 +93,7 @@
 
         foreach ($sqdata as $arrkey => $conninfo) {
           $returnarray[$conninfo["id"]] = $conninfo;
-          $returnarray[$conninfo["id"]]["nodeauthhash"] = $this->decryptAuthhash($conninfo["nodeauthhash"]);
+          $returnarray[$conninfo["id"]]["nodeauthhash"] = $this->encryption_api->decryptString($conninfo["nodeauthhash"]);
         }
 
         return array("status" => 0, "message" => "Sucessfully loaded all client data.", "data" => $returnarray);
@@ -57,6 +103,12 @@
       }
     }
 
+    /**
+     * Returns a list of all nodes known and registered to the api.
+     * Function made for: Web GUI
+     * @throws Exception $e       Throws an exception on db errors.
+     * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB stored node type information]}
+     */
     public function getNodeTypes(){
       try{
         $sql = $this->db_api->execute("SELECT id, description, code, allowed_authtype, nodetype FROM nodetypes_avail WHERE selectable = 1", array());
@@ -73,6 +125,15 @@
       }
     }
 
+    /**
+     * Allow a node to reconnect if it's ip has recently changed.
+     * Function made for: Web GUI
+     * @throws Exception $e                   Throws an exception on db errors.
+     * @param  array  $data                   { "nodeid" : [The nodes id where the ip has changed], "authhash" : "[The nodes authhash where the ip has changed]" }
+     * @param  array $loginData               { NULL } No logindata is needed to query this function
+     * @param  ChiaWebSocketServer $server    An instance to the Webscoket server to be able to communicate with the node
+     * @return array                          {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
+     */
     public function acceptIPChange(array $data, array $loginData = NULL, $server = NULL){
       if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data)){
         try{
@@ -100,6 +161,15 @@
       }
     }
 
+    /**
+     * Accept a request of newly connected node.
+     * Function made for: Web GUI
+     * @throws Exception $e                    Throws an exception on db errors.
+     * @param  array  $data                    [description]
+     * @param  array $loginData                [description]
+     * @param  ChiaWebSocketServer $server     [description]
+     * @return array                           [description]
+     */
     public function acceptNodeRequest(array $data, array $loginData = NULL, $server = NULL){
       if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data) && array_key_exists("nodetypes", $data)){
         try{
@@ -183,7 +253,7 @@
           JOIN nodetype nt ON nt.nodeid = n.id
           JOIN nodetypes_avail nta ON nta.code = nt.code
           WHERE n.nodeauthhash = ?
-          GROUP BY n.id", array($this->encryptAuthhash($loginData["authhash"])));
+          GROUP BY n.id", array($this->encryption_api->encryptString($loginData["authhash"])));
           $sqldata = $sql->fetchAll(\PDO::FETCH_ASSOC)[0];
 
           return array("status" => 0, "method" => "loginStatus", "message" => "This node is logged in.", "data" => $sqldata);
@@ -198,7 +268,7 @@
     public function updateScriptVersion(array $data, array $loginData = NULL){
       if(array_key_exists("authhash", $loginData) && array_key_exists("scriptversion", $data) && array_key_exists("chia", $data)){
         try{
-          $sql = $this->db_api->execute("UPDATE nodes SET scriptversion = ?, chiaversion = ?, chiapath = ? WHERE nodeauthhash = ?", array($data["scriptversion"], $data["chia"]["version"], $data["chia"]["path"], $this->encryptAuthhash($loginData["authhash"])));
+          $sql = $this->db_api->execute("UPDATE nodes SET scriptversion = ?, chiaversion = ?, chiapath = ? WHERE nodeauthhash = ?", array($data["scriptversion"], $data["chia"]["version"], $data["chia"]["path"], $this->encryption_api->encryptString($loginData["authhash"])));
 
           return array("status" =>0, "message" => "Successfully updated version.");
         }catch(Exception $e){
@@ -211,7 +281,7 @@
 
     public function nodeUpdateStatus(array $data, array $loginData = NULL){
       try{
-        $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryptAuthhash($loginData["authhash"])));
+        $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
         $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
 
         return array("status" => 0, "message" => "Successfully queried node update status", "data" => array("nodeid" => $nodeid, "status" => $data));
@@ -409,7 +479,7 @@
           "message" => "Query " . $infos["description"] . " running status.",
           "data"=> array()
         );
-        $querydata["nodeinfo"]["authhash"] = $this->decryptAuthhash($infos["nodeauthhash"]);
+        $querydata["nodeinfo"]["authhash"] = $this->encryption_api->decryptString($infos["nodeauthhash"]);
         if(!is_null($server)){
           $server->messageSpecificNode($querydata);
         }else{
@@ -417,14 +487,6 @@
           $activeSubscriptions = $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
         }
       }
-    }
-
-    private function encryptAuthhash(string $encryptedauthhash){
-      return openssl_encrypt($encryptedauthhash, $this->ciphering, $this->ini["serversalt"], $this->options, $this->encryption_iv);
-    }
-
-    public function decryptAuthhash(string $encryptedauthhash){
-      return openssl_decrypt($encryptedauthhash, $this->ciphering, $this->ini["serversalt"], $this->options, $this->encryption_iv);
     }
   }
 ?>

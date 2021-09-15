@@ -203,7 +203,6 @@
     /**
      * Returns the exchangerate associaated with the configured default exchangerate oof a given user.
      * Function made for: Web Client / App
-     * @throws Exception $e Throws an exception on db errors.
      * @param  array  $data      { "userid" : [userid] }
      * @param  array $loginData  { NULL } No logindata is needed to query this function.
      * @return array             { "status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[Currency asocciated exchangerate]}}
