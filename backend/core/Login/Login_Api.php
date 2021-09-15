@@ -5,29 +5,65 @@
   use ChiaMgmt\Mailing\Mailing_Api;
   use ChiaMgmt\System\System_Api;
 
-
+  /**
+   * The Login_Api is one of two restfull enabled api classes and handles all webapp login based actions.
+   * This class is only used by the webclient to fullfill login/logout and session validation actions.
+   * @version 0.1.1
+   * @author OLED1 - Oliver Edtmair
+   * @since 0.1.0
+   * @copyright Copyright (c) 2021, Oliver Edtmair (OLED1), Luca Austelat (lucaust)
+   */
   class Login_Api{
-    private $dbcon, $config, $logging, $mailing_api, $system_api;
+    /**
+     * Holds an instance to the Database Class.
+     * @var DB_Api
+     */
+    private $db_api;
+    /**
+     * Holds an instance to the Logging Class.
+     * @var Logging_Api
+     */
+    private $logging_api;
+    /**
+     * Holds an instance to the Mailing Class.
+     * @var Mailing_Api
+     */
+    private $mailing_api;
+    /**
+     * Holds an instance to the System Class.
+     * @var System_Api
+     */
+    private $system_api;
+    /**
+     * Holds a system config json array.
+     * @var array
+     */
+    private $ini;
 
+    /**
+     * Initialises the needed and above stated private variables.
+     */
     public function __construct(){
-      $this->dbcon = new DB_Api();
-      $this->logging = new Logging_Api($this);
+      $this->db_api = new DB_Api();
+      $this->logging_api = new Logging_Api($this);
       $this->mailing_api = new Mailing_Api();
       $this->system_api = new System_Api();
-      $this->config = parse_ini_file(__DIR__.'/../../config/config.ini.php');
+      $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
     }
 
     /**
-     * The login method so a user is able to login
-     * @param  string $username The username (or socalled userid)
-     * @param  string $password The user's password
-     * @return array            Returns a statuscode array
+     * The login method so a user is able to login.
+     * Function made for: WebGUI/App
+     * @param  string $username       The username (or socalled userid)
+     * @param  string $password       The user's password
+     * @param  bool $stayloggedin     If the user wants to stays logged in (max. 30 days). True = Stay logged in, False = Sessions ends after 30 minutes.
+     * @return array                  Returns a statuscode array
      */
-    public function login(string $username, string $password, string $stayloggedin){
+    public function login(string $username, string $password, bool $stayloggedin){
       $userdata = $this->getCurrentUserInfos($username);
 
       if(count($userdata["status"]) == 1 && $userdata["status"] == 0){
-        $salted_hash=hash('sha256',$password.$userdata["data"]["salt"].$this->config['serversalt']);
+        $salted_hash=hash('sha256',$password.$userdata["data"]["salt"].$this->ini['serversalt']);
       }else{
         return $userdata;
       }
@@ -35,7 +71,7 @@
       if(isset($userdata["data"]["password"]) && $userdata["data"]["password"] == $salted_hash){
         $session = $this->setSession($userdata["data"]["id"]);
 
-        $this->logging->logtofile(0, 0, "User with ID " . $userdata["data"]["id"] . " logged in from " . $_SERVER['REMOTE_ADDR'] . ".;");
+        $this->logging_api->logtofile(0, 0, "User with ID " . $userdata["data"]["id"] . " logged in from " . $_SERVER['REMOTE_ADDR'] . ".;");
         if($session["status"] == 0){
           try{
             $security = $this->system_api->getSpecificSystemSetting("security");
@@ -51,24 +87,30 @@
                 $sendauthkey = true;
             }
 
-            $sql = $this->dbcon->execute("Insert INTO users_sessions (id, userid, sessid, authkeypassed, deviceinfo, validuntil) VALUES (NULL, ?, ?, ?, ?, " . ($stayloggedin ? "NULL" : "DATE_ADD(now(), INTERVAL 30 MINUTE)" ) . ")",
+            $sql = $this->db_api->execute("Insert INTO users_sessions (id, userid, sessid, authkeypassed, deviceinfo, validuntil) VALUES (NULL, ?, ?, ?, ?, " . ($stayloggedin ? "NULL" : "DATE_ADD(now(), INTERVAL 30 MINUTE)" ) . ")",
                                           array($session["data"]["userid"], $session["data"]["sessid"], $authkeypassed, $_SERVER['HTTP_USER_AGENT']));
 
             if($sendauthkey){
               $this->generateAndsendAuthKey($session["data"]["userid"], $session["data"]["sessid"]);
-              return $this->logging->getErrormessage("001");
+              return $this->logging_api->getErrormessage("001");
             }
 
             return array("status" => "0", "message" => "Logged in.");
           }catch(Exception $e){
-            return $this->logging->getErrormessage("002", $e);
+            return $this->logging_api->getErrormessage("002", $e);
           }
         }
       }else{
-        return $this->logging->getErrormessage("003","User with ID " . $userdata["data"]["id"] . " tried to log in from " . $_SERVER['REMOTE_ADDR'] . ".");
+        return $this->logging_api->getErrormessage("003","User with ID " . $userdata["data"]["id"] . " tried to log in from " . $_SERVER['REMOTE_ADDR'] . ".");
       }
     }
 
+    /**
+     * [checkAuthKey description]
+     * Function made for: WebGUI/App
+     * @param  string $authkey               [description]
+     * @return [type]          [description]
+     */
     public function checkAuthKey(string $authkey){
       if(array_key_exists('user_id', $_COOKIE) && array_key_exists('PHPSESSID', $_COOKIE)){
         $userid = $_COOKIE['user_id'];
@@ -76,24 +118,24 @@
         $currentdate = new \DateTime();
 
         try{
-          $sql = $this->dbcon->execute("SELECT validuntil FROM users_authkeys WHERE authkey = ? AND validuntil >= ? LIMIT 1",
+          $sql = $this->db_api->execute("SELECT validuntil FROM users_authkeys WHERE authkey = ? AND validuntil >= ? LIMIT 1",
                   array($authkey, $currentdate->format("Y-m-d H:i:s")));
 
           $sqreturn = $sql->fetchAll(\PDO::FETCH_ASSOC)[0];
 
           if(array_key_exists("validuntil", $sqreturn)){
-            $sql = $this->dbcon->execute("UPDATE users_authkeys SET valid = 0 WHERE userid = ?", array($userid));
-            $sql = $this->dbcon->execute("UPDATE users_sessions SET authkeypassed = 1 WHERE userid = ? AND sessid = ?", array($userid, $sessionid));
+            $sql = $this->db_api->execute("UPDATE users_authkeys SET valid = 0 WHERE userid = ?", array($userid));
+            $sql = $this->db_api->execute("UPDATE users_sessions SET authkeypassed = 1 WHERE userid = ? AND sessid = ?", array($userid, $sessionid));
 
             return array("status" => 0, "message" => "Successfully logged in.");
           }else{
-            return $this->logging->getErrormessage("001");
+            return $this->logging_api->getErrormessage("001");
           }
         }catch(Exception $e){
-          return $this->logging->getErrormessage("002", $e);
+          return $this->logging_api->getErrormessage("002", $e);
         }
       }else{
-        return $this->logging->getErrormessage("003");
+        return $this->logging_api->getErrormessage("003");
       }
     }
 
@@ -110,15 +152,15 @@
           $authkey = bin2hex(random_bytes(25));
 
           try{
-            $sql = $this->dbcon->execute("SELECT email FROM users WHERE id = ?", array($userid));
+            $sql = $this->db_api->execute("SELECT email FROM users WHERE id = ?", array($userid));
             $email = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["email"];
 
-            $sql = $this->dbcon->execute("UPDATE users_authkeys SET valid = 0 WHERE userid = ?", array($userid));
+            $sql = $this->db_api->execute("UPDATE users_authkeys SET valid = 0 WHERE userid = ?", array($userid));
 
             $keyvaliduntil = new \DateTime();
             $keyvaliduntil->modify("+15 minutes");
 
-            $sql = $this->dbcon->execute("Insert INTO users_authkeys (id, userid, authkey, validuntil) VALUES (NULL, ?, ?, ?)",
+            $sql = $this->db_api->execute("Insert INTO users_authkeys (id, userid, authkey, validuntil) VALUES (NULL, ?, ?, ?)",
                                           array($userid, $authkey, $keyvaliduntil->format("Y-m-d H:i:s")));
 
             $message = "<h1>Complete your login</h1><br>To complete your login enter this authkey when prompted:<br>$authkey<br><br>This key will be valid until {$keyvaliduntil->format("Y-m-d H:i:s")}.";
@@ -127,13 +169,13 @@
 
             return array("status" => 0, "message" => "Successfully (re)sent authmail.");
           }catch(Exception $e){
-            return $this->logging->getErrormessage("001", $e);
+            return $this->logging_api->getErrormessage("001", $e);
           }
         }else{
-          return $this->logging->getErrormessage("002");
+          return $this->logging_api->getErrormessage("002");
         }
       }else{
-        return $this->logging->getErrormessage("003");
+        return $this->logging_api->getErrormessage("003");
       }
     }
 
@@ -143,32 +185,32 @@
         $sessionid = $_COOKIE['PHPSESSID'];
 
         try{
-          $sql = $this->dbcon->execute("UPDATE users_sessions SET invalidated = 1 WHERE userid = ? AND sessid = ?", array($userid, $sessionid));
+          $sql = $this->db_api->execute("UPDATE users_sessions SET invalidated = 1 WHERE userid = ? AND sessid = ?", array($userid, $sessionid));
           setcookie('user_id', null, -1, '/');
           setcookie('PHPSESSID', null, -1, '/');
 
           return array("status" => 0, "message" => "Successfully invalidated (pending) login.");
         }catch(Exception $e){
-          return $this->logging->getErrormessage("001", $e);
+          return $this->logging_api->getErrormessage("001", $e);
         }
 
       }else{
-        return $this->logging->getErrormessage("002");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
     /**
-     * Gets some user infos from a particular user ID (not db ID)
+     * Gets some user infos from a particular user ID (not db ID).
      * @param  string $username The username
      * @return array           Returns a status code array with the needed data
      */
     public function getCurrentUserInfos(string $username){
       try{
-        $sql = $this->dbcon->execute("SELECT id,name,lastname,email,password,salt FROM users WHERE username = ? AND enabled = 1",
+        $sql = $this->db_api->execute("SELECT id,name,lastname,email,password,salt FROM users WHERE username = ? AND enabled = 1",
                                       array($username));
 
         if($sql->rowCount() == 0){
-          return $this->logging->getErrormessage("001","An unknown user tried to log in from " . $_SERVER['REMOTE_ADDR'] . ".");
+          return $this->logging_api->getErrormessage("001","An unknown user tried to log in from " . $_SERVER['REMOTE_ADDR'] . ".");
         }
 
         $data = $sql->fetch(\PDO::FETCH_ASSOC);
@@ -176,12 +218,12 @@
         return array("status" => 0,"message" => "Data successfully loaded.","data" => $data);
       }catch(Exception $e){
         //return array("status" => 0,"message" => "Data successfully loaded.","data" => $data);
-        return $this->logging->getErrormessage("002", $e);
+        return $this->logging_api->getErrormessage("002", $e);
       }
     }
 
     /**
-     * Sets the session after a user logged in successfully
+     * Sets the session after a user logged in successfully.
      * @param int $id The users id which logged in
      * @return array  Return a status code array
      */
@@ -215,24 +257,24 @@
 
         return array("status" => 0, "message" => "Session successfully set!", "data" => array("userid" => $userid, "sessid" => $sessionID));
       }catch(Exception $e){
-        return $this->logging->getErrormessage("001",$e);
+        return $this->logging_api->getErrormessage("001",$e);
       }
     }
 
     /**
-     * Logs a user out and removes his session ID from db
+     * Logs a user out and removes his session ID from db.
      * @param  int $userid The user which should be logged out
      * @return array       Returns a status code array
      */
     public function logout(int $userid){
       try{
-        $sql = $this->dbcon->execute("UPDATE users SET loginDate = NULL, sessionString = NULL, ipaddr = NULL WHERE id = ?",
+        $sql = $this->db_api->execute("UPDATE users SET loginDate = NULL, sessionString = NULL, ipaddr = NULL WHERE id = ?",
         array($userid));
 
         session_destroy();
-        return $this->logging->getErrormessage("001","User with ID " . $userid . " logged out.");
+        return $this->logging_api->getErrormessage("001","User with ID " . $userid . " logged out.");
       }catch(Exception $e){
-        return $this->logging->getErrormessage("002",$e);
+        return $this->logging_api->getErrormessage("002",$e);
       }
     }
 
@@ -246,7 +288,7 @@
         $this->invalidateAllNotLoggedin();
 
         try{
-          $sql = $this->dbcon->execute("SELECT authkeypassed, validuntil FROM users_sessions WHERE userid = ? AND sessid = ? AND invalidated = 0",
+          $sql = $this->db_api->execute("SELECT authkeypassed, validuntil FROM users_sessions WHERE userid = ? AND sessid = ? AND invalidated = 0",
           array($userid, $sessionid));
 
           $returneddata = $sql->fetchAll(\PDO::FETCH_ASSOC);
@@ -264,31 +306,31 @@
 
                 if($currentdate <= $validuntil){
                   $currentdate->modify("+30 minutes");
-                  $sql = $this->dbcon->execute("UPDATE users_sessions SET validuntil = ? WHERE userid = ? AND sessid = ?",
+                  $sql = $this->db_api->execute("UPDATE users_sessions SET validuntil = ? WHERE userid = ? AND sessid = ?",
                                                 array($currentdate->format("Y-m-d H:i:s"), $userid, $sessionid));
 
                   return array("status" => "0", "message" => "User with id {$userid} is logged in.");
                 }else{
-                  return $this->logging->getErrormessage("001");
+                  return $this->logging_api->getErrormessage("001");
                 }
               }
             }else{
-              return $this->logging->getErrormessage("002");
+              return $this->logging_api->getErrormessage("002");
             }
           }else{
-              return $this->logging->getErrormessage("005");
+              return $this->logging_api->getErrormessage("005");
           }
         }catch(Exception $e){
-          return $this->logging->getErrormessage("003",$e);
+          return $this->logging_api->getErrormessage("003",$e);
         }
       }else{
-        return $this->logging->getErrormessage("004","", false);
+        return $this->logging_api->getErrormessage("004","", false);
       }
     }
 
     public function invalidateAllNotLoggedin(string $sessionid = NULL, int $userid = NULL){
       try{
-        $sql = $this->dbcon->execute("UPDATE users_sessions SET invalidated =
+        $sql = $this->db_api->execute("UPDATE users_sessions SET invalidated =
                                         CASE
                                           WHEN (invalidated = 0 AND validuntil IS NOT NULL AND validuntil <= DATE_ADD(NOW(), INTERVAL 5 MINUTE)) OR
                                                 (authkeypassed = 0 AND NOW() >= DATE_ADD(logindate, INTERVAL 1 HOUR) AND invalidated = 0) OR
@@ -299,7 +341,7 @@
 
         return array("status" => 0, "message" => "Successfully invalidated not logged in session.");
       }catch(Exception $e){
-        return $this->logging->getErrormessage("001",$e);
+        return $this->logging_api->getErrormessage("001",$e);
       }
     }
   }

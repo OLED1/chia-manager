@@ -3,8 +3,34 @@
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\Logging\Logging_Api;
 
+  /**
+   * The Exchangerates_Api class contains every needed methods to get/set currency and exchangerates values.
+   * The chia overall api and CHIA itself queries the current chia price in USD, so the base currency for converting is USD.
+   * @version 0.1.1
+   * @author OLED1 - Oliver Edtmair
+   * @since 0.1.0
+   * @copyright Copyright (c) 2021, Oliver Edtmair (OLED1), Luca Austelat (lucaust)
+   */
   class Exchangerates_Api{
+    /**
+     * Holds a system config json array.
+     * @var array
+     */
+    private $ini;
+    /**
+     * Holds an instance to the Database Class.
+     * @var DB_Api
+     */
+    private $db_api;
+    /**
+     * Holds an instance to the Logging Class.
+     * @var Logging_Api
+     */
+    private $logging_api;
 
+    /**
+     * Initialises the needed and above stated private variables.
+     */
     public function __construct(){
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
       $this->db_api = new DB_Api();
@@ -12,6 +38,18 @@
     }
 
     //Base Currency is always USD
+    /**
+     * Queryies current exchangerates from an external api using stated config values from the config.ini.php and returns the exchangerate in the given currency code.
+     * This function has a query cap from one query per day.
+     * Default currency is USD (usd).
+     * Function made for: Only WebClient (PHP)
+     * @todo Make this function compatible for a future App
+     * @throws Exception $e          Throws an exception on db errors.
+     * @see https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies.json
+     * @see https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/usd.json
+     * @param  string $currency_code The currency code in which the exchangerate should be converted. E.g. eur, to get the exchangerates in Euro.
+     * @return array                 {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB found exchangerates]}}
+     */
     public function queryExchangeRatesData(string $currency_code){
       if(array_key_exists("exchangerate_api_codes", $this->ini) && array_key_exists("exchangerate_api_rates", $this->ini)){
         try{
@@ -60,6 +98,13 @@
       }
     }
 
+    /**
+     * Get all available currencies found in the db.
+     * Function made for: Only WebClient (PHP)
+     * @todo Make this function compatible for a future App
+     * @throws Exception $e Throws an exception on db errors.
+     * @return array        {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB found currencies]}}
+     */
     public function getAllCurrencies(){
       try{
         $sql = $this->db_api->execute("SELECT currency_code, currency_desc FROM exchangerates", array());
@@ -70,6 +115,14 @@
       }
     }
 
+    /**
+     * Returns the current default user set-up currency in which the Chia price should be converted.
+     * Function made for: Only WebClient (PHP)
+     * @todo Make this function compatible for a future App
+     * @throws Exception $e       Throws an exception on db errors.
+     * @param  int    $userid     The userid of a certain user for which the values should be returned.
+     * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB found default user currency]}}
+     */
     public function getUserDefaultCurrency(int $userid){
       if($userid > 0 && array_key_exists("user_id", $_COOKIE) && $_COOKIE["user_id"] == $userid){
         try{
@@ -96,6 +149,14 @@
       }
     }
 
+    /**
+     * Sets the current default user currency in which the Chia price should be converted.
+     * Function made for: Web Client/App
+     * @throws Exception $e       Throws an exception on db errors.
+     * @param  array    $data       { "currency_code" : "[Currency 3-4 digits code, e.g. usd]" }
+     * @param  array    $loginData  { "userid" : [userid] }
+     * @return array                { "status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[Newly set default currency]}}
+     */
     public function setUserDefaultCurrency(array $data, array $loginData = NULL){
       if(array_key_exists("currency_code", $data) && array_key_exists("userid", $loginData)){
         try{
@@ -117,6 +178,13 @@
       }
     }
 
+    /**
+     * Returns the currency associated exchangerate with a given 3-4 digits currency-code. Base is USD.
+     * Function made for: Backend
+     * @throws Exception $e Throws an exception on db errors.
+     * @param  string $currency_code  Currency 3-4 digits code, e.g. usd
+     * @return array                  { "status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[Currency asocciated exchangerate]}}
+     */
     private function getExchangerate(string $currency_code){
       try{
         $sql = $this->db_api->execute("SELECT currency_rate FROM exchangerates WHERE currency_code = ?", array($currency_code));
@@ -132,6 +200,14 @@
       }
     }
 
+    /**
+     * Returns the exchangerate associaated with the configured default exchangerate oof a given user.
+     * Function made for: Web Client / App
+     * @throws Exception $e Throws an exception on db errors.
+     * @param  array  $data      { "userid" : [userid] }
+     * @param  array $loginData  { NULL } No logindata is needed to query this function.
+     * @return array             { "status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[Currency asocciated exchangerate]}}
+     */
     public function getUserExchangeData(array $data, array $loginData = NULL){
       if(array_key_exists("userid", $data)){
         $defaultCurrency = $this->getUserDefaultCurrency($data["userid"]);

@@ -6,6 +6,8 @@
    * @version 0.1.1
    * @author OLED1
    * @see https://www.geeksforgeeks.org/how-to-encrypt-and-decrypt-a-php-string/
+   * @copyright Copyright (c) 2021, Oliver Edtmair (OLED1), Luca Austelat (lucaust)
+   * @since 0.1.0
    */
   class Encryption_Api{
     /**

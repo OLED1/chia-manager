@@ -3,15 +3,55 @@
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\Logging\Logging_Api;
 
+  /**
+   * The Chia_Overall_Api class contains every needed methods to manage all available overview data.
+   * It stores and manages values regarding chia netspace and other chia information.
+   * The data will be queried from an external open api.
+   * This class is used by the backendclient to query information from the external api and from the webclient to get data.
+   * @see https://api.chiaprofitability.com/
+   * @version 0.1.1
+   * @author OLED1 - Oliver Edtmair
+   * @since 0.1.0
+   * @copyright Copyright (c) 2021, Oliver Edtmair (OLED1), Luca Austelat (lucaust)
+   */
   class Chia_Overall_Api{
-    private $db_api, $logging_api;
+    /**
+     * Holds an instance to the Database Class.
+     * @var DB_Api
+     */
+    private $db_api;
+    /**
+     * Holds an instance to the Nodes Class.
+     * @var Logging_Api
+     */
+    private $logging_api;
+    /**
+     * Holds a system config json array.
+     * @var array
+     */
+    private $ini;
 
+    /**
+     * Initialises the needed and above stated private variables.
+     */
     public function __construct(){
       $this->db_api = new DB_Api();
       $this->logging_api = new Logging_Api($this);
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
     }
 
+    /**
+     * This function is called to query and get current chia overall at once. The querying is capped at a request limit from 5min per request.
+     * When the cap of 5min per request is not met, the current stored db values are sent back in the return.
+     * Function made for: Web Client
+     * @throws Exception $e                 Throws an exception on db errors.
+     * @todo                                Implement historical data loading.
+     * @param  array $data                  { NULL } No requestdata needed to query this function.
+     * @param  array $loginData             { NULL } No logindata needed to query this function.
+     * @param  ChiaWebSocketServer $server  { NULL } No valid instance is needed to query this function.
+     * @param  DateTime $fromtime           { NULL } On NULL only the last queryied data is returned. If a DateTime is given it will return historical data newer than. (Currently not implemented)
+     * @return array                        Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}} from the subfunction calls.
+     */
     public function queryOverallData(array $data = NULL, array $loginData = NULL, $server = NULL, DateTime $fromtime = NULL){
       if(array_key_exists("netspace_api", $this->ini) && array_key_exists("market_api", $this->ini)){
         $netspace_api = $this->ini["netspace_api"];
@@ -50,6 +90,13 @@
       }
     }
 
+    /**
+     * Returns the newest overall informaiton stored in the db.
+     * @throws Exception $e        Throws an exception on db errors.
+     * @todo                       Implement historical data loading.
+     * @param  DateTime $fromtime  { NULL } On NULL only the last queryied data is returned. If a DateTime is given it will return historical data newer than. (Currently not implemented)
+     * @return array               Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}.
+     */
     private function getOverallChiaData(DateTime $fromtime = NULL){
       try{
         if(is_null($fromtime)){
@@ -69,6 +116,12 @@
       }
     }
 
+    /**
+     * Queryies latest data from the external api using the link(s) stored in the config.ini.php.
+     * @see https://api.chiaprofitability.com/netspace
+     * @see https://api.chiaprofitability.com/market
+     * @return array Returns {"status": [0|>0], "message": [Status message], "data": {[Found queried external data]}}.
+     */
     private function getDataFromExtApi(){
       $overall = true;
 

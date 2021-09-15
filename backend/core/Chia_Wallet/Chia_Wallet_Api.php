@@ -3,26 +3,62 @@
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\Nodes\Nodes_Api;
+  use ChiaMgmt\Encryption\Encryption_Api;
 
+  /**
+   * The Chia_Wallet_Api class contains every needed methods to manage all available wallet data.
+   * This class is used by the client to send in data and from the webclient to get data.
+   * The client can also be managed via this class.
+   * @version 0.1.1
+   * @author OLED1 - Oliver Edtmair
+   * @since 0.1.0
+   * @copyright Copyright (c) 2021, Oliver Edtmair (OLED1), Luca Austelat (lucaust)
+   */
   class Chia_Wallet_Api{
-    private $db_api, $logging_api, $nodes_api;
+    /**
+     * Holds an instance to the Database Class.
+     * @var DB_Api
+     */
+    private $db_api;
+    /**
+     * Holds an instance to the Logging Class.
+     * @var Logging_Api
+     */
+    private $logging_api;
+    /**
+     * Holds an instance to the Nodes Class.
+     * @var Nodes_Api
+     */
+    private $nodes_api;
+    /**
+     * Holds an instance to the Encryption Class.
+     * @var Encryption_Api
+     */
+    private $encryption_api;
 
+    /**
+     * Initialises the needed and above stated private variables.
+     */
     public function __construct(){
-      $this->ciphering = "AES-128-CTR";
-      $this->iv_length = openssl_cipher_iv_length($this->ciphering);
-      $this->options = 0;
-      $this->encryption_iv = '1234567891011121';
-      $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
-
       $this->db_api = new DB_Api();
       $this->logging_api = new Logging_Api($this);
       $this->nodes_api = new Nodes_Api();
+      $this->encryption_api = new Encryption_Api();
     }
 
+    /**
+     * Update the available wallet data.
+     * Function made for: Node Client
+     * @throws Exception $e       Throws an exception on db errors.
+     * @see https://files.chiamgmt.edtmair.at/docs/classes/ChiaMgmt-Encryption-Encryption-Api.html#method_encryptString
+     * @param  array  $data       {'wallet': {'1': {'walletheight': '843911', 'syncstatus': 'Not synced', 'walletid': '1', 'wallettype': 'STANDARD_WALLET', 'totalbalance': '4e-06', 'pendingtotalbalance': '4e-06', 'spendable': '4e-06', 'walletaddress': '[Walletaddress]\n'}}},
+     * @param  array  $loginData  {"authhash": "[Querying Node's authhash]"}
+     * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {"nodeid": [nodeid], "data": {[newly added wallet data]}}
+     */
     public function updateWalletData(array $data, array $loginData = NULL){
       if(array_key_exists("wallet", $data)){
         try{
-          $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryptAuthhash($loginData["authhash"])));
+          $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
           $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
 
           foreach($data["wallet"] AS $walletid => $walletdata){
@@ -48,10 +84,29 @@
       }
     }
 
+    /**
+     * Update all transactions which were incoming our outgoing.
+     * Function made for: Node Client
+     * @todo Implement function and logging
+     * @throws Exception $e       Throws an exception on db errors.
+     * @param  array $data       [description]
+     * @param  array $loginData  [description]
+     * @return array             [description]
+     */
     public function updateWalletTransactions(array $data = NULL, array $loginData = NULL){
 
     }
 
+    /**
+     * Returns an array of all available on the database stored wallet values.
+     * Function made for: Web GUI/App
+     * @throws Exception $e                    Throws an exception on db errors.
+     * @param  array  $data                    { NULL } Will be changed to { nodeid: [NULL|nodeid] } as soon as the method needs to be called outsite of the web gui.
+     * @param  array  $loginData               { NULL } No logindata will be needed to be able to return valid data.
+     * @param  ChiaWebSocketServer  $server    An instance to websocket server class to be able to send data directly to nodes.
+     * @param  int  $nodeid                    The node id to get only node specific data. Can be NULL if all data will be queried. Will be deprecated as soon as the method needs to be called outsite of the web gui.
+     * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": [Found wallet data array]}
+     */
     public function getWalletData(array $data = NULL, array $loginData = NULL, $server = NULL, int $nodeid = NULL){
       try{
         if(is_null($nodeid)){
@@ -72,7 +127,7 @@
 
         $returndata = [];
         foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $walletinfo){
-          $walletinfo["nodeauthhash"] = $this->decryptAuthhash($walletinfo["nodeauthhash"]);
+          $walletinfo["nodeauthhash"] = $this->encryption_api->decryptString($walletinfo["nodeauthhash"]);
           $returndata[$walletinfo["nodeid"]][(is_numeric($walletinfo["walletid"]) ? $walletinfo["walletid"] : 0)] = $walletinfo;
         }
 
@@ -82,6 +137,17 @@
       }
     }
 
+    /**
+     * Returns an array of all available on the database stored wallet transactions from the (near) past.
+     * Function made for: Web GUI/App
+     * @todo Implement Logging
+     * @throws Exception $e                    Throws an exception on db errors.
+     * @param  array  $data                    { NULL } Will be changed to { nodeid: [NULL|nodeid] } as soon as the method needs to be called outsite of the web gui.
+     * @param  array  $loginData               { NULL } No logindata will be needed to be able to return valid data.
+     * @param  ChiaWebSocketServer  $server    An instance to websocket server class to be able to send data directly to nodes.
+     * @param  int  $nodeid                    The node id to get only node specific data. Can be NULL if all data will be queried. Will be deprecated as soon as the method needs to be called outsite of the web gui.
+     * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": [Found wallet transaction data array]}
+     */
     public function getWalletTransactions(array $data = NULL, array $loginData = NULL){
       $returndata = [];
       try{
@@ -108,9 +174,18 @@
       return array("status" =>0, "message" => "Successfully loaded chia wallet information.", "data" => $returndata);
     }
 
+    /**
+     * Sets the current walletstatus sent in from the node client.
+     * Function made for: Node Client
+     * @throws Exception $e       Throws an exception on db errors.
+     * @see https://files.chiamgmt.edtmair.at/docs/classes/ChiaMgmt-Encryption-Encryption-Api.html#method_encryptString
+     * @param  array $data       { status: [0 = Running |1 = Not Running] } No data is needed to query this method.
+     * @param  array $loginData  { NULL } No logindata is needed to query this method.
+     * @return array             Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
+     */
     public function walletStatus(array $data = NULL, array $loginData = NULL){
       try{
-        $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryptAuthhash($loginData["authhash"])));
+        $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
         $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
 
         $this->nodes_api->setNodeServiceStats(["type" => 5, "stat" => ($data["status"] == 0 ? 0 : 1), "nodeid" => $nodeid]);
@@ -122,6 +197,16 @@
       }
     }
 
+    /**
+     * Informs the node client to query new wallet data.
+     * Function made for: Communication WebGUI -> Node Client
+     * @see https://files.chiamgmt.edtmair.at/docs/classes/ChiaMgmt-WebSocketServer-ChiaWebSocketServer.html#method_messageSpecificNode
+     * @see https://files.chiamgmt.edtmair.at/docs/classes/ChiaMgmt-WebSocketServer-ChiaWebSocketServer.html#method_messageAllNodes
+     * @param  array $data                  { authhash: [Target Node Authhash] }
+     * @param  array $loginData             { NULL } No logindata needed to query this function.
+     * @param  ChiaWebSocketServer $server  An instance to the websocket server to be able to send data to the connected clients.
+     * @return array                        Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}} from the subfunction calls.
+     */
     public function queryWalletData(array $data = NULL, array $loginData = NULL, $server = NULL){
       $querydata = [];
       $querydata["data"]["queryWalletData"] = array(
@@ -144,6 +229,15 @@
       }
     }
 
+    /**
+     * Informs the node client to restart the wallet service.
+     * Function made for: Communication WebGUI -> Node Client
+     * @see https://files.chiamgmt.edtmair.at/docs/classes/ChiaMgmt-WebSocketServer-ChiaWebSocketServer.html#method_messageSpecificNode
+     * @param  array $data                    { authhash: [Target Node Authhash] }
+     * @param  array $loginData               { NULL } No logindata needed to query this function.
+     * @param  ChiaWebSocketServer $server    An instance to the websocket server to be able to send data to the connected clients.
+     * @return array                          Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}} from the subfunction call.
+     */
     public function restartWalletService(array $data = NULL, array $loginData = NULL, $server = NULL){
       $querydata = [];
       $querydata["data"]["restartWalletService"] = array(
@@ -161,9 +255,18 @@
       }
     }
 
+    /**
+     * The function which will be called from the node client when the service has been restarted.
+     * Function made for: Node Client
+     * @throws Exception $e       Throws an exception on db errors.
+     * @see https://files.chiamgmt.edtmair.at/docs/classes/ChiaMgmt-Encryption-Encryption-Api.html#method_encryptString
+     * @param  array $data      { "status": [0 = Success, 1 = Failed], "message": [Specific message about service restart for the WebGUI] }
+     * @param  array $loginData { authhash: [Querying Node's Authhash] }
+     * @return array            Returns {"status": [0|>0], "message": [Status message], "data": { "status": [0 = Success, 1 = Failed], "message": [Specific message about service restart for the WebGUI], nodeid: [Querying Node's ID] }}
+     */
     public function walletServiceRestart(array $data = NULL, array $loginData = NULL){
       try{
-        $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryptAuthhash($loginData["authhash"])));
+        $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
         $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
 
         $data["data"] = $nodeid;
@@ -171,14 +274,6 @@
       }catch(Exception $e){
         return $this->logging->getErrormessage("001", $e);
       }
-    }
-
-    private function encryptAuthhash(string $encryptedauthhash){
-      return openssl_encrypt($encryptedauthhash, $this->ciphering, $this->ini["serversalt"], $this->options, $this->encryption_iv);
-    }
-
-    public function decryptAuthhash(string $encryptedauthhash){
-      return openssl_decrypt($encryptedauthhash, $this->ciphering, $this->ini["serversalt"], $this->options, $this->encryption_iv);
     }
   }
 ?>

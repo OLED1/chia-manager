@@ -22,7 +22,7 @@
     private $db_api;
     /**
      * Holds an instance to the Nodes Class.
-     * @var Nodes_Api
+     * @var Logging_Api
      */
     private $logging_api;
     /**

@@ -1,11 +1,35 @@
 <?php
   namespace ChiaMgmt\Logging;
 
+  /**
+   * The logging api is the core of the project's logging.
+   * This class uses defined error messages in the errorcode folder and returns the given messages correcty with log levels formatted and so on.
+   * Furthermore it writes extended output into the logfile defaultly stored in project-root/logs/api.log
+   */
   class Logging_Api{
-    private $codefilepath, $errorfilepath, $logpath, $callerClass;
+    /**
+     * Holds a path where the sitecodes translation file for logging-enabled classes are stored.
+     * @var string
+     */
+    private $codefilepath;
+    /**
+     * Holds the path where function translation and message files for logging-enabled classes are stored.
+     * @var string
+     */
+    private $errorfilepath;
+    /**
+     * Holds the path where log messages for the api are written and stored locally (not in DB).
+     * @var string
+     */
+    private $logpath;
+    /**
+     * Holds the $this-instance from the calling class.
+     * @var Object
+     */
+    private $callerClass;
 
     /**
-     * The constructor initializes all paths which are needed to work properly
+     * The constructor initializes all paths which are needed to work properly.
      * @param object $caller The caller class ($this)
      */
     public function __construct(Object $caller = NULL){
@@ -18,11 +42,10 @@
     }
 
     /**
-     * Logs messages to the api.log file
-     * @param  int $loglevel  The loglevel of the message (0 Info, 1 Warning/Fatal)
+     * Logs messages to the api.log file.
+     * @param  int $loglevel     The loglevel of the message (0 Info, 1 Warning/Fatal)
      * @param  string $errorcode The errorcode 0 for success or a generated errorcode (e.g. 001002003 -> 001 = Class ID, 002 = Function ID, 003 = Message Order ID in particular function)
      * @param  string $text      The messagetext
-     * @return array             Returns a status code array
      */
     public function logtofile(int $loglevel, string $errorcode, string $text){
       $loggingfile = fopen($this->logpath, 'a') or die("Unable to open file!");
@@ -37,10 +60,10 @@
     }
 
     /**
-     * Loads the errorcode files, generates a errorcode from it and return a complete error message for debugging
+     * Loads the errorcode files, generates a errorcode from it and return a complete error message for debugging.
      * @param  string $functioncode The functions order ID socalled functioncode
      * @param  string $additional   Additional Info which should only logged to the file (if it contains 'false' this message will not be logged)
-     * @return array                Return a status code array
+     * @return array                {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
     public function getErrormessage(string $functioncode, string $additional = "", bool $logtofile = true){
       $sitecodefile = @file_get_contents($this->codefilepath);
@@ -78,6 +101,11 @@
       }
     }
 
+    /**
+     * Converts a numeric loglevel into a string.
+     * @param  int    $loglevel  Target loglevel as int.
+     * @return string            The converted loglevel as string.
+     */
     private function getHReadableLoglevel(int $loglevel){
       switch ($loglevel) {
         case 0:
@@ -94,7 +122,7 @@
     }
 
     /**
-     * Loads all messages from the api.log file
+     * Loads all messages from the api.log file.
      * @param  int    $fromline Which line should be the first one (If i don't need the whole files content)
      * @param  int    $toline   Which line should be the last one (If i don't need the whole files content)
      * @return array            A status code array with the needed data
@@ -131,8 +159,8 @@
     }
 
     /**
-     * Returns all logs newer than an given timestamp
-     * @return [type] [description]
+     * Returns all logs newer than an given timestamp.
+     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[Locally found log-messages]}}
      */
     public function getNewerLogsFromTimestamp(DateTime $lastData){
       $logarray = [];
