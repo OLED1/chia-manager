@@ -204,16 +204,21 @@
       $returndata = [];
       try{
         if(is_null($data)){
-          $sql = $this->db_api->execute("SELECT id, nodeid, wallet_id, parent_coin_info, amount, amount, confirmed, confirmed_at_height, created_at_time, fee_amount, name, removals, sent, sent_to, spend_bundle, to_address, to_puzzle_hash, trade_id, type FROM chia_wallets_transactions", array());
+          $sql = $this->db_api->execute("SELECT id, nodeid, wallet_id, parent_coin_info, amount, amount, confirmed, confirmed_at_height, created_at_time, fee_amount, name, removals, sent, sent_to, spend_bundle, to_address, to_puzzle_hash, trade_id, type FROM chia_wallets_transactions ORDER BY created_at_time ASC", array());
         }else if(!is_null($data) && array_key_exists("nodeid", $data) && array_key_exists("walletid", $data)){
-          $sql = $this->db_api->execute("SELECT id, nodeid, wallet_id, parent_coin_info, amount, amount, confirmed, confirmed_at_height, created_at_time, fee_amount, name, removals, sent, sent_to, spend_bundle, to_address, to_puzzle_hash, trade_id, type FROM chia_wallets_transactions WHERE nodeid = ? AND wallet_id = ?", array($data["nodeid"], $data["walletid"]));
+          $sql = $this->db_api->execute("SELECT id, nodeid, wallet_id, parent_coin_info, amount, amount, confirmed, confirmed_at_height, created_at_time, fee_amount, name, removals, sent, sent_to, spend_bundle, to_address, to_puzzle_hash, trade_id, type FROM chia_wallets_transactions WHERE nodeid = ? AND wallet_id = ? ORDER BY created_at_time ASC", array($data["nodeid"], $data["walletid"]));
         }else{
           //TODO Implement correct status codes
           return array("status" => 1, "message" => "No data found.");
         }
 
-        foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $walletdata){
-          $returndata[$walletdata["nodeid"]][$walletdata["wallet_id"]] = $walletdata;
+        foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $transactiondata){
+          if(!array_key_exists($transactiondata["nodeid"], $returndata))
+            $returndata[$transactiondata["nodeid"]] = [];
+          if(!array_key_exists($transactiondata["wallet_id"], $returndata[$transactiondata["nodeid"]]))
+            $returndata[$transactiondata["nodeid"]][$transactiondata["wallet_id"]] = [];
+
+          array_push($returndata[$transactiondata["nodeid"]][$transactiondata["wallet_id"]], $transactiondata);
         }
 
         return array("status" =>0, "message" => "Successfully loaded chia wallet information.", "data" => $returndata);

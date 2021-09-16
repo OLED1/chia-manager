@@ -21,6 +21,7 @@
   $nodes_states = $nodes_api->queryNodesServicesStatus()["data"];
 
   $walletdata = $chia_wallet_api->getWalletData();
+  $transactiondata = $chia_wallet_api->getWalletTransactions();
   $chia_overall_data = $chia_overall_api->queryOverallData();
 
   $defaultCurrency = $exchangerates_api-> getUserDefaultCurrency($_COOKIE["user_id"]);
@@ -38,7 +39,12 @@
   $chiapriceindefcurr = number_format(floatval($chia_overall_data["data"]["price_usd"]) * floatval($exchangerate), 2);
 
   if(array_key_exists("data", $walletdata) && count($walletdata["data"]) > 0){
-    echo "<script nonce={$ini["nonce_key"]}> var chiaWalletData = " . json_encode($walletdata["data"]) . "; </script>";
+    echo "<script nonce={$ini["nonce_key"]}>
+            var chiaWalletData = " . json_encode($walletdata["data"]) . ";
+            var transactionData = " . json_encode($transactiondata["data"]) . ";
+            var currentxchdefaultprice = {$chiapriceindefcurr};
+            var defaultCurrency = '{$defaultCurrency}';
+          </script>";
     foreach($walletdata["data"] AS $nodeid => $nodedata){
       foreach($nodedata as $walletid => $thiswallet){
 ?>
@@ -160,12 +166,10 @@
                   </div>
                 </div>
                 <?php
-                  $transactiondata = $chia_wallet_api->getWalletTransactions(["nodeid" => $nodeid, "walletid" => $thiswallet['walletid']]);
-                  //print_r($transactiondta);
-                  if($transactiondata["status"] == 0){
-                    if(count($transactiondata["data"]) > 0){
+                  if($transactiondata["status"] == 0 && array_key_exists("data", $transactiondata) &&
+                      array_key_exists($nodeid, $transactiondata["data"]) && array_key_exists($thiswallet['walletid'], $transactiondata["data"][$nodeid])){
 
-                    }else{
+                    if(count($transactiondata["data"][$nodeid][$thiswallet['walletid']]) == 0){
                       $message = "<div class='card bg-warning text-white shadow'>
                                     <div class='card-body'>
                                       There are currently no transactions to show.
@@ -195,7 +199,38 @@
                     <div class='card shadow mb-4'>
                       <div class='card-body'>
                         <h6>Transactions Table</h6>
-                        <?php echo $message; ?>
+                        <?php
+                          if(count($transactiondata["data"][$nodeid][$thiswallet['walletid']]) > 0){
+                        ?>
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="<?php echo "transactions_{$nodeid}_{$thiswallet['walletid']}"; ?>" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                      <th>ID</th>
+                                      <th>Date</th>
+                                      <th>Amount</th>
+                                      <th>Receiver</th>
+                                      <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                      <th>ID</th>
+                                      <th>Date</th>
+                                      <th>Amount</th>
+                                      <th>Receiver</th>
+                                      <th>Actions</th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        <?php
+                          }else{
+                            echo $message;
+                          }
+                        ?>
                       </div>
                     </div>
                   </div>

@@ -1,5 +1,6 @@
 initRefreshWalletInfo();
 initRestartWalletService();
+createTransactionsTables();
 
 $("#queryAllNodes").off("click");
 $("#queryAllNodes").on("click", function(){
@@ -7,6 +8,83 @@ $("#queryAllNodes").on("click", function(){
       queryWalletData(nodeid);
   });
 });
+
+function createTransactionsTables(){
+  $.each(transactionData, function(nodeid, transactions){
+    $.each(transactions, function(walletid, transaction){
+      var target = $("#transactions_" + nodeid + "_" + walletid);
+      if(target.length > 0){
+        var transactiontable = $(target).DataTable({
+          data: transaction,
+          columns: [
+            { data: "id" },
+            { data: "created_at_time", render: function(data, type, row){
+                const date = new Date(data*1000);
+                return date.toLocaleDateString();
+              }
+            },
+            { data: "amount", render: function(data, type, row){
+                return data + " mojo(s)";
+              }
+            },
+            { data: "to_address" },
+            {
+              defaultContent: "<button type='button' class='connection-info btn btn-warning wsbutton'><i class='fas fa-info-circle'></i></button>"
+            }
+          ]
+        });
+
+        $(target).find("tbody").off("click", "button");
+        $(target).find("tbody").on("click", "button", function(){
+          var data = transactiontable.row( $(this).parents('tr') ).data();
+          var this_wallet_adddress = chiaWalletData[nodeid][walletid]["walletaddress"];
+          console.log(data);
+          $("#transaction-nodeid").text(nodeid);
+          $("#transaction-walletid").text(walletid);
+
+          //Summary -- START --
+          $("#transaction-summary #confirmed").html(function(){
+            var confirmed = Boolean(Number(data["confirmed"]));
+            return "<span class='badge " + (confirmed ? "badge-success" : "badge-warning") + "'>" + (confirmed ? "Confirmed" : "Not confirmed") + "</span>";
+          });
+          $("#transaction-summary #date").html(function(){
+            const date = new Date(data["created_at_time"]*1000);
+            return date.toLocaleDateString();
+          });
+
+          $("#transaction-summary #direction").html(function(){
+            return "<span class='badge " + (this_wallet_adddress == data["to_address"] ? "badge-success" : "badge-warning") + "'>" + (this_wallet_adddress == data["to_address"] ? "Incoming <i class='far fa-arrow-alt-circle-left'></i>" : "Outgoing <i class='far fa-arrow-alt-circle-right'></i>") + "</span>";
+          });
+
+          $("#transaction-summary #amount").html(function(){
+            return data["amount"] + " mojo(s) / " + (data["amount"] / 1000000000000) + " XCH";
+          });
+
+          $("#transaction-summary .currency_code").text(defaultCurrency.toUpperCase());
+          $("#transaction-summary #amount_currency").html(function(){
+            return (parseFloat(currentxchdefaultprice) * (parseInt(data["amount"]) / 1000000000000)) + "&nbsp" + defaultCurrency.toUpperCase();
+          });
+
+          $("#transaction-summary #fee_amount_currency").html(function(){
+            return (parseFloat(currentxchdefaultprice) * (parseInt(data["fee_amount"]) / 1000000000000)) + "&nbsp" + defaultCurrency.toUpperCase();
+          });
+
+          $("#transaction-summary #fee_amount").text(data["fee_amount"] + " mojo(s)");
+
+          $("#transaction-summary #to_address").text(data["to_address"]);
+          $("#transaction-summary #name").text(data["name"]);
+          //Summary -- END --
+          //Extended (More) -- START
+          $("#transaction-more #parent_coin_info").text(data["parent_coin_info"]);
+          $("#transaction-more #confirmed_at_height").text(data["confirmed_at_height"]);
+          $("#transaction-more #to_puzzle_hash").text(data["to_puzzle_hash"]);
+          //Extended (More) -- END
+          $("#transactiondetailsmodal").modal("show");
+        });
+      }
+    });
+  });
+}
 
 function queryWalletData(nodeid){
   var walletid = $(this).attr("data-wallet-id");

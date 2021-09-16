@@ -107,7 +107,7 @@
      */
     public function getAllCurrencies(){
       try{
-        $sql = $this->db_api->execute("SELECT currency_code, currency_desc FROM exchangerates", array());
+        $sql = $this->db_api->execute("SELECT currency_code, currency_desc FROM exchangerates  ORDER BY currency_code ASC", array());
 
         return array("status" => 0, "message" => "Successfully loaded all available currencies.", "data" => $sql->fetchAll(\PDO::FETCH_ASSOC));
       }catch(Exception $e){
