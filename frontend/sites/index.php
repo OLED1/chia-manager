@@ -449,6 +449,8 @@
     <!-- Page level plugins -->
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/datatables/jquery.dataTables.min.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/datatables/dataTables.bootstrap4.min.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/chart.js/Chart.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/momentjs/moment-with-locales.min.js"></script>
 
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/js/sitewrapper/load_pages.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/js/sitewrapper/transfer.js"></script>

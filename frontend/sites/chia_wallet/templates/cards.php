@@ -92,11 +92,45 @@
         <div class='row'>
           <div class='col'>
             <div class='row'>
-              <div class='col-5 mb-4'>
+              <div class='col mb-4'>
                 <div class='card <?php echo ($thiswallet['syncstatus'] == "Synced" ? "bg-success" : "bg-danger"); ?> text-white shadow'>
                   <div class='card-body'>
                     Walletstatus: <?php echo $thiswallet['syncstatus']; ?>
                     <div class='text-white-50 small'>Height: <?php echo $thiswallet['walletheight']; ?></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class='row'>
+              <div class='col mb-4'>
+                <div class='card border-left-success shadow h-100 py-2'>
+                  <div class='card-body'>
+                    <div class='row no-gutters align-items-center'>
+                      <div class='col mr-2'>
+                        <div class='text-xs font-weight-bold text-success text-uppercase mb-1'>Total XCH owning</div>
+                        <div class='h5 mb-0 font-weight-bold text-gray-800'>XCH <?php echo $thiswallet['totalbalance']; ?></div>
+                      </div>
+                      <div class='col-auto'>
+                        <i class='fas fa-wallet fa-2x text-gray-300'></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class='row'>
+              <div class='col mb-4'>
+                <div class='card border-left-primary shadow h-100 py-2'>
+                  <div class='card-body'>
+                    <div class='row no-gutters align-items-center'>
+                      <div class='col mr-2'>
+                        <div class='text-xs font-weight-bold text-primary text-uppercase mb-1'>Total XCH in <?php echo $defaultCurrency; ?></div>
+                        <div class='h5 mb-0 font-weight-bold text-gray-800 text-uppercase'><?php echo "{$defaultCurrency}&nbsp;" . ($chiapriceindefcurr*$thiswallet['totalbalance']); ?></div>
+                      </div>
+                      <div class='col-auto'>
+                        <i class='fas fa-money-bill-wave fa-2x text-gray-300'></i>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -129,110 +163,80 @@
             </div>
           </div>
           <div class='col'>
-            <div class='card shadow mb-4'>
-              <div class='card-body'>
-                <div class='row'>
-                  <div class='col mb-4'>
-                    <div class='card border-left-success shadow h-100 py-2'>
-                      <div class='card-body'>
-                        <div class='row no-gutters align-items-center'>
-                          <div class='col mr-2'>
-                            <div class='text-xs font-weight-bold text-success text-uppercase mb-1'>Total XCH owning</div>
-                            <div class='h5 mb-0 font-weight-bold text-gray-800'>XCH <?php echo $thiswallet['totalbalance']; ?></div>
-                          </div>
-                          <div class='col-auto'>
-                            <i class='fas fa-wallet fa-2x text-gray-300'></i>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class='row'>
-                  <div class='col mb-4'>
-                    <div class='card border-left-primary shadow h-100 py-2'>
-                      <div class='card-body'>
-                        <div class='row no-gutters align-items-center'>
-                          <div class='col mr-2'>
-                            <div class='text-xs font-weight-bold text-primary text-uppercase mb-1'>Total XCH in <?php echo $defaultCurrency; ?></div>
-                            <div class='h5 mb-0 font-weight-bold text-gray-800 text-uppercase'><?php echo "{$defaultCurrency}&nbsp;" . ($chiapriceindefcurr*$thiswallet['totalbalance']); ?></div>
-                          </div>
-                          <div class='col-auto'>
-                            <i class='fas fa-money-bill-wave fa-2x text-gray-300'></i>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <?php
-                  if($transactiondata["status"] == 0 && array_key_exists("data", $transactiondata) &&
-                      array_key_exists($nodeid, $transactiondata["data"]) && array_key_exists($thiswallet['walletid'], $transactiondata["data"][$nodeid])){
+            <?php
+              if($transactiondata["status"] == 0 && array_key_exists("data", $transactiondata) &&
+                  array_key_exists($nodeid, $transactiondata["data"]) && array_key_exists($thiswallet['walletid'], $transactiondata["data"][$nodeid])){
 
-                    if(count($transactiondata["data"][$nodeid][$thiswallet['walletid']]) == 0){
-                      $message = "<div class='card bg-warning text-white shadow'>
-                                    <div class='card-body'>
-                                      There are currently no transactions to show.
-                                    </div>
-                                </div>";
-                    }
-                  }else{
-                    $message = "<div class='card bg-warning text-white shadow'>
-                                  <div class='card-body'>
-                                    {$transactiondata["message"]}
-                                  </div>
-                              </div>";
-                  }
-                ?>
-                <div class='row'>
-                  <div class='col'>
-                    <div class='card shadow mb-4'>
-                      <div class='card-body'>
-                        <h6>Transactions Chart</h6>
-                        <?php echo $message; ?>
-                      </div>
-                    </div>
+                if(count($transactiondata["data"][$nodeid][$thiswallet['walletid']]) == 0){
+                  $message = "<div class='card bg-warning text-white shadow'>
+                                <div class='card-body'>
+                                  There are currently no transactions to show.
+                                </div>
+                            </div>";
+                }
+              }else{
+                $message = "<div class='card bg-warning text-white shadow'>
+                              <div class='card-body'>
+                                {$transactiondata["message"]}
+                              </div>
+                          </div>";
+              }
+            ?>
+            <div class='row'>
+              <div class='col'>
+                <div class='card shadow mb-4'>
+                  <div class='card-body'>
+                    <h6>Transactions Chart</h6>
+                    <?php
+                      if(count($transactiondata["data"][$nodeid][$thiswallet['walletid']]) > 0){
+                    ?>
+                    <canvas id="<?php echo "transactions_chart_{$nodeid}_{$thiswallet['walletid']}"; ?>"></canvas>
+                    <?php
+                      }else{
+                        echo $message;
+                      }
+                    ?>
                   </div>
                 </div>
-                <div class='row'>
-                  <div class='col'>
-                    <div class='card shadow mb-4'>
-                      <div class='card-body'>
-                        <h6>Transactions Table</h6>
-                        <?php
-                          if(count($transactiondata["data"][$nodeid][$thiswallet['walletid']]) > 0){
-                        ?>
-                        <div class="table-responsive">
-                            <table class="table table-bordered" id="<?php echo "transactions_{$nodeid}_{$thiswallet['walletid']}"; ?>" width="100%" cellspacing="0">
-                                <thead>
-                                    <tr>
-                                      <th>ID</th>
-                                      <th>Date</th>
-                                      <th>Amount</th>
-                                      <th>Receiver</th>
-                                      <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                      <th>ID</th>
-                                      <th>Date</th>
-                                      <th>Amount</th>
-                                      <th>Receiver</th>
-                                      <th>Actions</th>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                        <?php
-                          }else{
-                            echo $message;
-                          }
-                        ?>
-                      </div>
+              </div>
+            </div>
+            <div class='row'>
+              <div class='col'>
+                <div class='card shadow mb-4'>
+                  <div class='card-body'>
+                    <h6>Transactions Table</h6>
+                    <?php
+                      if(count($transactiondata["data"][$nodeid][$thiswallet['walletid']]) > 0){
+                    ?>
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="<?php echo "transactions_{$nodeid}_{$thiswallet['walletid']}"; ?>" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                  <th>ID</th>
+                                  <th>Date</th>
+                                  <th>Amount</th>
+                                  <th>Receiver</th>
+                                  <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                  <th>ID</th>
+                                  <th>Date</th>
+                                  <th>Amount</th>
+                                  <th>Receiver</th>
+                                  <th>Actions</th>
+                                </tr>
+                            </tfoot>
+                        </table>
                     </div>
+                    <?php
+                      }else{
+                        echo $message;
+                      }
+                    ?>
                   </div>
                 </div>
               </div>

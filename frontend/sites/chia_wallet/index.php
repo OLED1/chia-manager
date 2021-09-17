@@ -30,23 +30,23 @@
 <div id="walletcontainer">
 <?php include("templates/cards.php"); ?>
 </div>
-<div class="modal fade" id="transactiondetailsmodal" data-nodeid="" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true" data-keyboard="false" data-backdrop="static">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
+<div class="modal fade" id="transactiondetailsmodal" style="text-align: center;" data-nodeid="" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true" data-keyboard="false" data-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered" role="document" style="text-align: left; max-width: 100%; width: auto !important; display: inline-block; height: 30em;">
+    <div class="modal-content" style="height: 30em;">
       <div class="modal-header">
         <h5 class="modal-title">Transaction Info (Nodeid: <span id="transaction-nodeid"></span>, Walletid:  <span id="transaction-walletid"></span>)</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body" style="height: 20em;">
         <nav>
           <div class="nav nav-tabs" id="nav-tab" role="tablist">
             <a class="nav-item nav-link active" id="transaction-summary-tab" data-toggle="tab" href="#transaction-summary" role="tab" aria-controls="transaction-summary" aria-selected="true">Summary</a>
             <a class="nav-item nav-link" id="transaction-extended-tab" data-toggle="tab" href="#transaction-extended" role="tab" aria-controls="transaction-extended" aria-selected="false">More</a>
           </div>
         </nav>
-        <div class="tab-content" id="nav-tabContent" style="min-height: 30em; margin-top: 1em;">
+        <div class="tab-content" id="nav-tabContent" style="margin-top: 1em;">
           <div class="tab-pane fade show active" id="transaction-summary" role="tabpanel" aria-labelledby="transaction-summary-tab">
             <div class="row">
               <div class="col">
@@ -72,15 +72,15 @@
                   <div class="row">
                     <div class="col">
                       <b>Transaction ID:</b>
-                    </div>
-                    <div id="name" class="col" style="word-wrap: break-word;">
+                      <br>
+                      <span id="name" style="word-wrap: break-word;"></span>
                     </div>
                   </div>
                   <div class="row">
                     <div class="col">
                       <b>To Wallet:</b>
-                    </div>
-                    <div id="to_address" class="col infotext" style="word-wrap: break-word;">
+                      <br>
+                      <span id="to_address" style="word-wrap: break-word;"></span>
                     </div>
                   </div>
                   <div class="row">
@@ -118,8 +118,9 @@
                   <div class="row">
                     <div class="col">
                       <b>Parent coin info:</b>
+                      <br>
+                      <span id="parent_coin_info" style="word-wrap: break-word;"></span>
                     </div>
-                    <div id="parent_coin_info" class="col" style="word-wrap: break-word;"></div>
                   </div>
                   <div class="row">
                     <div class="col">
@@ -130,8 +131,9 @@
                   <div class="row">
                     <div class="col">
                       <b>To puzzle hash:</b>
+                      <br>
+                      <span id="to_puzzle_hash" style="word-wrap: break-word;"></span>
                     </div>
-                    <div id="to_puzzle_hash" class="col" style="word-wrap: break-word;"></div>
                   </div>
                 </div>
               </div>

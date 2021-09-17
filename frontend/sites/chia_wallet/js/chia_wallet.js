@@ -1,6 +1,9 @@
 initRefreshWalletInfo();
 initRestartWalletService();
 createTransactionsTables();
+createTransactionsCharts();
+
+Chart.defaults.global.defaultFontColor = (darkmode == 1 ? "#858796" : "#fff");
 
 $("#queryAllNodes").off("click");
 $("#queryAllNodes").on("click", function(){
@@ -38,7 +41,7 @@ function createTransactionsTables(){
         $(target).find("tbody").on("click", "button", function(){
           var data = transactiontable.row( $(this).parents('tr') ).data();
           var this_wallet_adddress = chiaWalletData[nodeid][walletid]["walletaddress"];
-          console.log(data);
+
           $("#transaction-nodeid").text(nodeid);
           $("#transaction-walletid").text(walletid);
 
@@ -80,6 +83,69 @@ function createTransactionsTables(){
           $("#transaction-more #to_puzzle_hash").text(data["to_puzzle_hash"]);
           //Extended (More) -- END
           $("#transactiondetailsmodal").modal("show");
+        });
+      }
+    });
+  });
+}
+
+function createTransactionsCharts(){
+  const nrofdays = 30;
+  const thirtyDaysAgo =  moment().subtract(nrofdays, 'days');
+
+  $.each(transactionData, function(nodeid, transactions){
+    $.each(transactions, function(walletid, transaction){
+      var target = $("#transactions_chart_" + nodeid + "_" + walletid);
+      if(target.length > 0){
+        var labels = [];
+        var data = [];
+
+        for (let i = 0; i < nrofdays; i = i + 1) {
+          thirtyDaysAgo.add(1, 'days');
+          labels.push(thirtyDaysAgo.format('DD-MMM-YYYY'));
+          data.push(0);
+        }
+
+        $.each(transaction, function(arrkey, thistransaction){
+          var dateString = moment.unix(thistransaction["created_at_time"]).format('DD-MMM-YYYY');
+          var valueIndex = labels.indexOf(dateString);
+          if(valueIndex > 0){
+            data[valueIndex] += (parseInt(thistransaction["amount"]) / 1000000000000);
+          }
+        });
+
+        var myChart = new Chart(target, {
+            type: "line",
+            data: {
+              labels: labels,
+              datasets: [
+                {
+                  label: "Daily transactions (In-Out) in XCH (" + nrofdays + " days)",
+                  data: data,
+                  borderColor: "rgba(52, 161, 235, 0)",
+                  backgroundColor: "rgba(52, 161, 235, 0.5)",
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: {
+                  position: 'top',
+                },
+                title: {
+                  display: true,
+                  text: 'Transactions Chart'
+                }
+              },
+              scales: {
+                yAxes: [{
+                  ticks: {
+                    maxTicksLimit: 5
+                  }
+                }]
+              }
+            }
         });
       }
     });
