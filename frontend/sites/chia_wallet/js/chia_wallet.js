@@ -232,7 +232,7 @@ function messagesTrigger(data){
     }else if(key == "queryNodesServicesStatus"){
       $.each(data[key]["data"], function(nodeid, condata){
         if(condata["onlinestatus"] == 1){
-          setFarmerBadge(nodeid, condata["onlinestatus"], "Node not reachable");
+          setWalletBadge(nodeid, condata["onlinestatus"], "Node not reachable");
         }
       });
     }

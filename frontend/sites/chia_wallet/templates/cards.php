@@ -4,7 +4,6 @@
   use ChiaMgmt\Chia_Overall\Chia_Overall_Api;
   use ChiaMgmt\Exchangerates\Exchangerates_Api;
   use ChiaMgmt\Nodes\Nodes_Api;
-  require __DIR__ . '/../../../../vendor/autoload.php';
 
   $login_api = new Login_Api();
   $ini = parse_ini_file(__DIR__.'/../../../../backend/config/config.ini.php');

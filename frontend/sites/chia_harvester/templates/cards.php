@@ -29,28 +29,27 @@
     <div class="card shadow mb-4">
       <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
         <h6 class='m-0 font-weight-bold text-primary'>Harvesterdata for host <?php echo $harvesterinfos["hostname"]; ?> with id <?php echo $nodeid; ?>&nbsp;
-        <?php
-        if(is_null($harvesterinfos["plotdirs"][array_key_first($harvesterinfos["plotdirs"])]["finalplotsdir"])){ ?>
+        <?php if(is_null($harvesterinfos["plotdirs"][array_key_first($harvesterinfos["plotdirs"])]["finalplotsdir"])){ ?>
           <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-danger'>No data found</span>
-          <?php
+        <?php
+          }else{
+            if($nodes_states[$nodeid]["onlinestatus"] == 1){
+              $statustext = "Node not reachable.";
+              $statusicon = "badge-danger";
+            }else if($nodes_states[$nodeid]["onlinestatus"] == 0){
+              if($nodes_states[$nodeid][$statusname] == 1){
+                $statustext = "Harvester service not running.";
+                $statusicon = "badge-danger";
+              }else if($nodes_states[$nodeid][$statusname] == 0){
+                $statustext = "Harvester service running.";
+                $statusicon = "badge-success";
               }else{
-                if($nodes_states[$nodeid]["onlinestatus"] == 1){
-                  $statustext = "Node not reachable.";
-                  $statusicon = "badge-danger";
-                }else if($nodes_states[$nodeid]["onlinestatus"] == 0){
-                  if($nodes_states[$nodeid][$statusname] == 1){
-                    $statustext = "Harvester service not running.";
-                    $statusicon = "badge-danger";
-                  }else if($nodes_states[$nodeid][$statusname] == 0){
-                    $statustext = "Harvester service running.";
-                    $statusicon = "badge-success";
-                  }else{
-                    $statustext = "Querying service status";
-                    $statusicon = "badge-secondary";
-                  }
-                }
-            ?>
-            <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge <?php echo $statusicon; ?>'><?php echo $statustext; ?></span>
+                $statustext = "Querying service status";
+                $statusicon = "badge-secondary";
+              }
+            }
+        ?>
+          <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge <?php echo $statusicon; ?>'><?php echo $statustext; ?></span>
         <?php } ?>
         </h6>
         <div class='dropdown no-arrow'>

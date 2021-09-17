@@ -183,6 +183,20 @@ function initAndDrawLoadChart(nodeid){
   });
 }
 
+function setSysinfoBadge(nodeid, status, message){
+  var targetbadge = $("#servicestatus_" + nodeid);
+  targetbadge.removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-danger");
+  if(status == 0){
+    targetbadge.addClass("badge-success");
+  }else if(status == 1){
+    targetbadge.addClass("badge-danger");
+  }else if(status == 2){
+    targetbadge.addClass("badge-secondary");
+  }
+
+  targetbadge.text(message);
+}
+
 function messagesTrigger(data){
   var key = Object.keys(data);
 
@@ -190,6 +204,19 @@ function messagesTrigger(data){
     if(key == "updateSystemInfo"){
       $('#all_node_sysinfo_container').load(frontend + "/sites/chia_infra_sysinfo/templates/cards.php");
       reloadTables();
+    }else if(key == "connectedNodesChanged"){
+      sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryNodesServicesStatus", {});
+    }else if(key == "queryNodesServicesStatus"){
+      $.each(data[key]["data"], function(nodeid, condata){
+        setSysinfoBadge(nodeid, condata["onlinestatus"], (condata["onlinestatus"] == 0 ? "Node connected." : "Node not reachable."));
+      });
     }
+  }else if(data[key]["status"] == "014003001"){
+    $(".statusbadge").each(function(){
+      var thisnodeid = $(this).attr("data-node-id");
+      if(($(this).hasClass("badge-secondary") || $(this).hasClass("badge-success")) && $.inArray(data[key]["data"]["informed"],thisnodeid) == -1){
+        $(this).removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-danger").addClass("badge-danger").html("Node not reachable");
+      }
+    });
   }
 }
