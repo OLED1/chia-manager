@@ -55,10 +55,10 @@
           $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
           $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
 
-          $sql = $this->db_api->execute("INSERT INTO chia_infra_sysinfo (id, nodeid, load_1min, load_5min, load_15min, filesystem, memory_total, memory_free, memory_buffers, memory_cached, swap_total, swap_free, cpu_count, cpu_cores, cpu_model) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          $sql = $this->db_api->execute("INSERT INTO chia_infra_sysinfo (id, nodeid, load_1min, load_5min, load_15min, filesystem, memory_total, memory_free, memory_buffers, memory_cached, memory_shared, swap_total, swap_free, cpu_count, cpu_cores, cpu_model) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           array($nodeid, $data["system"]["load"]["1min"], $data["system"]["load"]["5min"], $data["system"]["load"]["15min"],
                 json_encode($data["system"]["filesystem"]),
-                $data["system"]["memory"]["total"], $data["system"]["memory"]["free"], $data["system"]["memory"]["buffers"], $data["system"]["memory"]["cached"],
+                $data["system"]["memory"]["total"], $data["system"]["memory"]["free"], $data["system"]["memory"]["buffers"], $data["system"]["memory"]["cached"], $data["system"]["memory"]["shared"],
                 $data["system"]["swap"]["total"], $data["system"]["swap"]["free"],
                 $data["system"]["cpu"]["count"], $data["system"]["cpu"]["cores"], $data["system"]["cpu"]["model"]
           ));
@@ -84,7 +84,7 @@
         try{
           if(is_null($nodeid)){
             $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, cif.timestamp, cif.load_1min, cif.load_5min, cif.load_15min,
-                                                  cif.filesystem, cif.memory_total, cif.memory_free, cif.memory_buffers,
+                                                  cif.filesystem, cif.memory_total, cif.memory_free, cif.memory_buffers, cif.memory_shared,
                                                   cif.memory_cached, cif.swap_total, cif.swap_free, cif.cpu_count,
                                                   cif.cpu_cores, cif.cpu_model
                                             FROM nodes n
@@ -94,7 +94,7 @@
                                             )", array());
           }else{
             $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, cif.timestamp, cif.load_1min,
-                                                  cif.load_5min, cif.load_15min, cif.filesystem, cif.memory_total,
+                                                  cif.load_5min, cif.load_15min, cif.filesystem, cif.memory_total, cif.memory_shared,
                                                   cif.memory_free, cif.memory_buffers, cif.memory_cached,
                                                   cif.swap_total, cif.swap_free, cif.cpu_count, cif.cpu_cores, cif.cpu_model
                                             FROM nodes n

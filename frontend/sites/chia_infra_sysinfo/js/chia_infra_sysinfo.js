@@ -53,22 +53,19 @@ function initAndDrawRAMorSWAPChart(nodeid, type){
   var infodata = sysinfodata[nodeid];
 
   if(type == "ram"){
-    var totalused = (parseInt(infodata["memory_total"]) - parseInt(infodata["memory_free"]));
-    //var cached = parseInt(infodata["memory_cached"]) + parseInt(infodata["memory_sreclaimable"]) - parseInt(infodata["memory_shmem"]);
-    var cached = parseInt(infodata["memory_cached"]);
-    var totalfree = cached + parseInt(infodata["memory_free"]);
-    totalfree = totalfree/1024/1024/1024;
-    totalused = totalused/1024/1024/1024;
-    cached = cached/1024/1024/1024;
+    var memorytotal = parseInt(infodata["memory_total"]);
+    var memoryfree = parseInt(infodata["memory_free"]) + parseInt(infodata["memory_buffers"]) + parseInt(infodata["memory_cached"]) - parseInt(infodata["memory_shared"]);
+    var memoryused = ((memorytotal - memoryfree)/1024/1024/1024).toFixed(2);
+    memoryfree = (memoryfree/1024/1024/1024).toFixed(2);
 
     var labels = ["RAM used", "RAM free"];
-    var data = [(totalused-cached).toFixed(2), totalfree.toFixed(2)];
+    var data = [memoryused, memoryfree];
   }else if(type == "swap"){
-    var available = (parseInt(infodata["swap_total"]) - parseInt(infodata["swap_free"]))/1024/1024/1024;
+    var used = (parseInt(infodata["swap_total"]) - parseInt(infodata["swap_free"]))/1024/1024/1024;
     var free = parseInt(infodata["swap_free"])/1024/1024/1024;
 
     var labels = ["SWAP used", "SWAP free"];
-    var data = [available.toFixed(2), free.toFixed(2)];
+    var data = [used.toFixed(2), free.toFixed(2)];
   }
 
   var target = $("#" + type + "_chart_" + nodeid);
