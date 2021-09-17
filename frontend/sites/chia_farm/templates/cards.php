@@ -35,10 +35,10 @@
               $statustext = "Node not reachable.";
               $statusicon = "badge-danger";
             }else if($nodes_states[$nodeid]["onlinestatus"] == 0){
-              if($nodes_states[$nodeid][$statusname] == 1){
+              if($nodes_states[$nodeid]["farmerstatus"] == 1){
                 $statustext = "Farmer service not running.";
                 $statusicon = "badge-danger";
-              }else if($nodes_states[$nodeid][$statusname] == 0){
+              }else if($nodes_states[$nodeid]["farmerstatus"] == 0){
                 $statustext = "Farmer service running.";
                 $statusicon = "badge-success";
               }else{

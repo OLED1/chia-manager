@@ -2,6 +2,12 @@ initRefreshHarvesterInfos();
 initRestartHarvesterService();
 initAllDatatables();
 
+setTimeout(function(){
+  if($(".statusbadge.badge-secondary").length > 0){
+    sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryNodesServicesStatus", {});
+  }
+}, 5000);
+
 $("#queryAllNodes").off("click");
 $("#queryAllNodes").on("click", function(){
   $.each(chiaHarvesterData, function(nodeid, farmdata) {

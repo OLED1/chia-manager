@@ -37,10 +37,10 @@
               $statustext = "Node not reachable.";
               $statusicon = "badge-danger";
             }else if($nodes_states[$nodeid]["onlinestatus"] == 0){
-              if($nodes_states[$nodeid][$statusname] == 1){
+              if($nodes_states[$nodeid]["harvesterstatus"] == 1){
                 $statustext = "Harvester service not running.";
                 $statusicon = "badge-danger";
-              }else if($nodes_states[$nodeid][$statusname] == 0){
+              }else if($nodes_states[$nodeid]["harvesterstatus"] == 0){
                 $statustext = "Harvester service running.";
                 $statusicon = "badge-success";
               }else{

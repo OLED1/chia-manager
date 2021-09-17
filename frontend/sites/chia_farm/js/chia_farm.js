@@ -2,6 +2,12 @@ initRefreshFarmInfos();
 initRestartFarmerService();
 initChallengesTables();
 
+setTimeout(function(){
+  if($(".statusbadge.badge-secondary").length > 0){
+    sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryNodesServicesStatus", {});
+  }
+}, 5000);
+
 $("#queryAllNodes").off("click");
 $("#queryAllNodes").on("click", function(){
   $.each(chiaFarmData, function(nodeid, farmdata) {

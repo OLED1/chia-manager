@@ -60,10 +60,10 @@
                 $statustext = "Node not reachable.";
                 $statusicon = "badge-danger";
               }else if($nodes_states[$nodeid]["onlinestatus"] == 0){
-                if($nodes_states[$nodeid][$statusname] == 1){
+                if($nodes_states[$nodeid]["walletstatus"] == 1){
                   $statustext = "Wallet service not running.";
                   $statusicon = "badge-danger";
-                }else if($nodes_states[$nodeid][$statusname] == 0){
+                }else if($nodes_states[$nodeid]["walletstatus"] == 0){
                   $statustext = "Wallet service running.";
                   $statusicon = "badge-success";
                 }else{
