@@ -1,5 +1,11 @@
 setServiceCount();
 
+setTimeout(function(){
+  if($(".nodestatus.badge-secondary").length > 0){
+    sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryNodesServicesStatus", {});
+  }
+}, 5000);
+
 function setServiceCount(){
   var critServices = $("#sitecontent .badge-danger").length;
   var okServices = $("#sitecontent .badge-success").length;
@@ -44,8 +50,8 @@ function messagesTrigger(data){
       $.each(data[key]["data"], function(nodeid, condata){
         if(condata["onlinestatus"] == 1){
           setServiceBadge("Wallet", nodeid, condata["walletstatus"], "Node not reachable");
-          setServiceBadge("Farmer", nodeid, condata["walletstatus"], "Node not reachable");
-          setServiceBadge("Harvester", nodeid, condata["walletstatus"], "Node not reachable");
+          setServiceBadge("Farmer", nodeid, condata["farmerstatus"], "Node not reachable");
+          setServiceBadge("Harvester", nodeid, condata["harvesterstatus"], "Node not reachable");
         }
       });
     }else if(key == "checkUpdatesAndChannels"){

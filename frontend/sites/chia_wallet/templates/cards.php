@@ -162,25 +162,6 @@
             </div>
           </div>
           <div class='col'>
-            <?php
-              if($transactiondata["status"] == 0 && array_key_exists("data", $transactiondata) &&
-                  array_key_exists($nodeid, $transactiondata["data"]) && array_key_exists($thiswallet['walletid'], $transactiondata["data"][$nodeid])){
-
-                if(count($transactiondata["data"][$nodeid][$thiswallet['walletid']]) == 0){
-                  $message = "<div class='card bg-warning text-white shadow'>
-                                <div class='card-body'>
-                                  There are currently no transactions to show.
-                                </div>
-                            </div>";
-                }
-              }else{
-                $message = "<div class='card bg-warning text-white shadow'>
-                              <div class='card-body'>
-                                {$transactiondata["message"]}
-                              </div>
-                          </div>";
-              }
-            ?>
             <div class='row'>
               <div class='col'>
                 <div class='card shadow mb-4'>
@@ -192,7 +173,11 @@
                     <canvas id="<?php echo "transactions_chart_{$nodeid}_{$thiswallet['walletid']}"; ?>"></canvas>
                     <?php
                       }else{
-                        echo $message;
+                        echo "<div class='card bg-warning text-white shadow'>
+                                <div class='card-body'>
+                                  There are currently no transactions to show.
+                                </div>
+                              </div>";
                       }
                     ?>
                   </div>
