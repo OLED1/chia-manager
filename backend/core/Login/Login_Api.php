@@ -4,6 +4,8 @@
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\Mailing\Mailing_Api;
   use ChiaMgmt\System\System_Api;
+  use ChiaMgmt\Encryption\Encryption_Api;
+  use ChiaMgmt\Users\Users_Api;
 
   /**
    * The Login_Api is one of two restfull enabled api classes and handles all webapp login based actions.
@@ -35,6 +37,16 @@
      */
     private $system_api;
     /**
+     * Holds an instance to the Encryption Class.
+     * @var Encryption_Api
+     */
+    private $encryption_api;
+    /**
+     * Holds an instance to the Users Class.
+     * @var Users_Api
+     */
+    private $users_api;
+    /**
      * Holds a system config json array.
      * @var array
      */
@@ -48,6 +60,8 @@
       $this->logging_api = new Logging_Api($this);
       $this->mailing_api = new Mailing_Api();
       $this->system_api = new System_Api();
+      $this->encryption_api = new Encryption_Api();
+      $this->users_api = new Users_Api();
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
     }
 

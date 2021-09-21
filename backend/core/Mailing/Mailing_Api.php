@@ -97,6 +97,7 @@
       if($mailsettings["status"] == 0 && Count($mailsettings["data"]) > 0){
         $mailsettings_data = $mailsettings["data"]["mailing"];
 
+        $message .= "<br><br>This mail was automatically generated. Please do not reply to this e-mail.";
         $footer = "Sent by Chia Management (<a href='{$this->ini["app_protocol"]}://{$this->ini["app_domain"]}'>{$this->ini["app_protocol"]}://{$this->ini["app_domain"]}</a>) {$this->ini["versnummer"]}.";
         $preheader = substr($message, 0, 100);
 
@@ -137,7 +138,7 @@
           return array("status" => 0, "message" => "Message has been sent.");
         }catch (Exception $e) {
           //return array("status" => 1, "message" => "Message could not be sent. Mailer Error: {$mail->ErrorInfo}.");
-          return $this->logging->getErrormessage("001","Message could not be sent. Mailer Error: {$mail->ErrorInfo}.");
+          return $this->logging_api->getErrormessage("001","Message could not be sent. Mailer Error: {$mail->ErrorInfo}.");
         }
       }
       return $mailsettings;

@@ -84,6 +84,38 @@ $(function(){
     }
   });
 
+  $("#forgot-password").on("click", function(e){
+    e.preventDefault();
+    showPWResetwindow();
+  });
+
+  $("#pwreset-go-back").on("click", function(e){
+    e.preventDefault();
+    showloginwindow();
+  });
+
+  $("#inputPWReset").on("input", function(){
+    if($(this).val().trim().length > 0){
+      $("#sendResetLinkBtn").removeAttr("disabled");
+    }else{
+      $("#sendResetLinkBtn").attr("disabled","disabled");
+    }
+  });
+
+  $("#sendResetLinkBtn").on("click", function(e){
+    e.preventDefault();
+
+    var action = "requestUserPasswordReset";
+    var type = "POST";
+    var url = backend + "/core/Users/Users_Rest.php";
+    var data = {
+      username: $("#inputPWReset").val()
+    };
+
+    $("#sendResetLinkBtn i").show();
+    sendToAPI(url, action, type, data);
+  });
+
   function beginLogin(){
     $("#loginbutton").attr("disabled", "disabled").find("i").show();
     $("#inputLogin").attr("disabled", "disabled");
@@ -125,7 +157,16 @@ $(function(){
   function showloginwindow(){
     if($("#loginwindow").is(":hidden")){
       $("#authkeywindow").hide(500);
+      $("#pwresetwindow").hide(500);
       $("#loginwindow").show(500);
+    }
+  }
+
+  function showPWResetwindow(){
+    if($("#pwresetwindow").is(":hidden")){
+      $("#inputPWReset").val("");
+      $("#loginwindow").hide(500);
+      $("#pwresetwindow").show(500);
     }
   }
 
@@ -162,6 +203,10 @@ $(function(){
             showloginwindow();
           }else if(action == "checkAuthKey"){
             $(location).attr('href',frontend + '/index.php');
+          }else if(action == "requestUserPasswordReset"){
+            $("#pwResetMessage").show();
+            $("#pwResetMessage .card-body").text(result["message"]);
+            $("#sendResetLinkBtn i").hide();
           }
         }else{
           if(result["status"] == "007001001"){

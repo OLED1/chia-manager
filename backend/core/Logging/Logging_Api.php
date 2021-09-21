@@ -83,6 +83,7 @@
         $errormessage = $errorarray["errormessages"][$functionname][$functioncode];
         $errorcode = "$sitecode$functionID$functioncode";
 
+
         if(is_array($errormessage)){
           $loglevel = $errormessage[0];
           $messagetoshow = $errorcode . ": " . $this->getHReadableLoglevel($loglevel) . " " . $errormessage[1];
@@ -97,7 +98,7 @@
 
         return array("status" => $errorcode, "loglevel" => $loglevel, "message" => $messagetoshow);
       }else{
-        return array("status" => "?", "message" => "No errormessage found. Please check the corresponding errorcodefile or caller method function parameters.");
+        return array("status" => "999999999", "message" => "No errormessage found. Please check the corresponding errorcodefile or caller method function parameters.");
       }
     }
 

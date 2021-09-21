@@ -12,9 +12,13 @@
     "getBackupKey" : "010",
     "checkCurrentPassword" : "011",
     "checkPasswordStrength" : "012",
-    "getLoggedInDevices" : "013",
-    "logoutDevice" : "014",
-    "sendInvitationMail" : "015"
+    "resetUserPassword" : "013",
+    "getLoggedInDevices" : "014",
+    "logoutDevice" : "015",
+    "sendInvitationMail" : "016",
+    "requestUserPasswordReset" : "017",
+    "checkResetLinkValid" : "018",
+    "resetPassword" : "019"
   },
   "errormessages" : {
     "savePersonalInfo" : {
@@ -57,15 +61,15 @@
     "checkCurrentPassword" : {
       "001" : [1, "Stated password does not match."],
       "002" : [1, "Action not known or not allowed."],
-      "003" : [1, "An error occured."],
+      "003" : [2, "An error occured."],
       "004" : [1, "Not all data stated."]
     },
     "checkPasswordStrength" : {
       "001" : [1, "Password should be at least 8 characters in length and should include at least one upper case letter, one number, and one special character."]
     },
     "resetUserPassword" : {
-      "001" : [1, "New password matches old password, nothing to do."],
-      "002" : [1, "Action not known or not allowed."],
+      "001" : [1, "Password did not change."],
+      "002" : [1, "No or too much data returned."],
       "003" : [2, "An error occured."],
       "004" : [1, "Not all data stated."]
     },
@@ -79,5 +83,17 @@
     "sendInvitationMail" : {
       "001" : [1, "It makes no sense to send an invitation to yourself :)."]
     },
+    "requestUserPasswordReset" : {
+      "001" : [2, "An error occured during e-mail sending. Please contact this instance administrator."],
+      "002" : [2, "An error occured."]
+    },
+    "checkResetLinkValid" : {
+      "001" : [1, "Reset link not valid (anymore)."],
+      "002" : [2, "An error occured."]
+    },
+    "resetPassword" : {
+      "001" : [1, "Could not reset user password, maybe the key is not valid anymore. Please try again."],
+      "002" : [2, "An error occured."]
+    }
   }
 }

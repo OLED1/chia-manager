@@ -4,20 +4,40 @@
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\Mailing\Mailing_Api;
+  use ChiaMgmt\Encryption\Encryption_Api;
 
   class Users_Api{
-    private $db_api, $logging_api, $ini, $ciphering, $iv_length, $options, $encryption_iv, $mailing_api;
+    /**
+     * Holds an instance to the Database Class.
+     * @var DB_Api
+     */
+    private $db_api;
+    /**
+     * Holds an instance to the Logging Class.
+     * @var Logging_Api
+     */
+    private $logging_api;
+    /**
+     * Holds an instance to the Logging Class.
+     * @var Mailing_Api
+     */
+    private $mailing_api;
+    /**
+     * Holds an instance to the Encryption Class.
+     * @var Encryption_Api
+     */
+    private $encryption_api;
+    /**
+     * Holds a system config json array.
+     * @var array
+     */
+    private $ini;
 
     public function __construct(){
-      //Variables for pw encrypting and decrypting
-      $this->ciphering = "AES-128-CTR";
-      $this->iv_length = openssl_cipher_iv_length($this->ciphering);
-      $this->options = 0;
-      $this->encryption_iv = '1234567891011121';
-
       $this->db_api = new DB_Api();
-      $this->logging = new Logging_Api($this);
+      $this->logging_api = new Logging_Api($this);
       $this->mailing_api = new Mailing_Api();
+      $this->encryption_api = new Encryption_Api();
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
     }
 
@@ -31,13 +51,13 @@
 
             return array("status" => 0, "message" => "Updated userdata successfully.", "data" => $data);
           }catch(Exeption $e){
-            return $this->logging->getErrormessage("001", $e);
+            return $this->logging_api->getErrormessage("001", $e);
           }
         }else{
           return $checkUserExists;
         }
       }else{
-        return $this->logging->getErrormessage("002");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
@@ -65,17 +85,17 @@
               unset($data["password"]);
               return array("status" => 0, "message" => "Updated userdata successfully.", "data" => $newData);
             }catch(Exception $e){
-              return $this->logging->getErrormessage("001", $e);
+              return $this->logging_api->getErrormessage("001", $e);
             }
           }else{
             if($userexists["status"] == 1) return $userexists;
             if($pwcheck["status"] == 1) return $pwcheck;
           }
         }else{
-          return $this->logging->getErrormessage("002");
+          return $this->logging_api->getErrormessage("002");
         }
       }else{
-        return $this->logging->getErrormessage("003");
+        return $this->logging_api->getErrormessage("003");
       }
     }
 
@@ -100,15 +120,15 @@
             unset($data["password"]);
             return array("status" => 0, "message" => "Updated userdata successfully.", "data" => $data);
           }else{
-            return $this->logging->getErrormessage("001");
+            return $this->logging_api->getErrormessage("001");
           }
 
         }else{
-          return $this->logging->getErrormessage("002");
+          return $this->logging_api->getErrormessage("002");
         }
         unset($data["password"]);
       }else{
-        return $this->logging->getErrormessage("003");
+        return $this->logging_api->getErrormessage("003");
       }
     }
 
@@ -121,13 +141,13 @@
 
             return array("status" => 0, "message" => "Successfully disabled user with ID {$data["userID"]}.", "data" => $data);
           }catch(Exception $e){
-            return $this->logging->getErrormessage("001", $e);
+            return $this->logging_api->getErrormessage("001", $e);
           }
         }else{
-          return $this->logging->getErrormessage("002");
+          return $this->logging_api->getErrormessage("002");
         }
       }else{
-        return $this->logging->getErrormessage("003");
+        return $this->logging_api->getErrormessage("003");
       }
     }
 
@@ -138,10 +158,10 @@
 
           return array("status" => 0, "message" => "Successfully enabled user with ID {$data["userID"]}.", "data" => $data);
         }catch(Exception $e){
-          return $this->logging->getErrormessage("001", $e);
+          return $this->logging_api->getErrormessage("001", $e);
         }
       }else{
-        return $this->logging->getErrormessage("002");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
@@ -167,7 +187,7 @@
         }
         return array("status" => 0, "message" => "Successfully loaded user information.", "data" => $returndata);
       }catch(Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 
@@ -191,10 +211,10 @@
         if($usercount == 0){
           return array("status" => 0, "message" => "User does not exist!");
         }else{
-          return $this->logging->getErrormessage("001");
+          return $this->logging_api->getErrormessage("001");
         }
       }catch(Exception $e){
-        return $this->logging->getErrormessage("002",$e);
+        return $this->logging_api->getErrormessage("002",$e);
       }
     }
 
@@ -205,7 +225,7 @@
     public function generateNewBackupKey(array $data, array $backendInfo = NULL){
       if(array_key_exists("userID", $data)){
         $backupkey = bin2hex(random_bytes(25));
-        $encryptedbackupkey = $this->encrypt($backupkey);
+        $encryptedbackupkey = $this->encryption_api->encryptString($backupkey);
 
         try{
           $sql = $this->db_api->execute("UPDATE users_backupkeys SET valid = 0 where userid = ?", array($data["userID"]));
@@ -214,11 +234,11 @@
 
           return array("status" => 0, "message" => "Generated new backup key for User {$data["userID"]}.", "data" => $backupkey);
         }catch(Exception $e){
-          return $this->logging->getErrormessage("001", $e);
+          return $this->logging_api->getErrormessage("001", $e);
         }
 
       }else{
-        return $this->logging->getErrormessage("002");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
@@ -227,14 +247,14 @@
         $sql = $this->db_api->execute("SELECT backupkey FROM users_backupkeys WHERE userid = ? AND valid = 1", array($userID));
         $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
         if($sqdata > 0 && array_key_exists(0, $sqdata) && array_key_exists("backupkey", $sqdata[0])){
-          $decryptedkey = $this->decrypt($sqdata[0]["backupkey"]);
+          $decryptedkey = $this->encryption_api->decryptString($sqdata[0]["backupkey"]);
         }else{
           $decryptedkey = "";
         }
 
         return array("status" => 0, "message" => "Successfully loaded user information.", "data" => $decryptedkey);
       }catch(Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 
@@ -258,16 +278,16 @@
             if($stated_salted_password == $current_salted_pw){
               return array("status" => 0, "message" => "Stated password matches.");
             }else{
-              return $this->logging->getErrormessage("001");
+              return $this->logging_api->getErrormessage("001");
             }
           }else{
-            return $this->logging->getErrormessage("002");
+            return $this->logging_api->getErrormessage("002");
           }
         }catch(Exeption $e){
-          return $this->logging->getErrormessage("003",$e);
+          return $this->logging_api->getErrormessage("003",$e);
         }
       }else{
-        return $this->logging->getErrormessage("004");
+        return $this->logging_api->getErrormessage("004");
       }
     }
 
@@ -278,7 +298,7 @@
       $specialChars = preg_match('@[^\w]@', $password);
 
       if(!$uppercase || !$lowercase || !$number || !$specialChars || strlen($password) < 8) {
-        return $this->logging->getErrormessage("001");
+        return $this->logging_api->getErrormessage("001");
       }else{
         return array("status" => 0, "message" => "Password strong enough.");
       }
@@ -309,19 +329,19 @@
 
                 return array("status" => 0, "message" => "Password successfully updated.");
               }else{
-                return $this->logging->getErrormessage("001");
+                return $this->logging_api->getErrormessage("001");
               }
             }else{
-              return $this->logging->getErrormessage("002");
+              return $this->logging_api->getErrormessage("002");
             }
           }catch(Exeption $e){
-            return $this->logging->getErrormessage("003",$e);
+            return $this->logging_api->getErrormessage("003",$e);
           }
         }else{
           return $pwcheck;
         }
       }else{
-        return $this->logging->getErrormessage("004");
+        return $this->logging_api->getErrormessage("004");
       }
     }
 
@@ -342,7 +362,7 @@
 
         return array("status" => 0, "message" => "Successfully loaded all logged in devices.", "data" => $sqreturndata);
       }catch(Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 
@@ -356,10 +376,10 @@
 
           return array("status" => 0, "message" => "Successfully logged out device.", "data" => array("deviceid" => $deviceID));
         }catch(Exception $e){
-          return $this->logging->getErrormessage("001", $e);
+          return $this->logging_api->getErrormessage("001", $e);
         }
       }else{
-        return $this->logging->getErrormessage("002");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
@@ -381,7 +401,7 @@
             Username: <b>{$userdata["username"]}</b><br>
             E-Mail: <b>{$userdata["email"]}</b><br>
             Login link: <a href='{$this->ini["app_protocol"]}://{$this->ini["app_domain"]}{$this->ini["frontend_url"]}'><b>Click Here</b></a><br>
-            To get your login password ask the user who invited you.<br><br>
+            To get your login password ask the user who invited you or click <b>'Forgot password'</b> in the login window.<br><br>
             Have fun :)<br>
             ";
 
@@ -392,17 +412,99 @@
             return $userdata;
           }
         }else{
-          return $this->logging->getErrormessage("001");
+          return $this->logging_api->getErrormessage("001");
         }
       }
     }
 
-    private function encrypt(string $string){
-      return openssl_encrypt($string, $this->ciphering, $this->ini["serversalt"], $this->options, $this->encryption_iv);
+    /**
+     * Sends an email with an reset link attached to a user if existing
+     * Will always send a success message even the user is not existing
+     * @param string $username  The user's username which wants his password be reset
+     * @return array             {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
+     */
+    public function requestUserPasswordReset(string $username){
+      try{
+        $sql = $this->db_api->execute("SELECT id, name, lastname, email FROM users WHERE username = ? AND enabled = 1", array($username));
+        $userdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
+
+        if(count($userdata) == 1){
+          $userdata = $userdata[0];
+          $resetLink = bin2hex(random_bytes(35));
+          $resetLinkEncrypted = $this->encryption_api->encryptString($resetLink);
+          $keyvaliduntil = new \DateTime();
+          $keyvaliduntil->modify("+15 minutes");
+
+          $resetPWLink = "{$this->ini["app_protocol"]}://{$this->ini["app_domain"]}{$this->ini["frontend_url"]}/password-reset.php?pw-reset-key={$resetLink}";
+
+          $message = "<h1>Password reset</h1><br>Hello {$userdata["name"]} {$userdata["lastname"]},<br><br>you recently decided to reset your password.<br>Please click <a href='$resetPWLink'>here</a> to comlete the request.<br><br>This link will be valid until {$keyvaliduntil->format("Y-m-d H:i:s")}.";
+          $mailingstatus = $this->mailing_api->sendMail(array($userdata["email"]), "Chia Management Password Reset" , $message);
+
+          if($mailingstatus["status"] == 0){
+            $sql = $this->db_api->execute("UPDATE users_pwresets SET expired = 1 WHERE userid = ?", array($userdata["id"]));
+            $sql = $this->db_api->execute("Insert INTO users_pwresets (id, userid, linkkey, expiration, expired) VALUES (NULL, ?, ?, ?, 0)", array($userdata["id"], $resetLinkEncrypted, $keyvaliduntil->format("Y-m-d H:i:s")));
+          }else{
+            return $this->logging_api->getErrormessage("001");
+          }
+        }
+
+        return array("status" => 0, "message" => "Successfully sent email with resetlink to user {$username}.");
+      }catch(Exception $e){
+        return $this->logging_api->getErrormessage("002", $e);
+      }
     }
 
-    private function decrypt(string $encryptedstring){
-      return openssl_decrypt ($encryptedstring, $this->ciphering, $this->ini["serversalt"], $this->options, $this->encryption_iv);
+    /**
+     * Checks if a given resetlink is valid
+     * @param string $resetLink  The reset link which should be checked
+     * @return array             {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
+     */
+    public function checkResetLinkValid(string $resetLink){
+      try{
+        $encryptedResetKey = $this->encryption_api->encryptString($resetLink);
+        $sql = $this->db_api->execute("SELECT Count(*) as count FROM users_pwresets WHERE linkkey = ? AND expired = 0 AND expiration >= NOW()", array($encryptedResetKey));
+
+        if($sql->fetchAll(\PDO::FETCH_ASSOC)[0]["count"] == 1){
+          return array("status" => 0, "message" => "Reset link valid.");
+        }else{
+          return $this->logging_api->getErrormessage("001");
+        }
+      }catch(Exception $e){
+        return $this->logging_api->getErrormessage("002", $e);
+      }
+    }
+
+    /**
+     * Resets a user's password to a password of his choice.
+     * This is a REST function.
+     * @param string $resetLink        The reset link stated in the mail
+     * @param string $newUserPassword  The new password which should be set
+     * @return array                   {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
+     */
+    public function resetPassword(string $resetKey, string $newUserPassword){
+      try{
+        $encryptedResetKey = $this->encryption_api->encryptString($resetKey);
+        $sql = $this->db_api->execute("SELECT userid FROM users_pwresets WHERE linkkey = ? AND expired = 0 AND expiration >= NOW()", array($encryptedResetKey));
+        $sqreturn = $sql->fetchAll(\PDO::FETCH_ASSOC);
+
+        if(count($sqreturn) == 1){
+          $userid = $sqreturn[0]["userid"];
+          $pwreset = $this->resetUserPassword(array("userID" => $userid, "password" => $newUserPassword));
+
+          if($pwreset["status"] == 0){
+            $sql = $this->db_api->execute("UPDATE users_pwresets SET expired = 1 WHERE userid = ?", array($userid));
+            return array("status" => 0, "message" => "Successfully reset password.");
+          }else{
+            return $pwreset;
+          }
+        }else{
+          return $this->logging_api->getErrormessage("001");
+        }
+
+        return array("status" => 0, "message" => "Successfully set new password.");
+      }catch(Exception $e){
+        return $this->logging_api->getErrormessage("002", $e);
+      }
     }
   }
 ?>
