@@ -162,13 +162,13 @@
     }
 
     /**
-     * Accept a request of newly connected node.
+     * Accept a request of (newly) connected node.
      * Function made for: Web GUI
      * @throws Exception $e                    Throws an exception on db errors.
-     * @param  array  $data                    [description]
-     * @param  array $loginData                [description]
-     * @param  ChiaWebSocketServer $server     [description]
-     * @return array                           [description]
+     * @param  array  $data                    { "nodeid" : [nodeid], "authhash" : [node's authhash], "nodetypes" : [The nodes types as array(e.g. [farmer, harvester])]}
+     * @param  array $loginData                { NULL } No logindata needed to query this function.
+     * @param  ChiaWebSocketServer $server     An instance to the Webscoket server to be able to communicate with the node
+     * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
     public function acceptNodeRequest(array $data, array $loginData = NULL, $server = NULL){
       if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data) && array_key_exists("nodetypes", $data)){
@@ -219,6 +219,15 @@
       }
     }
 
+    /**
+     * Decline a request of a (newly) connected node.
+     * Function made for: Web GUI
+     * @throws Exception $e                    Throws an exception on db errors.
+     * @param  array  $data                    { "nodeid" : [nodeid], "authhash" : [node's authhash], "nodetypes" : [The nodes types as array(e.g. [farmer, harvester])]}
+     * @param  array $loginData                { NULL } No logindata needed to query this function.
+     * @param  ChiaWebSocketServer $server     An instance to the Webscoket server to be able to communicate with the node
+     * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
+     */
     public function declineNodeRequest(array $data, array $loginData = NULL, $server = NULL){
       if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data)){
         try{
@@ -230,10 +239,10 @@
           $querydata["nodeinfo"]["authhash"] = $data["authhash"];
 
           if(!is_null($server)){
-            print_r($server->messageSpecificNode($querydata));
+            $server->messageSpecificNode($querydata);
           }else{
             $this->websocket_api = new WebSocket_Api();
-            print_r($this->websocket_api->sendToWSS("messageSpecificNode", $querydata));
+            $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
           }
 
           return $returnmessage;
@@ -245,6 +254,14 @@
       }
     }
 
+    /**
+     * Returns the loginstatus of certain node with the given authhash.
+     * Function made for: Web GUI
+     * @throws Exception $e     Throws an exception on db errors.
+     * @param  array  $data     { "authhash" : [A node's authhash]}
+     * @param  array $loginData [description]
+     * @return array            [description]
+     */
     public function loginStatus(array $data, array $loginData = NULL){
       if(array_key_exists("authhash", $loginData)){
         try{
@@ -265,6 +282,14 @@
       }
     }
 
+    /**
+     * Sets the node client's script version to be accessible for the frontend
+     * Function made for: Node client
+     * @throws Exception $e                    Throws an exception on db errors.
+     * @param  array  $data                    { "authhash" : [node's authhash - string], "scriptversion" : [Node's current node script version - string], "chia" : [Node's current installed chia version -string] }
+     * @param  array $loginData                { NULL } No logindata needed to query this function.
+     * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
+     */
     public function updateScriptVersion(array $data, array $loginData = NULL){
       if(array_key_exists("authhash", $loginData) && array_key_exists("scriptversion", $data) && array_key_exists("chia", $data)){
         try{
@@ -279,17 +304,33 @@
       }
     }
 
+    /**
+     * Sets the querieng nodes update status for the frontend.
+     * Function made for: Node client
+     * @throws Exception $e                    Throws an exception on db errors.
+     * @param  array  $data                    { "status" : ["Current script update status" - array] }
+     * @param  array $loginData                { "authhash" : [Node's authhash] }
+     * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
+     */
     public function nodeUpdateStatus(array $data, array $loginData = NULL){
       try{
         $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
         $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
 
-        return array("status" => 0, "message" => "Successfully queried node update status", "data" => array("nodeid" => $nodeid, "status" => $data));
+        return array("status" => 0, "message" => "Successfully queried node update status.", "data" => array("nodeid" => $nodeid, "status" => $data));
       }catch(Exception $e){
         return $this->logging_api->getErrormessage("001", $e);
       }
     }
 
+    /**
+     * Checks if there is an update available for a node.
+     * Function made for: Web client
+     * @throws Exception $e                    Throws an exception on db errors.
+     * @param  array  $data                    { "nodeid" : ["A specific nodes id"] }
+     * @param  array $loginData                { NULL } No loginData needed to query this function.
+     * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" => ["Requested infos - array"]}
+     */
     public function checkUpdatesAndChannels(array $data = [], array $loginData = NULL){
       $updatepackagepath = "https://files.chiamgmt.edtmair.at/client/";
       $version_file_json = file_get_contents("{$updatepackagepath}/versions.json");
@@ -297,7 +338,6 @@
       $returndata = [];
       $returndata["available_channels"] = array_keys($version_file_data);
       $returndata["updateinfos"] = [];
-
 
       try{
         if(array_key_exists("nodeid", $data) && is_numeric($data["nodeid"])){
@@ -322,6 +362,14 @@
       }
     }
 
+    /**
+     * Updates the branch of a node client's scripts.
+     * Function made for: Web GUI
+     * @throws Exception $e     Throws an exception on db errors.
+     * @param  array  $data     { "branch" : [The node client's target branch], "nodeid" : [The target node's id]}
+     * @param  array $loginData { NULL } No $loginData needed to query this function.
+     * @return array            {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : ["branch" => [branchname], "nodeid" => [nodeid]]}
+     */
     public function updateNodeBranch(array $data, array $loginData = NULL){
       if(array_key_exists("branch", $data) && array_key_exists("nodeid", $data)){
         $allowedbranches = array("dev","staging","main");
@@ -341,6 +389,16 @@
       }
     }
 
+    /**
+     * Queries the current states of the chia nodes (Node UP/DOWN, Services running).
+     * The result will be cached in the database for 30 seconds if the node state itself does not change in this time.
+     * Function made for: Web GUI
+     * @throws Exception $e                    Throws an exception on db errors.
+     * @param  array  $data                    { NULL } No data needed to query this function.
+     * @param  array $loginData                { NULL } No loginData needed to query this function.
+     * @param  ChiaWebSocketServer $server     An instance to the Webscoket server to be able to communicate with the nodes directly
+     * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The cached or queried node states from the subquery]}
+     */
     public function queryNodesServicesStatus(array $data = [], array $loginData = NULL, $server = NULL){
       $allNodeStatus = $this->getNodeStatus($data);
       if($allNodeStatus["status"] > 0) return $allNodeStatus;
@@ -412,7 +470,15 @@
       return $this->getNodeStatus($data);
     }
 
-    public function setNodeServiceStats(array $data = [], array $loginData = NULL, $server = NULL){
+    /**
+     * Sets the nodes service stat reported from the nodes specific method (farmerstatus, harvesterstatus, walletstatus) given in the one of these three classes: Farmer_Api, Harvester_Api, Wallet_Api.
+     * Function made for: Backend Client
+     * @param  array  $data                    { "type" : ["nodetype" - 0|1|3], "stat" : ["the service stat 0|1" - int], "nodeid" : [The reporting node's id - int] }
+     * @param  array $loginData                { NULL } No loginData needed to query this function.
+     * @param  ChiaWebSocketServer $server     An instance to the Webscoket server to be able to communicate with the nodes directly
+     * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The cached or queried node states from the subquery]}
+     */
+    public function setNodeServiceStats(array $data = []){
       if(array_key_exists("type", $data) && array_key_exists("stat", $data) && array_key_exists("nodeid", $data)){
         if(is_numeric($data["stat"]) && $data["type"] >= 3 && $data["type"] <= 5){
           if($data["type"] == 3){
@@ -434,6 +500,13 @@
       }
     }
 
+    /**
+     * Returns the status of a specific node or all nodes.
+     * Function made for: Web GUI
+     * @throws Exception $e                    Throws an exception on db errors.
+     * @param  array  $data                    { "Node ID's as" - array }
+     * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The requested data as array]}
+     */
     private function getNodeStatus(array $nodedata = []){
       if(count($nodedata) == 0){
         $sql = $this->db_api->execute("SELECT n.id AS nodeid, n.nodeauthhash FROM nodetype nt JOIN nodes n ON n.id = nt.nodeid WHERE code >= 3 AND code <= 5 GROUP by n.id", array());
@@ -469,6 +542,12 @@
       return array("status" => 0, "message" => "Successfully loaded requested node status.", "data" => $sqreturn);
     }
 
+    /**
+     * Queries specific service data from a specific node.
+     * Function made for: communication Web GUI => Node Client
+     * @param  array  $nodedata                { "nodeid" : [The target node's id - int]}
+     * @param  ChiaWebSocketServer $server     An instance to the Websocket server to be able to communicate with the nodes directly
+     */
     private function queryDataFromNode(array $nodedata, $server = NULL){
       $sql = $this->db_api->execute("SELECT na.description, n.nodeauthhash FROM nodetype nt JOIN nodetypes_avail na ON na.code = nt.code JOIN nodes n ON n.id = nt.nodeid WHERE nt.code >= 3 AND nt.code <= 5 AND nt.nodeid = ?", array($nodedata["nodeid"]));
 

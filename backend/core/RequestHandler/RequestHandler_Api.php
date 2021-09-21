@@ -6,26 +6,74 @@
   use ChiaMgmt\Mailing\Mailing_Api;
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\System_Update\System_Update_Api;
+  use ChiaMgmt\Encryption\Encryption_Api;
 
-  require __DIR__ . '/../../../vendor/autoload.php';
-
+  /**
+   * The RequestHandler_Api class validates all requests to the websocket api.
+   * This class is used by the node client, web(/app) client and the backend client to validate their logged in states and if they are allowed to send in or get data.
+   * @version 0.1.1
+   * @author OLED1 - Oliver Edtmair
+   * @since 0.1.0
+   * @copyright Copyright (c) 2021, Oliver Edtmair (OLED1), Luca Austelat (lucaust)
+   */
   class RequestHandler_Api{
-    private $db_api, $login_api, $ini, $logging, $ciphering, $iv_length, $options, $encryption_iv;
-    private $subscriptions, $requests, $nodeid;
+    /**
+     * Holds an instance to the Database Class.
+     * @var DB_Api
+     */
+    private $db_api;
+    /**
+     * Holds an instance to the Login Class.
+     * @var Logi_Api
+     */
+    private $login_api;
+    /**
+     * Holds an instance to the Logging Class.
+     * @var Logging_Api
+     */
+    private $logging;
+    /**
+    * Holds an instance to the Encryption Class.
+    * @var Encryption_Api
+    */
+    private $encryption_api;
+    /**
+     * The server configuration file.
+     * @var array
+     */
+    private $ini;
+    /**
+    * Holds an array of the logged in clients.
+    * @var array
+    */
+    private $subscriptions;
+    /**
+    * Holds an array of the clients which wants to login.
+    * @var array
+    */
+    private $requests;
 
+    /**
+     * The constructur sets the needed above stated private variables except $subscriptions and $requests.
+     */
     public function __construct(){
-      $this->ciphering = "AES-128-CTR";
-      $this->iv_length = openssl_cipher_iv_length($this->ciphering);
-      $this->options = 0;
-      $this->encryption_iv = '1234567891011121';
-
       $this->login_api = new Login_Api();
       $this->db_api = new DB_Api();
       $this->logging = new Logging_Api($this);
       $this->system_update_api = new System_Update_Api();
+      $this->encryption_api = new Encryption_Api();
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
     }
 
+    /**
+     * Checks if a incoming data request or send in request of a specific node is valid.
+     * It will checked first if the requesting node is logged in. If not the node is not allowed to send in or get data.
+     * @param  array  $loginData    The nodes logindata.
+     * @param  array  $backendInfo  [description]
+     * @param  array  $data         [description]
+     * @param  [type] $server       [description]
+     * @return [type]              [description]
+     */
     public function processRequest(array $loginData, array $backendInfo, array $data, $server = NULL){
       if($this->system_update_api->checkUpdateRoutine()["data"]["maintenance_mode"] == 1 && $backendInfo["method"] != "finishUpdate" && $backendInfo["method"] != "disableMaintenanceMode"){
         return $this->logging->getErrormessage("001");
@@ -97,7 +145,7 @@
 
     public function requesterLogin(string $nodeip, array $data, array $nodeinfo){
       if(array_key_exists("authhash", $data)){
-        $encryptedauthhash = $this->encryptAuthhash($data["authhash"]);
+        $encryptedauthhash = $this->encryption_api->encryptString($data["authhash"]);
 
         try{
           $sql = $this->db_api->execute("SELECT n.id, GROUP_CONCAT(nta.description SEPARATOR ', ') AS nodetype, n.authtype, n.conallow, n.hostname, n.ipaddress
@@ -170,7 +218,7 @@
 
             if(count($sqdata) == 0){
               $newnodeauthhash = substr(str_shuffle('0123456789abcdefghijklmnopqrstuvwxyz'), 0, 35);
-              $encryptedauthhash = $this->encryptAuthhash($newnodeauthhash);
+              $encryptedauthhash = $this->encryption_api->encryptString($newnodeauthhash);
               $sql = $this->db_api->execute("INSERT INTO nodes (id, nodeauthhash, hostname, conallow, authtype, ipaddress) VALUES (NULL, ?, ?, ?, ?, ?)",
                                             array($encryptedauthhash, $nodeinfo["hostname"], 2, 0, $nodeip));
 
@@ -188,13 +236,13 @@
                 else $data = $this->logging->getErrormessage("007");
 
                 $data["data"]["nodeid"] = $sqdata[0]["id"];
-                $data["data"]["newauthhash"] = $this->decryptAuthhash($sqdata[0]["nodeauthhash"]);
+                $data["data"]["newauthhash"] = $this->encryption_api->decryptString($sqdata[0]["nodeauthhash"]);
 
                 return $data;
               }else{
                 $sql = $this->db_api->execute("UPDATE nodes SET changedIP = ? WHERE hostname = ?", array($nodeip, $nodeinfo["hostname"]));
                 $data = $this->logging->getErrormessage("011");
-                $data["data"]["newauthhash"] = $this->decryptAuthhash($sqdata[0]["nodeauthhash"]);
+                $data["data"]["newauthhash"] = $this->encryption_api->decryptString($sqdata[0]["nodeauthhash"]);
                 return $data;
               }
             }
@@ -207,14 +255,6 @@
       }else{
         return $this->logging->getErrormessage("010");
       }
-    }
-
-    private function encryptAuthhash(string $authhash){
-      return openssl_encrypt($authhash, $this->ciphering, $this->ini["serversalt"], $this->options, $this->encryption_iv);
-    }
-
-    private function decryptAuthhash(string $encryptedauthhash){
-      return openssl_decrypt($encryptedauthhash, $this->ciphering, $this->ini["serversalt"], $this->options, $this->encryption_iv);
     }
   }
 ?>
