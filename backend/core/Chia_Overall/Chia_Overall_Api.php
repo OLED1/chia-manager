@@ -65,7 +65,7 @@
         $lastquerytime->modify("+5 minutes");
 
         try{
-          if($lastquerytime <= $now){
+          if(count($sqdata) == 0 || $lastquerytime <= $now){
             $extapidata = $this->getDataFromExtApi();
 
             if($extapidata["status"] == 0){
