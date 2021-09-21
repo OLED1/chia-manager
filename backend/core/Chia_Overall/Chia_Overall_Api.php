@@ -65,8 +65,9 @@
         $lastquerytime->modify("+5 minutes");
 
         try{
-          if(count($sqdata) == 0 || (count($sqdata) == 1 && ($lastquerytime <= $now))){
+          if($lastquerytime <= $now){
             $extapidata = $this->getDataFromExtApi();
+
             if($extapidata["status"] == 0){
               $netspacedata = $extapidata["data"]["netspace"];
               $marketdata = $extapidata["data"]["market"];

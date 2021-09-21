@@ -89,7 +89,7 @@
       <?php if(is_numeric($thiswallet['walletid'])){ ?>
       <div class='card-body'>
         <div class='row'>
-          <div class='col'>
+          <div class='col-5'>
             <div class='row'>
               <div class='col mb-4'>
                 <div class='card <?php echo ($thiswallet['syncstatus'] == "Synced" ? "bg-success" : "bg-danger"); ?> text-white shadow'>
@@ -161,7 +161,7 @@
               </div>
             </div>
           </div>
-          <div class='col'>
+          <div class='col-7'>
             <div class='row'>
               <div class='col'>
                 <div class='card shadow mb-4'>
