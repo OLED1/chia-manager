@@ -4,6 +4,7 @@
   use ChiaMgmt\Chia_Overall\Chia_Overall_Api;
   use ChiaMgmt\Exchangerates\Exchangerates_Api;
   use ChiaMgmt\Nodes\Nodes_Api;
+  require __DIR__ . '/../../../../vendor/autoload.php';
 
   $login_api = new Login_Api();
   $ini = parse_ini_file(__DIR__.'/../../../../backend/config/config.ini.php');
@@ -168,7 +169,7 @@
                   <div class='card-body'>
                     <h6>Transactions Chart</h6>
                     <?php
-                      if(count($transactiondata["data"][$nodeid][$thiswallet['walletid']]) > 0){
+                      if(array_key_exists($nodeid, $transactiondata["data"]) && count($transactiondata["data"][$nodeid][$thiswallet['walletid']]) > 0){
                     ?>
                     <canvas id="<?php echo "transactions_chart_{$nodeid}_{$thiswallet['walletid']}"; ?>"></canvas>
                     <?php
@@ -190,7 +191,7 @@
                   <div class='card-body'>
                     <h6>Transactions Table</h6>
                     <?php
-                      if(count($transactiondata["data"][$nodeid][$thiswallet['walletid']]) > 0){
+                      if(array_key_exists($nodeid, $transactiondata["data"]) && count($transactiondata["data"][$nodeid][$thiswallet['walletid']]) > 0){
                     ?>
                     <div class="table-responsive">
                         <table class="table table-bordered" id="<?php echo "transactions_{$nodeid}_{$thiswallet['walletid']}"; ?>" width="100%" cellspacing="0">
@@ -218,7 +219,11 @@
                     </div>
                     <?php
                       }else{
-                        echo $message;
+                        echo "<div class='card bg-warning text-white shadow'>
+                                <div class='card-body'>
+                                  There are currently no transactions to show.
+                                </div>
+                              </div>";
                       }
                     ?>
                   </div>
