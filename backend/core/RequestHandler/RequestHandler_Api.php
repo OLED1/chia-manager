@@ -68,11 +68,13 @@
     /**
      * Checks if a incoming data request or send in request of a specific node is valid.
      * It will checked first if the requesting node is logged in. If not the node is not allowed to send in or get data.
-     * @param  array  $loginData    The nodes logindata.
-     * @param  array  $backendInfo  [description]
-     * @param  array  $data         [description]
-     * @param  [type] $server       [description]
-     * @return [type]              [description]
+     * Function made for: All websocket clients
+     * @throws Exception $e       Throws an exception on db errors.
+     * @param  array  $loginData              The nodes logindata.
+     * @param  array  $backendInfo            { method : [The method which should be called] }
+     * @param  array  $data                   { "maintenance_mode" : [1 = true |0 = false] }
+     * @param  WebSocketServer $server        An instance to the Webscoket server to be able to communicate with the node
+     * @return array                          {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The returnded data] } from subquery.
      */
     public function processRequest(array $loginData, array $backendInfo, array $data, $server = NULL){
       if($this->system_update_api->checkUpdateRoutine()["data"]["maintenance_mode"] == 1 && $backendInfo["method"] != "finishUpdate" && $backendInfo["method"] != "disableMaintenanceMode"){
@@ -95,6 +97,13 @@
       }
     }
 
+    /**
+     * Return a list of currently connected websocket clients in json format.
+     * Function made for: All websocket clients
+     * @param  array  $loginData      The nodes logindata.
+     * @param  array  $subscriptions  A list of subscriptions given from the websocket server.
+     * @return array                  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The queried data] }
+     */
     public function processGetActiveSubscriptions(array $loginData, array $subscriptions){
       if($loginData["authhash"] == $this->ini["web_client_auth_hash"] ||
           $loginData["authhash"] == $this->ini["backend_client_auth_hash"]){
@@ -104,6 +113,13 @@
       }
     }
 
+    /**
+     * Return a list of currently for connection waiting websocket clients in json format.
+     * Function made for: All websocket clients
+     * @param  array  $loginData      The nodes logindata.
+     * @param  array  $requests       A list of all clients which are waiting for authorisation given from the websocket server.
+     * @return array                  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The queried data] }
+     */
     public function processGetActiveRequests(array $loginData, array $requests){
 
       if($loginData["authhash"] == $this->ini["web_client_auth_hash"] ||
@@ -114,6 +130,16 @@
       }
     }
 
+    /**
+     * Updates the siteid from a connected webclient if the frontend site has changed. This is needed to push newly added data to the correct site.
+     * This enables the websocket server not to use broadcasts for the gui but targets the user which is currently viewing the correct site.
+     * Function made for: Web/App Client
+     * @param  array  $loginData      The nodes logindata.
+     * @param  array  $subscriptions  A list of subscriptions given from the websocket server.
+     * @param  array  $data           { userID : [The users id], siteID : [The site which the user is currently viewing] }
+     * @param  int    $connid         The connection id of the user who changed the site, given from the websocket server.
+     * @return array                  { "status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [Current subscriptions] }
+     */
     public function processUpdateFrontendViewingSite(array $loginData, array $subscriptions, array $data, int $connid){
       if(array_key_exists("userID", $data) && array_key_exists("siteID", $data) &&
         ($loginData["authhash"] == $this->ini["web_client_auth_hash"] ||
@@ -135,14 +161,38 @@
       }
     }
 
+    /**
+     * Informs the frontend that a/some node(s) has joined or disjoined the websocket server.
+     * Function made for: Communication between Backend and Web/App Client
+     * @param  array  $subscriptions A list of subscriptions given from the websocket server.
+     * @param  array  $changedtypes  An array which contains the node types where the connection has changed.
+     * @param  int    $connstatus    The connection status. Either 0 or 1.
+     * @return array                 { "status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : ["subscriptions" : [A list of current active clients], "changedtypes" => [An array of the changed types], "connstatus" => [0 = disconnected|1 = connected]] }
+     */
     public function processNodeConnectionChanged(array $subscriptions, array $changedtypes, int $connstatus){
       return array("connectedNodesChanged" => array("status" => 0, "message" => "Successfully handeled connection request.", "data" => ["subscriptions" => $subscriptions, "changedtypes" => $changedtypes, "connstatus" => $connstatus]));
     }
 
+    /**
+     * Informs the frontend that a/some node(s) has joined or disjoined the websocket server and waits for connection permission.
+     * Function made for: Communication between Backend and Web/App Client
+     * @param  array  $requests  A list of all clients which are waiting for authorisation given from the websocket server.
+     * @return array             {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The queried data] }
+     */
     public function processConnectionRequest(array $requests){
       return array("clientConnectionRequest" => array("status" => 0, "message" => "Successfully handeled connection request.", "data" => $requests));
     }
 
+    /**
+     * Validates the loginstatus of a data or connection request.
+     * Bevore a client is able to query data from the websocket server it's login status will be checked beforehand.
+     * If a node client has newly connected it will be registered to the api and ca be accepted.
+     * Function made for: All node types
+     * @param  string $nodeip    The connected node's ip address.
+     * @param  array  $data      { "authhash" : [The connected node's authhash] }
+     * @param  array  $nodeinfo  An array of the client's connection infos.
+     * @return array             {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The queried data] }
+     */
     public function requesterLogin(string $nodeip, array $data, array $nodeinfo){
       if(array_key_exists("authhash", $data)){
         $encryptedauthhash = $this->encryption_api->encryptString($data["authhash"]);

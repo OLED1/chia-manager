@@ -72,7 +72,8 @@
     /**
      * Returns an array of all information available for all nodes.
      * Function made for: Web GUI
-     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB stored node information]}
+     * @throws Exception $e       Throws an exception on db errors.
+     * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB stored node information]}
      */
     public function getConfiguredNodes(){
       $returndata = array();

@@ -3,9 +3,10 @@
     "setSystemSettings" : "001",
     "getAllSystemSettings" : "002",
     "confirmSetting" : "003",
-    "checkForUpdates" : "004",
-    "getSystemMessages" : "005",
-    "processUpdate" : "006"
+    "getSpecificSystemSetting" : "004",
+    "checkForUpdates" : "005",
+    "getSystemMessages" : "006",
+    "processUpdate" : "007"
   },
   "errormessages" : {
     "setSystemSettings" : {
@@ -17,6 +18,9 @@
     "confirmSetting" : {
       "001" : [2, "An error occured."],
       "002" : [1, "No settingtype stated."]
+    },
+    "getSpecificSystemSetting" : {
+      "001" : [2, "An error occured."]
     },
     "checkForUpdates" : {
       "001" : [2, "No versions available."],

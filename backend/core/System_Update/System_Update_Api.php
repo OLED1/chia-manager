@@ -5,19 +5,49 @@
   use ChiaMgmt\System\System_Api;
   use ChiaMgmt\Logging\Logging_Api;
 
+  /**
+   * The System_Update_Api class handles the webgui update tasks.
+   * @version 0.1.1
+   * @author OLED1 - Oliver Edtmair
+   * @since 0.1.0
+   * @copyright Copyright (c) 2021, Oliver Edtmair (OLED1), Luca Austelat (lucaust)
+   */
   class System_Update_Api{
-    private $db_api, $ini, $ciphering, $iv_length, $options, $encryption_iv, $websocket_api, $logging_api;
+    /**
+     * Holds an instance to the Database Class.
+     * @var DB_Api
+     */
+    private $db_api;
+    /**
+     * Holds an instance to the Logging Class.
+     * @var Logging_Api
+     */
+    private $logging_api;
+    /**
+     * Holds an instance to the WebSocket Class.
+     * @var WebSocket_Api
+     */
+    private $websocket_api;
+    /**
+     * Variable for handling and detecting previous errors in update process.
+     * @var boolean
+     */
+    private $preverror;
+    /**
+     * The server configuration file.
+     * @var array
+     */
+    private $ini;
 
+    /**
+     * Initialises the needed and above stated private variables.
+     */
     public function __construct(){
-      $this->ciphering = "AES-128-CTR";
-      $this->iv_length = openssl_cipher_iv_length($this->ciphering);
-      $this->options = 0;
-      $this->encryption_iv = '1234567891011121';
-      $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
       $this->db_api = new DB_Api();
+      $this->logging_api = new Logging_Api($this);
       $this->server = NULL;
       $this->preverror = false;
-      $this->logging_api = new Logging_Api($this);
+      $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
     }
 
     public function checkUpdateRoutine(){

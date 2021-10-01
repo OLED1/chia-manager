@@ -110,9 +110,9 @@
     /**
      * [getLatestTransactionDate description]
      * Function made for: Node Client
-     * @param  [type] $data                    [description]
-     * @param  [type] $loginData               [description]
-     * @return [type]            [description]
+     * @param  array $data      [description]
+     * @param  array $loginData [description]
+     * @return array            [description]
      */
     public function getLatestTransactionDate(array $data = NULL, array $loginData = NULL){
       if(array_key_exists("wallet_ids", $data) && is_array($data["wallet_ids"]) && count($data["wallet_ids"]) > 0){

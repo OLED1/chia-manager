@@ -3,16 +3,47 @@
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\Logging\Logging_Api;
 
+  /**
+   * The Sites_Api class contains every needed methods to manage all available frontend available sites.
+   * This class is used by the webclient to get data.
+   * @version 0.1.1
+   * @author OLED1 - Oliver Edtmair
+   * @since 0.1.0
+   * @copyright Copyright (c) 2021, Oliver Edtmair (OLED1), Luca Austelat (lucaust)
+   */
   class Sites_Api{
-    private $db_api, $logging_api, $ini;
+    /**
+     * Holds an instance to the Database Class.
+     * @var DB_Api
+     */
+    private $db_api;
+    /**
+     * Holds an instance to the Logging Class.
+     * @var Logging_Api
+     */
+    private $logging_api;
+    /**
+     * Holds a system config json array.
+     * @var array
+     */
+    private $ini;
 
+    /**
+     * Initialises the needed and above stated private variables.
+     */
     public function __construct(){
-      $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
-
       $this->db_api = new DB_Api();
       $this->logging_api = new Logging_Api($this);
+      $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
     }
 
+    /**
+     * [getSiteInfos description]
+     * @throws Exception $e       Throws an exception on db errors.
+     * @param  array  $data       { "siteid" : [The siteid of which the infos are needed] }
+     * @param  array $loginData   { NULL } No logindata needed to query this method.
+     * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The queried data] }
+     */
     public function getSiteInfos(array $data, array $loginData = NULL){
       if(array_key_exists("siteid", $data)){
         $siteid = $data["siteid"];

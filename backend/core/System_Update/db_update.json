@@ -1,5 +1,53 @@
 {
   "table_structures" : {
+    "authkeys" : {
+      "existing" : {
+        "id" : "int NOT NULL AUTO_INCREMENT",
+        "usrID" : "int NOT NULL",
+        "authstring" : "varchar(200) COLLATE utf8mb4_general_ci NOT NULL"
+      },
+      "notexisting" : [
+        "CREATE TABLE `authkeys` (`id` int NOT NULL AUTO_INCREMENT, `usrID` int NOT NULL, `authstring` varchar(200) COLLATE utf8mb4_general_ci NOT NULL, PRIMARY KEY (`id`), KEY `UserID` (`usrID`), CONSTRAINT `UserID` FOREIGN KEY (`usrID`) REFERENCES `users` (`id`)) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;"
+      ]
+    },
+    "chia_farm" : {
+      "existing" : {
+        "id" : "int NOT NULL AUTO_INCREMENT",
+        "nodeid" : "int NOT NULL",
+        "farming_status" : "varchar(50) COLLATE utf8mb4_general_ci NOT NULL",
+        "total_chia_farmed" : "float NOT NULL DEFAULT '0'",
+        "user_transaction_fees" : "loat NOT NULL DEFAULT '0'",
+        "block_rewards" : "float NOT NULL DEFAULT '0'",
+        "last_height_farmed" : "int DEFAULT '0'",
+        "plot_count" : "int NOT NULL DEFAULT '0'",
+        "total_size_of_plots" : "varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL",
+        "estimated_network_space" : "varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL",
+        "expected_time_to_win" : "varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL",
+        "querydate" : "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP"
+      },
+      "notexisting" : [
+        "CREATE TABLE `chia_farm` (`id` int NOT NULL AUTO_INCREMENT, `nodeid` int NOT NULL, `farming_status` varchar(50) COLLATE utf8mb4_general_ci NOT NULL, `total_chia_farmed` float NOT NULL DEFAULT '0', `user_transaction_fees` float NOT NULL DEFAULT '0', `block_rewards` float NOT NULL DEFAULT '0', `last_height_farmed` int DEFAULT '0', `plot_count` int NOT NULL DEFAULT '0', `total_size_of_plots` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL, `estimated_network_space` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL, `expected_time_to_win` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL, `querydate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`id`), KEY `NodeIDFarm` (`nodeid`)) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;"
+      ]
+    },
+    "chia_farm_challenges" : {
+      "existing" : {
+        "id" : "int NOT NULL AUTO_INCREMENT",
+        "date" : "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+        "hash" : "varchar(70) COLLATE utf8mb4_general_ci NOT NULL",
+        "hash_index" : "int NOT NULL"
+      },
+      "notexisting" : [
+        "CREATE TABLE `chia_farm_challenges` (`id` int NOT NULL AUTO_INCREMENT,`date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,`hash` varchar(70) COLLATE utf8mb4_general_ci NOT NULL,`hash_index` int NOT NULL,PRIMARY KEY (`id`)) ENGINE=InnoDB AUTO_INCREMENT=641 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;"
+      ]
+    },
+    "chia_infra_sysinfo" : {
+      "existing" : {
+
+      },
+      "notexisting" : [
+        
+      ]
+    },
     "chia_wallets_transactions" : {
       "existing" : {
         "id" : "int NOT NULL AUTO_INCREMENT",
