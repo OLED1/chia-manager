@@ -195,7 +195,8 @@
      */
     public function requesterLogin(string $nodeip, array $data, array $nodeinfo){
       if(array_key_exists("authhash", $data)){
-        $encryptedauthhash = $this->encryption_api->encryptString($data["authhash"]);
+        if(!is_Null($data["authhash"])) $encryptedauthhash = $this->encryption_api->encryptString($data["authhash"]);
+        else $encryptedauthhash = "";
 
         try{
           $sql = $this->db_api->execute("SELECT n.id, GROUP_CONCAT(nta.description SEPARATOR ', ') AS nodetype, n.authtype, n.conallow, n.hostname, n.ipaddress

@@ -2,6 +2,10 @@
   function getServiceStates($nodes_states, $nodeid, $type){
     $statusname = strtolower($type)."status";
 
+    if(is_null($nodes_states)){
+      return array("statustext" => "Node not reachable.", "statusicon" => "badge-danger");
+    }
+
     if($nodes_states[$nodeid]["onlinestatus"] == 1){
       $statustext = "Node not reachable.";
       $statusicon = "badge-danger";
