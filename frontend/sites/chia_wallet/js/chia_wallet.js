@@ -221,7 +221,7 @@ function messagesTrigger(data){
   var key = Object.keys(data);
 
   if(data[key]["status"] == 0){
-    if(key == "updateWalletData"){
+    if(key == "updateWalletData" || key == "updateWalletTransactions"){
       $('#walletcontainer').load(frontend + "/sites/chia_wallet/templates/cards.php");
 
       initRefreshWalletInfo();

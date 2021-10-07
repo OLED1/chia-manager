@@ -93,10 +93,35 @@
      * @param  array $loginData  [description]
      * @return array             [description]
      */
-    public function updateWalletTransactions(array $data = NULL, array $loginData = NULL){
-      if(array_key_exists("transactions", $data) && count($data["transactions"]) > 0){
+    public function updateWalletTransactions(array $data = NULL, array $loginData = []){
+      if(Count($data) > 0){
         try{
-          print_r($data["transactions"]);
+          $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
+          $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
+
+          $sql = $this->db_api->execute("SELECT name FROM chia_wallets_transactions WHERE nodeid = ?", array($nodeid));
+          $found_transactions = $sql->fetchAll(\PDO::FETCH_ASSOC);
+
+          foreach($found_transactions as $arrkey => $transactionname){
+            $found_transactions[$arrkey] = $transactionname["name"];
+          }
+
+          foreach($data AS $walletid => $transactions){
+            if(array_key_exists("transactions", $transactions)){
+              foreach($transactions["transactions"] AS $arrkey => $transactiondata){
+                if(!in_array($transactiondata["name"], $found_transactions)){
+                  $sql = $this->db_api->execute("INSERT INTO chia_wallets_transactions (id, nodeid, wallet_id, parent_coin_info, amount, confirmed, confirmed_at_height, created_at_time, fee_amount, name, removals, sent, sent_to, spend_bundle, to_address, to_puzzle_hash, trade_id, type) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                  array($nodeid, $walletid, $transactiondata["additions"][0]["parent_coin_info"], $transactiondata["amount"],
+                        $transactiondata["confirmed"], $transactiondata["confirmed_at_height"], $transactiondata["created_at_time"], $transactiondata["fee_amount"],
+                        $transactiondata["name"], json_encode($transactiondata["removals"]), $transactiondata["sent"], json_encode($transactiondata["sent_to"]),
+                        $transactiondata["spend_bundle"], $transactiondata["to_address"], $transactiondata["to_puzzle_hash"], (is_null($transactiondata["trade_id"]) ? 0 : $transactiondata["trade_id"]),
+                        $transactiondata["type"]
+                      ));
+                }
+              }
+            }
+          }
+
         }catch(Exception $e){
           //TODO Implement correct status code
           print_r($e);
@@ -266,9 +291,14 @@
      */
     public function queryWalletData(array $data = NULL, array $loginData = NULL, $server = NULL){
       $querydata = [];
-      $querydata["data"]["queryWalletData"] = array(
+      $querydata_0["data"]["queryWalletData"] = array(
         "status" => 0,
         "message" => "Query Wallet data.",
+        "data"=> array()
+      );
+      $querydata_1["data"]["queryWalletTransactions"] = array(
+        "status" => 0,
+        "message" => "Query Wallet transaction data.",
         "data"=> array()
       );
 
@@ -279,10 +309,12 @@
       }
 
       if(!is_null($server)){
-        return $server->$callfunction($querydata);
+        $server->$callfunction($querydata_0);
+        return $server->$callfunction($querydata_1);
       }else{
         $this->websocket_api = new WebSocket_Api();
-        return $this->websocket_api->sendToWSS($callfunction, $querydata);
+        $this->websocket_api->sendToWSS($callfunction, $querydata_0);
+        return $this->websocket_api->sendToWSS($callfunction, $querydata_1);
       }
     }
 
