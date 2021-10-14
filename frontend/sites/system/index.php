@@ -19,7 +19,10 @@
     $updatechannelname = "Stable";
   }
 
-  echo "<script nonce={$ini["nonce_key"]}> var siteID = 3; </script>";
+  echo "<script nonce={$ini["nonce_key"]}>
+          var siteID = 3;
+          var frontend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}';
+        </script>";
 ?>
 <!-- Page Heading -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -129,7 +132,7 @@
             <div class="row">
               <div class="col">
                 <button type="button" class="btn btn-secondary wsbutton" id="check-for-updates">Check for updates<i class="fas fa-spinner fa-spin" style="display: none;"></i></button>
-                <button type="button" class="btn btn-warning wsbutton" id="start-update" style="<?php echo ($updates["data"]["updateavail"] ? "" : "display: none;") ?>">Start update</button>
+                <button type="button" class="btn btn-warning wsbutton" id="start-update" style="<?php echo ($updates["data"]["updateavail"] ? "" : "display: none;") ?>">Open updater</button>
               </div>
             </div>
           </div>

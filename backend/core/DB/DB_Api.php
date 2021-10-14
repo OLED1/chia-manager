@@ -14,13 +14,37 @@
      * The constructur initialises the databse instance with the parameters stated in the config file.
      */
     public function __construct(){
-      $ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
+      $config_file = __DIR__.'/../../config/config.ini.php';
+      if(file_exists($config_file)){
+        $ini = parse_ini_file($config_file);
 
+        if(array_key_exists("db_name", $ini)){
+          try{
+            $this->con = new \PDO("mysql:dbname={$ini["db_name"]};host={$ini['db_host']}", $ini['db_user'], $ini['db_password']);
+            $this->con->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+          }catch(\Throwable $e){
+            throw new \Exception($e);
+          }
+        }
+      }
+    }
+
+    /**
+     * Tests if a database connection can be established using stated parameters.
+     * @param  string $db_name       The database name where the connection should be made.
+     * @param  string $db_host       The database host where the connection should be made.
+     * @param  string $db_user       The database user which should be used for the connection.
+     * @param  string $db_password   The database password which should be used for the connection.
+     * @return array                 An positive status code array or an exception.
+     */
+    public function testConnection(string $db_name, string $db_host, string $db_user, string $db_password){
       try{
-        $this->con = new \PDO('mysql:dbname='. $ini["db_name"] .';host='. $ini['db_host'], $ini['db_user'], $ini['db_password']);
-        $this->con->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-      }catch(Exception $e){
-        throw new Exception();
+        $con = new \PDO("mysql:dbname={$db_name};host={$db_host}", $db_user, $db_password);
+        $con->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+
+        return array("status" => 0, "message" => "Database connection successfull.");
+      }catch(\Throwable $e){
+        throw new \Exception($e);
       }
     }
 
@@ -37,8 +61,8 @@
         $sql->execute($this->removeHTMLEntities($parameter));
 
         return $sql;
-      }catch(Exception $e){
-        throw new Exception($e);
+      }catch(\Throwable $e){
+        throw new \Exception($e);
       }
     }
 

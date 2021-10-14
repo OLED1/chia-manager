@@ -6,21 +6,23 @@
 
   require __DIR__ . '/../../vendor/autoload.php';
 
-  $login_api = new Login_Api();
-  $ini = parse_ini_file(__DIR__.'/../../backend/config/config.ini.php');
-  $loggedin = $login_api->checklogin();
-
-  $frontendurl = $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"];
-  if($loggedin["status"] > 0){
-    header("Location: {$frontendurl}/login.php");
-  }
-
   $system_update_api = new System_Update_Api();
   $system_update_state = $system_update_api->checkUpdateRoutine();
 
-  $showupdatemodal = false;
-  if($system_update_state["data"]["db_update_needed"] < 0 && $system_update_state["data"]["userid_updating"] == $_COOKIE["user_id"] && $system_update_state["data"]["maintenance_mode"] == 1){
-    $showupdatemodal = true;
+  print_r($system_update_state);
+
+  if((array_key_exists("process_update", $system_update_state["data"]) && $system_update_state["data"]["process_update"]) || array_key_exists("db_install_needed", $system_update_state["data"])){
+    echo "Location: http://{$_SERVER['SERVER_NAME']}/frontend/sites/installer_updater/";
+    header("Location: http://{$_SERVER['SERVER_NAME']}/frontend/sites/installer_updater/");
+  }
+
+  $ini = parse_ini_file(__DIR__.'/../../backend/config/config.ini.php');
+  $frontendurl = $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"];
+  $login_api = new Login_Api();
+  $loggedin = $login_api->checklogin();
+
+  if($loggedin["status"] > 0){
+    header("Location: {$frontendurl}/login.php");
   }
 
   $users_api = new Users_Api();
@@ -33,15 +35,15 @@
   if(array_key_exists("user_id", $_COOKIE)) $userData = $users_api->getOwnUserData($_COOKIE["user_id"]);
 
   echo "<script nonce={$ini["nonce_key"]}>
-          var backend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["backend_url"]}';
-          var frontend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}';
-          var websocket = '{$ini["socket_protocol"]}://{$ini["socket_domain"]}{$ini["socket_listener"]}';
-          var authhash = '{$ini["web_client_auth_hash"]}';
-          var userdata = " . json_encode($userData["data"]) . ";
-          var userID = {$_COOKIE["user_id"]};
-          var sessid = '{$_COOKIE["PHPSESSID"]}';
-          var darkmode = {$gui_mode};
-        </script>";
+  var backend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["backend_url"]}';
+  var frontend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}';
+  var websocket = '{$ini["socket_protocol"]}://{$ini["socket_domain"]}{$ini["socket_listener"]}';
+  var authhash = '{$ini["web_client_auth_hash"]}';
+  var userdata = " . json_encode($userData["data"]) . ";
+  var userID = {$_COOKIE["user_id"]};
+  var sessid = '{$_COOKIE["PHPSESSID"]}';
+  var darkmode = {$gui_mode};
+  </script>";
 ?>
 <html lang="en">
 <head>
@@ -134,7 +136,7 @@
                 <i class="fas fa-users-cog"></i>
                 <span>Users</span>
               </a>
-            </liv>
+            </li>
             <li id="nav-system-settings" class="nav-item">
               <a class="nav-link" data-siteid=3 data-nav-target="nav-system-settings"href="/sites/system">
                 <i class="fas fa-server"></i>
@@ -201,14 +203,14 @@
                               <span class="sr-only">Loading...</span>
                             </div>
                           </span>
-                        </liv>
+                        </li>
                         <li class="nav-item no-arrow mx-1">
                           <span class="nav-link">
                             <span id="wsstatus" data-connected="0" class="badge badge-secondary"></span>
                             <span class="mr-2 d-none d-lg-inline text-gray-600 small">
                             </span>
                           </span>
-                        </li class="nav-item dropdown no-arrow d-sm-none">
+                        </li>
                         <li class="nav-item dropdown no-arrow mx-1">
                             <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -370,70 +372,6 @@
         </div>
       </div>
     </div>
-    <?php if($showupdatemodal){ ?>
-    <div class="modal fade" id="update_routines" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
-      <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 30em;">
-        <div class="modal-content">
-          <div class="modal-body">
-            <div class="p-5">
-              <div class="text-center">
-                <div class="row">
-                  <div class="col mb-4">
-                    <i class="fas fa-hard-hat 9px" style="font-size: 3em"></i>
-                    <h2>Finish Update</h2>
-                    <span id="update_text">
-                      <p>The previous update process was finished successfully. Now the database needs to be updated. Press the button bellow to finish the update.</p>
-                    </span>
-                    <span id="update_success" style="display: none;">
-                      <i class="fas fa-check-circle text-success" style="font-size: 6em;"></i>
-                      <div class="row">
-                        <div class="col mb-4">
-                          <h5>Success! The maintenance mode has been stopped.<br>The window will now be reloaded.</h5>
-                        </div>
-                      </div>
-                      <div class="row">
-                        <div class="col mb-4">
-                          <div class="card bg-warning text-white shadow">
-                            <div class="card-body">
-                              Please do not forget to restart the websocket server.
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="row">
-                        <div class="col">
-                          <button id="success_reload" class="btn btn-success" type="button">Reload</button>
-                        </div>
-                      </div>
-                    </span>
-                    <span id="update_failed" style="display: none;">
-                      <i class="fas fa-times-circle text-danger" style="font-size: 6em;"></i>
-                      <h5>Failed with the following error:<br><span id="error_message"></span><br>You have one of the following options:</h5>
-                      <div class="row">
-                        <div class="col mb-4">
-                          <button id="error_retry" class="btn btn-primary" type="button">Retry update</button>
-                        </div>
-                      </div>
-                      <div class="row">
-                        <div class="col">
-                          <button id="error_disable_maintenance" class="btn btn-secondary" type="button">Disable maintenance mode and finish with error</button>
-                        </div>
-                      </div>
-                    </span>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col">
-                    <button id="finish_update_btn" class="btn btn-success" type="button" style="display: none;">Finish update<i class="fas fa-spinner fa-spin" style="display: none;"></i></button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <?php } ?>
 
     <!-- Bootstrap core JavaScript-->
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/jquery/jquery.min.js"></script>
@@ -455,10 +393,6 @@
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/js/sitewrapper/load_pages.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/js/sitewrapper/transfer.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/js/sitewrapper/sitewrapper.js"></script>
-
-    <?php if($showupdatemodal){ ?>
-      <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/js/sitewrapper/finish_update.js"></script>
-    <?php } ?>
 </body>
 
 </html>

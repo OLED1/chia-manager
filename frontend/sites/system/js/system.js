@@ -130,9 +130,11 @@ $(function(){
 
   $("#start-update").on("click", function(e){
     e.preventDefault();
-    $("#confirm-update-process").removeAttr("disabled").find("i").hide();
-    $("#updatelogcontainer").children().remove();
-    $("#updater_modal").modal("show");
+    //$("#confirm-update-process").removeAttr("disabled").find("i").hide();
+    //$("#updatelogcontainer").children().remove();
+    //$("#updater_modal").modal("show");
+
+    window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "setInstanceUpdating", { "userid" : userID, "updatestate" : 1 });
   });
 
   $("#confirm-update-process").on("click", function(e){
@@ -269,6 +271,8 @@ function messagesTrigger(data){
     }else if(key == "processUpdate"){
       $("#confirm-update-process").hide();
       $("#proceed-update-routine").show();
+    }else if(key == "setInstanceUpdating"){
+      $(location).attr('href',frontend + '/sites/installer_updater/');
     }
   }else{
     showMessage(2, data["message"]);

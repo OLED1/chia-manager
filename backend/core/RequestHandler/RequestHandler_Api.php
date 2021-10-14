@@ -267,7 +267,7 @@
             $sql = $this->db_api->execute("SELECT id, ipaddress, nodeauthhash FROM nodes WHERE hostname = ?", array($nodeinfo["hostname"]));
             $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
 
-            if(count($sqdata) == 0){
+            if(count($sqdata) == 0 && array_key_exists("hostname", $nodeinfo)){
               $newnodeauthhash = substr(str_shuffle('0123456789abcdefghijklmnopqrstuvwxyz'), 0, 35);
               $encryptedauthhash = $this->encryption_api->encryptString($newnodeauthhash);
               $sql = $this->db_api->execute("INSERT INTO nodes (id, nodeauthhash, hostname, conallow, authtype, ipaddress) VALUES (NULL, ?, ?, ?, ?, ?)",
@@ -296,6 +296,8 @@
                 $data["data"]["newauthhash"] = $this->encryption_api->decryptString($sqdata[0]["nodeauthhash"]);
                 return $data;
               }
+            }else{
+              return $this->logging->getErrormessage("014", "Cannot add host with IP {$nodeip}. Not all data stated.");
             }
           }else{
             return $this->logging->getErrormessage("008");

@@ -2,8 +2,9 @@
   namespace ChiaMgmt\System_Update;
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\WebSocket\WebSocket_Api;
-  use ChiaMgmt\System\System_Api;
   use ChiaMgmt\Logging\Logging_Api;
+  use ChiaMgmt\Encryption\Encryption_Api;
+  use ChiaMgmt\System\System_Api;
 
   /**
    * The System_Update_Api class handles the webgui update tasks.
@@ -19,15 +20,15 @@
      */
     private $db_api;
     /**
-     * Holds an instance to the Logging Class.
-     * @var Logging_Api
-     */
-    private $logging_api;
-    /**
      * Holds an instance to the WebSocket Class.
      * @var WebSocket_Api
      */
     private $websocket_api;
+    /**
+     * Holds an instance to the Logging Class.
+     * @var Logging_Api
+     */
+    private $logging_api;
     /**
      * Variable for handling and detecting previous errors in update process.
      * @var boolean
@@ -43,22 +44,330 @@
      * Initialises the needed and above stated private variables.
      */
     public function __construct(){
-      $this->db_api = new DB_Api();
-      $this->logging_api = new Logging_Api($this);
-      $this->server = NULL;
-      $this->preverror = false;
-      $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
+      $config_file = __DIR__.'/../../config/config.ini.php';
+      if(file_exists($config_file)){
+        $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
+        if(array_key_exists("db_name", $this->ini)){
+          $this->db_api = new DB_Api();
+          $this->websocket_api = new WebSocket_Api();
+          $this->logging_api = new Logging_Api($this);
+          $this->server = NULL;
+          $this->preverror = false;
+        }
+      }
+    }
+
+    public function setInstanceUpdating(array $data = [], array $loginData = NULL){
+      if(array_key_exists("userid", $data) && array_key_exists("updatestate", $data)){
+        try{
+          $this->db_api->execute("UPDATE system_infos SET userid_updating = ?, process_update = ?", array($data["userid"],$data["updatestate"]));
+
+          return array("status" => 0, "message" => "Successfully set updater mode.");
+        }catch(\Throwable $e){
+          //TODO Implement correct status code
+          print_r($e);
+          return array("status" => 1, "message" => "An error occured.");
+        }
+      }else{
+        //TODO Implement correct status code
+        return array("status" => 1, "message" => "No all data stated.");
+      }
+    }
+
+    /**
+     * Checks for system updates.
+     * Function made for: Web(App)client
+     * @param  array  $data       { "updatechannel" : "[main|staging|dev|NULL]" }
+     * @param  array $loginData   { NULL } No logindata is needed query this function.
+     * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [Available updateinformation]}
+     */
+    public function checkForUpdates(array $data = [], array $loginData = NULL, array $updatechannel = NULL){
+      if(is_Null($updatechannel)){
+        $system_api = new System_Api();
+        $updatechannel = $system_api->getSpecificSystemSetting("updatechannel");
+      }
+
+      if(array_key_exists("updatechannel", $updatechannel["data"])){
+        $updatechannel = $updatechannel["data"]["updatechannel"]["branch"]["value"];
+      }else{ $updatechannel = "main"; }
+
+      $url = "https://files.chiamgmt.edtmair.at/server/versions.json";
+      $json = file_get_contents($url);
+      $json_data = json_decode($json, true);
+
+      if(array_key_exists($updatechannel, $json_data)){
+        if(array_key_exists("0", $json_data[$updatechannel])){
+          $myversion = $this->ini["versnummer"];
+          $remoteversion = $json_data[$updatechannel][0]["version"];
+
+          if(version_compare($myversion, $remoteversion) < 0) $updateavailable = true;
+          else $updateavailable = false;
+
+          return array("status" => 0, "message" => "Successfully loaded updatedata and versions.", "data" => array("localversion" => $myversion, "remoteversion" => $remoteversion, "updateavail" => $updateavailable, "updatechannel" => $updatechannel));
+        }else{
+          $returndata = $this->logging_api->getErrormessage("001");
+          $returndata["data"] = array("localversion" => $this->ini["versnummer"], "updatechannel" => $updatechannel);
+          return $returndata;
+        }
+      }else{
+        return $this->logging_api->getErrormessage("002", "Updatechannel {$updatechannel} not found.");
+      }
     }
 
     public function checkUpdateRoutine(){
       try{
-        $sql = $this->db_api->execute("SELECT dbversion, userid_updating, lastsucupdate, maintenance_mode FROM system_infos", array());
-        $returndata = $sql->fetchAll(\PDO::FETCH_ASSOC)[0];
-        $returndata["db_update_needed"] = version_compare($returndata["dbversion"], $this->ini["versnummer"]);
+        if(is_null($this->ini) && !array_key_exists("db_name", $this->ini)) return array("status" => 0, "message" => "Successfully queried system update state.", "data" => array("db_install_needed" => true));
+
+        $sql = $this->db_api->execute("SHOW TABLES LIKE 'system_infos'", array());
+        $tablefound = $sql->fetchAll(\PDO::FETCH_ASSOC);
+
+        if(count($tablefound) == 0){
+          $returndata["db_install_needed"] = true;
+        }else{
+          $sql = $this->db_api->execute("SELECT dbversion, userid_updating, process_update, lastsucupdate, maintenance_mode FROM system_infos", array());
+          $returndata = $sql->fetchAll(\PDO::FETCH_ASSOC)[0];
+          if(version_compare($returndata["dbversion"], $this->ini["versnummer"]) < 0 || $returndata["process_update"] == 1){
+            $returndata["process_update"] = true;
+          }
+        }
 
         return array("status" => 0, "message" => "Successfully queried system update state.", "data" => $returndata);
       }catch(Exception $e){
         return $this->logging_api->getErrormessage("001", $e);
+      }
+    }
+
+    public function checkServerDependencies(){
+      $php_required = "7.4.0";
+      $phpversion = phpversion();
+      $versioncompare = version_compare($phpversion, $php_required, ">=");
+
+      $needed_modules = ["Core", "date", "libxml", "openssl", "pcre", "zlib", "filter", "hash", "Reflection", "SPL", "session", "standard", "sodium", "cgi-fcgi", "mysqlnd", "PDO", "xml", "apcu", "bcmath", "bz2", "calendar", "ctype", "curl", "dom", "mbstring", "FFI", "fileinfo", "ftp", "gd", "gettext", "gmp", "iconv", "igbinary", "imagick", "intl", "json", "exif", "msgpack", "mysqli", "pdo_mysql", "apc", "posix", "readline", "redis", "shmop", "SimpleXML", "sockets", "sysvmsg", "sysvsem", "sysvshm", "tidy", "tokenizer", "xmlreader", "xmlrpc", "xmlwriter", "xsl", "zip", "Phar", "memcached", "Zend OPcache"];
+      $diff = array_diff(get_loaded_extensions(), $needed_modules);
+
+      $returndata = [];
+      if(!$versioncompare){
+        $returndata["php-version"]["status"] = 1;
+        $returndata["php-version"]["message"] = "Installed PHP Version {$phpversion} does not meet requirement {$php_required}.";
+      }else{
+        $returndata["php-version"]["status"] = 0;
+        $returndata["php-version"]["message"] = "Installed PHP Version {$phpversion} meets requirement {$php_required}.";
+      }
+
+      if(count($diff) > 0){
+        foreach($diff AS $arrkey => $modulename){
+          $modules_missing .= $modulename . " ";
+        }
+        $returndata["php-modules"]["status"] = 1;
+        $returndata["php-modules"]["message"] = "The following PHP modules were not found {$modules_missing}.";
+      }else{
+        $returndata["php-modules"]["status"] = 0;
+        $returndata["php-modules"]["message"] = "All needed PHP modules are installed.";
+      }
+
+      return array("status" => 0, "message" => "Successfully loaded dependencies.", "data" => $returndata);
+    }
+
+    public function checkMySQLConfig(string $db_name, string $db_user, string $db_password, string $db_host){
+        try{
+          $db_api = new DB_Api();
+          return $try_con = $db_api->testConnection($db_name, $db_host, $db_user, $db_password);
+        }catch(\Throwable $e){
+          return array("status" => 1, "message" => $e->getMessage());
+        }
+    }
+
+    public function installChiamgmt(string $branch, array $db_config, array $websocket_config, array $webgui_user_config){
+      //Default the returnvalues to error
+      $returnarray["status"] = 1;
+      $returnarray["message"] = "An error occured during installation process.";
+
+      $updatepackagepath = "https://files.chiamgmt.edtmair.at/server/";
+
+      $returnarray = [];
+      $noncekey = $this->generateRandomString();
+      $dbsalt = $this->generateRandomString();
+      $serversalt = $this->generateRandomString();
+      $web_client_auth_hash = $this->generateRandomString();
+      $backend_client_auth_hash = $this->generateRandomString();
+      $configdir = "{$_SERVER["DOCUMENT_ROOT"]}/backend/config/";
+      $tmpdir = "/tmp";
+
+      //1. Create Config File
+      $returnarray["data"]["config_file"] = array("status" => 0, "message" => "Config file created. Default values are: ");
+      $returnarray["data"]["config_file"]["data"] = [];
+      //1a. Downloading latest version info from used branch
+      $version_file_json = file_get_contents("{$updatepackagepath}/versions.json");
+      $version_file_data = json_decode($version_file_json, true);
+
+      $version = $version_file_data[$branch][0]["version"];
+      if(is_null($version)){
+        $returnarray["data"]["config_file"] = array("status" => 1, "message" => "Error during version number query.");
+        array_push($returnarray["data"]["config_file"]["data"], array("status" => 1, "message" => "Could not load latest version number from {$updatepackagepath}/versions.json."));
+        return $returnarray;
+      }
+      //1b. Create config
+      $config =
+        ";<?php\n" .
+        ";die(); // For further security\n" .
+        ";/*\n" .
+        "[database]\n" .
+        "db_name     = '{$db_config["databasename"]}'\n" .
+        "db_user     = '{$db_config["mysqluser"]}'\n" .
+        "db_password = '{$db_config["mysqlpassword"]}'\n" .
+        "db_host = '{$db_config["mysqlhost"]}'\n" .
+        "\n" .
+        "[application]\n" .
+        "app_protocol = 'https'\n" .
+        "app_domain = '{$_SERVER["HTTP_HOST"]}'\n" .
+        "system_root = '/'\n" .
+        "backend_url = '/backend'\n" .
+        "frontend_url = '/frontend'\n" .
+        "backup_root = '/backup'\n" .
+        "serversalt = '{$serversalt}'\n" .
+        "nonce_key = '{$noncekey}'\n" .
+        "versnummer = '{$version}'\n" .
+        "\n" .
+        "[websocket]\n" .
+        "web_client_auth_hash = '{$web_client_auth_hash}'\n" .
+        "backend_client_auth_hash = '{$backend_client_auth_hash}'\n" .
+        "socket_protocol = 'wss'\n" .
+        "socket_domain = '{$_SERVER["HTTP_HOST"]}'\n" .
+        "socket_listener = '{$websocket_config["socket_protocol"]}'\n" .
+        "socket_local_port = '{$websocket_config["socket_local_port"]}'\n" .
+        "\n" .
+        "[extapis]\n" .
+        "netspace_api = 'https://api.chiaprofitability.com/netspace'\n" .
+        "market_api = 'https://api.chiaprofitability.com/market'\n" .
+        "exchangerate_api_codes = 'https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies.json'\n" .
+        "exchangerate_api_rates = 'https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/usd.json'\n" .
+        ";*/";
+
+      //1c. Writing config
+      $configfile = fopen("{$configdir}/config.ini.php", "w");
+      fwrite($configfile, $config);
+      fclose($configfile);
+
+      //1d. Verifying config
+      $configfile = parse_ini_file(__DIR__.'/../../config/config.ini.php');
+      if(!is_array($configfile)){
+        $returnarray["data"]["config_file"] = array("status" => 1, "message" => "Error during config file creation.");
+        array_push($returnarray["data"]["config_file"]["data"], array("status" => 0, "message" => "The config file were not created successfully."));
+        return $returnarray;
+      }
+      array_push($returnarray["data"]["config_file"]["data"], array("status" => 0, "message" => "Successfully created config file. Nonce_key for secure js loading:&nbsp;{$noncekey}."));
+
+      //2. Creating Database
+      $returnarray["data"]["db_config"] = array("status" => 0, "message" => "Database imported and installed default values.");
+      $returnarray["data"]["db_config"]["data"] = [];
+      try{
+        //2a. Instance db connection
+        $this->db_api = new DB_Api();
+
+        //2b. Importing structure dump
+        $query = '';
+        $structuredump = file("files/chiamgmt-structure.sql");
+        foreach ($structuredump as $line) {
+          $startWith = substr(trim($line), 0 ,2);
+          $endWith = substr(trim($line), -1 ,1);
+
+          if (empty($line) || $startWith == '--' || $startWith == '/*' || $startWith == '//') {
+            continue;
+          }
+
+          $query = $query . $line;
+          if($endWith == ';'){
+            $this->db_api->execute($query,[]);
+            $query= '';
+          }
+        }
+        array_push($returnarray["data"]["db_config"]["data"], array("status" => 0, "message" => "Table structure created successfully."));
+        //2c. Insert default values
+        $this->encryption_api = new Encryption_Api();
+        //Default Nodes
+        $query = '';
+        $web_client_auth_hash = $this->encryption_api->encryptString($web_client_auth_hash);
+        $backend_client_auth_hash = $this->encryption_api->encryptString($backend_client_auth_hash);
+        $query = "INSERT INTO `nodes` VALUES (1,'{$web_client_auth_hash}','localhost',NULL,NULL,NULL,NULL,1,1,'','',0,NOW()), (2,'{$backend_client_auth_hash}','localhost',NULL,NULL,NULL,NULL,1,3,'','',0,NOW());";
+        //Default Nodetypes
+        $query .= "INSERT INTO `nodetype` VALUES (1,1,1),(2,2,2);";
+        //Default nodetypes available
+        $query .= "INSERT INTO `nodetypes_avail` VALUES (1,'webClient',1,1,1,'app'),
+                                                  (2,'backendClient',2,0,3,'backend'),
+                                                  (3,'Farmer',3,1,2,'chianode'),
+                                                  (4,'Harvester',4,1,2,'chianode'),
+                                                  (5,'Wallet',5,1,2,'chianode'),
+                                                  (6,'Unknown',99,0,2,'');";
+        //Default sites
+        $query .= "INSERT INTO `sites` VALUES (1,'ChiaMgmt\\\\MainOverview\\\\MainOverview_Api'),
+                                        (2,'ChiaMgmt\\\\Nodes\\\\Nodes_Api'),
+                                        (3,'ChiaMgmt\\\\System\\\\System_Api'),
+                                        (4,'ChiaMgmt\\\\Users\\\\Users_Api'),
+                                        (5,'ChiaMgmt\\\\Chia_Wallet\\\\Chia_Wallet_Api'),
+                                        (6,'ChiaMgmt\\\\Chia_Farm\\\\Chia_Farm_Api'),
+                                        (7,'ChiaMgmt\\\\Chia_Harvester\\\\Chia_Harvester_Api'),
+                                        (8,'ChiaMgmt\\\\Chia_Infra_Sysinfo\\\\Chia_Infra_Sysinfo_Api'),
+                                        (9,'ChiaMgmt\\\\Chia_Overall\\\\Chia_Overall_Api'),
+                                        (10,'ChiaMgmt\\\\System_Update\\\\System_Update_Api');";
+
+        //Default sites_pagestoinform
+        $query .= "INSERT INTO `sites_pagestoinform` VALUES (1,1,1),(2,2,2),(3,2,1),(4,3,3),(5,4,4),
+                                                      (6,5,5),(7,5,1),(8,6,6),(9,6,1),(10,7,7),
+                                                      (11,7,1),(12,2,5),(13,2,6),(14,2,7),(15,8,8),
+                                                      (16,8,1),(17,2,8),(18,9,1),(19,10,1);";
+
+        //Default system_settings
+        $query .= "INSERT INTO `system_settings` VALUES (1,'mailing','{}',0),(2,'security','{\"TOTP\": {\"value\": \"0\"}}',0),(3,'updatechannel','{\"branch\": {\"value\": \"{$branch}\"}}',0);";
+
+        //Default system_infos
+        $query .= "INSERT INTO `system_infos` VALUES (1,'{$version}',0,NOW(),0);";
+
+        //Set default user settings
+        $query .= "INSERT INTO `users_settings` VALUES (1,1,'usd',2);";
+
+        //Default user (admin) as configured in installer
+        $userpassword = hash('sha256',$webgui_user_config["gui-password"].$dbsalt.$serversalt);
+        $query .= "INSERT INTO `users` VALUES (1,'{$webgui_user_config["gui-username"]}','{$webgui_user_config["gui-forename"]}','{$webgui_user_config["gui-lastname"]}','{$userpassword}','{$dbsalt}','{$webgui_user_config["gui-email"]}',NOW(),1);";
+
+        $this->db_api->execute($query,[]);
+        array_push($returnarray["data"]["db_config"]["data"], array("status" => 0, "message" => "Default entries inserted successfully."));
+      }catch(\Throwable $e){
+        $returnarray["data"]["db_config"]["status"] = 1;
+        $returnarray["data"]["db_config"]["message"] = "Error during database configuration.";
+        array_push($returnarray["data"]["db_config"]["data"], array("status" => 0, "message" => $e->getMessage()));
+        return $returnarray;
+      }
+
+      $returnarray["status"] = 0;
+      $returnarray["message"] = "Finished installation.";
+      return $returnarray;
+    }
+
+    public function checkFilesWritable(){
+      $not_accessable = [];
+      $whitelist = [".htaccess", "config.ini.php.example"];
+
+      foreach(
+       $iterator = new \RecursiveIteratorIterator(
+                    new \RecursiveDirectoryIterator("../../..{$this->ini["system_root"]}/", \RecursiveDirectoryIterator::SKIP_DOTS),
+                        \RecursiveIteratorIterator::SELF_FIRST) as $item
+      ){
+        if(str_contains($iterator->getSubPathname(), "backup" )){
+          continue;
+        }else{
+          if(in_array($item->getFilename(), $whitelist)) continue;
+
+          if(!(is_readable($item) && is_writeable($item))){
+            array_push($not_accessable, "/{$iterator->getSubPathname()}");
+          }
+        }
+      }
+
+      if(count($not_accessable) > 0){
+        $apacheuser = exec('whoami');
+        return array("status" => 1, "message" => "Some files are not fully accessable. Please adjust the file owner and group to {$apacheuser} and set 750 as file rights.", "data" => $not_accessable);
+      }else{
+        return array("status" => 0, "message" => "All neded files are fully accessable.");
       }
     }
 
@@ -78,6 +387,47 @@
         return $this->logging_api->getErrormessage("001");
       }else{
         return array("status" => 0, "message" => "Update process success.");
+      }
+    }
+
+    public function setMaintenanceMode(int $userid, int $maintenance_mode){
+      if($userid > 0 && $maintenance_mode == 0 || $maintenance_mode == 1){
+        try{
+          $sql = $this->db_api->execute("UPDATE system_infos SET userid_updating = ?, maintenance_mode = ?",
+          array($userid, $maintenance_mode));
+
+          return array("status" => 0, "message" => "Successfully set maintenance mode to {$maintenance_mode}.");
+        }catch(Exception $e){
+          return $this->logging_api->getErrormessage("001", $e);
+        }
+      }else{
+        return array("status" => 1, "message" => "Could not set maintenance mode to {$maintenance_mode}. Some data is missing.");
+      }
+    }
+
+    public function stopWebsocketServer(){
+      return $this->websocket_api->stopWSS();
+    }
+
+    public function createBackups(){
+      $now = new \DateTime();
+      $now = $now->format("Y-m-d H:i:s");
+
+      $createBackupDirs = $this->createBackupdirs($now);
+      if($createBackupDirs["status"] == 0){
+        $backupSystemDB = $this->backupSystemDatabase($now);
+        if($backupSystemDB["status"] == 0){
+          $backupSystemData = $this->backupSystemData($now);
+          if($backupSystemData["status"] == 0){
+            return array("status" => 0, "message" => "Successfully created backup structure and backed up mysql databse and file structure.");
+          }else{
+            return $backupSystemData;
+          }
+        }else{
+          return $backupSystemDB;
+        }
+      }else{
+        return $createBackupDirs;
       }
     }
 
@@ -132,79 +482,52 @@
       }
     }
 
-    private function enableUpdateMode(int $userid){
-      try{
-        $sql = $this->db_api->execute("UPDATE system_infos SET userid_updating = ?, maintenance_mode = ?",
-                                      array($userid, 1));
-      }catch(Exception $e){
-        return $this->logging_api->getErrormessage("001", $e);
-      }
-    }
-
-    private function createBackupdirs(string $message, string $timestamp){
-      $this->sendStatus(0, 1, 2, $message);
+    private function createBackupdirs(string $timestamp){
       $backupdir = "../../..{$this->ini["backup_root"]}";
 
       if(!file_exists($backupdir)) {
         if(!mkdir($backupdir, 0777, true)){
-          $this->sendStatus(0, 1, 1, "Error creating dir {$backupdir}.<br>Please create dir manually and set apache as owner.");
-          $this->preverror = true;
-          return;
+          return array("status" => 1, "message" => "Backup directory {$backupdir} could not be created.");
         }
       }
 
       $thisbackupdir = "{$backupdir}/{$timestamp}";
       if(!file_exists($thisbackupdir)) {
         if(!mkdir($thisbackupdir, 0777, true)){
-          $this->sendStatus(0, 1, 1, "Error creating dir {$thisbackupdir}");
-          $this->preverror = true;
-          return;
+          return array("status" => 1, "message" => "Backup directory {$thisbackupdir} could not be created.");
         }
       }
 
       $filesdir = "{$thisbackupdir}/files";
       if(!file_exists($filesdir)) {
         if(!mkdir($filesdir, 0777, true)){
-          $this->sendStatus(0, 1, 1, "Error creating dir {$filesdir}");
-          $this->preverror = true;
-          return;
+          return array("status" => 1, "message" => "Backup directory {$filesdir} could not be created.");
         }
       }
 
       $mysqldir = "{$thisbackupdir}/db";
       if(!file_exists($mysqldir)) {
         if(!mkdir($mysqldir, 0777, true)){
-          $this->sendStatus(0, 1, 1, "Error creating dir {$mysqldir}");
-          $this->preverror = true;
-          return;
+          return array("status" => 1, "message" => "Backup directory {$mysqldir} could not be created.");
         }
       }
 
-      $this->sendStatus(0, 1, 0, $message);
+      return array("status" => 0, "message" => "All directories successfully created.");
     }
 
-    private function backupSystemData(string $message, string $timestamp){
-      $this->sendStatus(0, 2, 2, $message);
+    private function backupSystemDatabase(string $timestamp){
+      $targetdir = "../../..{$this->ini["backup_root"]}/{$timestamp}/db/mysq_backup.sql";
+      exec("mysqldump --user={$this->ini["db_user"]} --password={$this->ini["db_password"]} --host={$this->ini["db_host"]} {$this->ini["db_name"]} --result-file='{$targetdir}' 2>&1", $output, $exitCode);
+
+      if($exitCode == 0) return array("status" => 0, "message" => "Successfully backup up system database.");
+      return array("status" => 1, "message" => "An error occured backing up system database.");
+    }
+
+    private function backupSystemData(string $timestamp){
       $source = "../../..{$this->ini["system_root"]}";
       $dest = "../../..{$this->ini["backup_root"]}/{$timestamp}/files/";
       $this->zipBackup($source, $dest, $timestamp);
-      $this->sendStatus(0, 2, 0, $message);
-    }
-
-    private function backupSystemDatabase(string $message, string $timestamp){
-      $this->sendStatus(0, 3, 2, $message);
-      $targetdir = "../../..{$this->ini["backup_root"]}/{$timestamp}/db/mysq_backup.sql";
-      print_r($targetdir);
-
-      exec("mysqldump --user={$this->ini["db_user"]} --password={$this->ini["db_password"]} --host={$this->ini["db_host"]} {$this->ini["db_name"]} --result-file='{$targetdir}' 2>&1", $output, $exitCode);
-      print_r($output);
-      echo "Exit Code: $exitCode\n";
-      if($exitCode == 0){
-        $this->sendStatus(0, 3, 0, $message);
-      }else{
-        $this->preverror = true;
-        $this->sendStatus(0, 3, 1, "{$message}. Exit Code: {$exitCode}");
-      }
+      return $this->checkZipValid($dest, $timestamp);
     }
 
     private function zipBackup($source, $dest, $timestamp){
@@ -225,6 +548,28 @@
           }
       }
       $zip->close();
+    }
+
+    private function checkZipValid(string $dest, string $timestamp){
+      $zipfile = "{$dest}/backup-{$timestamp}.zip";
+      if(file_exists($zipfile)){
+        $zip = new \ZipArchive();
+        $res = $zip->open($zipfile, \ZipArchive::CHECKCONS);
+        if ($res !== TRUE) {
+          switch($res) {
+            case \ZipArchive::ER_NOZIP:
+              return array("status" => 1, "message" => "An error occured. Backupfile is not a zip.");
+            case \ZipArchive::ER_INCONS :
+              return array("status" => 1, "message" => "An error occured. Filebackup zip consistency check failed.");
+            case \ZipArchive::ER_CRC :
+              return array("status" => 1, "message" => "An error occured. Filebackup zip checksum failed.");
+            default:
+              return array("status" => 0, "message" => "Backup zipfile valid.");
+          }
+        }
+      }else{
+        return array("status" => 1, "message" => "An error occured. Filebackup zip not found.");
+      }
     }
 
     private function downloadUpdateData($message){
@@ -324,6 +669,16 @@
       }else {
         return false;
       }
+    }
+
+    private function generateRandomString($length = 50) {
+      $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      $charactersLength = strlen($characters);
+      $randomString = '';
+      for ($i = 0; $i < $length; $i++) {
+          $randomString .= $characters[rand(0, $charactersLength - 1)];
+      }
+      return $randomString;
     }
 
     //processing-status: 0 Success, 1 Failed, 2 Processing

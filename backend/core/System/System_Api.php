@@ -174,31 +174,18 @@
      */
     public function checkForUpdates(array $data = [], array $loginData = NULL){
       $updatechannel = $this->getSpecificSystemSetting("updatechannel");
-      if(array_key_exists("updatechannel", $updatechannel["data"])){
-        $updatechannel = $updatechannel["data"]["updatechannel"]["branch"]["value"];
-      }else{ $updatechannel = "main"; }
+      return $this->system_update_api->checkForUpdates($data, $loginData, $updatechannel);
+    }
 
-      $url = "https://files.chiamgmt.edtmair.at/server/versions.json";
-      $json = file_get_contents($url);
-      $json_data = json_decode($json, true);
-
-      if(array_key_exists($updatechannel, $json_data)){
-        if(array_key_exists("0", $json_data[$updatechannel])){
-          $myversion = $this->ini["versnummer"];
-          $remoteversion = $json_data[$updatechannel][0]["version"];
-
-          if(version_compare($myversion, $remoteversion) < 0) $updateavailable = true;
-          else $updateavailable = false;
-
-          return array("status" => 0, "message" => "Successfully loaded updatedata and versions.", "data" => array("localversion" => $myversion, "remoteversion" => $remoteversion, "updateavail" => $updateavailable, "updatechannel" => $updatechannel));
-        }else{
-          $returndata = $this->logging_api->getErrormessage("001");
-          $returndata["data"] = array("localversion" => $this->ini["versnummer"], "updatechannel" => $updatechannel);
-          return $returndata;
-        }
-      }else{
-        return $this->logging_api->getErrormessage("002", "Updatechannel {$updatechannel} not found.");
-      }
+    /**
+     * Sets the instance as updateing.
+     * Function made for: Web(App)client
+     * @param array  $data       { NULL }
+     * @param array $loginData   { NULL }
+     * @return array             {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
+     */
+    public function setInstanceUpdating(array $data = [], array $loginData = NULL){
+      return $this->system_update_api->setInstanceUpdating($data, $loginData);
     }
 
     /**

@@ -1,12 +1,17 @@
 {
   "functioncodes" : {
-    "checkUpdateRoutine" : "001",
-    "processUpdate" : "002",
-    "finishUpdate" : "003",
-    "disableMaintenanceMode" : "004",
-    "enableUpdateMode" : "005"
+    "checkForUpdates" : "001",
+    "checkUpdateRoutine" : "002",
+    "processUpdate" : "003",
+    "finishUpdate" : "004",
+    "disableMaintenanceMode" : "005",
+    "enableUpdateMode" : "006"
   },
   "errormessages" : {
+    "checkForUpdates" : {
+      "001" : [2, "No versions available."],
+      "002" : [2, "Configured updatechannel not found."]
+    },
     "checkUpdateRoutine" : {
       "001" : [2, "An error occured."]
     },

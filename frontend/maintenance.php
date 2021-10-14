@@ -6,9 +6,9 @@
 
   $system_update_api = new System_Update_Api();
   $system_update_state = $system_update_api->checkUpdateRoutine();
+  $ini = parse_ini_file(__DIR__.'/../backend/config/config.ini.php');
 
   if($system_update_state["data"]["maintenance_mode"] == 0){
-    $ini = parse_ini_file(__DIR__.'/../backend/config/config.ini.php');
     header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/index.php");
   }else{
     $page = $_SERVER['PHP_SELF'];

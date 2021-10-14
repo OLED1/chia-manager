@@ -35,7 +35,8 @@
       "010" : [1, "Data missing."],
       "011" : [1, "Node IP address changed. Please follow instructions on frontend."],
       "012" : [1, "This node is waiting for authentication please wait."],
-      "013" : [1, "This node is already existing. Please configure your authkey in the nodes config file."]
+      "013" : [1, "This node is already existing. Please configure your authkey in the nodes config file."],
+      "014" : [1, "Cannot add host. Not all data stated."]
     }
   }
 }
