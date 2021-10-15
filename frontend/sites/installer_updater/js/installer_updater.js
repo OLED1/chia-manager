@@ -189,11 +189,45 @@ function sendData(action, data){
           $("#updater-backup i").removeClass("fa-spinner").removeClass("fa-spin").removeClass("fa-times").addClass("fa-check").css("color","green");
 
           $("#updater-downloading i").removeClass("fa-hourglass-start").removeClass("fa-times").addClass("fa-spinner fa-spin").css("color","");
+          sendData("downloadUpdateFiles", {});
+        }else if(action == "downloadUpdateFiles"){
+          $("#updater-downloading-log").text(result["message"]);
+          $("#updater-downloading i").removeClass("fa-spinner").removeClass("fa-spin").removeClass("fa-times").addClass("fa-check").css("color","green");
+
+          $("#updater-extracting-moving i").removeClass("fa-hourglass-start").removeClass("fa-times").addClass("fa-spinner fa-spin").css("color","");
+          sendData("extractAndMoveUpdateFiles", {});
+        }else if(action == "extractAndMoveUpdateFiles"){
+          $("#updater-extracting-moving-log").text(result["message"]);
+          $("#updater-extracting-moving i").removeClass("fa-spinner").removeClass("fa-spin").removeClass("fa-times").addClass("fa-check").css("color","green");
+
+          $("#updater-adjusting-db i").removeClass("fa-hourglass-start").removeClass("fa-times").addClass("fa-spinner fa-spin").css("color","");
+          sendData("checkAndAdjustDatabase", {});
+        }else if(action == "checkAndAdjustDatabase"){
+          $("#updater-adjusting-db-log").text(result["message"]);
+          $("#updater-adjusting-db i").removeClass("fa-spinner").removeClass("fa-spin").removeClass("fa-times").addClass("fa-check").css("color","green");
+
+          $("#updater-set-version i").removeClass("fa-hourglass-start").removeClass("fa-times").addClass("fa-spinner fa-spin").css("color","");
+          sendData("updateConfigFile", {});
+        }else if(action == "updateConfigFile"){
+          $("#updater-set-version-log").text(result["message"]);
+          $("#updater-set-version i").removeClass("fa-spinner").removeClass("fa-spin").removeClass("fa-times").addClass("fa-check").css("color","green");
+
+          $("#updater-websocket-on i").removeClass("fa-hourglass-start").removeClass("fa-times").addClass("fa-spinner fa-spin").css("color","");
+          sendData("startWebsocketServer", {});
+        }else if(action == "startWebsocketServer"){
+          $("#updater-websocket-on-log").text(result["message"]);
+          $("#updater-websocket-on i").removeClass("fa-spinner").removeClass("fa-spin").removeClass("fa-times").addClass("fa-check").css("color","green");
+
+          $("#updater-maintenance-off i").removeClass("fa-hourglass-start").removeClass("fa-times").addClass("fa-spinner fa-spin").css("color","");
+          sendData("setMaintenanceMode", { "userID" : userID, "maintenance_mode" : 0 });
         }
       }else{
+        var showretry = false;
         if(action == "checkFilesWritable"){
           $("#updater-writable i").removeClass("fa-spinner").removeClass("fa-spin").addClass("fa-times").css("color","red");
           $("#updater-writable-log").text(result["message"]);
+
+          showretry = true;
         }else if(action == "setMaintenanceMode"){
           if(data["maintenance_mode"] == 1){
             $("#updater-maintenance-on i").removeClass("fa-spinner").removeClass("fa-spin").addClass("fa-times").css("color","red");
@@ -202,23 +236,49 @@ function sendData(action, data){
             $("#updater-maintenance-off i").removeClass("fa-spinner").removeClass("fa-spin").addClass("fa-times").css("color","red");
             $("#updater-maintenance-off-log").text(result["message"]);
           }
+          showretry = true;
         }else if(action == "stopWebsocketServer"){
           $("#updater-websocket-off-log").text(result["message"]);
           if(result["status"] == "015004002"){
             $("#updater-websocket-off i").removeClass("fa-spinner").removeClass("fa-spin").removeClass("fa-times").addClass("fa-check").css("color","green");
+            $("#updater-backup i").removeClass("fa-hourglass-start").removeClass("fa-times").addClass("fa-spinner fa-spin").css("color","");
+            sendData("createBackups", {});
           }else{
             $("#updater-websocket-off i").removeClass("fa-spinner").removeClass("fa-spin").addClass("fa-times").css("color","red");
+            showretry = true;
           }
-
-          $("#updater-backup i").removeClass("fa-hourglass-start").removeClass("fa-times").addClass("fa-spinner fa-spin").css("color","");
-          sendData("createBackups", {});
         }else if(action == "createBackups"){
           $("#updater-backup-log").text(result["message"]);
-          $("#updater-backup-log i").removeClass("fa-spinner").removeClass("fa-spin").addClass("fa-times").css("color","red");
+          $("#updater-backup i").removeClass("fa-spinner").removeClass("fa-spin").addClass("fa-times").css("color","red");
+          showretry = true;
+        }else if(action == "downloadUpdateFiles"){
+          $("#updater-downloading-log").text(result["message"]);
+          $("#updater-downloading i").removeClass("fa-spinner").removeClass("fa-spin").addClass("fa-times").css("color","red");
+          showretry = true;
+        }else if(action == "extractAndMoveUpdateFiles"){
+          $("#updater-extracting-moving-log").text(result["message"]);
+          $("#updater-extracting-moving i").removeClass("fa-spinner").removeClass("fa-spin").addClass("fa-times").css("color","red");
+
+          showretry = true;
+        }else if(action == "checkAndAdjustDatabase"){
+          $("#updater-adjusting-db-log").text(result["message"]);
+          $("#updater-adjusting-db i").removeClass("fa-spinner").removeClass("fa-spin").addClass("fa-times").css("color","red");
+
+          showretry = true;
+        }else if(action == "updateConfigFile"){
+          $("#updater-set-version-log").text(result["message"]);
+          $("#updater-set-version i").removeClass("fa-spinner").removeClass("fa-spin").addClass("fa-times").css("color","red");
+
+          showretry = true;
+        }else if(action == "startWebsocketServer"){
+          $("#updater-set-version-log").text(result["message"]);
+          $("#updater-set-version i").removeClass("fa-spinner").removeClass("fa-spin").addClass("fa-times").css("color","red");
+
+          $("#updater-maintenance-off i").removeClass("fa-hourglass-start").removeClass("fa-times").addClass("fa-spinner fa-spin").css("color","");
         }else{
           alert(result["message"]);
         }
-        $("#retry-update").show();
+        if(showretry) $("#retry-update").show();
       }
     },
     error:function(xhr, status, error){

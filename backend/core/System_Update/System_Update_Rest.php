@@ -1,7 +1,17 @@
 <?php
   session_start();
   use ChiaMgmt\System_Update\System_Update_Api;
+  use ChiaMgmt\System_Update\System_Update_Api;
   require __DIR__ . '/../../../vendor/autoload.php';
+
+  $system_update_api = new System_Update_Api();
+  $system_update_state = $system_update_api->checkUpdateRoutine();
+  $ini = parse_ini_file(__DIR__.'/../../../backend/config/config.ini.php');
+
+  if(!array_key_exists("db_install_needed", $system_update_state["data"]) && !(array_key_exists("process_update", $system_update_state["data"]) && $system_update_state["data"]["process_update"])){
+    echo json_encode(array("status" => 1, "message" => "No update process started."));
+    die();
+  }
 
   $system_update_api = new System_Update_Api();
 
@@ -16,13 +26,23 @@
 
     echo json_encode($system_update_api->installChiamgmt($_POST["data"]["branch"], $_POST["data"]["db_config"], $_POST["data"]["websocket_config"], $_POST["data"]["webgui_user_config"]));
   }else if(isset($_POST["action"]) && $_POST["action"] == "checkFilesWritable"){
-      echo json_encode($system_update_api->checkFilesWritable());
+    echo json_encode($system_update_api->checkFilesWritable());
   }else if(isset($_POST["action"]) && $_POST["action"] == "setMaintenanceMode" && isset($_POST["data"]["userID"]) && isset($_POST["data"]["maintenance_mode"])){
-      echo json_encode($system_update_api->setMaintenanceMode($_POST["data"]["userID"], $_POST["data"]["maintenance_mode"]));
+    echo json_encode($system_update_api->setMaintenanceMode($_POST["data"]["userID"], $_POST["data"]["maintenance_mode"]));
   }else if(isset($_POST["action"]) && $_POST["action"] == "stopWebsocketServer"){
-      echo json_encode($system_update_api->stopWebsocketServer());
+    echo json_encode($system_update_api->stopWebsocketServer());
   }else if(isset($_POST["action"]) && $_POST["action"] == "createBackups"){
-      echo json_encode($system_update_api->createBackups());
+    echo json_encode($system_update_api->createBackups());
+  }else if(isset($_POST["action"]) && $_POST["action"] == "downloadUpdateFiles"){
+    echo json_encode($system_update_api->downloadUpdateFiles());
+  }else if(isset($_POST["action"]) && $_POST["action"] == "extractAndMoveUpdateFiles"){
+    echo json_encode($system_update_api->extractAndMoveUpdateFiles());
+  }else if(isset($_POST["action"]) && $_POST["action"] == "checkAndAdjustDatabase"){
+    echo json_encode($system_update_api->checkAndAdjustDatabase());
+  }else if(isset($_POST["action"]) && $_POST["action"] == "updateConfigFile"){
+    echo json_encode($system_update_api->updateConfigFile());
+  }else if(isset($_POST["action"]) && $_POST["action"] == "startWebsocketServer"){
+    echo json_encode($system_update_api->startWebsocketServer());
   }else{
     echo json_encode(array("status" => 1, "message" => "Action not known or not allowed."));
   }

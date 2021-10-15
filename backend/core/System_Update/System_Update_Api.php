@@ -527,7 +527,7 @@
       $source = "../../..{$this->ini["system_root"]}";
       $dest = "../../..{$this->ini["backup_root"]}/{$timestamp}/files/";
       $this->zipBackup($source, $dest, $timestamp);
-      return $this->checkZipValid($dest, $timestamp);
+      return $this->checkZipValid("{$dest}/backup-{$timestamp}.zip");
     }
 
     private function zipBackup($source, $dest, $timestamp){
@@ -550,30 +550,163 @@
       $zip->close();
     }
 
-    private function checkZipValid(string $dest, string $timestamp){
-      $zipfile = "{$dest}/backup-{$timestamp}.zip";
+    private function checkZipValid(string $zipfile){
       if(file_exists($zipfile)){
         $zip = new \ZipArchive();
         $res = $zip->open($zipfile, \ZipArchive::CHECKCONS);
         if ($res !== TRUE) {
           switch($res) {
             case \ZipArchive::ER_NOZIP:
-              return array("status" => 1, "message" => "An error occured. Backupfile is not a zip.");
+              return array("status" => 1, "message" => "An error occured. File is not a zip.");
             case \ZipArchive::ER_INCONS :
-              return array("status" => 1, "message" => "An error occured. Filebackup zip consistency check failed.");
+              return array("status" => 1, "message" => "An error occured. Zip consistency check failed.");
             case \ZipArchive::ER_CRC :
-              return array("status" => 1, "message" => "An error occured. Filebackup zip checksum failed.");
+              return array("status" => 1, "message" => "An error occured. Zip checksum failed.");
             default:
-              return array("status" => 0, "message" => "Backup zipfile valid.");
+              return array("status" => 0, "message" => "Zip file valid.");
           }
         }
       }else{
-        return array("status" => 1, "message" => "An error occured. Filebackup zip not found.");
+        return array("status" => 1, "message" => "An error occured. Zip not found.");
       }
     }
 
-    private function downloadUpdateData($message){
-      $this->sendStatus(0, 4, 2, $message);
+    public function downloadUpdateFiles(){
+      $version_file_data = $this->getVersionFileData();
+      $updatechannel = $version_file_data["updatechannel"];
+      $version_file_data = $version_file_data["versionfiledata"];
+      $updatepackagepath = "https://files.chiamgmt.edtmair.at/server/";
+
+      if(!is_null($version_file_data) && array_key_exists($updatechannel, $version_file_data)){
+        $updateurl = $version_file_data[$updatechannel][0]["link"];
+        $tmpdir = "/tmp";
+        if(is_dir($tmpdir)){
+          $packagepath = "{$updatepackagepath}{$updateurl}";
+          $tmpfiledir = "{$tmpdir}/chiamgmt_update.zip";
+
+          file_put_contents($tmpfiledir,file_get_contents($packagepath));
+
+          $zipcheck = $this->checkZipValid($tmpfiledir);
+          if($zipcheck["status"] == 0){
+            return array("status" => 0, "message" => "Successfully downloaded update {$packagepath} to {$tmpfiledir}.");
+          }else{
+            return $zipcheck;
+          }
+        }else{
+          return array("status" => 1, "message" => "Temporary directory {$tmpdir} for update downloading not found or not accessable.");
+        }
+      }else if(is_null($version_file_data)){
+        return array("status" => 1, "message" => "Versionfile could not be downloaded from {$versionfilepath}.");
+      }else if(!array_key_exists($updatechannel, $version_file_data)){
+        return array("status" => 1, "message" => "Configured updatechannel {$updatechannel} was not found in version file.");
+      }
+    }
+
+    public function extractAndMoveUpdateFiles(){
+      $tmpdir = "/tmp";
+      $tmpfiledir = "{$tmpdir}/chiamgmt_update.zip";
+      $zipcheck = $this->checkZipValid($tmpfiledir);
+
+      if($zipcheck["status"] == 0){
+        $version_file_data = $this->getVersionFileData();
+        $updatechannel = $version_file_data["updatechannel"];
+        $version_file_data = $version_file_data["versionfiledata"];
+
+        $zip = new \ZipArchive;
+        $res = $zip->open($tmpfiledir);
+        if ($res === TRUE) {
+          $zip->extractTo($tmpdir);
+          $zip->close();
+
+          $this->full_copy("{$tmpdir}/chia-web-gui-{$updatechannel}/", "../../..{$this->ini["system_root"]}/");
+          return array("status" => 0, "message" => "Successfully moved new files in place.");
+        }else{
+          return array("status" => 1, "message" => "Could not open {$tmpfiledir}.");
+        }
+      }else{
+        return $zipcheck;
+      }
+    }
+
+    public function checkAndAdjustDatabase(){
+      $config_file = __DIR__.'/../../config/config.ini.php';
+      $config_data = parse_ini_file($config_file, true);
+      $db_update_json = file_get_contents("files/db_update.json");
+      $db_update_array = json_decode($db_update_json, true);
+      $alteredtables = [];
+
+      try{
+        foreach($db_update_array AS $version => $tables){
+          if(version_compare($config_data["application"]["versnummer"], $version)){
+            foreach($tables AS $tablename => $statements){
+              foreach($statements AS $arrkey => $statement){
+                $sql = $this->db_api->execute($statement, array());
+              }
+            }
+            array_push($alteredtables, $tablename);
+          }
+        }
+      }catch(\Throwable $e){
+        return array("status" => 1, "message" => "An error occured. DB Message: {$e->getMessage()}");
+      }
+
+      return array("status" => 0, "message" => "Altered tables " . implode(",", $alteredtables) . " successfully. DB version updated successfully.");
+    }
+
+    public function startWebsocketServer(){
+      return $this->websocket_api->startWSS();
+    }
+
+    public function updateConfigFile(){
+      $config_file = __DIR__.'/../../config/config.ini.php';
+      $config_data = parse_ini_file($config_file, true);
+
+      $version_file_data = $this->getVersionFileData();
+      $updatechannel = $version_file_data["updatechannel"];
+      $version_file_data = $version_file_data["versionfiledata"];
+      $newversion = $version_file_data[$updatechannel][0]["version"];
+
+      $key = "application";
+      $section = "versnummer";
+      $value = $newversion;
+
+      $config_data[$key][$section] = $value;
+      $new_content = '';
+      foreach ($config_data as $section => $section_content) {
+          $section_content = array_map(function($value, $key) {
+              return "$key='$value'";
+          }, array_values($section_content), array_keys($section_content));
+          $section_content = implode("\n", $section_content);
+          $new_content .= "[$section]\n$section_content\n\n";
+      }
+
+      $new_content = ";<?php\n;die(); // For further security;\n;/*\n{$new_content};*/";
+      file_put_contents($config_file, $new_content);
+
+      $tempini = parse_ini_file($config_file);
+      if(array_key_exists("versnummer", $tempini) && $tempini["versnummer"] == $newversion){
+        return array("status" => 0, "message" => "Successfully set new version to {$newversion}.");
+      }else {
+        return array("status" => 1, "message" => "Could not set version in config.ini.php file.");
+      }
+    }
+
+    private function getVersionFileData(){
+      $updatepackagepath = "https://files.chiamgmt.edtmair.at/server/";
+      $versionfilepath = "{$updatepackagepath}/versions.json";
+      $version_file_json = file_get_contents($versionfilepath);
+      $version_file_data = json_decode($version_file_json, true);
+
+      $system_api = new System_Api();
+      $updatechannel = $system_api->getSpecificSystemSetting("updatechannel");
+      if(array_key_exists("updatechannel", $updatechannel["data"])){
+        $updatechannel = $updatechannel["data"]["updatechannel"]["branch"]["value"];
+      }else{ $updatechannel = "main"; }
+
+      return array("versionfiledata" => $version_file_data, "updatechannel" => $updatechannel);
+    }
+
+    private function downloadUpdateData(){
       $updatepackagepath = "https://files.chiamgmt.edtmair.at/server/";
       $version_file_json = file_get_contents("{$updatepackagepath}/versions.json");
       $version_file_data = json_decode($version_file_json, true);
@@ -623,6 +756,8 @@
     }
 
     private function full_copy($source, $dest){
+      $blacklist = [".htaccess", "System_Update_Api.php", "System_Update_Rest.php","db_update.json"];
+
       if(!file_exists($dest)) mkdir($dest, 0755);
       foreach(
        $iterator = new \RecursiveIteratorIterator(
@@ -635,39 +770,11 @@
           if($item->isDir()){
             mkdir($dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
           }else{
-            echo "Copying {$item} -> " . $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname() ."\n";
+            if(in_array($item->getFilename(), $blacklist)) continue;
+            //echo "Copying {$item} -> " . $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname() ."\n";
             copy($item, $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
           }
         }
-      }
-    }
-
-    private function updateConfigFile($newversion){
-      $config_file = __DIR__.'/../../config/config.ini.php';
-      $config_data = parse_ini_file($config_file, true);
-      print_r($config_data);
-      $key = "application";
-      $section = "versnummer";
-      $value = $newversion;
-
-      $config_data[$key][$section] = $value;
-      $new_content = '';
-      foreach ($config_data as $section => $section_content) {
-          $section_content = array_map(function($value, $key) {
-              return "$key='$value'";
-          }, array_values($section_content), array_keys($section_content));
-          $section_content = implode("\n", $section_content);
-          $new_content .= "[$section]\n$section_content\n\n";
-      }
-
-      $new_content = ";<?php\n;die(); // For further security;\n;/*\n{$new_content};*/";
-      file_put_contents($config_file, $new_content);
-
-      $tempini = parse_ini_file($config_file);
-      if(array_key_exists("versnummer", $tempini) && $tempini["versnummer"] == $newversion){
-        return true;
-      }else {
-        return false;
       }
     }
 

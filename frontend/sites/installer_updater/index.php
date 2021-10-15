@@ -19,7 +19,7 @@
     header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/login.php");
   }
 
-  echo "<script nonce={$ini["nonce_key"]}>
+  echo "<script nonce={$default_nonce}>
           var userID = {$_COOKIE["user_id"]};
         </script>";
 ?>
@@ -378,9 +378,15 @@
                       <h5 id="updater-backup"><i class="fas fa-hourglass-start"></i>&nbsp;Creating backup</h5>
                       <p id="updater-backup-log" class="update-log"></p>
                       <h5 id="updater-downloading"><i class="fas fa-hourglass-start"></i>&nbsp;Downloading files</h5>
+                      <p id="updater-downloading-log" class="update-log"></p>
                       <h5 id="updater-extracting-moving"><i class="fas fa-hourglass-start"></i>&nbsp;Extracting and moving files</h5>
+                      <p id="updater-extracting-moving-log" class="update-log"></p>
                       <h5 id="updater-adjusting-db"><i class="fas fa-hourglass-start"></i>&nbsp;Checking and adjusting Database</h5>
+                      <p id="updater-adjusting-db-log" class="update-log"></p>
+                      <h5 id="updater-set-version"><i class="fas fa-hourglass-start"></i>&nbsp;Updating config file</h5>
+                      <p id="updater-set-version-log" class="update-log"></p>
                       <h5 id="updater-websocket-on"><i class="fas fa-hourglass-start"></i>&nbsp;Starting websocket server</h5>
+                      <p id="updater-websocket-on-log" class="update-log"></p>
                       <h5 id="updater-maintenance-off"><i class="fas fa-hourglass-start"></i>&nbsp;Disable maintenance mode</h5>
                       <p id="updater-maintenance-off-log" class="update-log"></p>
                       <hr>

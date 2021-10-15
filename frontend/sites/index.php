@@ -9,8 +9,6 @@
   $system_update_api = new System_Update_Api();
   $system_update_state = $system_update_api->checkUpdateRoutine();
 
-  print_r($system_update_state);
-
   if((array_key_exists("process_update", $system_update_state["data"]) && $system_update_state["data"]["process_update"]) || array_key_exists("db_install_needed", $system_update_state["data"])){
     echo "Location: http://{$_SERVER['SERVER_NAME']}/frontend/sites/installer_updater/";
     header("Location: http://{$_SERVER['SERVER_NAME']}/frontend/sites/installer_updater/");
