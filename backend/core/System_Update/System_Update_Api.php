@@ -30,11 +30,6 @@
      */
     private $logging_api;
     /**
-     * Variable for handling and detecting previous errors in update process.
-     * @var boolean
-     */
-    private $preverror;
-    /**
      * The server configuration file.
      * @var array
      */
@@ -46,17 +41,22 @@
     public function __construct(){
       $config_file = __DIR__.'/../../config/config.ini.php';
       if(file_exists($config_file)){
-        $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
+        $this->ini = parse_ini_file($config_file);
         if(array_key_exists("db_name", $this->ini)){
           $this->db_api = new DB_Api();
           $this->websocket_api = new WebSocket_Api();
           $this->logging_api = new Logging_Api($this);
-          $this->server = NULL;
-          $this->preverror = false;
         }
       }
     }
 
+    /**
+     * Marks this instance as updating. This will allow to open the installer/updater.
+     * This method is used during the update process.
+     * Function made for: Web(App)client
+     * @param array  $data       { userid: [userid], updatestate: [1 = Updating, 0 = Not updating]}
+     * @param array $loginData   {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     public function setInstanceUpdating(array $data = [], array $loginData = NULL){
       if(array_key_exists("userid", $data) && array_key_exists("updatestate", $data)){
         try{
@@ -64,18 +64,16 @@
 
           return array("status" => 0, "message" => "Successfully set updater mode.");
         }catch(\Throwable $e){
-          //TODO Implement correct status code
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
+          $this->logging_api->getErrormessage("001", $e);
         }
       }else{
-        //TODO Implement correct status code
-        return array("status" => 1, "message" => "No all data stated.");
+        $this->logging_api->getErrormessage("002");
       }
     }
 
     /**
-     * Checks for system updates.
+     * Checks for system updates. Returns update specific data.
+     * This method is used during the update process.
      * Function made for: Web(App)client
      * @param  array  $data       { "updatechannel" : "[main|staging|dev|NULL]" }
      * @param  array $loginData   { NULL } No logindata is needed query this function.
@@ -114,6 +112,12 @@
       }
     }
 
+    /**
+     * Checks if this instance needs to be installed or updated.
+     * This method is used during the update and installation process.
+     * Function made for: Web(App)client
+     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : { "db_install_needed" : 1 / "process_update" : 1 // NULL }}
+     */
     public function checkUpdateRoutine(){
       try{
         if(is_null($this->ini) && !array_key_exists("db_name", $this->ini)) return array("status" => 0, "message" => "Successfully queried system update state.", "data" => array("db_install_needed" => true));
@@ -137,6 +141,13 @@
       }
     }
 
+    /**
+     * Checks if all PHP server dependencies are present.
+     * This method is used during the installation process.
+     * This method do not return formatted error messages, because they are not present at this time.
+     * Function made for: Web(App)client
+     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     public function checkServerDependencies(){
       $php_required = "7.4.0";
       $phpversion = phpversion();
@@ -168,6 +179,17 @@
       return array("status" => 0, "message" => "Successfully loaded dependencies.", "data" => $returndata);
     }
 
+    /**
+     * Checks if a database configuration is working.
+     * This method is used during the installation process.
+     * This method do not return formatted error messages, because they are not present at this time.
+     * Function made for: Web(App)client
+     * @param  string $db_name       The databasename to which it should be connected.
+     * @param  string $db_user       The database user which should be used.
+     * @param  string $db_password   The database access password for the connection.
+     * @param  string $db_host       The host where the instance is running. Either localhost or IP:PORT.
+     * @return array                 {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     public function checkMySQLConfig(string $db_name, string $db_user, string $db_password, string $db_host){
         try{
           $db_api = new DB_Api();
@@ -177,6 +199,17 @@
         }
     }
 
+    /**
+     * Installs the chiamgmt instance.
+     * This method is used during the installation process.
+     * This method do not return formatted error messages, because they are not present at this time.
+     * Function made for: Web(App)client
+     * @param  string $branch               Either dev, staging or main. Must be the same names as the github branches.
+     * @param  array  $db_config            The complete databaseconfiguration. { "databasename" : [DBNAME], "mysqluser" : [LOGIN USER], "mysqlpassword" : [LOGIN PW], "mysqlhost" : [localhost or IP:PORT]}
+     * @param  array  $websocket_config     The websocket configuration. { "socket_protocol" : [ws/wss], "socket_local_port" : [Default: 8443] }
+     * @param  array  $webgui_user_config   The webgui admin user config. { "gui-username" : [adminusername], "gui-forename" : [Admin's Name],"gui-lastname" : [Admin's lastname], "gui-password" : [The login password], "gui-email" : [Admin's login email]}
+     * @return array                        {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     public function installChiamgmt(string $branch, array $db_config, array $websocket_config, array $webgui_user_config){
       //Default the returnvalues to error
       $returnarray["status"] = 1;
@@ -343,6 +376,12 @@
       return $returnarray;
     }
 
+    /**
+     * Checks if all files in the directory are writable to the apache user.
+     * This method is used during the update process.
+     * Function made for: Web(App)client
+     * @return array    {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     public function checkFilesWritable(){
       $not_accessable = [];
       $whitelist = [".htaccess", "config.ini.php.example"];
@@ -364,32 +403,20 @@
       }
 
       if(count($not_accessable) > 0){
-        $apacheuser = exec('whoami');
-        return array("status" => 1, "message" => "Some files are not fully accessable. Please adjust the file owner and group to {$apacheuser} and set 750 as file rights.", "data" => $not_accessable);
+        return $this->logging_api->getErrormessage("001");
       }else{
         return array("status" => 0, "message" => "All neded files are fully accessable.");
       }
     }
 
-    public function processUpdate(array $data, array $loginData = NULL, $server = NULL){
-      $this->server = $server;
-      $now = new \DateTime();
-      $now = $now->format("Y-m-d H:i:s");
-
-      $this->sendStatus(0, 0, 2, "Starting update");
-      $this->enableUpdateMode($loginData["userid"]);
-      $this->createBackupdirs("Creating backup directories", $now);
-      if(!$this->preverror) $this->backupSystemData("Backing up system data", $now);
-      if(!$this->preverror) $this->backupSystemDatabase("Backing up databasedata", $now);
-      if(!$this->preverror) $this->downloadUpdateData("Downloading and installing update");
-
-      if($this->preverror){
-        return $this->logging_api->getErrormessage("001");
-      }else{
-        return array("status" => 0, "message" => "Update process success.");
-      }
-    }
-
+    /**
+     * Enables or disables the maintenance mode.
+     * This method is used during the update process.
+     * Function made for: Web(App)client
+     * @param int $userid            The userid which is currently updating the instance.
+     * @param int $maintenance_mode  { 0 = "Not updating" / 1 = "Updating" }
+     * @return array                 {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     public function setMaintenanceMode(int $userid, int $maintenance_mode){
       if($userid > 0 && $maintenance_mode == 0 || $maintenance_mode == 1){
         try{
@@ -401,14 +428,26 @@
           return $this->logging_api->getErrormessage("001", $e);
         }
       }else{
-        return array("status" => 1, "message" => "Could not set maintenance mode to {$maintenance_mode}. Some data is missing.");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
+    /**
+     * Stop the websocket server
+     * This method is used during the update process.
+     * Function made for: Web(App)client
+     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     public function stopWebsocketServer(){
       return $this->websocket_api->stopWSS();
     }
 
+    /**
+     * Creates backups of the instance.
+     * This method is used during the update process.
+     * Function made for: Web(App)client
+     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     public function createBackups(){
       $now = new \DateTime();
       $now = $now->format("Y-m-d H:i:s");
@@ -431,57 +470,12 @@
       }
     }
 
-    public function finishUpdate(array $data, array $loginData = NULL){
-      $db_update_file = file_get_contents(__DIR__ . "/db_update.json");
-      $db_update_json = json_decode($db_update_file, true);
-
-      if(array_key_exists("table_structures", $db_update_json)){
-        try{
-          $db_system = $this->checkUpdateRoutine();
-
-          if($db_system["data"]["db_update_needed"] < 0){
-            foreach($db_update_json["table_structures"] AS $tablename => $tablechecks){
-              $sql = $this->db_api->execute("SHOW TABLES LIKE '{$tablename}'", array());
-
-              if(count($sql->fetchAll(\PDO::FETCH_ASSOC)) > 0){
-                foreach($tablechecks["existing"] AS $columnname => $columndata){
-                  $sql = $this->db_api->execute("SHOW COLUMNS FROM {$tablename} WHERE Field = ?", array($columnname));
-                  if(count($sql->fetchAll(\PDO::FETCH_ASSOC)) == 0){
-                    $this->db_api->execute("ALTER TABLE {$tablename} ADD {$columnname} {$columndata}", array());
-                  }
-                }
-              }else{
-                foreach($tablechecks["notexisting"] AS $arrkey => $statement){
-                  $this->db_api->execute("{$statement}", array());
-                }
-              }
-            }
-          }
-
-          $now = new \DateTime("now");
-          $sql = $this->db_api->execute("UPDATE system_infos SET dbversion = ?, userid_updating = ?, lastsucupdate = ?, maintenance_mode = ?",
-                                        array($this->ini["versnummer"], 0, $now->format("Y-m-d H:i:s"), 0));
-        }catch(Exception $e){
-          return $this->logging_api->getErrormessage("001", $e);
-        }
-
-        return array("status" => 0, "message" => "Successfully finished update to version {$this->ini["versnummer"]}.");
-      }else{
-        return $this->logging_api->getErrormessage("002");
-      }
-    }
-
-    public function disableMaintenanceMode(array $data, array $loginData = NULL){
-      try{
-        $sql = $this->db_api->execute("UPDATE system_infos SET maintenance_mode = ?",
-                                      array(0));
-
-        return array("status" => 0, "message" => "Successfully disabled maintenance mode.");
-      }catch(Exception $e){
-        return $this->logging_api->getErrormessage("001", $e);
-      }
-    }
-
+    /**
+     * Creates the directories needed for saving the backups.
+     * Returns only 0 or 1 for errors because of specific error messages.
+     * @param  string $timestamp  The timestmap for the backup.
+     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     private function createBackupdirs(string $timestamp){
       $backupdir = "../../..{$this->ini["backup_root"]}";
 
@@ -515,14 +509,24 @@
       return array("status" => 0, "message" => "All directories successfully created.");
     }
 
+    /**
+     * Creates a backup of the system database.
+     * @param  string $timestamp  The timestmap for the backup.
+     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     private function backupSystemDatabase(string $timestamp){
       $targetdir = "../../..{$this->ini["backup_root"]}/{$timestamp}/db/mysq_backup.sql";
       exec("mysqldump --user={$this->ini["db_user"]} --password={$this->ini["db_password"]} --host={$this->ini["db_host"]} {$this->ini["db_name"]} --result-file='{$targetdir}' 2>&1", $output, $exitCode);
 
       if($exitCode == 0) return array("status" => 0, "message" => "Successfully backup up system database.");
-      return array("status" => 1, "message" => "An error occured backing up system database.");
+      return $this->logging_api->getErrormessage("001");
     }
 
+    /**
+     * Creates a backup of the instance filesystem.
+     * @param  string $timestamp  The timestmap for the backup.
+     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     private function backupSystemData(string $timestamp){
       $source = "../../..{$this->ini["system_root"]}";
       $dest = "../../..{$this->ini["backup_root"]}/{$timestamp}/files/";
@@ -530,7 +534,14 @@
       return $this->checkZipValid("{$dest}/backup-{$timestamp}.zip");
     }
 
-    private function zipBackup($source, $dest, $timestamp){
+    /**
+     * Creates a zip of the backed up instance files.
+     * @param  string $source     The root directory of this instance.
+     * @param  string $dest       The backup directory of this instance.
+     * @param  string $timestamp  The timestmap for the backup.
+     * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
+    private function zipBackup(string $source, string $dest, string $timestamp){
       $zip = new \ZipArchive();
       $zip->open("{$dest}/backup-{$timestamp}.zip", \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
 
@@ -550,6 +561,11 @@
       $zip->close();
     }
 
+    /**
+     * Checks if a zipfile is valid or corrupted.
+     * @param  string $zipfile  The path to the zipfile which should be checked.
+     * @return array            {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     private function checkZipValid(string $zipfile){
       if(file_exists($zipfile)){
         $zip = new \ZipArchive();
@@ -557,20 +573,25 @@
         if ($res !== TRUE) {
           switch($res) {
             case \ZipArchive::ER_NOZIP:
-              return array("status" => 1, "message" => "An error occured. File is not a zip.");
+              return $this->logging_api->getErrormessage("001");
             case \ZipArchive::ER_INCONS :
-              return array("status" => 1, "message" => "An error occured. Zip consistency check failed.");
+              return $this->logging_api->getErrormessage("002");
             case \ZipArchive::ER_CRC :
-              return array("status" => 1, "message" => "An error occured. Zip checksum failed.");
+              return $this->logging_api->getErrormessage("003");
             default:
               return array("status" => 0, "message" => "Zip file valid.");
           }
         }
       }else{
-        return array("status" => 1, "message" => "An error occured. Zip not found.");
+        return $this->logging_api->getErrormessage("004");
       }
     }
 
+    /**
+     * Download the files for the update and saves them to temporary storage (/tmp).
+     * Returns only 0 or 1 for errors because of specific error messages.
+     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     public function downloadUpdateFiles(){
       $version_file_data = $this->getVersionFileData();
       $updatechannel = $version_file_data["updatechannel"];
@@ -602,6 +623,11 @@
       }
     }
 
+    /**
+     * Extracts the update files and move them in place.
+     * Returns only 0 or 1 for errors because of specific error messages.
+     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     public function extractAndMoveUpdateFiles(){
       $tmpdir = "/tmp";
       $tmpfiledir = "{$tmpdir}/chiamgmt_update.zip";
@@ -628,6 +654,11 @@
       }
     }
 
+    /**
+     * Alters the table after the update and sets the new version.
+     * Returns only 0 or 1 for errors because of specific error messages.
+     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     public function checkAndAdjustDatabase(){
       $config_file = __DIR__.'/../../config/config.ini.php';
       $config_data = parse_ini_file($config_file, true);
@@ -647,16 +678,24 @@
           }
         }
       }catch(\Throwable $e){
-        return array("status" => 1, "message" => "An error occured. DB Message: {$e->getMessage()}");
+        return $this->logging_api->getErrormessage("001", $e);
       }
 
       return array("status" => 0, "message" => "Altered tables " . implode(",", $alteredtables) . " successfully. DB version updated successfully.");
     }
 
+    /**
+     * Starts the websocket server.
+     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     public function startWebsocketServer(){
       return $this->websocket_api->startWSS();
     }
 
+    /**
+     * Updates the config files with new values.
+     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     public function updateConfigFile(){
       $config_file = __DIR__.'/../../config/config.ini.php';
       $config_data = parse_ini_file($config_file, true);
@@ -687,10 +726,14 @@
       if(array_key_exists("versnummer", $tempini) && $tempini["versnummer"] == $newversion){
         return array("status" => 0, "message" => "Successfully set new version to {$newversion}.");
       }else {
-        return array("status" => 1, "message" => "Could not set version in config.ini.php file.");
+        return $this->logging_api->getErrormessage("001");
       }
     }
 
+    /**
+     * Returns version and update specific values.
+     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     private function getVersionFileData(){
       $updatepackagepath = "https://files.chiamgmt.edtmair.at/server/";
       $versionfilepath = "{$updatepackagepath}/versions.json";
@@ -706,57 +749,13 @@
       return array("versionfiledata" => $version_file_data, "updatechannel" => $updatechannel);
     }
 
-    private function downloadUpdateData(){
-      $updatepackagepath = "https://files.chiamgmt.edtmair.at/server/";
-      $version_file_json = file_get_contents("{$updatepackagepath}/versions.json");
-      $version_file_data = json_decode($version_file_json, true);
-
-      $system_api = new System_Api();
-      $updatechannel = $system_api->getSpecificSystemSetting("updatechannel");
-      if(array_key_exists("updatechannel", $updatechannel["data"])){
-        $updatechannel = $updatechannel["data"]["updatechannel"]["branch"]["value"];
-      }else{ $updatechannel = "main"; }
-
-      if(!is_null($version_file_data) && array_key_exists($updatechannel, $version_file_data)){
-        $updateurl = $version_file_data[$updatechannel][0]["link"];
-        $tmpdir = "/tmp";
-        if(is_dir($tmpdir)){
-          $packagepath = "{$updatepackagepath}{$updateurl}";
-          $tmpfiledir = "{$tmpdir}/chiamgmt_update.zip";
-
-          file_put_contents($tmpfiledir,file_get_contents($packagepath));
-
-          $zip = new \ZipArchive;
-          $res = $zip->open($tmpfiledir);
-          if ($res === TRUE) {
-            $zip->extractTo($tmpdir);
-            $zip->close();
-
-            $this->full_copy("{$tmpdir}/chia-web-gui-{$updatechannel}/", "../../..{$this->ini["system_root"]}/");
-            $newversion = $version_file_data[$updatechannel][0]["version"];
-            if($this->updateConfigFile($newversion)){
-              $this->sendStatus(0, 4, 0, $message);
-            }else{
-              $this->sendStatus(0, 4, 1, "{$message}. Could not set new version. Please enter it manually: {$newversion}");
-            }
-          }else{
-            $this->preverror = true;
-            $this->sendStatus(0, 4, 1, "{$message}. Could not open {$tmpfiledir}.");
-            return;
-          }
-        }else{
-          $this->preverror = true;
-          $this->sendStatus(0, 4, 1, "{$message}. Temporary dir /tmp not found.");
-          return;
-        }
-      }else{
-        $this->preverror = true;
-        $this->sendStatus(0, 4, 1, $message);
-      }
-    }
-
-    private function full_copy($source, $dest){
-      $blacklist = [".htaccess", "System_Update_Api.php", "System_Update_Rest.php","db_update.json"];
+    /**
+     * Copies update files to the final destination.
+     * @param  string $source The filesource which should be copied.
+     * @param  string $dest   The destination where the files should be move to.
+     */
+    private function full_copy(string $source, string $dest){
+      $blacklist = [".htaccess"];
 
       if(!file_exists($dest)) mkdir($dest, 0755);
       foreach(
@@ -771,13 +770,17 @@
             mkdir($dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
           }else{
             if(in_array($item->getFilename(), $blacklist)) continue;
-            //echo "Copying {$item} -> " . $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname() ."\n";
             copy($item, $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
           }
         }
       }
     }
 
+    /**
+     * Generates a random string.
+     * @param  integer $length  The length of the string which should be generated.
+     * @return string           Some random string.
+     */
     private function generateRandomString($length = 50) {
       $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
       $charactersLength = strlen($characters);
@@ -786,13 +789,6 @@
           $randomString .= $characters[rand(0, $charactersLength - 1)];
       }
       return $randomString;
-    }
-
-    //processing-status: 0 Success, 1 Failed, 2 Processing
-    private function sendStatus(int $status, int $step, int $processing_status, string $message){
-      $now = new \DateTime("now");
-      $time = $now->format("Y-m-d H:i:s");
-      $this->server->messageFrontendClients(array("siteID" => 3), array("processingUpdate" => array("status" => $status, "step" => $step, "processing-status" => $processing_status, "message" => "{$message}: {$time}")));
     }
   }
 ?>

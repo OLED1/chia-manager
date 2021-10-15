@@ -1,13 +1,20 @@
 {
   "functioncodes" : {
-    "checkForUpdates" : "001",
-    "checkUpdateRoutine" : "002",
-    "processUpdate" : "003",
-    "finishUpdate" : "004",
-    "disableMaintenanceMode" : "005",
-    "enableUpdateMode" : "006"
+    "setInstanceUpdating" : "001",
+    "checkForUpdates" : "002",
+    "checkUpdateRoutine" : "003",
+    "checkFilesWritable" : "004",
+    "setMaintenanceMode" : "005",
+    "backupSystemDatabase" : "006",
+    "checkZipValid" : "007",
+    "checkAndAdjustDatabase" : "008",
+    "updateConfigFile" : "009"
   },
   "errormessages" : {
+    "setInstanceUpdating" : {
+      "001" : [2, "An error occured."],
+      "002" : [2, "No all data stated."]
+    },
     "checkForUpdates" : {
       "001" : [2, "No versions available."],
       "002" : [2, "Configured updatechannel not found."]
@@ -15,18 +22,27 @@
     "checkUpdateRoutine" : {
       "001" : [2, "An error occured."]
     },
-    "processUpdate" : {
-      "001" : [2, "Update process failed."]
+    "checkFilesWritable" : {
+      "001" : [2, "Some files are not fully accessable. Please adjust the file owner and group to the apache user and set 750 as file rights."]
     },
-    "finishUpdate" : {
-      "001" : [2, "A database error occured."],
-      "002" : [2, "An error occured, db_update.json could not be found!"]
+    "setMaintenanceMode" : {
+      "001" : [2, "An error occured."],
+      "002" : [2, "Could not set maintenance mode. Some data is missing."]
     },
-    "disableMaintenanceMode" : {
-      "001" : [2, "A database error occured."]
+    "backupSystemDatabase" : {
+      "001" : [2, "An error occured backing up system database."]
     },
-    "enableUpdateMode" : {
+    "checkZipValid" : {
+      "001" : [2, "An error occured. File is not a zip."],
+      "002" : [2, "An error occured. Zip consistency check failed."],
+      "003" : [2, "An error occured. Zip checksum failed."],
+      "004" : [2, "An error occured. Zip not found."]
+    },
+    "checkAndAdjustDatabase" : {
       "001" : [2, "An error occured."]
+    },
+    "updateConfigFile" : {
+      "001" : [2, "Could not set version in config.ini.php file."]
     }
   }
 }

@@ -304,45 +304,4 @@
   </div>
 </div>
 
-<div id="updater_modal" data-verified="false" class="modal" tabindex="-1" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><span class="fas fa-caret-square-up"></span>&nbsp;System Update</h5>
-        <button type="button" class="close update-close-button" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body" id="updater-taskslog">
-        <div class="row">
-          <div class="col mb-4">
-              <div class="card bg-warning text-white shadow">
-                  <div class="card-body">
-                      Please do not reload this page or force a close of this window during update process!
-                  </div>
-              </div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col">
-            <div class="card" style="height: 20em; width: 100%; overflow: auto;">
-              <div class="card-body">
-                <h5>Updatelog</h5>
-                <div id="updatelogcontainer">
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary" id="confirm-update-process">Process update<i class="fas fa-spinner fa-spin" style="display: none;"></i></button>
-        <button type="button" class="btn btn-primary" id="proceed-update-routine" style="display: none;">Finish update</button>
-        <button type="button" class="btn btn-secondary update-close-button" data-dismiss="modal">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
 <script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/system/js/system.js"?>></script>

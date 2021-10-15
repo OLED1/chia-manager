@@ -124,16 +124,11 @@ $(function(){
 
   $("#check-for-updates").on("click", function(e){
     e.preventDefault();
-
     window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "checkForUpdates", {});
   });
 
   $("#start-update").on("click", function(e){
     e.preventDefault();
-    //$("#confirm-update-process").removeAttr("disabled").find("i").hide();
-    //$("#updatelogcontainer").children().remove();
-    //$("#updater_modal").modal("show");
-
     window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "setInstanceUpdating", { "userid" : userID, "updatestate" : 1 });
   });
 
