@@ -4,5 +4,10 @@
       "ALTER TABLE `system_infos` CHANGE `dbversion` `dbversion` VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL;",
       "UPDATE `system_infos` SET dbversion = '0.1.1.211014'"
     ]
+  },
+  "0.1.1.211015" : {
+    "system_infos" : [
+      "UPDATE `system_infos` SET dbversion = '0.1.1.211015'"
+    ]
   }
 }

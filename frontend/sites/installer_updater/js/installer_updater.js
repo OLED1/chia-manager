@@ -220,6 +220,10 @@ function sendData(action, data){
 
           $("#updater-maintenance-off i").removeClass("fa-hourglass-start").removeClass("fa-times").addClass("fa-spinner fa-spin").css("color","");
           sendData("setMaintenanceMode", { "userID" : userID, "maintenance_mode" : 0 });
+          sendData("setInstanceUpdating", { "userid" : userID, "updatestate" : 0 });
+
+          $("#retry-update").hide();
+          $("#update-finish-btn").prop("disabled", false).show();
         }
       }else{
         var showretry = false;

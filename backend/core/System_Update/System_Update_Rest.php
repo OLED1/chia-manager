@@ -1,7 +1,6 @@
 <?php
   session_start();
   use ChiaMgmt\System_Update\System_Update_Api;
-  use ChiaMgmt\System_Update\System_Update_Api;
   require __DIR__ . '/../../../vendor/autoload.php';
 
   $system_update_api = new System_Update_Api();
@@ -43,6 +42,8 @@
     echo json_encode($system_update_api->updateConfigFile());
   }else if(isset($_POST["action"]) && $_POST["action"] == "startWebsocketServer"){
     echo json_encode($system_update_api->startWebsocketServer());
+  }else if(isset($_POST["action"]) && $_POST["action"] == "setInstanceUpdating" && isset($_POST["data"]["userid"]) && isset($_POST["data"]["updatestate"])){
+    echo json_encode($system_update_api->setInstanceUpdating($_POST["data"]));
   }else{
     echo json_encode(array("status" => 1, "message" => "Action not known or not allowed."));
   }

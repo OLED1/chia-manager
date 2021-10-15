@@ -9,6 +9,7 @@
   $default_nonce = "3LMJm+1llrExr4spfB+DrjbN5ys7gYhj1w=";
   $db_install = false;
   $process_update = false;
+
   if(array_key_exists("db_install_needed", $system_update_state["data"])){
     $db_install = true;
   }else if(array_key_exists("process_update", $system_update_state["data"]) && $system_update_state["data"]["process_update"]){
@@ -391,12 +392,29 @@
                       <p id="updater-maintenance-off-log" class="update-log"></p>
                       <hr>
                       <button id="retry-update" class="btn btn-success btn-user btn-block install-step" style="width: 25%; display: none;">Retry</button>
-                      <button data-target="process-update-page" data-myid="updater-welcome-page" class="btn btn-success btn-user btn-block install-step" style="width: 25%;" disabled>Finish</button>
+                      <button id="update-finish-btn" data-target="updater-finish-page" data-myid="process-update-page" class="btn btn-success btn-user btn-block install-step" style="width: 25%;" disabled>Finish</button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+          <div id="updater-finish-page" style="display: none;">
+            <div class="d-sm-flex align-items-center justify-content-between mb-4">
+              <h1 class="h3 mb-0 text-gray-800">Update finished</h1>
+            </div>
+            <div class="row">
+              <div class="col">
+                <div class="card shadow mb-4">
+                  <div class="card-body">
+                    <p>This instance has been updated successfully. We hope you are happy with the new bug fixes and features.<br>
+                    Just press the button "Go to instance" to hang on.<br></p>
+                    <hr>
+                    <a href="/" class="btn btn-success btn-user btn-block" style="width: 25%;">Go to instance</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
             <?php } ?>
             </div>
           </main>
