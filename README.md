@@ -175,7 +175,7 @@ cd /var/www/chiamgmt
 #### Download the project files
 ```
 wget https://github.com/OLED1/chia-web-gui/archive/refs/heads/dev.zip
-unzip chia-web-gui-dev
+unzip chia-web-gui-dev.zip
 ```
 
 #### Execute the installer
