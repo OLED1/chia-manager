@@ -154,7 +154,7 @@ apt install mysql-server php php-common php-json php-mbstring php-igbinary php-t
 mysql -u root -p
 CREATE DATABASE chiamgmt_db;
 CREATE USER 'chiamgmt_user'@'localhost' IDENTIFIED WITH mysql_native_password BY 'password';
-GRANT ALL PRIVILEGES ON chiamgmt_db TO 'chiamgmt_user'@'localhost';
+GRANT ALL PRIVILEGES ON chiamgmt_db . * TO 'chiamgmt_user'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
