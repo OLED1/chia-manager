@@ -9,9 +9,9 @@ The main goal is to make monitoring and managing the Chia Infrastructure and the
 ### Why should i use it?
 This project should make it more easy to use, manage and monitor your Chia Nodes and to be sure every node makes his work and you are good to go.
 
-Some of the upcomming feature like autoplotting via Madmax plotter will excite you.
+Some of the upcoming feature like autoplotting via Madmax plotter will excite you.
 
-Furthermore this project (will) offer(s) nearly everthing like the chia electron gui.
+Furthermore this project (will) offer(s) nearly everything like the chia electron gui.
 Read more in the following sections.
 
 ### What can i do with it?
@@ -146,7 +146,7 @@ At least PHP 7.4 is needed to run the Web-GUI. PHP 8 is currently not supported/
 ##### Debian based systems (Ubuntu 20.04)
 This application is currently tested on Ubuntu 20.04 LTS.
 ```
-apt install php php-cli php-fpm php-json php-common php-mysql php-zip php-gd php-mbstring php-curl php-xml php-pear php-bcmath
+apt install php php-common php-json php-mbstring php-igbinary php-tokenizer php-apcu php-readline php-sockets php-intl php-posix php-sysvmsg php-cli php-fpm
 ```
 
 #### Setup a Mysql database
@@ -162,25 +162,29 @@ FLUSH PRIVILEGES;
 You can download an example Vhost config for apache webservers from here:
 https://files.chiamgmt.edtmair.at/server/Example_Configs/
 
-#### Download the installer
+#### Create your folder structure
 ```
+mkdir /path/to/your/desired/directory
 cd /path/to/your/desired/directory
 
-Download your desired install package from
-https://files.chiamgmt.edtmair.at/server/install-packages/
+E.g.
+mkdir /var/www/chiamgmt
+cd /var/www/chiamgmt
+```
 
+#### Download the project files
+```
+wget https://github.com/OLED1/chia-web-gui/archive/refs/heads/dev.zip
 unzip chia-web-gui-dev
-mv chia-web-gui-dev/installer.php /path/to/your/desired/directory
-rm -rf chia-web-gui-dev*
 ```
 
 #### Execute the installer
-Go to https://your.chiamgmtwebgui.com/installer.php and follow the steps.
-After successfull instalation do not forget to remove the installer.php - file.
+Go to https://your.chiamgmtwebgui.com/frontend/sites/installer_updater and follow the steps.
+After successful installation do not forget to update the javascript nonce stated in the config file into your htaccess file. Otherwise no javascript can be loaded.
 
 #### Node client Installation
-Just follow the instructions in the Web-GUI unter the point "Nodes".
+Just follow the instructions in the Web-GUI under the point "Nodes".
 Select your desired system OS. (Only Linux is currently supported)
 
 ### Disclaimer
-CHIA NETWORK INC, CHIA™, the CHIA BLOCKCHAIN™, the CHIA PROTOCOL™, CHIALISP™ and the “leaf Logo” (including the leaf logo alone when it refers to or indicates Chia), are trademarks or registered trademarks of Chia Network, Inc., a Delaware corporation. There is no affliation between this Chia Mgmt project and the main Chia Network project.
+CHIA NETWORK INC, CHIA™, the CHIA BLOCKCHAIN™, the CHIA PROTOCOL™, CHIALISP™ and the “leaf Logo” (including the leaf logo alone when it refers to or indicates Chia), are trademarks or registered trademarks of Chia Network, Inc., a Delaware corporation. There is no affiliation between this Chia Mgmt project and the main Chia Network project.
