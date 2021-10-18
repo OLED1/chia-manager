@@ -146,7 +146,7 @@ At least PHP 7.4 is needed to run the Web-GUI. PHP 8 is currently not supported/
 ##### Debian based systems (Ubuntu 20.04)
 This application is currently tested on Ubuntu 20.04 LTS.
 ```
-apt install php php-common php-json php-mbstring php-igbinary php-tokenizer php-apcu php-readline php-sockets php-intl php-posix php-sysvmsg php-cli php-fpm
+apt install mysql-server php php-common php-json php-mbstring php-igbinary php-tokenizer php-apcu php-readline php-sockets php-intl php-posix php-sysvmsg php-cli php-fpm
 ```
 
 #### Setup a Mysql database
