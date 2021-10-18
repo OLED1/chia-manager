@@ -155,7 +155,7 @@
       $phpversion = phpversion();
       $versioncompare = version_compare($phpversion, $php_required, ">=");
 
-      $needed_modules = ["Core", "date", "libxml", "openssl", "pcre", "zlib", "filter", "hash", "Reflection", "SPL", "session", "standard", "sodium", "cgi-fcgi", "mysqlnd", "PDO", "xml", "apcu", "bcmath", "bz2", "calendar", "ctype", "curl", "dom", "mbstring", "FFI", "fileinfo", "ftp", "gd", "gettext", "gmp", "iconv", "igbinary", "imagick", "intl", "json", "exif", "msgpack", "mysqli", "pdo_mysql", "apc", "posix", "readline", "redis", "shmop", "SimpleXML", "sockets", "sysvmsg", "sysvsem", "sysvshm", "tidy", "tokenizer", "xmlreader", "xmlrpc", "xmlwriter", "xsl", "zip", "Phar", "memcached", "Zend OPcache"];
+      $needed_modules = ["standard", "session", "json", "Core", "date", "hash", "filter", "pcre", "curl", "openssl", "mbstring", "iconv", "SPL", "igbinary", "tokenizer", "apcu", "readline", "pcntl", "sockets", "zlib", "intl", "posix", "sysvmsg", "ctype"];
       $diff = array_diff(get_loaded_extensions(), $needed_modules);
 
       $returndata = [];
