@@ -54,6 +54,7 @@
      * Marks this instance as updating. This will allow to open the installer/updater.
      * This method is used during the update process.
      * Function made for: Web(App)client
+     * @throws Exception $e       Throws an exception on db errors.
      * @param array  $data       { userid: [userid], updatestate: [1 = Updating, 0 = Not updating]}
      * @param array $loginData   {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
@@ -116,6 +117,7 @@
      * Checks if this instance needs to be installed or updated.
      * This method is used during the update and installation process.
      * Function made for: Web(App)client
+     * @throws Exception $e       Throws an exception on db errors.
      * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : { "db_install_needed" : 1 / "process_update" : 1 // NULL }}
      */
     public function checkUpdateRoutine(){
@@ -184,6 +186,7 @@
      * This method is used during the installation process.
      * This method do not return formatted error messages, because they are not present at this time.
      * Function made for: Web(App)client
+     * @throws Exception $e          Throws an exception on db errors.
      * @param  string $db_name       The databasename to which it should be connected.
      * @param  string $db_user       The database user which should be used.
      * @param  string $db_password   The database access password for the connection.
@@ -204,6 +207,7 @@
      * This method is used during the installation process.
      * This method do not return formatted error messages, because they are not present at this time.
      * Function made for: Web(App)client
+     * @throws Exception $e                 Throws an exception on db errors.
      * @param  string $branch               Either dev, staging or main. Must be the same names as the github branches.
      * @param  array  $db_config            The complete databaseconfiguration. { "databasename" : [DBNAME], "mysqluser" : [LOGIN USER], "mysqlpassword" : [LOGIN PW], "mysqlhost" : [localhost or IP:PORT]}
      * @param  array  $websocket_config     The websocket configuration. { "socket_protocol" : [ws/wss], "socket_local_port" : [Default: 8443] }
@@ -413,6 +417,7 @@
      * Enables or disables the maintenance mode.
      * This method is used during the update process.
      * Function made for: Web(App)client
+     * @throws Exception $e       Throws an exception on db errors.
      * @param int $userid            The userid which is currently updating the instance.
      * @param int $maintenance_mode  { 0 = "Not updating" / 1 = "Updating" }
      * @return array                 {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
@@ -424,7 +429,7 @@
           array($userid, $maintenance_mode));
 
           return array("status" => 0, "message" => "Successfully set maintenance mode to {$maintenance_mode}.");
-        }catch(Exception $e){
+        }catch(\Throwable $e){
           return $this->logging_api->getErrormessage("001", $e);
         }
       }else{
@@ -657,6 +662,7 @@
     /**
      * Alters the table after the update and sets the new version.
      * Returns only 0 or 1 for errors because of specific error messages.
+     * @throws Exception $e       Throws an exception on db errors.
      * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
     public function checkAndAdjustDatabase(){

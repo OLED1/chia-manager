@@ -8,11 +8,64 @@ use ChiaMgmt\RequestHandler\RequestHandler_Api;
 use ChiaMgmt\Sites\Sites_Api;
 use ChiaMgmt\Logging\Logging_Api;
 
-require __DIR__ . '/../../../vendor/autoload.php';
-
+/**
+ * The ChiaWebSocketServer class contains the websocket server itself and it's data processing functions.
+ * This class is mainly used by the web(/app) client.
+ * @version 0.1.1
+ * @author OLED1 - Oliver Edtmair
+ * @since 0.1.0
+ * @copyright Copyright (c) 2021, Oliver Edtmair (OLED1), Luca Austelat (lucaust)
+ */
 class ChiaWebSocketServer implements MessageComponentInterface {
-    protected $clients, $users, $subscription, $websocketClient, $login_api, $requestHandler, $requests, $sites_api, $sites_data, $sites_data1, $logging;
+  /**
+   * The local connected client object.
+   * @var SplObjectStorage
+   */
+    private $clients;
+    /**
+     * The local connected client array.
+     * @var array
+     */
+    private $users;
+    /**
+     * The local active connected clients array.
+     * @var array
+     */
+    private $subscription;
+    /**
+     * Holds an instance to the Login Class.
+     * @var Login_Api
+     */
+    private $login_api;
+    /**
+     * Holds an instance to the RequestHandler Class.
+     * @var RequestHandler_Api
+     */
+    private $requestHandler;
+    /**
+     * The local active request clients array.
+     * @var array
+     */
+    private $requests;
+    /**
+     * Holds an instance to the Sites Class.
+     * @var Sites_Api
+     */
+    private $sites_api;
+    /**
+     * Holds an array of available system enabled sites.
+     * @var array
+     */
+    private $sites_data;
+    /**
+     * Holds an instance to the Logging Class.
+     * @var Logging_Api
+     */
+    private $logging;
 
+    /**
+     * Initialises the needed and above stated private variables.
+     */
     public function __construct() {
       echo "[{$this->getDate()}] INFO: Starting websocket server\n";
       $this->clients = new \SplObjectStorage;
@@ -27,6 +80,10 @@ class ChiaWebSocketServer implements MessageComponentInterface {
       $this->sites_data = $this->sites_api->getSiteInfos(["siteid" => NULL])["data"];
     }
 
+    /**
+     * This websocketserver specific function will be called as soon as a client opens a new connection to the server.
+     * @param  ConnectionInterface $conn  Websocket specific information about the current client connection.
+     */
     public function onOpen(ConnectionInterface $conn) {
         // Store the new connection to send messages to later
         $this->clients->attach($conn);
@@ -35,6 +92,14 @@ class ChiaWebSocketServer implements MessageComponentInterface {
         echo "[{$this->getDate()}] INFO: New connection! ({$conn->resourceId})\n";
     }
 
+    /**
+     * This websocketserver specific function will be called as soon as a client sends in an action to the server.
+     * If the client sent in a valid json array, the request will be processed using the RequestHandler.
+     * It will be checked if the client is allowed to connect and send in or query information to/from the api.
+     * After that the requester gets an information via websocket and the websocket client if a user is viewing the site for which the data is meant for.
+     * @param  ConnectionInterface $from    Websocket specific information about the current client connection.
+     * @param  array $msg                   The message as json which was sent in from the client.
+     */
     public function onMessage(ConnectionInterface $from, $msg) {
       $data = json_decode($msg, true);
 
@@ -156,6 +221,11 @@ class ChiaWebSocketServer implements MessageComponentInterface {
       $this->unsubscribeAllBackendClients();
     }
 
+    /**
+     * This websocketserver specific function will be called as soon as a client closes the connection to the server.
+     * This function removes the client connection from the local array.
+     * @param  ConnectionInterface $conn  Websocket specific information about the current client connection.
+     */
     public function onClose(ConnectionInterface $conn) {
         // The connection is closed, remove it, as we can no longer send it messages
         $this->clients->detach($conn);
@@ -191,6 +261,11 @@ class ChiaWebSocketServer implements MessageComponentInterface {
         }
     }
 
+    /**
+     * This websocketserver specific function will be called as soon as an error happens to the websocket server.
+     * The errors will be logged to the server's logging file.
+     * @param  ConnectionInterface $conn  Websocket specific information about the current client connection.
+     */
     public function onError(ConnectionInterface $conn, \Exception $e) {
         echo "[{$this->getDate()}] CRITICAL: An error has occurred: {$e->getMessage()}\n";
         $this->logging->getErrormessage("001", $e->getMessage());
@@ -198,14 +273,31 @@ class ChiaWebSocketServer implements MessageComponentInterface {
         $conn->close();
     }
 
+    /**
+     * Returns a list of active subscriptions.
+     * @param  array  $loginData  The clients logindata to be sure the client is logged in.
+     * @return array              The requested subscriptions list.
+     */
     public function getActiveSubscriptions(array $loginData){
       return $this->requestHandler->processGetActiveSubscriptions($loginData, $this->subscription);
     }
 
+    /**
+     * Retuns the current formatted date.
+     * This function is only meant for server logging in CLI.
+     * @return DateTime The current date.
+     */
     private function getDate(){
       return date("d.m.Y H:i:s");
     }
 
+    /**
+     * Sends a message to all web/app-frontend clients which are viewing a specific site.
+     * @param  array  $loginData    The clients logindata.
+     * @param  array  $datatosend   The json formatted data which should be sent to the frontend client(s).
+     * @param  int $mycon           The connection ID of the sending client to be able to send back an info.
+     * @param  array $backendInfo   The backend related information for data processing like namespace- and functionname.
+     */
     public function messageFrontendClients(array $loginData, array $datatosend, int $mycon = NULL, array $backendInfo = NULL){
       if(is_null($backendInfo) && array_key_exists("siteID", $loginData) && $loginData["siteID"] > 0){
         $siteID = $this->sites_data["by-id"][$loginData["siteID"]]["sitestoinform"];
@@ -242,6 +334,10 @@ class ChiaWebSocketServer implements MessageComponentInterface {
       }
     }
 
+    /**
+     * Sends a message to a specific web/app-frontend clients which are viewing a specific site.
+     * @param  array  $data   The json formatted data array which should be sent to the client.
+     */
     public function messageSpecificNode(array $data){
       if(array_key_exists("nodeinfo", $data) && array_key_exists("authhash", $data["nodeinfo"]) && array_key_exists("data", $data)){
         $alreadyinformed = [];
@@ -277,6 +373,10 @@ class ChiaWebSocketServer implements MessageComponentInterface {
       }
     }
 
+    /**
+     * Sends a message to all web/app-frontend, backend and chia clients.
+     * @param  array  $data   The json formatted data array which should be sent to the client.
+     */
     public function messageAllNodes(array $data){
       $alreadyinformed = [];
 
@@ -310,6 +410,9 @@ class ChiaWebSocketServer implements MessageComponentInterface {
       }
     }
 
+    /**
+     * Deletes all connections the backend client.
+     */
     private function unsubscribeAllBackendClients(){
       if(array_key_exists("backendClient", $this->subscription)){
         foreach($this->subscription["backendClient"] AS $connid => $conndata){

@@ -1,25 +1,56 @@
 <?php
   namespace ChiaMgmt\WebSocket;
-
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\WebSocketClient\WebSocketClient_Api;
 
+  /**
+   * The WebSocket_Api class handles the start, stop, restart operations of the websocket server.
+   * @version 0.1.1
+   * @author OLED1 - Oliver Edtmair
+   * @since 0.1.0
+   * @copyright Copyright (c) 2021, Oliver Edtmair (OLED1), Luca Austelat (lucaust)
+   */
   class WebSocket_Api{
-    private $wsclient, $logging;
+    /**
+     * Holds an instance to the Websocket Client Class.
+     * @var WebSocketClient_Api
+     */
+    private $wsclient;
+    /**
+     * Holds an instance to the Logging Class.
+     * @var Logging_Api
+     */
+    private $logging_api;
 
+    /**
+     * Initialises the needed and above stated private variables.
+     */
     public function __construct(){
       $this->wsclient = new WebSocketClient_Api();
-      $this->logging = new Logging_Api($this);
+      $this->$logging_api = new Logging_Api($this);
     }
 
+    /**
+     * [testConnection description]
+     * Function made for: Web(App)client
+     * @throws Exception $e  Throws an exception websocket errors.
+     * @return array         {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     public function testConnection(){
       try{
         return $this->wsclient->testConnection();
       }catch(Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->$logging_api->getErrormessage("001", $e);
       }
     }
 
+    /**
+     * Updates the user current viewing site to the websockets internal array.
+     * Function made for: Web(App)client
+     * @todo Make this function websocket compatible.
+     * @return int $siteID  The siteid which the user is currenty viewing.
+     * @return array        {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     public function updateSiteID(int $siteID){
       if($siteID > 0){
         $con_test = $this->testConnection();
@@ -29,10 +60,16 @@
           return $con_test;
         }
       }else{
-        return $this->logging->getErrormessage("001");
+        return $this->$logging_api->getErrormessage("001");
       }
     }
 
+    /**
+     * Sends a command to the websocket server.
+     * @param  string $command   The command which should be sent to the websocket server.
+     * @param  array  $data      The data which should be sent to the websocket server.
+     * @return array             {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     public function sendToWSS(string $command, array $data = []){
       $con_test = $this->testConnection();
       if($con_test["status"] == 0){
@@ -42,6 +79,10 @@
       }
     }
 
+    /**
+     * Starts the websocket server if not running.
+     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     public function startWSS(){
       $wssstatus = $this->wsclient->testConnection();
       if($wssstatus["status"] == "016001001" || $wssstatus["status"] == "016001002"){
@@ -51,13 +92,17 @@
         if($wssstatus["status"] == 0){
           return $wssstatus;
         }else{
-          return $this->logging->getErrormessage("001");
+          return $this->$logging_api->getErrormessage("001");
         }
       }else{
-        return $this->logging->getErrormessage("002");
+        return $this->$logging_api->getErrormessage("002");
       }
     }
 
+    /**
+     * Stops the websocket server if not stopped.
+     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     public function stopWSS(){
       $wssstatus = $this->wsclient->testConnection();
       if($wssstatus["status"] == 0){
@@ -68,13 +113,17 @@
         if($wssstatus["status"] == "016001001" || $wssstatus["status"] == "016001002"){
           return array("status" => 0, "message" => "Websocket server stopped.");
         }else{
-          return $this->logging->getErrormessage("001");
+          return $this->$logging_api->getErrormessage("001");
         }
       }else{
-        return $this->logging->getErrormessage("002");
+        return $this->$logging_api->getErrormessage("002");
       }
     }
 
+    /**
+     * Restarts the websocket server if running.
+     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     public function restartWSS(){
       $stop = $this->stopWSS();
       if($stop["status"] == 0){

@@ -6,6 +6,13 @@
   use ChiaMgmt\Mailing\Mailing_Api;
   use ChiaMgmt\Encryption\Encryption_Api;
 
+  /**
+   * The Users_Api class handles the user creation and editing specific functions.
+   * @version 0.1.1
+   * @author OLED1 - Oliver Edtmair
+   * @since 0.1.0
+   * @copyright Copyright (c) 2021, Oliver Edtmair (OLED1), Luca Austelat (lucaust)
+   */
   class Users_Api{
     /**
      * Holds an instance to the Database Class.
@@ -33,6 +40,9 @@
      */
     private $ini;
 
+    /**
+     * Initialises the needed and above stated private variables.
+     */
     public function __construct(){
       $this->db_api = new DB_Api();
       $this->logging_api = new Logging_Api($this);
@@ -41,6 +51,14 @@
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
     }
 
+    /**
+     * Updates user specific information.
+     * Function made for: Web(App)client
+     * @throws Exception $e       Throws an exception on db errors.
+     * @param  array  $data       { "name" : "The user's forename", "lastname" : "The user's lastname", "email" : "The user's email address", "username" : "The user's username" }
+     * @param  array $loginData   No logindata needed to use this function.
+     * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The changed data]} }
+     */
     public function savePersonalInfo(array $data, array $loginData = NULL){
       if(isset($data["userID"]) && isset($data["name"]) && isset($data["lastname"]) && isset($data["email"]) && isset($data["username"])){
         $checkUserExists = $this->checkUsernameExists($data["username"], $data["userID"]);
@@ -61,6 +79,14 @@
       }
     }
 
+    /**
+     * Adds a user to the system.
+     * Function made for: Web(App)client
+     * @throws Exception $e       Throws an exception on db errors.
+     * @param  array  $data       { "name" : "The user's forename", "lastname" : "The user's lastname", "email" : "The user's email address", "username" : "The user's username", "password" : "The user's password in cleartext" }
+     * @param  array $loginData   No logindata needed to use this function.
+     * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The newly added data]} }
+     */
     public function addUser(array $data, array $loginData = NULL){
       if(array_key_exists("name", $data) && array_key_exists("lastname", $data) &&
           array_key_exists("email", $data) && array_key_exists("username", $data) && array_key_exists("password", $data)){
@@ -99,6 +125,14 @@
       }
     }
 
+    /**
+     * Edit the information regarding an existing system user.
+     * Function made for: Web(App)client
+     * @throws Exception $e       Throws an exception on db errors.
+     * @param  array  $data       { "id" : "The user's db id", "name" : "The user's forename", "lastname" : "The user's lastname", "email" : "The user's email address", "username" : "The user's username", "password" : "The password which should be changed. Not mandatory." }
+     * @param  array $loginData   No logindata needed to use this function.
+     * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The newly added data]} }
+     */
     public function editUserInfo(array $data, array $loginData = NULL){
       if(array_key_exists("id", $data) && array_key_exists("name", $data) && array_key_exists("lastname", $data) &&
           array_key_exists("email", $data) && array_key_exists("username", $data)){
@@ -132,6 +166,14 @@
       }
     }
 
+    /**
+     * Disables an existing system user. The admin account and own account cannot be disabled.
+     * Function made for: Web(App)client
+     * @throws Exception $e       Throws an exception on db errors.
+     * @param  array  $data       { "userID" : "The user's db id" }
+     * @param  array $loginData   No logindata needed to use this function.
+     * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The id which was disabled.]} }
+     */
     public function disableUser(array $data, array $loginData = NULL){
       if(array_key_exists("userID", $data)){
         if($loginData["userid"] != $data["userID"] && $data["userID"] > 1){
@@ -151,6 +193,14 @@
       }
     }
 
+    /**
+     * Enables an existing system user.
+     * Function made for: Web(App)client
+     * @throws Exception $e       Throws an exception on db errors.
+     * @param  array  $data       { "userID" : "The user's db id" }
+     * @param  array $loginData   No logindata needed to use this function.
+     * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The id which was enabled.] } }
+     */
     public function enableUser(array $data, array $loginData = NULL){
       if(array_key_exists("userID", $data)){
         try{
@@ -165,6 +215,12 @@
       }
     }
 
+    /**
+     * Checks if the stated data is not empty.
+     * @param  array  $data       The key-value dataarray which should be checked.
+     * @param  array $loginData   No logindata needed to use this function.
+     * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     private function userInfoNotEmpty(array $data){
       $notempty = true;
       foreach($data AS $key => $value){
@@ -174,6 +230,15 @@
       return array("status" => ($notempty ? "0" : "1"), "message" => "Check processed successfully $notempty.");
     }
 
+    /**
+     * Returns all or specific user data.
+     * Function made for: Web(App)client.
+     * @todo Make this function websocket compatible.
+     * @throws Exception $e       Throws an exception on db errors.
+     * @param  array  $data       { "userID" : "The user's db id. Not mandatory." }
+     * @param  array $loginData   No logindata needed to use this function.
+     * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The found on the db stored data.]} }
+     */
     public function getUserData(int $userID = NULL){
       try{
         if(is_Null($userID)){
@@ -192,9 +257,13 @@
     }
 
     /**
-     * Checks if a specific username is already existin
-     * @param  string $username The username which should be checked
-     * @return array            Returns a statuscode array
+     * Checks if a specific username is already existing.
+     * Function made for: Web(App)client.
+     * @todo Make this function websocket compatible.
+     * @throws Exception $e       Throws an exception on db errors.
+     * @param  string $username   The username which should be checked
+     * @param  int    $userID     The userid for which the username should be checked for.
+     * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
     public function checkUsernameExists(string $username, int $userID = NULL){
       try{
@@ -218,10 +287,25 @@
       }
     }
 
+    /**
+     * Returns the own db stored userdata.
+     * Function made for: Web(App)client.
+     * @todo Make this function websocket compatible.
+     * @param  int    $userID   The userid for which the data should be returned for.
+     * @return array            {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The found on the db stored data.]} }
+     */
     public function getOwnUserData(int $userID){
       return $this->getUserData($userID);
     }
 
+    /**
+     * Generates a new backup key for a user.
+     * Function made for: Web(App)client.
+     * @throws Exception $e         Throws an exception on db errors.
+     * @param  array  $data         { "userID" : "The user's id." }
+     * @param  array $backendInfo   No backendInfo needed to query this function.
+     * @return array                {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The newly created backup key.]} }
+     */
     public function generateNewBackupKey(array $data, array $backendInfo = NULL){
       if(array_key_exists("userID", $data)){
         $backupkey = bin2hex(random_bytes(25));
@@ -242,6 +326,15 @@
       }
     }
 
+    /**
+     * Returns the current user's setup backup key.
+     * Function made for: Web(App)client.
+     * @todo Make this function websocket compatible.
+     * @throws Exception $e         Throws an exception on db errors.
+     * @param  array  $data         { "userID" : "The user's id." }
+     * @param  array $backendInfo   No backendInfo needed to query this function.
+     * @return array                {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The currently used backup key.]} }
+     */
     public function getBackupKey(int $userID){
       try{
         $sql = $this->db_api->execute("SELECT backupkey FROM users_backupkeys WHERE userid = ? AND valid = 1", array($userID));
@@ -260,8 +353,11 @@
 
     /**
      * Checks if the current password matches the password on the db
-     * @param  array $data The data array which contains the userID and password
-     * @return aray        Returns a statuscode array
+     * Function made for: Web(App)client.
+     * @throws Exception $e         Throws an exception on db errors.
+     * @param  array $data          { "userID" : "The user's id.", "password" : "The password which should be checked." }
+     * @param  array $loginData     No logindata needed to query this function.
+     * @return array                {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
     public function checkCurrentPassword(array $data, array $loginData = NULL){
       if(isset($data["userID"]) && isset($data["password"])){
@@ -291,6 +387,11 @@
       }
     }
 
+    /**
+     * Checks if a stated password is strong enough.
+     * @param  string $password   The password which should be checked.
+     * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     private function checkPasswordStrength(string $password){
       $uppercase = preg_match('@[A-Z]@', $password);
       $lowercase = preg_match('@[a-z]@', $password);
@@ -306,8 +407,11 @@
 
     /**
      * Resets the in the data array stated user's password
-     * @param  array $data The data containing the userID and the password
-     * @return array       Returns a statuscode array
+     * Function made for: Web(App)client.
+     * @throws Exception $e         Throws an exception on db errors.
+     * @param  array $data          { "userID" : "The user's id.", "password" : "The password which should be reset." }
+     * @param  array $loginData     No logindata needed to query this function.
+     * @return array                {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
     public function resetUserPassword(array $data, array $loginData = NULL){
       if(isset($data["userID"]) && isset($data["password"])){
@@ -345,6 +449,14 @@
       }
     }
 
+    /**
+     * Returns a list logged in devices.
+     * Function made for: Web(App)client.
+     * @todo Make this function websocket compatible.
+     * @throws Exception $e     Throws an exception on db errors.
+     * @param  int    $userID   The userid for which the data should be returned for.
+     * @return array            {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The found on the db stored data.]} }
+     */
     public function getLoggedInDevices(int $userID = NULL){
       try{
         if(is_null($userID)){
@@ -366,6 +478,14 @@
       }
     }
 
+    /**
+     * Logs out an logged in user specific device.
+     * Function made for: Web(App)client.
+     * @throws Exception $e       Throws an exception on db errors.
+     * @param  array  $data       { "deviceid" : "The db device id.", "userid" : "The user's id to where the device belongs to."}
+     * @param  array $loginData   No logindata needed to query this function.
+     * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": { "deviceid" : [A list of logged out device id's.]} }
+     */
     public function logoutDevice(array $data, array $loginData = NULL){
       if(array_key_exists("deviceid", $data) && array_key_exists("userid", $data)){
         $deviceID = $data["deviceid"];
@@ -383,6 +503,14 @@
       }
     }
 
+    /**
+     * Sends a invitation mail to a user.
+     * Function made for: Web(App)client.
+     * @throws Exception $e       Throws an exception on db errors.
+     * @param  array  $data       { "userID" : "The user's id where the mail should be send to."}
+     * @param  array $loginData   No logindata needed to query this function.
+     * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
     public function sendInvitationMail(array $data, array $loginData = NULL){
       if(array_key_exists("userID", $data)){
         if($loginData["userid"] != $data["userID"]){
@@ -418,8 +546,10 @@
     }
 
     /**
-     * Sends an email with an reset link attached to a user if existing
-     * Will always send a success message even the user is not existing
+     * Sends an email with an reset link attached to a user if existing.
+     * Will always send a success message even the user is not existing.
+     * Function made for: Web(App)client.
+     * @throws Exception $e       Throws an exception on db errors.
      * @param string $username  The user's username which wants his password be reset
      * @return array             {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
@@ -455,9 +585,11 @@
     }
 
     /**
-     * Checks if a given resetlink is valid
-     * @param string $resetLink  The reset link which should be checked
-     * @return array             {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
+     * Checks if a given resetlink is valid.
+     * Function made for: Web(App)client.
+     * @throws Exception $e       Throws an exception on db errors.
+     * @param string $resetLink   The reset link which should be checked.
+     * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
     public function checkResetLinkValid(string $resetLink){
       try{
@@ -477,6 +609,8 @@
     /**
      * Resets a user's password to a password of his choice.
      * This is a REST function.
+     * Function made for: Web(App)client.
+     * @throws Exception $e       Throws an exception on db errors.
      * @param string $resetLink        The reset link stated in the mail
      * @param string $newUserPassword  The new password which should be set
      * @return array                   {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
