@@ -674,7 +674,7 @@
 
       try{
         foreach($db_update_array AS $version => $tables){
-          if(version_compare($config_data["application"]["versnummer"], $version)){
+          if(version_compare($config_data["application"]["versnummer"], $version) <= 0){
             foreach($tables AS $tablename => $statements){
               foreach($statements AS $arrkey => $statement){
                 $sql = $this->db_api->execute($statement, array());
