@@ -110,7 +110,7 @@
                         Current blocks synced
                         <div class="progress">
                           <?php $syncpercent = number_format(($thiswallet['walletheight'] / $chia_overall_data["data"]["xch_blockheight"] * 100), 2); ?>
-                          <div class="progress-bar bg-primary" role="progressbar" style="width: <?php echo "{$syncpercent}"; ?>%;" aria-valuenow="<?php echo "{$syncpercent}"; ?>" aria-valuemin="0" aria-valuemax="100"><?php echo "{$syncpercent}% - {$thiswallet['walletheight']}/{$chia_overall_data["data"]["xch_blockheight"]}" ?></div>
+                          <div class="progress-bar bg-primary" role="progressbar" style="width: <?php echo "{$syncpercent}"; ?>%;" aria-valuenow="<?php echo "{$syncpercent}"; ?>" aria-valuemin="0" aria-valuemax="100"><?php echo "{$syncpercent}% - {$thiswallet['walletheight']}&nbsp;/&nbsp;{$chia_overall_data["data"]["xch_blockheight"]}" ?></div>
                         </div>
                       </div>
                     </div>
