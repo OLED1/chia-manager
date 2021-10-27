@@ -7,6 +7,9 @@
   },
   "0.1.1.211015" : {
     "system_infos" : [
+      "ALTER TABLE `exchangerates` CHANGE `currency_code` `currency_code` VARCHAR(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL;",
+      "ALTER TABLE `exchangerates` CHANGE `currency_desc` `currency_desc` VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL;",
+      "ALTER TABLE `system_infos` ADD `process_update` TINYINT NOT NULL DEFAULT '0' AFTER `userid_updating`;",
       "UPDATE `system_infos` SET dbversion = '0.1.1.211015'"
     ]
   }
