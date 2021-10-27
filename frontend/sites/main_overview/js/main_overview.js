@@ -4,7 +4,7 @@ setTimeout(function(){
   if($(".nodestatus.badge-secondary").length > 0){
     sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryNodesServicesStatus", {});
   }
-}, 5000);
+}, 30000);
 
 function setServiceCount(){
   var critServices = $("#sitecontent .badge-danger").length;
@@ -17,6 +17,7 @@ function setServiceCount(){
 function setServiceBadge(nodetype, nodeid, code, message){
   var targetelement = $("#servicestatus_" + nodetype.toLowerCase() + "_" + nodeid);
   targetelement.removeClass("badge-secondary").removeClass("badge-danger").removeClass("badge-success");
+
   if(code == 0){
     targetelement.addClass("badge-success").text(message);
   }else if(code == 1){
