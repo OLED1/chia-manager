@@ -17,5 +17,11 @@
     "system_infos" : [
       "UPDATE `system_infos` SET dbversion = '0.1.1.211027'"
     ]
+  },
+  "0.1.1.211028" : {
+    "system_infos" : [
+      "ALTER TABLE `chia_overall` ADD `xch_blockheight` INT NOT NULL AFTER `netspace`;",
+      "UPDATE `system_infos` SET dbversion = '0.1.1.211028'"
+    ]
   }
 }

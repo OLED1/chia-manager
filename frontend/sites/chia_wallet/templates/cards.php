@@ -102,6 +102,23 @@
               </div>
             </div>
             <div class='row'>
+              <div class='col'>
+                <div class='row'>
+                  <div class='col mb-4'>
+                    <div class='card text-white shadow'>
+                      <div class='card-body'>
+                        Current blocks synced
+                        <div class="progress">
+                          <?php $syncpercent = number_format(($thiswallet['walletheight'] / $chia_overall_data["data"]["xch_blockheight"] * 100), 2); ?>
+                          <div class="progress-bar bg-primary" role="progressbar" style="width: <?php echo "{$syncpercent}"; ?>%;" aria-valuenow="<?php echo "{$syncpercent}"; ?>" aria-valuemin="0" aria-valuemax="100"><?php echo "{$syncpercent}% - {$thiswallet['walletheight']}/{$chia_overall_data["data"]["xch_blockheight"]}" ?></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class='row'>
               <div class='col mb-4'>
                 <div class='card border-left-success shadow h-100 py-2'>
                   <div class='card-body'>
