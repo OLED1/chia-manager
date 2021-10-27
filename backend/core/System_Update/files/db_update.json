@@ -12,5 +12,10 @@
       "ALTER TABLE `system_infos` ADD `process_update` TINYINT NOT NULL DEFAULT '0' AFTER `userid_updating`;",
       "UPDATE `system_infos` SET dbversion = '0.1.1.211015'"
     ]
+  },
+  "0.1.1.211027" : {
+    "system_infos" : [
+      "UPDATE `system_infos` SET dbversion = '0.1.1.211027'"
+    ]
   }
 }
