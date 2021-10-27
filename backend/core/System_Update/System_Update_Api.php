@@ -278,6 +278,7 @@
         "market_api = 'https://api.chiaprofitability.com/market'\n" .
         "exchangerate_api_codes = 'https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies.json'\n" .
         "exchangerate_api_rates = 'https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/usd.json'\n" .
+        "xchscan_api = 'https://xchscan.com/api'\n" .
         ";*/";
 
       //1c. Writing config

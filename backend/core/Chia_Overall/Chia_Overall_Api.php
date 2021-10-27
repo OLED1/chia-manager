@@ -53,7 +53,7 @@
      * @return array                        Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}} from the subfunction calls.
      */
     public function queryOverallData(array $data = NULL, array $loginData = NULL, $server = NULL, DateTime $fromtime = NULL){
-      if(array_key_exists("netspace_api", $this->ini) && array_key_exists("market_api", $this->ini) && array_key_exists("xch_api", $this->ini)){
+      if(array_key_exists("netspace_api", $this->ini) && array_key_exists("market_api", $this->ini) && array_key_exists("xchscan_api", $this->ini)){
         $sql = $this->db_api->execute("SELECT querydate FROM chia_overall WHERE querydate = (SELECT MAX(querydate) FROM chia_overall)", array());
         $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
 
@@ -137,7 +137,7 @@
       curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
       $market_result = json_decode(curl_exec($curl), true);
       //XCHSCAN API
-      curl_setopt($curl, CURLOPT_URL, "{$this->ini["xch_api"]}/blocks?limit=10&offset=0");
+      curl_setopt($curl, CURLOPT_URL, "{$this->ini["xchscan_api"]}/blocks?limit=10&offset=0");
       curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
       $xch_height_result = json_decode(curl_exec($curl), true);
 
@@ -155,7 +155,7 @@
 
       if(!array_key_exists("blocks", $xch_height_result) && !array_key_exists(0, $xch_height_result["blocks"])){
         $overall = false;
-        $this->logging->getErrormessage("003", "The external api {$this->ini["xch_api"]} returned an empty output.");
+        $this->logging->getErrormessage("003", "The external api {$this->ini["xchscan_api"]} returned an empty output.");
       }
 
       if($overall){
