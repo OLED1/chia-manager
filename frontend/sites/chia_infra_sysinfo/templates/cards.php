@@ -2,6 +2,7 @@
   use ChiaMgmt\Login\Login_Api;
   use ChiaMgmt\Nodes\Nodes_Api;
   use ChiaMgmt\Chia_Infra_Sysinfo\Chia_Infra_Sysinfo_Api;
+  require __DIR__ . '/../../../../vendor/autoload.php';
 
   $login_api = new Login_Api();
   $ini = parse_ini_file(__DIR__.'/../../../../backend/config/config.ini.php');

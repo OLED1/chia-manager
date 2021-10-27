@@ -27,7 +27,7 @@
      */
     public function __construct(){
       $this->wsclient = new WebSocketClient_Api();
-      $this->$logging_api = new Logging_Api($this);
+      $this->logging_api = new Logging_Api($this);
     }
 
     /**
