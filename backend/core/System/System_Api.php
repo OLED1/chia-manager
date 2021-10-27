@@ -217,12 +217,6 @@
       $returndata["found"] = [];
       $returndata["count"] = 0;
 
-      //Checking if install.php is existing
-      if(file_exists(__DIR__."/../../../installer.php")){
-        $returndata["found"]["installer"] = "The installer file (installer.php) were found. Please remove it as soon as possible.";
-        $returndata["count"] = $returndata["count"] + 1;
-      }
-
       //Checking if updates are available
       $systemupdate = $this->checkForUpdates()["data"];
       if($systemupdate["updateavail"]){
@@ -231,12 +225,20 @@
       }
       $nodeupdates = $this->nodes_api->checkUpdatesAndChannels()["data"];
       $nodesupdatesavail = [];
+      $chiaupdatesavail = [];
+
       foreach($nodeupdates["updateinfos"] AS $arrkey => $nodeupdatedata){
         if($nodeupdatedata["updateavailable"] < 0) array_push($nodesupdatesavail, $nodeupdatedata["hostname"]);
+        if($nodeupdatedata["chiaupdateavail"] < 0) array_push($chiaupdatesavail, $nodeupdatedata["hostname"]);
       }
 
       if(count($nodesupdatesavail) > 0){
-        $returndata["found"]["updateavail"] = "There are node updates available for the following nodes: " . implode(", ", $nodesupdatesavail) . ". Please update soon.";
+        $returndata["found"]["updateavail"] = "There are node script updates available for the following nodes: " . implode(", ", $nodesupdatesavail) . ". Please update soon.";
+        $returndata["count"] = $returndata["count"] + 1;
+      }
+
+      if(count($chiaupdatesavail) > 0){
+        $returndata["found"]["updateavail"] = "There are chia blockchian updates available for the following nodes: " . implode(", ", $chiaupdatesavail) . ". Please update soon.";
         $returndata["count"] = $returndata["count"] + 1;
       }
 

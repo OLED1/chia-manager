@@ -104,21 +104,22 @@ function recreateConfiguredClients(){
 
   $.each(configuredNodes, function(arrkey, value){
     var rowNode = configuredClients
-    .row.add( [ value["id"], value["nodetype"], value["nodeauthhash"], getAuthtypeString(value["authtype"]), getConallowString(value["conallow"]), value["hostname"], formatScriptInfoWithUpdate(value["id"]), formatIP(value["ipaddress"], value["changedIP"], value["id"]), getClientCount(value["nodeauthhash"]), value["lastseen"], getButtonsConfClients(value["id"], value["conallow"], value["changeable"]) ] )
+    .row.add( [ value["id"], value["nodetype"], getAuthtypeString(value["authtype"]), getConallowString(value["conallow"]), value["hostname"], formatScriptInfoWithUpdate(value["id"], 1), formatScriptInfoWithUpdate(value["id"], 0), formatIP(value["ipaddress"], value["changedIP"], value["id"]), getClientCount(value["nodeauthhash"]), value["lastseen"], getButtonsConfClients(value["id"], value["conallow"], value["changeable"]) ] )
     .draw()
     .node().id = "confnode_" + value["id"];
   });
 }
 
-function formatScriptInfoWithUpdate(nodeid){
+//Type: 0 = Scriptversion, 1 = Chiaversion
+function formatScriptInfoWithUpdate(nodeid, type){
   if(nodeid in scriptupdatesavail["updateinfos"]){
     var nodeupdate = scriptupdatesavail["updateinfos"][nodeid];
-    return nodeupdate["scriptversion"] + "<br><span id='table_updateavail_" + nodeid + "'>" + getUpdateAvailableBadge(nodeupdate["updateavailable"]) + "</span>";
+    if(type == 0) return nodeupdate["scriptversion"] + "<br><span id='table_script_updateavail_" + nodeid + "'>" + getUpdateAvailableBadge(nodeupdate["updateavailable"], type) + "</span>";
+    else if(type == 1) return nodeupdate["chiaversion"] + "<br><span table_chia_updateavail_>" + getUpdateAvailableBadge(nodeupdate["chiaupdateavail"], type) + "</span>";
   }else{
     return "-";
   }
 }
-
 
 //Conallow = 0 Node not allowed to connect
 //Conallow = 1 Node is allowed to connect
@@ -321,7 +322,7 @@ function initShowNodeInfo(){
     $("#updatechannelsMenu").text(getFullNameFromBranch(updateinfo["updatechannel"]));
     $("#current_version").text(updateinfo["scriptversion"]);
     $("#remote_version").text(updateinfo["remoteversion"]);
-    $("#update_available").html(getUpdateAvailableBadge(updateinfo["updateavailable"]));
+    $("#update_available").html(getUpdateAvailableBadge(updateinfo["updateavailable"], 0));
 
     $("#updatenode").hide();
     if(updateinfo["updateavailable"] < 0){
@@ -356,11 +357,14 @@ function getFullNameFromBranch(channelname){
   }
 }
 
-function getUpdateAvailableBadge(updateavailable){
-  if(updateavailable >= 0){
-    return "<span class='badge badge-success'>Node script up to date.</span>";
+function getUpdateAvailableBadge(updateavailable, type){
+  if(type == 0){ nodetext = "Node script"; }
+  else if(type == 1){ nodetext = "Chia blockchain"; }
+
+  if(updateavailable == 0){
+    return "<span class='badge badge-success'>"+ nodetext + " up to date.</span>";
   }else if(updateavailable < 0){
-    return "<span class='badge badge-warning'>Update available.</span>";
+    return "<span class='badge badge-warning'>"+ nodetext + " update available.</span>";
   }else{
     return "<span class='badge badge-warning'>No updatedata available.</span>";
   }
@@ -396,8 +400,6 @@ function messagesTrigger(data){
   var key = Object.keys(data);
   var reinit = true;
 
-  console.log(data);
-
   if(data[key]["status"] == 0){
     if(key == "connectedNodesChanged"){
       sendToWSS("ownRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getConfiguredNodes", {});
@@ -430,7 +432,7 @@ function messagesTrigger(data){
       var nodeupdatedata = data[key]["data"]["updateinfos"];
       $.each(nodeupdatedata, function(nodeid, updatedata){
         if($("#nodeactionmodal[data-nodeid='" + nodeid + "']").length > 0){
-          $("#update_available").html(getUpdateAvailableBadge(updatedata["updateavailable"]));
+          $("#update_available").html(getUpdateAvailableBadge(updatedata["updateavailable"], 0));
           $("#updatenode").hide();
           $("#remote_version").text(updatedata["remoteversion"]);
           $("#current_version").text(updatedata["scriptversion"]);

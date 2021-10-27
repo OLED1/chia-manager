@@ -340,6 +340,17 @@
       $returndata["available_channels"] = array_keys($version_file_data);
       $returndata["updateinfos"] = [];
 
+      //We need to use curl, because Amazon AWS wants a user Agent set to be able to download the chia release file
+      $chiaversionspath = "https://api.github.com/repos/Chia-Network/chia-blockchain/releases";
+      $ch = curl_init();
+      curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+      curl_setopt($ch, CURLOPT_URL, $chiaversionspath);
+      curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 6.2; WOW64; rv:17.0) Gecko/20100101 Firefox/17.0');
+      $chia_version_file_json = curl_exec($ch);
+      curl_close($ch);
+      $chia_version_file_data = json_decode($chia_version_file_json, true);
+
       try{
         if(array_key_exists("nodeid", $data) && is_numeric($data["nodeid"])){
           $sql = $this->db_api->execute("SELECT id, hostname, scriptversion, updatechannel, chiaversion FROM nodes WHERE authtype = 2 AND id = ?", array($data["nodeid"]));
@@ -354,6 +365,10 @@
           if(array_key_exists($nodedata["updatechannel"], $version_file_data)){
             $returndata["updateinfos"][$nodedata["id"]]["updateavailable"] = version_compare($nodedata["scriptversion"], $version_file_data[$nodedata["updatechannel"]][0]["version"]);
             $returndata["updateinfos"][$nodedata["id"]]["remoteversion"] = $version_file_data[$nodedata["updatechannel"]][0]["version"];
+          }
+          $returndata["updateinfos"][$nodedata["id"]]["chiaupdateavail"] = 0;
+          if(array_key_exists(0, $chia_version_file_data) && array_key_exists("name", $chia_version_file_data[0])){
+            $returndata["updateinfos"][$nodedata["id"]]["chiaupdateavail"] = version_compare($nodedata["chiaversion"], $chia_version_file_data[0]["name"]);
           }
         }
 

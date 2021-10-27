@@ -228,10 +228,10 @@
                           <tr>
                             <th>ID</th>
                             <th>Type</th>
-                            <th>Authhash</th>
                             <th>Authtype</th>
                             <th>Connection Allowed</th>
                             <th>Hostname</th>
+                            <th>Chiaversion</th>
                             <th>Scriptversion</th>
                             <th>IP Address</th>
                             <th>Connections</th>
@@ -245,10 +245,10 @@
                           <tr>
                             <th>ID</th>
                             <th>Type</th>
-                            <th>Authhash</th>
                             <th>Authtype</th>
                             <th>Connection Allowed</th>
                             <th>Hostname</th>
+                            <th>Chiaversion</th>
                             <th>Scriptversion</th>
                             <th>IP Address</th>
                             <th>Connections</th>
