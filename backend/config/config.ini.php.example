@@ -1,0 +1,35 @@
+;<?php
+;die(); // For further security
+;/*
+[database]
+db_name     = 'chiamgmt_db'
+db_user     = 'chiamgmt'
+db_password = 'Your-super-safe-password'
+db_host = 'localhost'
+
+[application]
+app_protocol = 'https'
+app_domain = 'chiamgmt.example.com'
+system_root = '/'
+backend_url = '/backend'
+frontend_url = '/frontend'
+backup_root = '/backup'
+serversalt = 'Your-super-safe-serversalt'
+nonce_key = 'Your-super-safe-nonce-key'
+versnummer = '0.1.1.210909'
+
+[websocket]
+web_client_auth_hash = 'Your-super-safe-default-web-client-authhash'
+backend_client_auth_hash = 'G9ZdJiAUK/BmGh9dVsP0cHA0dxs5JpQcRIjlWcNrASCQKKs'
+socket_protocol = 'wss'
+socket_domain = 'dev.chiamgmt.edtmair.at'
+socket_listener = '/chiamgmt'
+socket_local_port = '8443'
+
+[extapis]
+netspace_api = 'https://api.chiaprofitability.com/netspace'
+market_api = 'https://api.chiaprofitability.com/market'
+exchangerate_api_codes = 'https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies.json'
+exchangerate_api_rates = 'https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/usd.json'
+xchscan_api = 'https://xchscan.com/api';
+;*/
