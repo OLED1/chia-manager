@@ -4,7 +4,7 @@ setTimeout(function(){
   if($(".nodestatus.badge-secondary").length > 0){
     sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryNodesServicesStatus", {});
   }
-}, 30000);
+}, 10000);
 
 function setServiceCount(){
   var critServices = $("#sitecontent .badge-danger").length;

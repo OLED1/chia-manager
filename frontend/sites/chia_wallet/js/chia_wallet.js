@@ -9,7 +9,7 @@ setTimeout(function(){
   if($(".statusbadge.badge-secondary").length > 0){
     sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryNodesServicesStatus", {});
   }
-}, 30000);
+}, 10000);
 
 $("#queryAllNodes").off("click");
 $("#queryAllNodes").on("click", function(){

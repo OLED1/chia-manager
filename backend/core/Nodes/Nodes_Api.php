@@ -462,7 +462,7 @@
         try{
           if(array_key_exists($nodedata["nodeid"], $allNodeStatus)){
             $querytime = new \DateTime($allNodeStatus[$nodedata["nodeid"]]["querytime"]);
-            $querytime->modify('+30 seconds');
+            $querytime->modify('+10 seconds');
 
             //If the previous node status is not the current node state, safe new state
             if($now > $querytime || $allNodeStatus[$nodedata["nodeid"]]["onlinestatus"] != $onlinestatus){
