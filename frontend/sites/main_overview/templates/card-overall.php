@@ -45,7 +45,7 @@
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                 Total Netspace</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo $overallData["netspace"]; ?></div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-900"><?php echo $overallData["netspace"]; ?></div>
                             <i class="fas <?php echo (floatval($overallData["daychange_percent"]) > 0 ? "fa-arrow-up" : "fa-arrow-down"); ?>" style="color: <?php echo (floatval($overallData["daychange_percent"]) > 0 ? "green" : "red"); ?>"></i>&nbsp;<?php echo number_format($overallData["daychange_percent"], 2) . "% (24H)"; ?>
                         </div>
                         <div class="col-auto">
@@ -62,7 +62,7 @@
                   <div class="col mr-2">
                     <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                         Current block height</div>
-                    <div class="h5 mb-0 font-weight-bold text-gray-800 text-uppercase"><?php echo $overallData["xch_blockheight"]; ?></div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-900 text-uppercase"><?php echo $overallData["xch_blockheight"]; ?></div>
                     <div class="text-uppercase">
                       &nbsp;
                     </div>
@@ -81,7 +81,7 @@
                   <div class="col mr-2">
                     <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                         Current XCH price</div>
-                    <div class="h5 mb-0 font-weight-bold text-gray-800 text-uppercase"><?php echo "{$exchangeData["defaultCurrency"]}&nbsp;" . number_format(floatval($overallData["price_usd"]) * floatval($exchangeData["exchangerate"]), 2); ?></div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-900 text-uppercase"><?php echo "{$exchangeData["defaultCurrency"]}&nbsp;" . number_format(floatval($overallData["price_usd"]) * floatval($exchangeData["exchangerate"]), 2); ?></div>
                     <div class="text-uppercase">
                       <i class="fas fa-arrow-down" style="color: red;"></i>&nbsp;<?php echo "{$exchangeData["defaultCurrency"]}&nbsp;" . number_format(floatval($overallData["daymin_24h_usd"]) * floatval($exchangeData["exchangerate"]), 2); ?>
                       <i class="fas fa-arrow-up" style="color: green;"></i>&nbsp;<?php echo "{$exchangeData["defaultCurrency"]}&nbsp;" . number_format(floatval($overallData["daymax_24h_usd"]) * floatval($exchangeData["exchangerate"]), 2); ?>

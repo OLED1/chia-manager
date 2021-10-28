@@ -111,7 +111,7 @@
                 <div class="row no-gutters align-items-center">
                   <div class="col mr-2">
                     <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Total Plot count (all Farmer)</div>
-                    <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo $totalplotcount; ?></div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-900"><?php echo $totalplotcount; ?></div>
                   </div>
                   <div class="col-auto">
                     <i class="fas fa-sitemap fa-2x text-gray-300"></i>
@@ -128,7 +128,7 @@
                 <div class="row no-gutters align-items-center">
                   <div class="col mr-2">
                     <div class="text-xs font-weight-bold text-dark text-uppercase mb-1">Total size of Plots (all Farmer)</div>
-                    <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo floatval($totalsizeofplots) . " {$size}";?></div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-900"><?php echo floatval($totalsizeofplots) . " {$size}";?></div>
                   </div>
                   <div class="col-auto">
                     <i class="fas fa-save fa-2x text-gray-300"></i>
