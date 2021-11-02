@@ -356,10 +356,30 @@
         </button>
       </div>
       <div class="modal-body">
-        <p>Do you really want to decline the connection for node <strong id="declinemodal-nodeid"></strong> with authhash <strong id="declinemodal-authhash"></strong>?
+        <p>Do you really want to decline the connection for node <strong id="declinemodal-nodeid"></strong> with authhash <strong id="declinemodal-authhash"></strong>?</p>
       </div>
       <div class="modal-footer">
         <button type="button" id="decline-node" class="btn btn-danger">Decline connection</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="removeNodeModal" data-authhash="" data-conf-id="" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true" data-keyboard="false" data-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="removeNodeModalModalTitle">Remove node</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Do you really want to remove the node <strong id="removeNodeModal-nodeid"></strong> with authhash <strong id="removeNodeModal-authhash"></strong>?
+        <br>This node and it's data will be inaccassable forever!</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="remove-node" class="btn btn-danger">Remove node</button>
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
       </div>
     </div>
@@ -407,6 +427,13 @@
                       <b>Hostname:</b>
                     </div>
                     <div id="hostname" class="col infotext" style="text-align: right;">
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col">
+                      <b>Client&nbsp;authhash:</b>
+                    </div>
+                    <div id="nodeauthhash" class="col infotext" style="text-align: right;">
                     </div>
                   </div>
                   <div class="row">

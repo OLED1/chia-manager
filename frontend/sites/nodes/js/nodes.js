@@ -15,6 +15,7 @@ initAllowConnect();
 initDenyConnect();
 initAllowIPChange();
 initShowNodeInfo();
+initRemoveNode();
 
 var updatechannels = {};
 
@@ -127,15 +128,20 @@ function formatScriptInfoWithUpdate(nodeid, type){
 function getButtonsConfClients(id, conallow, changeable){
   var button = "";
   if((conallow == 0 || conallow == 2) && changeable == 1){
-    button += "<button type='button' data-conf-id=" + id + " class='allow-connect btn btn-success wsbutton'><i class='far fa-check-circle'></i></button>&nbsp";
+    button += "<button type='button' data-conf-id=" + id + " class='allow-connect btn btn-success wsbutton'><i class='far fa-check-circle'></i></button>";
   }
   if((conallow == 1 || conallow == 2) && changeable == 1){
     button += "<button type='button' data-conf-id=" + id + " class='decline-connect btn btn-danger wsbutton'><i class='far fa-times-circle'></i></button>";
   }
 
-  if(conallow == 1 && changeable == 1){
-    button += "&nbsp;<button type='button' data-conf-id=" + id + " class='connection-info btn btn-warning'><i class='fas fa-info-circle'></i></button>";
+  if(changeable == 1){
+    button += "&nbsp;<button type='button' data-conf-id=" + id + " class='remove-node btn btn-danger'><i class='fas fa-trash-alt'></i></button>";
   }
+
+  if(conallow == 1 && changeable == 1){
+    button += "&nbsp;<button type='button' data-conf-id=" + id + " class='connection-info btn btn-primary'><i class='fas fa-info-circle'></i></button>";
+  }
+
 
   return button;
 }
@@ -272,6 +278,31 @@ function initDenyConnect(){
   });
 }
 
+function initRemoveNode(){
+  $(".remove-node").off("click");
+  $(".remove-node").on("click", function(){
+    var nodeid = $(this).attr("data-conf-id");
+    var config = configuredNodes[nodeid];
+    var authhash = config["nodeauthhash"];
+
+    $("#removeNodeModal-nodeid").text(nodeid);
+    $("#removeNodeModal-authhash").text(authhash);
+
+    $("#removeNodeModal").attr("data-conf-id", nodeid);
+    $("#removeNodeModal").attr("data-authhash", authhash);
+    $("#removeNodeModal").modal("show");
+
+    $("#remove-node").on("click", function(){
+      data = {
+        nodeid: nodeid,
+        authhash: authhash
+      };
+
+      sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "declineNodeRequest", data);
+    });
+  });
+}
+
 function initAllowIPChange(){
   $(".ip-changed-allow").off("click");
   $(".ip-changed-allow").on("click", function(){
@@ -316,8 +347,11 @@ function initShowNodeInfo(){
       $("#"+key).text(value);
     });
 
-    $("#cpu_cores_threads").text(nodeinfo["cpu_count"] + " Core(s) / " + (nodeinfo["cpu_count"]*nodeinfo["cpu_cores"]) + " Thread(s)");
-    $("#ram_swap_size").text((nodeinfo["memory_total"]/1024/1024/1024).toFixed(2) + "GB / " + (nodeinfo["swap_total"]/1024/1024/1024).toFixed(2) + "GB");
+    if($.isNumeric(nodeinfo["cpu_count"]) && $.isNumeric(nodeinfo["cpu_cores"]))
+      $("#cpu_cores_threads").text(nodeinfo["cpu_count"] + " Core(s) / " + (nodeinfo["cpu_count"]*nodeinfo["cpu_cores"]) + " Thread(s)");
+
+    if($.isNumeric(nodeinfo["memory_total"]) && $.isNumeric(nodeinfo["swap_total"]))
+      $("#ram_swap_size").text((nodeinfo["memory_total"]/1024/1024/1024).toFixed(2) + "GB / " + (nodeinfo["swap_total"]/1024/1024/1024).toFixed(2) + "GB");
 
     $("#updatechannelsMenu").text(getFullNameFromBranch(updateinfo["updatechannel"]));
     $("#current_version").text(updateinfo["scriptversion"]);
@@ -453,6 +487,7 @@ function messagesTrigger(data){
       initDenyConnect();
       initAllowIPChange();
       initShowNodeInfo();
+      initRemoveNode();
     }
   }
 }
