@@ -267,7 +267,40 @@
      */
     public function removeNodeAndData(array $data, array $loginData = NULL, $server = NULL){
       if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data)){
+        try{
+          $sql = $this->db_api->execute("SELECT changeable FROM nodes WHERE id = ?", array($data["nodeid"]));
+          $sqldata = $sql->fetchAll(\PDO::FETCH_ASSOC);
 
+          if(count($sqldata) == 1){
+            $changeable = $sqldata[0]["changeable"];
+
+            if($changeable){
+              $this->db_api->execute("DELETE FROM nodes WHERE id = ?", array($data["nodeid"]));
+              $this->db_api->execute("DELETE FROM nodes_status WHERE nodeid = ?", array($data["nodeid"]));
+              $this->db_api->execute("DELETE FROM nodetype WHERE id = ?", array($data["nodeid"]));
+
+              $returnmessage = array("status" => 0, "message" => "Successfully removed node {$data["nodeid"]}.", "data" => $data["nodeid"]);
+              $querydata = [];
+              $querydata["data"]["removeNodeAndData"] = $returnmessage;
+              $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+
+              if(!is_null($server)){
+                $server->messageSpecificNode($querydata);
+              }else{
+                $this->websocket_api = new WebSocket_Api();
+                $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
+              }
+
+              return $returnmessage;
+            }else{
+              return $this->logging_api->getErrormessage("001");
+            }
+          }else{
+            return $this->logging_api->getErrormessage("002");
+          }
+        }catch(Exception $e){
+          return $this->logging_api->getErrormessage("003", $e);
+        }
       }
     }
 

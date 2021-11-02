@@ -298,7 +298,7 @@ function initRemoveNode(){
         authhash: authhash
       };
 
-      sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "declineNodeRequest", data);
+      sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "removeNodeAndData", data);
     });
   });
 }
@@ -457,6 +457,9 @@ function messagesTrigger(data){
     }else if(key == "declineNodeRequest"){
       sendToWSS("ownRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getConfiguredNodes", {});
       $("#declineNodeRequestModal").modal("hide");
+    }else if(key == "removeNodeAndData"){
+      sendToWSS("ownRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getConfiguredNodes", {});
+      $("#removeNodeModal").modal("hide");
     }else if(key == "updateSystemInfo"){
       if(data[key]["data"]["nodeid"] in sysinfodata){
         sendToWSS("ownRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getSystemInfo", { "nodeid": data[key]["data"]["nodeid"] });

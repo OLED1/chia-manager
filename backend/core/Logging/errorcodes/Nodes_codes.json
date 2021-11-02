@@ -5,15 +5,16 @@
     "acceptIPChange" : "003",
     "acceptNodeRequest" : "004",
     "declineNodeRequest" : "005",
-    "loginStatus" : "006",
-    "updateScriptVersion" : "007",
-    "updateSystemInfo" : "008",
-    "getSystemInfo" : "009",
-    "nodeUpdateStatus" : "010",
-    "checkUpdatesAndChannels" : "011",
-    "updateNodeBranch" : "012",
-    "queryNodesServicesStatus" : "013",
-    "setNodeServiceStats" : "014"
+    "removeNodeAndData" : "006",
+    "loginStatus" : "007",
+    "updateScriptVersion" : "008",
+    "updateSystemInfo" : "009",
+    "getSystemInfo" : "010",
+    "nodeUpdateStatus" : "011",
+    "checkUpdatesAndChannels" : "012",
+    "updateNodeBranch" : "013",
+    "queryNodesServicesStatus" : "014",
+    "setNodeServiceStats" : "015"
   },
   "errormessages" : {
     "getConfiguredNodes" : {
@@ -32,7 +33,12 @@
     },
     "declineNodeRequest" : {
       "001" : [2, "An error occured."],
-      "002" : [1, "Not all data stated"]
+      "002" : [1, "Not all data stated."]
+    },
+    "removeNodeAndData" : {
+      "001" : [1, "This node cannot be deleted."],
+      "002" : [2, "Error! More than one rows returned. Aborting node deletion."],
+      "003" : [2, "An error occured."]
     },
     "loginStatus" : {
       "001" : [2, "An error occured."],
