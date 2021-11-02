@@ -270,11 +270,15 @@
             if(count($sqdata) == 0 && array_key_exists("hostname", $nodeinfo)){
               $newnodeauthhash = substr(str_shuffle('0123456789abcdefghijklmnopqrstuvwxyz'), 0, 35);
               $encryptedauthhash = $this->encryption_api->encryptString($newnodeauthhash);
+
               $sql = $this->db_api->execute("INSERT INTO nodes (id, nodeauthhash, hostname, conallow, authtype, ipaddress) VALUES (NULL, ?, ?, ?, ?, ?)",
                                             array($encryptedauthhash, $nodeinfo["hostname"], 2, 0, $nodeip));
 
               $sql = $this->db_api->execute("INSERT INTO nodetype (id, nodeid, code) VALUES (NULL, (SELECT id FROM nodes WHERE nodeauthhash = ?), 99)",
                                             array($encryptedauthhash));
+
+              $sql = $this->db_api->execute("SELECT id, ipaddress, nodeauthhash FROM nodes WHERE hostname = ?", array($nodeinfo["hostname"]));
+              $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
 
               $returndata = $this->logging->getErrormessage("006");
               $returndata["data"]["nodeid"] = $sqdata[0]["id"];
