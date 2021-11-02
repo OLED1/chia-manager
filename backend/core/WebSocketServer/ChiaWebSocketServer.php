@@ -67,7 +67,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
      * Initialises the needed and above stated private variables.
      */
     public function __construct() {
-      echo "[{$this->getDate()}] INFO: Starting websocket server\n";
+      echo "[{$this->getDate()}] INFO: Starting websocket server.\n";
       $this->clients = new \SplObjectStorage;
       $this->users = [];
       $this->subscription = [];
@@ -89,7 +89,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
         $this->clients->attach($conn);
         $this->users[$conn->resourceId] = $conn;
 
-        echo "[{$this->getDate()}] INFO: New connection! ({$conn->resourceId})\n";
+        echo "[{$this->getDate()}] INFO: New connection ({$conn->resourceId}).\n";
     }
 
     /**
@@ -160,8 +160,8 @@ class ChiaWebSocketServer implements MessageComponentInterface {
             }
           }
 
-          echo "[{$this->getDate()}] INFO: New backendRequest from " . $nodeInfo["nodeinfo"]["hostname"] . "\n";
-          echo "[{$this->getDate()}] INFO: Requested socketaction: ". $nodeInfo["socketaction"] . " from {$from->resourceId}.\n";
+          echo "[{$this->getDate()}] INFO: New backendRequest from {$nodeInfo["nodeinfo"]["hostname"]}.\n";
+          echo "[{$this->getDate()}] INFO: Requested socketaction: {$nodeInfo["socketaction"]} from {$from->resourceId}.\n";
           echo "[{$this->getDate()}] INFO: Transmitted data {$msg}.\n";
 
           switch($nodeInfo["socketaction"]){
@@ -230,8 +230,8 @@ class ChiaWebSocketServer implements MessageComponentInterface {
         // The connection is closed, remove it, as we can no longer send it messages
         $this->clients->detach($conn);
 
-        $message = "Connection {$conn->resourceId} has disconnected\n";
-        echo "[{$this->getDate()}] WARNING: {$message}\n";
+        $message = "Connection {$conn->resourceId} has disconnected.\n";
+        echo "[{$this->getDate()}] INFO: {$message}";
         $this->logging->getErrormessage("001", $message);
 
         unset($this->users[$conn->resourceId]);
@@ -267,7 +267,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
      * @param  ConnectionInterface $conn  Websocket specific information about the current client connection.
      */
     public function onError(ConnectionInterface $conn, \Exception $e) {
-        echo "[{$this->getDate()}] CRITICAL: An error has occurred: {$e->getMessage()}\n";
+        echo "[{$this->getDate()}] CRITICAL: An error has occurred: {$e->getMessage()}.\n";
         $this->logging->getErrormessage("001", $e->getMessage());
 
         $conn->close();
@@ -320,7 +320,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
               echo "[{$this->getDate()}] WARNING: Connection $connectionid is not existing.\n";
             }
           }else{
-            echo "[{$this->getDate()}] WARNING: User {$condetails["userid"]} is not watching a site which satisfies one of these sites: " . json_encode($siteID) . ".\n";
+            echo "[{$this->getDate()}] INFO: User {$condetails["userid"]} is not watching a site which satisfies one of these sites: " . json_encode($siteID) . ".\n";
           }
         }
       }else if(array_key_exists("loginStatus", $datatosend)){
