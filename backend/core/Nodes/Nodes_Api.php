@@ -224,15 +224,15 @@
      * Decline a request of a (newly) connected node.
      * Function made for: Web GUI
      * @throws Exception $e                    Throws an exception on db errors.
-     * @param  array  $data                    { "nodeid" : [nodeid], "authhash" : [node's authhash], "nodetypes" : [The nodes types as array(e.g. [farmer, harvester])]}
+     * @param  array  $data                    { "nodeid" : [nodeid], "authhash" : [node's authhash] }
      * @param  array $loginData                { NULL } No logindata needed to query this function.
-     * @param  ChiaWebSocketServer $server     An instance to the Webscoket server to be able to communicate with the node
+     * @param  ChiaWebSocketServer $server     An instance to the Webscoket server to be able to communicate with the node.
      * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
     public function declineNodeRequest(array $data, array $loginData = NULL, $server = NULL){
       if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data)){
         try{
-          $sql = $this->db_api->execute("UPDATE nodes SET conallow = 0 WHERE id = ?", array($data["nodeid"]));
+          $sql = $this->db_api->execute("UPDATE nodes SET conallow = 0 WHERE id = ? AND changeable = 1 AND (conallow = 1 OR conallow = 2)", array($data["nodeid"]));
 
           $returnmessage = array("status" => 0, "message" => "Successfully declined connection for id {$data["nodeid"]}.");
           $querydata = [];
@@ -252,6 +252,21 @@
         }
       }else{
         return $this->logging_api->getErrormessage("002");
+      }
+    }
+
+    /**
+     * Removes a node and all ist associated data from the database.
+     * Function made for: Web GUI
+     * @throws Exception $e                   Throws an exception on db errors.
+     * @param  array  $data                   { "nodeid" : [nodeid], "authhash" : [node's authhash] }
+     * @param  array $loginData               { NULL } No logindata needed to query this function.
+     * @param  ChiaWebSocketServer $server    An instance to the Webscoket server to be able to communicate with the node
+     * @return array                          {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
+     */
+    public function removeNodeAndData(array $data, array $loginData = NULL, $server = NULL){
+      if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data)){
+
       }
     }
 
