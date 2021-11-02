@@ -2,12 +2,6 @@ initRefreshFarmInfos();
 initRestartFarmerService();
 initChallengesTables();
 
-setTimeout(function(){
-  if($(".statusbadge.badge-secondary").length > 0){
-    sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryNodesServicesStatus", {});
-  }
-}, 10000);
-
 $("#queryAllNodes").off("click");
 $("#queryAllNodes").on("click", function(){
   $.each(chiaFarmData, function(nodeid, farmdata) {
@@ -105,3 +99,9 @@ function messagesTrigger(data){
     });
   }
 }
+
+setTimeout(function(){
+  if($(".statusbadge.badge-secondary").length > 0){
+    sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryNodesServicesStatus", {});
+  }
+}, 9000);
