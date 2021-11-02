@@ -13,7 +13,9 @@
   }
 
   $chia_overall_api = new Chia_Overall_Api();
-  $overallData = $chia_overall_api->queryOverallData()["data"];
+  $overallData = $chia_overall_api->queryOverallData();
+  if($overallData["status"] == 0 ) $overallData = $overallData["data"];
+  else $overallData = [];
 
   $exchangerates_api = new Exchangerates_Api();
   $exchangeData = $exchangerates_api->getUserExchangeData(["userid" => $_COOKIE["user_id"]]);
@@ -110,7 +112,9 @@
     </div>
     <div class="row">
       <div class="col">
+        <?php if(array_key_exists("querydate", $overallData)){ ?>
         Data queried: <?php echo $overallData["querydate"]; ?>
+        <?php } ?>
       </div>
     </div>
   </div>

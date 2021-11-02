@@ -19,7 +19,9 @@
   $walletData = $chia_wallet_api->getWalletData()["data"];
 
   $chia_overall_api = new Chia_Overall_Api();
-  $overallData = $chia_overall_api->queryOverallData()["data"];
+  $overallData = $chia_overall_api->queryOverallData();
+  if($overallData["status"] == 0 ) $overallData = $overallData["data"];
+  else $overallData = [];
 
   $exchangerates_api = new Exchangerates_Api();
   $exchangeData = $exchangerates_api->getUserExchangeData(["userid" => $_COOKIE["user_id"]]);
@@ -53,7 +55,8 @@
           $totalxch += floatval($walletdata["totalbalance"]);
         }
       }
-      $totalincurr = $totalxch * floatval($overallData["price_usd"]) * floatval($exchangeData["exchangerate"]);
+      if(array_key_exists("price_usd", $overallData) && array_key_exists("exchangerate", $exchangeData)) $totalincurr = $totalxch * floatval($overallData["price_usd"]) * floatval($exchangeData["exchangerate"]);
+      else $totalincurr = "";
   ?>
   <div class="card-body">
     <div class="row">

@@ -6,8 +6,9 @@
   },
   "errormessages" : {
     "queryOverallData" : {
-      "001" : [2, "An error occured."],
-      "002" : [1, "API values not set in configuration file."]
+      "001" : [2, "Could not load data from ext api."],
+      "002" : [2, "An error occured."],
+      "003" : [1, "API values not set in configuration file."]
     },
     "getOverallChiaData" : {
       "001" : [2, "No rows returned from database. Something does not work correctly."],

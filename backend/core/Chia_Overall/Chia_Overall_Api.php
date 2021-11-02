@@ -66,15 +66,19 @@
             $extapidata = $this->getDataFromExtApi();
 
             if($extapidata["status"] == 0){
-              $netspacedata = $extapidata["data"]["netspace"];
-              $marketdata = $extapidata["data"]["market"];
-              $blockheightdata = $extapidata["data"]["xch_blockheight"];
+              if(!is_null($extapidata) && array_key_exists("data", $extapidata) && array_key_exists("netspace", $extapidata["data"]) && array_key_exists("market", $extapidata["data"]) && array_key_exists("xch_blockheight", $extapidata["data"])){
+                $netspacedata = $extapidata["data"]["netspace"];
+                $marketdata = $extapidata["data"]["market"];
+                $blockheightdata = $extapidata["data"]["xch_blockheight"];
 
-              $sql = $this->db_api->execute("INSERT INTO chia_overall (id, daychange_percent, netspace, xch_blockheight, netspace_timestamp, price_usd, daymin_24h_usd, daymax_24h_usd, daychange_24h_percent, market_timestamp, querydate) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                            array($netspacedata["daychange"], $netspacedata["netspace"], $blockheightdata, $netspacedata["timestamp"],
-                                                  $marketdata["price"], $marketdata["daymin"], $marketdata["daymax"], $marketdata["daychange"], $marketdata["timestamp"],
-                                                  $now->format("Y-m-d H:i:s"))
-                                            );
+                $sql = $this->db_api->execute("INSERT INTO chia_overall (id, daychange_percent, netspace, xch_blockheight, netspace_timestamp, price_usd, daymin_24h_usd, daymax_24h_usd, daychange_24h_percent, market_timestamp, querydate) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                                array($netspacedata["daychange"], $netspacedata["netspace"], $blockheightdata, $netspacedata["timestamp"],
+                                                $marketdata["price"], $marketdata["daymin"], $marketdata["daymax"], $marketdata["daychange"], $marketdata["timestamp"],
+                                                $now->format("Y-m-d H:i:s"))
+                                              );
+              }else{
+                return $this->logging_api->getErrormessage("001");
+              }
             }else{
               return $extapidata;
             }
@@ -82,10 +86,10 @@
 
           return $this->getOverallChiaData($fromtime);
         }catch(Exception $e){
-          return $this->logging->getErrormessage("001", $e);
+          return $this->logging_api->getErrormessage("002", $e);
         }
       }else{
-        return $this->logging->getErrormessage("002");
+        return $this->logging_api->getErrormessage("003");
       }
     }
 
@@ -105,13 +109,13 @@
           if(array_key_exists("0", $sqdata)){
             return array("status" => 0, "message" => "Successfully queried chia overall data.", "data" => $sqdata[0]);
           }else{
-            return $this->logging->getErrormessage("001");
+            return $this->logging_api->getErrormessage("001");
           }
         }else{
           //Return historical data
         }
       }catch(Exception $e){
-        return $this->logging->getErrormessage("002", $e);
+        return $this->logging_api->getErrormessage("002", $e);
       }
     }
 
@@ -143,19 +147,19 @@
 
       curl_close($curl);
 
-      if(!$netspace_result["success"]){
+      if(is_null($netspace_result) || !array_key_exists("success", $netspace_result)){
         $overall = false;
-        $this->logging->getErrormessage("001", "The external api {$this->ini["netspace_api"]} returned an error.");
+        $this->logging_api->getErrormessage("001", "The external api {$this->ini["netspace_api"]} returned an error.");
       }
 
-      if(!$market_result["success"]){
+      if(is_null($market_result) || !array_key_exists("success", $market_result)){
         $overall = false;
-        $this->logging->getErrormessage("002", "The external api {$this->ini["market_api"]} returned an error.");
+        $this->logging_api->getErrormessage("002", "The external api {$this->ini["market_api"]} returned an error.");
       }
 
       if(!array_key_exists("blocks", $xch_height_result) && !array_key_exists(0, $xch_height_result["blocks"])){
         $overall = false;
-        $this->logging->getErrormessage("003", "The external api {$this->ini["xchscan_api"]} returned an empty output.");
+        $this->logging_api->getErrormessage("003", "The external api {$this->ini["xchscan_api"]} returned an empty output.");
       }
 
       if($overall){
@@ -172,7 +176,7 @@
 
         return array("status" => 0, "message" => "Data from external api queried successfully.", "data" => array("netspace" => $netspace_result, "market" => $market_result, "xch_blockheight" => $blockheight_result));
       }else{
-        $this->logging->getErrormessage("004");
+        return $this->logging_api->getErrormessage("004");
       }
     }
   }
