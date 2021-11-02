@@ -126,13 +126,13 @@ class ChiaWebSocketServer implements MessageComponentInterface {
 
         echo "[{$this->getDate()}] INFO: {$requesterLogin["message"]}\n";
 
-        if($requesterLogin["status"] == "008005006" || $requesterLogin["status"] == "008005007" ||
-          $requesterLogin["status"] == "008005012" || $requesterLogin["status"] == "008005002" ||
-          $requesterLogin["status"] == "008005011" || $requesterLogin["status"] == "008005013"
+        if($requesterLogin["status"] == "010005006" || $requesterLogin["status"] == "010005007" ||
+          $requesterLogin["status"] == "010005012" || $requesterLogin["status"] == "010005002" ||
+          $requesterLogin["status"] == "010005011" || $requesterLogin["status"] == "010005013"
         ){
           echo "[{$this->getDate()}] INFO: Send new connection request to frontend.\n";
           $requesterLogin["data"]["resid"] = $from->resourceId;
-          if($requesterLogin["status"] == "005004002") $this->requests[$requesterLogin["data"]["authhash"]] = $requesterLogin["data"];
+          if($requesterLogin["status"] == "010004002") $this->requests[$requesterLogin["data"]["authhash"]] = $requesterLogin["data"];
           else $this->requests[$requesterLogin["data"]["newauthhash"]] = $requesterLogin["data"];
           $this->messageFrontendClients(array("siteID" => 2), $this->requestHandler->processConnectionRequest($this->requests));
         }
