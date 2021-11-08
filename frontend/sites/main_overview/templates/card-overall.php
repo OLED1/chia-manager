@@ -13,7 +13,7 @@
   }
 
   $chia_overall_api = new Chia_Overall_Api();
-  $overallData = $chia_overall_api->queryOverallData();
+  $overallData = $chia_overall_api->getOverallChiaData();
   if($overallData["status"] == 0 ) $overallData = $overallData["data"];
   else $overallData = [];
 

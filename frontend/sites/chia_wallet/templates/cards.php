@@ -22,7 +22,7 @@
 
   $walletdata = $chia_wallet_api->getWalletData();
   $transactiondata = $chia_wallet_api->getWalletTransactions();
-  $chia_overall_data = $chia_overall_api->queryOverallData();
+  $chia_overall_data = $chia_overall_api->getOverallChiaData();
 
   $defaultCurrency = $exchangerates_api-> getUserDefaultCurrency($_COOKIE["user_id"]);
   if($defaultCurrency["status"] == 0) $defaultCurrency = $defaultCurrency["data"]["currency_code"];
