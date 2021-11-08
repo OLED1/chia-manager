@@ -27,8 +27,6 @@ socket_listener = '/chiamgmt'
 socket_local_port = '8443'
 
 [extapis]
-netspace_api = 'https://api.chiaprofitability.com/netspace'
-market_api = 'https://api.chiaprofitability.com/market'
 exchangerate_api_codes = 'https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies.json'
 exchangerate_api_rates = 'https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/usd.json'
 xchscan_api = 'https://xchscan.com/api';

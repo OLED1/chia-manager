@@ -7,6 +7,7 @@
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\System_Update\System_Update_Api;
   use ChiaMgmt\Encryption\Encryption_Api;
+  use ChiaMgmt\Chia_Overall\Chia_Overall_Api;
 
   /**
    * The RequestHandler_Api class validates all requests to the websocket api.
@@ -96,6 +97,29 @@
         return $returndata;
       }
     }
+
+    /**
+     * Calls and executes the setup cronjob.
+     * Function made for: All websocket clients
+     * @throws Exception $e       Throws an exception on db errors.
+     * @param  array  $loginData              The nodes logindata.
+     * @param  array  $backendInfo            { method : [The method which should be called] }
+     * @param  array  $data                   { "maintenance_mode" : [1 = true |0 = false] }
+     * @param  WebSocketServer $server        An instance to the Webscoket server to be able to communicate with the node
+     * @return array                          {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The returnded data] } from subquery.
+     */
+    public function processCronRequest(array $loginData, array $backendInfo, array $data, array $nodeInfo, $server = NULL){
+      $server->messageAllNodes($nodeInfo, $data);
+      $system_api = new System_Api();
+      $system_api->setCurrentCronjobRunTimestamp();
+
+      $overall_api = new Chia_Overall_Api();
+      $server->messageFrontendClients(array("siteID" => 9), array("queryOverallData" => $overall_api->queryOverallData()));
+
+      $now = new \Datetime("now");
+      return array("cronJobExecution" => array("status" => 0, "message" => "Successfully executed system background jobs.", "data" => $now->format("Y-m-d H:i:s")));
+    }
+
 
     /**
      * Return a list of currently connected websocket clients in json format.

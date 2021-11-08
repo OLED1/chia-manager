@@ -53,7 +53,7 @@
      * @return array                        Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}} from the subfunction calls.
      */
     public function queryOverallData(array $data = NULL, array $loginData = NULL, $server = NULL, DateTime $fromtime = NULL){
-      if(array_key_exists("netspace_api", $this->ini) && array_key_exists("market_api", $this->ini) && array_key_exists("xchscan_api", $this->ini)){
+      if(array_key_exists("xchscan_api", $this->ini)){
         $sql = $this->db_api->execute("SELECT querydate FROM chia_overall WHERE querydate = (SELECT MAX(querydate) FROM chia_overall)", array());
         $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
 
@@ -65,16 +65,33 @@
           if(count($sqdata) == 0 || $lastquerytime <= $now){
             $extapidata = $this->getDataFromExtApi();
 
-            if($extapidata["status"] == 0){
-              if(!is_null($extapidata) && array_key_exists("data", $extapidata) && array_key_exists("netspace", $extapidata["data"]) && array_key_exists("market", $extapidata["data"]) && array_key_exists("xch_blockheight", $extapidata["data"])){
-                $netspacedata = $extapidata["data"]["netspace"];
-                $marketdata = $extapidata["data"]["market"];
-                $blockheightdata = $extapidata["data"]["xch_blockheight"];
+            if(!is_null($extapidata) && array_key_exists("data", $extapidata) && array_key_exists("netspace", $extapidata["data"]) && array_key_exists("chia_price", $extapidata["data"]) && array_key_exists("xch_blockheight", $extapidata["data"])){
+              $netspacedata = $extapidata["data"]["netspace"];
+              $chia_price_usd = $extapidata["data"]["chia_price"]["usd"];
+              $blockheightdata = $extapidata["data"]["xch_blockheight"];
 
-                $sql = $this->db_api->execute("INSERT INTO chia_overall (id, daychange_percent, netspace, xch_blockheight, netspace_timestamp, price_usd, daymin_24h_usd, daymax_24h_usd, daychange_24h_percent, market_timestamp, querydate) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                                array($netspacedata["daychange"], $netspacedata["netspace"], $blockheightdata, $netspacedata["timestamp"],
-                                                $marketdata["price"], $marketdata["daymin"], $marketdata["daymax"], $marketdata["daychange"], $marketdata["timestamp"],
-                                                $now->format("Y-m-d H:i:s"))
+              if($extapidata["status"] == 0){
+                $sql = $this->db_api->execute("SELECT netspace FROM chia_overall WHERE querydate > DATE_SUB(NOW(), INTERVAL 24 HOUR) ORDER BY querydate ASC LIMIT 1", array());
+                $historynetspace = $sql->fetchAll(\PDO::FETCH_ASSOC);
+
+                $sql = $this->db_api->execute("SELECT MIN(price_usd) AS daymin_24h_usd, MAX(price_usd) AS daymax_24h_usd FROM chia_overall WHERE querydate > DATE_SUB(NOW(), INTERVAL 24 HOUR)", array());
+                $historyprice = $sql->fetchAll(\PDO::FETCH_ASSOC);
+
+                if(count($historynetspace) == 1 && count($historyprice) == 1){
+                  $daychange_percent = explode(" ",$extapidata["data"]["netspace"])[0] / explode(" ",$historynetspace[0]["netspace"])[0] * 100 - 100;
+                  $daymin_24h_usd = $historyprice[0]["daymin_24h_usd"];
+                  $daymax_24h_usd = $historyprice[0]["daymax_24h_usd"];
+                  $daychange_24h_percent = $chia_price_usd / $historyprice[0]["daymax_24h_usd"] * 100 - 100;
+                }else{
+                  $daychange_percent = 0;
+                  $daymin_24h_usd = $chia_price_usd;
+                  $daymax_24h_usd = $chia_price_usd;
+                  $daychange_24h_percent = 0;
+                }
+
+                $sql = $this->db_api->execute("INSERT INTO chia_overall (id, daychange_percent, netspace, xch_blockheight, netspace_timestamp, price_usd, daymin_24h_usd, daymax_24h_usd, daychange_24h_percent, market_timestamp, querydate) VALUES(NULL, ?, ?, ?, NOW(), ?, ?, ?, ?, NOW(), NOW())",
+                                                array($daychange_percent, $netspacedata, $blockheightdata,
+                                                $chia_price_usd, $daymin_24h_usd, $daymax_24h_usd, $daychange_24h_percent)
                                               );
               }else{
                 return $this->logging_api->getErrormessage("001");
@@ -100,7 +117,7 @@
      * @param  DateTime $fromtime  { NULL } On NULL only the last queryied data is returned. If a DateTime is given it will return historical data newer than. (Currently not implemented)
      * @return array               Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}.
      */
-    private function getOverallChiaData(DateTime $fromtime = NULL){
+    public function getOverallChiaData(DateTime $fromtime = NULL){
       try{
         if(is_null($fromtime)){
           $sql = $this->db_api->execute("SELECT daychange_percent, netspace, xch_blockheight, netspace_timestamp, price_usd, daymin_24h_usd, daymax_24h_usd, daychange_24h_percent, market_timestamp, querydate FROM chia_overall WHERE querydate = (SELECT MAX(querydate) FROM chia_overall)", array());
@@ -132,29 +149,29 @@
       $curl = curl_init();
       curl_setopt($curl, CURLOPT_POST, 1);
 
-      //Netspace Api
-      curl_setopt($curl, CURLOPT_URL, $this->ini["netspace_api"]);
+      //XCHSCAN API Netspace
+      curl_setopt($curl, CURLOPT_URL, "{$this->ini["xchscan_api"]}/netspace");
       curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-      $netspace_result = json_decode(curl_exec($curl), true);
-      //Market Api
-      curl_setopt($curl, CURLOPT_URL, $this->ini["market_api"]);
+      $xch_netspace_result = json_decode(curl_exec($curl), true);
+      //XCHSCAN API Chia Price
+      curl_setopt($curl, CURLOPT_URL, "{$this->ini["xchscan_api"]}/chia-price");
       curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-      $market_result = json_decode(curl_exec($curl), true);
-      //XCHSCAN API
+      $xch_chiaprice_result = json_decode(curl_exec($curl), true);
+      //XCHSCAN API Blockheight
       curl_setopt($curl, CURLOPT_URL, "{$this->ini["xchscan_api"]}/blocks?limit=10&offset=0");
       curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
       $xch_height_result = json_decode(curl_exec($curl), true);
 
       curl_close($curl);
 
-      if(is_null($netspace_result) || !array_key_exists("success", $netspace_result)){
+      if(is_null($xch_netspace_result) || !array_key_exists("netspace", $xch_netspace_result)){
         $overall = false;
-        $this->logging_api->getErrormessage("001", "The external api {$this->ini["netspace_api"]} returned an error.");
+        $this->logging_api->getErrormessage("001", "The external api {$this->ini["xchscan_api"]} returned an error.");
       }
 
-      if(is_null($market_result) || !array_key_exists("success", $market_result)){
+      if(is_null($xch_chiaprice_result) || !array_key_exists("usd", $xch_chiaprice_result)){
         $overall = false;
-        $this->logging_api->getErrormessage("002", "The external api {$this->ini["market_api"]} returned an error.");
+        $this->logging_api->getErrormessage("002", "The external api {$this->ini["xchscan_api"]} returned an error.");
       }
 
       if(!array_key_exists("blocks", $xch_height_result) && !array_key_exists(0, $xch_height_result["blocks"])){
@@ -163,21 +180,17 @@
       }
 
       if($overall){
-        $base = log($netspace_result["netspace"]) / log(1024);
+        $base = log($xch_netspace_result["netspace"]) / log(1024);
         $suffix = array("", " kiB", " MiB", " GiB", " TiB", " PiB", " EiB")[floor($base)];
-        $netspace_result["netspace"] = number_format(pow(1024, $base - floor($base)),2) . $suffix;
-        $blockheight_result = $xch_height_result["blocks"][0]["height"];
+        $xch_netspace_result["netspace"] = number_format(pow(1024, $base - floor($base)),2) . $suffix;
+        $xch_height_result = $xch_height_result["blocks"][0]["height"];
+        $nowdate = new \DateTime("now");
 
-        $netspace_date = new \DateTime("@" . $netspace_result["timestamp"]);
-        $market_date = new \DateTime("@" . $market_result["timestamp"]);
-
-        $netspace_result["timestamp"] = $netspace_date->format("Y-m-d H:i:s");
-        $market_result["timestamp"] = $market_date->format("Y-m-d H:i:s");
-
-        return array("status" => 0, "message" => "Data from external api queried successfully.", "data" => array("netspace" => $netspace_result, "market" => $market_result, "xch_blockheight" => $blockheight_result));
+        return array("status" => 0, "message" => "Data from external api queried successfully.", "data" => array("netspace" => $xch_netspace_result["netspace"], "chia_price" => $xch_chiaprice_result, "xch_blockheight" => $xch_height_result, "timestamp" => $nowdate->format("Y-m-d H:i:s")));
       }else{
         return $this->logging_api->getErrormessage("004");
       }
     }
   }
+
 ?>
