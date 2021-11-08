@@ -33,6 +33,10 @@ class ComposerStaticInit20ffcddb8b5a8306e7bd26f80e6ab716
     );
 
     public static $prefixLengthsPsr4 = array (
+        'T' => 
+        array (
+            'TiBeN\\' => 6,
+        ),
         'S' => 
         array (
             'Symfony\\Polyfill\\Php80\\' => 23,
@@ -94,6 +98,10 @@ class ComposerStaticInit20ffcddb8b5a8306e7bd26f80e6ab716
     );
 
     public static $prefixDirsPsr4 = array (
+        'TiBeN\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/tiben/crontab-manager/src',
+        ),
         'Symfony\\Polyfill\\Php80\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-php80',

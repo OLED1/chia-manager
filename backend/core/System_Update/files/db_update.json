@@ -1,27 +1,38 @@
 {
-  "0.1.1.211014" : {
-    "system_infos" : [
-      "ALTER TABLE `system_infos` CHANGE `dbversion` `dbversion` VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL;",
-      "UPDATE `system_infos` SET dbversion = '0.1.1.211014'"
-    ]
-  },
-  "0.1.1.211015" : {
-    "system_infos" : [
-      "ALTER TABLE `exchangerates` CHANGE `currency_code` `currency_code` VARCHAR(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL;",
-      "ALTER TABLE `exchangerates` CHANGE `currency_desc` `currency_desc` VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL;",
-      "ALTER TABLE `system_infos` ADD `process_update` TINYINT NOT NULL DEFAULT '0' AFTER `userid_updating`;",
-      "UPDATE `system_infos` SET dbversion = '0.1.1.211015'"
-    ]
-  },
-  "0.1.1.211027" : {
-    "system_infos" : [
-      "UPDATE `system_infos` SET dbversion = '0.1.1.211027'"
-    ]
-  },
-  "0.1.1.211028" : {
-    "system_infos" : [
-      "ALTER TABLE `chia_overall` ADD `xch_blockheight` INT NOT NULL AFTER `netspace`;",
-      "UPDATE `system_infos` SET dbversion = '0.1.1.211028'"
-    ]
-  }
+    "0.1.1.211014": {
+        "system_infos": [
+            "ALTER TABLE `system_infos` CHANGE `dbversion` `dbversion` VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL;",
+            "UPDATE `system_infos` SET dbversion = '0.1.1.211014';"
+        ]
+    },
+    "0.1.1.211015": {
+        "system_infos": [
+            "ALTER TABLE `exchangerates` CHANGE `currency_code` `currency_code` VARCHAR(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL;",
+            "ALTER TABLE `exchangerates` CHANGE `currency_desc` `currency_desc` VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL;",
+            "ALTER TABLE `system_infos` ADD `process_update` TINYINT NOT NULL DEFAULT '0' AFTER `userid_updating`;",
+            "UPDATE `system_infos` SET dbversion = '0.1.1.211015';"
+        ]
+    },
+    "0.1.1.211027": {
+        "system_infos": [
+            "UPDATE `system_infos` SET dbversion = '0.1.1.211027';"
+        ]
+    },
+    "0.1.1.211028": {
+        "system_infos": [
+            "ALTER TABLE `chia_overall` ADD `xch_blockheight` INT NOT NULL AFTER `netspace`;",
+            "UPDATE `system_infos` SET dbversion = '0.1.1.211028';"
+        ]
+    },
+    "0.1.1.211103": {
+        "system_infos": [
+            "ALTER TABLE `system_infos` ADD `lastcronrun` TIMESTAMP NOT NULL DEFAULT '1970-01-01 23:00:00' AFTER `maintenance_mode`;",
+            "UPDATE `system_infos` SET dbversion = '0.1.1.211103';"
+        ]
+    },
+    "0.1.1.211105": {
+        "system_infos": [
+            "UPDATE `system_infos` SET dbversion = '0.1.1.211105';"
+        ]
+    }
 }

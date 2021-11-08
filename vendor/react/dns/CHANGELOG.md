@@ -1,5 +1,50 @@
 # Changelog
 
+## 1.8.0 (2021-07-11)
+
+A major new feature release, see [**release announcement**](https://clue.engineering/2021/announcing-reactphp-default-loop).
+
+*   Feature: Simplify usage by supporting new [default loop](https://reactphp.org/event-loop/#loop).
+    (#182 by @clue)
+
+    ```php
+    // old (still supported)
+    $factory = new React\Dns\Resolver\Factory();
+    $resolver = $factory->create($config, $loop);
+
+    // new (using default loop)
+    $factory = new React\Dns\Resolver\Factory();
+    $resolver = $factory->create($config);
+    ```
+
+## 1.7.0 (2021-06-25)
+
+*   Feature: Update DNS `Factory` to accept complete `Config` object.
+    Add new `FallbackExecutor` and use fallback DNS servers when `Config` lists multiple servers.
+    (#179 and #180 by @clue)
+
+    ```php
+    // old (still supported)
+    $config = React\Dns\Config\Config::loadSystemConfigBlocking();
+    $server = $config->nameservers ? reset($config->nameservers) : '8.8.8.8';
+    $resolver = $factory->create($server, $loop);
+
+    // new
+    $config = React\Dns\Config\Config::loadSystemConfigBlocking();
+    if (!$config->nameservers) {
+        $config->nameservers[] = '8.8.8.8';
+    }
+    $resolver = $factory->create($config, $loop);
+    ```
+
+## 1.6.0 (2021-06-21)
+
+*   Feature: Add support for legacy `SPF` record type.
+    (#178 by @akondas and @clue)
+
+*   Fix: Fix integer overflow for TCP/IP chunk size on 32 bit platforms.
+    (#177 by @clue)
+
 ## 1.5.0 (2021-03-05)
 
 *   Feature: Improve error reporting when query fails, include domain and query type and DNS server address where applicable.

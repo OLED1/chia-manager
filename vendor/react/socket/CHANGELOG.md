@@ -1,5 +1,89 @@
 # Changelog
 
+## 1.9.0 (2021-08-03)
+
+*   Feature: Add new `SocketServer` and deprecate `Server` to avoid class name collisions.
+    (#263 by @clue)
+
+    The new `SocketServer` class has been added with an improved constructor signature
+    as a replacement for the previous `Server` class in order to avoid any ambiguities.
+    The previous name has been deprecated and should not be used anymore.
+    In its most basic form, the deprecated `Server` can now be considered an alias for new `SocketServer`.
+
+    ```php
+    // deprecated
+    $socket = new React\Socket\Server(0);
+    $socket = new React\Socket\Server('127.0.0.1:8000');
+    $socket = new React\Socket\Server('127.0.0.1:8000', null, $context);
+    $socket = new React\Socket\Server('127.0.0.1:8000', $loop, $context);
+
+    // new
+    $socket = new React\Socket\SocketServer('127.0.0.1:0');
+    $socket = new React\Socket\SocketServer('127.0.0.1:8000');
+    $socket = new React\Socket\SocketServer('127.0.0.1:8000', $context);
+    $socket = new React\Socket\SocketServer('127.0.0.1:8000', $context, $loop);
+    ```
+
+*   Feature: Update `Connector` signature to take optional `$context` as first argument.
+    (#264 by @clue)
+
+    The new signature has been added to match the new `SocketServer` and
+    consistently move the now commonly unneeded loop argument to the last argument.
+    The previous signature has been deprecated and should not be used anymore.
+    In its most basic form, both signatures are compatible.
+
+    ```php
+     // deprecated
+    $connector = new React\Socket\Connector(null, $context);
+    $connector = new React\Socket\Connector($loop, $context);
+
+    // new
+    $connector = new React\Socket\Connector($context);
+    $connector = new React\Socket\Connector($context, $loop);
+    ```
+
+## 1.8.0 (2021-07-11)
+
+A major new feature release, see [**release announcement**](https://clue.engineering/2021/announcing-reactphp-default-loop).
+
+*   Feature: Simplify usage by supporting new [default loop](https://reactphp.org/event-loop/#loop).
+    (#260 by @clue)
+
+    ```php
+    // old (still supported)
+    $socket = new React\Socket\Server('127.0.0.1:8080', $loop);
+    $connector = new React\Socket\Connector($loop);
+
+    // new (using default loop)
+    $socket = new React\Socket\Server('127.0.0.1:8080');
+    $connector = new React\Socket\Connector();
+    ```
+
+## 1.7.0 (2021-06-25)
+
+*   Feature: Support falling back to multiple DNS servers from DNS config.
+    (#257 by @clue)
+
+    If you're using the default `Connector`, it will now use all DNS servers
+    configured on your system. If you have multiple DNS servers configured and
+    connectivity to the primary DNS server is broken, it will now fall back to
+    your other DNS servers, thus providing improved connectivity and redundancy
+    for broken DNS configurations.
+
+*   Feature: Use round robin for happy eyeballs DNS responses (load balancing).
+    (#247 by @clue)
+
+    If you're using the default `Connector`, it will now randomize the order of
+    the IP addresses resolved via DNS when connecting. This allows the load to
+    be distributed more evenly across all returned IP addresses. This can be
+    used as a very basic DNS load balancing mechanism.
+
+*   Internal improvement to avoid unhandled rejection for future Promise API.
+    (#258 by @clue)
+
+*   Improve test suite, use GitHub actions for continuous integration (CI).
+    (#254 by @SimonFrings)
+
 ## 1.6.0 (2020-08-28)
 
 *   Feature: Support upcoming PHP 8 release.

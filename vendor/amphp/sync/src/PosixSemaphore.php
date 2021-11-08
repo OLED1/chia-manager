@@ -86,10 +86,11 @@ class PosixSemaphore implements Semaphore
     }
 
     /**
-     * Private to prevent serialization.
+     * Prevent serialization.
      */
-    private function __sleep()
+    public function __sleep()
     {
+        throw new \Error('A semaphore cannot be serialized!');
     }
 
     public function getId(): string
@@ -200,7 +201,11 @@ class PosixSemaphore implements Semaphore
             return;
         }
 
-        if (!\is_resource($this->queue) || !\msg_queue_exists($this->key)) {
+        if (\PHP_VERSION_ID < 80000 && (!\is_resource($this->queue) || !\msg_queue_exists($this->key))) {
+            return;
+        }
+
+        if (\PHP_VERSION_ID >= 80000 && (!$this->queue instanceof \SysvMessageQueue || !\msg_queue_exists($this->key))) {
             return;
         }
 
