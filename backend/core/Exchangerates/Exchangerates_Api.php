@@ -27,14 +27,20 @@
      * @var Logging_Api
      */
     private $logging_api;
+    /**
+     * Holds an instance to the Webocket Server Class.
+     * @var WebSocketServer
+     */
+    private $server;
 
     /**
      * Initialises the needed and above stated private variables.
      */
-    public function __construct(){
+    public function __construct(object $server = NULL){
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
       $this->db_api = new DB_Api();
-      $this->logging_api = new Logging_Api($this);
+      $this->logging_api = new Logging_Api($this, $server);
+      $this->server = $server;
     }
 
     //Base Currency is always USD

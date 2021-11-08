@@ -77,7 +77,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
 
       $this->login_api = new Login_Api();
       $this->sites_api = new Sites_Api();
-      $this->logging = new Logging_Api($this);
+      $this->logging = new Logging_Api($this, $this);
       $this->sites_data = $this->sites_api->getSiteInfos(["siteid" => NULL])["data"];
     }
 
@@ -117,7 +117,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
         if(array_key_exists("X-Forwarded-For", $from->httpRequest->getHeaders())) $nodeip = $from->httpRequest->getHeaders()['X-Forwarded-For'][0];
 
         //Authenticate Node usind ReqeuestHandler
-        $this->requestHandler = new RequestHandler_Api();
+        $this->requestHandler = new RequestHandler_Api($this);
 
         if(is_array($loginData) && is_array($data["node"]["nodeinfo"])){
           $requesterLogin = $this->requestHandler->requesterLogin($nodeip, $loginData, $data["node"]["nodeinfo"]);

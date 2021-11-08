@@ -1,5 +1,7 @@
 <?php
   namespace ChiaMgmt\Logging;
+  use ChiaMgmt\WebSocketClient\WebSocketClient_Api;
+
 
   /**
    * The logging api is the core of the project's logging.
@@ -32,15 +34,21 @@
      * @var string
      */
     private $errorfilepath;
+    /**
+     * Holds an instance to the Webocket Server Class.
+     * @var WebSocketServer
+     */
+    private $server;
 
     /**
      * The constructor initializes all paths which are needed to work properly.
      * @param object $caller The caller class ($this)
      */
-    public function __construct(Object $caller = NULL){
+    public function __construct(Object $caller = NULL, object $server = NULL){
       if($caller != NULL) $this->callerClass = explode('\\', get_class($caller))[1];
       else $this->callerClass = explode('\\', get_class($this))[1];
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
+      $this->server = $server;
 
       $projectroot = realpath(__DIR__."/../../../");
       $this->logpath = "{$projectroot}/logs/api.log";
@@ -69,9 +77,9 @@
       fwrite($loggingfile, $errortext."\n");
       fclose($loggingfile);
 
-      /*include_once(__DIR__ . "/../messages/messages_functions.php");
-      $messages = new Messages();
-      $messages->informFrontendUsers(get_class($this), 0, "getNewerLogsFromTimestamp");*/
+      if(!is_null($this->server)){
+        $this->server->messageFrontendClients(array("siteID" => 11), array("logsChanged" => $this->getMessagesFromFile(["fromline" => 0, "toline" => 1])));
+      }
     }
 
     /**
@@ -143,35 +151,42 @@
      * @param  int    $toline   Which line should be the last one (If i don't need the whole files content)
      * @return array            A status code array with the needed data
      */
-    public function getMessagesFromFile(int $fromline, int $toline){
-      //$loggingfile = fopen($this->logpath, 'r') or die("Unable to open file!");
-      $logarray = [];
+     //public function getMessagesFromFile(int $fromline, int $toline){
+    public function getMessagesFromFile(array $data){
+      if(array_key_exists("fromline", $data) && array_key_exists("toline", $data) && is_numeric($data["fromline"]) && is_numeric($data["toline"])){
+        $logarray = [];
+        $fromline = $data["fromline"];
+        $toline = $data["toline"];
 
-      $loggingfile = new SplFileObject($this->logpath);
+        $loggingfile = new \SplFileObject($this->logpath);
 
-      if($loggingfile) {
-        $loggingfile->seek(PHP_INT_MAX); // cheap trick to seek to EoF
-        $total_lines = $loggingfile->key(); // last line number
+        if($loggingfile) {
+          $loggingfile->seek(PHP_INT_MAX); // cheap trick to seek to EoF
+          $total_lines = $loggingfile->key(); // last line number
 
-        if($toline <= $total_lines || $fromline <= $total_lines){
-          if($toline > $total_lines) $toline = $total_lines;
+          if($toline <= $total_lines || $fromline <= $total_lines){
+            if($toline > $total_lines) $toline = $total_lines;
 
-          $i = $toline;
-          $reader = new LimitIterator($loggingfile, $total_lines - $toline);
-          foreach ($reader as $line) {
-            $splittedline = explode(";", $line);
-            if(count($splittedline) > 1){
-              //echo $line; // includes newlines
-              $logarray[$i] = $splittedline;
-              if($i == $fromline) break;
-              $i--;
+            $i = $toline;
+            $reader = new \LimitIterator($loggingfile, $total_lines - $toline);
+            foreach ($reader as $line) {
+              $splittedline = explode(";", $line);
+              if(count($splittedline) > 1){
+                //echo $line; // includes newlines
+                $logarray[$i] = $splittedline;
+                if($i == $fromline) break;
+                $i--;
+              }
             }
           }
+        }else{
+          return array("status" => 1, "message" => "An error occured.");
         }
+        return array("status" => 0, "message" => "Logs successfully loaded.","data" => $logarray);
       }else{
-        return array("status" => 1, "message" => "An error occured.");
+
       }
-      return array("status" => 0, "message" => "Logs successfully loaded.","data" => $logarray);
+      //$loggingfile = fopen($this->logpath, 'r') or die("Unable to open file!");
     }
 
     /**

@@ -34,18 +34,23 @@
      * @var array
      */
     private $ini;
+    /**
+     * Holds an instance to the Webocket Server Class.
+     * @var WebSocketServer
+     */
+    private $server;
 
     /**
      * Initialises the needed and above stated private variables.
      */
-    public function __construct(){
+    public function __construct(object $server = NULL){
       $config_file = __DIR__.'/../../config/config.ini.php';
       if(file_exists($config_file)){
         $this->ini = parse_ini_file($config_file);
         if(array_key_exists("db_name", $this->ini)){
           $this->db_api = new DB_Api();
           $this->websocket_api = new WebSocket_Api();
-          $this->logging_api = new Logging_Api($this);
+          $this->logging_api = new Logging_Api($this, $server);
         }
       }
     }
@@ -346,13 +351,14 @@
                                         (7,'ChiaMgmt\\\\Chia_Harvester\\\\Chia_Harvester_Api'),
                                         (8,'ChiaMgmt\\\\Chia_Infra_Sysinfo\\\\Chia_Infra_Sysinfo_Api'),
                                         (9,'ChiaMgmt\\\\Chia_Overall\\\\Chia_Overall_Api'),
-                                        (10,'ChiaMgmt\\\\System_Update\\\\System_Update_Api');";
+                                        (10,'ChiaMgmt\\\\System_Update\\\\System_Update_Api'),
+                                        (11, 'ChiaMgmt\\\\Logging\\\\Logging_Api');";
 
         //Default sites_pagestoinform
         $query .= "INSERT INTO `sites_pagestoinform` VALUES (1,1,1),(2,2,2),(3,2,1),(4,3,3),(5,4,4),
                                                       (6,5,5),(7,5,1),(8,6,6),(9,6,1),(10,7,7),
                                                       (11,7,1),(12,2,5),(13,2,6),(14,2,7),(15,8,8),
-                                                      (16,8,1),(17,2,8),(18,9,1),(19,10,1);";
+                                                      (16,8,1),(17,2,8),(18,9,1),(19,10,1), (20,11,11);";
 
         //Default system_settings
         $query .= "INSERT INTO `system_settings` VALUES (1,'mailing','{}',0),(2,'security','{\"TOTP\": {\"value\": \"0\"}}',0),(3,'updatechannel','{\"branch\": {\"value\": \"{$branch}\"}}',0);";

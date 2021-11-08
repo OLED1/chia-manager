@@ -34,5 +34,12 @@
         "system_infos": [
             "UPDATE `system_infos` SET dbversion = '0.1.1.211105';"
         ]
+    },
+    "0.1.1.211108": {
+        "system_infos": [
+            "INSERT INTO `sites` (`id`, `namespace`) VALUES ('11', 'ChiaMgmt\\\\Logging\\\\Logging_Api');",
+            "INSERT INTO `sites_pagestoinform` (`id`, `siteid`, `sitetoinform`) VALUES ('20', '11', '11');",
+            "UPDATE `system_infos` SET dbversion = '0.1.1.211108';"
+        ]
     }
 }

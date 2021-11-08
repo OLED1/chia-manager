@@ -137,9 +137,15 @@
               </a>
             </li>
             <li id="nav-system-settings" class="nav-item">
-              <a class="nav-link" data-siteid=3 data-nav-target="nav-system-settings"href="/sites/system">
+              <a class="nav-link" data-siteid=3 data-nav-target="nav-system-settings" href="/sites/system">
                 <i class="fas fa-server"></i>
                 <span>Settings</span>
+              </a>
+            </li>
+            <li id="nav-system-logging" class="nav-item">
+              <a class="nav-link" data-siteid=11 data-nav-target="nav-system-logging" href="/sites/logging">
+                <i class="fas fa-scroll"></i>
+                <span>Logging</span>
               </a>
             </li>
 

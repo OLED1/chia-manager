@@ -51,18 +51,24 @@
      * @var array
      */
     private $ini;
+    /**
+     * Holds an instance to the Webocket Server Class.
+     * @var WebSocketServer
+     */
+    private $server;
 
     /**
      * Initialises the needed and above stated private variables.
      */
-    public function __construct(){
+    public function __construct(object $server = NULL){
       $this->db_api = new DB_Api();
-      $this->logging_api = new Logging_Api($this);
+      $this->logging_api = new Logging_Api($this, $server);
       $this->mailing_api = new Mailing_Api();
       $this->system_api = new System_Api();
       $this->encryption_api = new Encryption_Api();
       $this->users_api = new Users_Api();
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
+      $this->server = $server;
     }
 
     /**

@@ -53,17 +53,23 @@
     * @var array
     */
     private $requests;
+    /**
+     * Holds an instance to the Webocket Server Class.
+     * @var WebSocketServer
+     */
+    private $server;
 
     /**
      * The constructur sets the needed above stated private variables except $subscriptions and $requests.
      */
-    public function __construct(){
+    public function __construct(object $server = NULL){
       $this->login_api = new Login_Api();
       $this->db_api = new DB_Api();
-      $this->logging = new Logging_Api($this);
+      $this->logging = new Logging_Api($this, $server);
       $this->system_update_api = new System_Update_Api();
       $this->encryption_api = new Encryption_Api();
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
+      $this->server = $server;
     }
 
     /**
@@ -77,15 +83,15 @@
      * @param  WebSocketServer $server        An instance to the Webscoket server to be able to communicate with the node
      * @return array                          {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The returnded data] } from subquery.
      */
-    public function processRequest(array $loginData, array $backendInfo, array $data, $server = NULL){
+    public function processRequest(array $loginData, array $backendInfo, array $data){
       if($this->system_update_api->checkUpdateRoutine()["data"]["maintenance_mode"] == 1 && $backendInfo["method"] != "finishUpdate" && $backendInfo["method"] != "disableMaintenanceMode"){
         return $this->logging->getErrormessage("001");
       }
 
       if(class_exists($backendInfo['namespace']) && method_exists($backendInfo['namespace'], $backendInfo['method'])){
         try{
-          $this_class = new $backendInfo['namespace']();
-          $return = $this_class->{$backendInfo['method']}($data, $loginData, $server);
+          $this_class = new $backendInfo['namespace']($this->server);
+          $return = $this_class->{$backendInfo['method']}($data, $loginData, $this->server);
 
           return array($backendInfo['method'] => $return);
         }catch(Exception $e){

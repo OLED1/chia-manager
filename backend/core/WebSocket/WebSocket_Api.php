@@ -21,13 +21,19 @@
      * @var Logging_Api
      */
     private $logging_api;
+    /**
+     * Holds an instance to the Webocket Server Class.
+     * @var WebSocketServer
+     */
+    private $server;
 
     /**
      * Initialises the needed and above stated private variables.
      */
-    public function __construct(){
+    public function __construct(object $server = NULL){
       $this->wsclient = new WebSocketClient_Api();
-      $this->logging_api = new Logging_Api($this);
+      $this->logging_api = new Logging_Api($this, $server);
+      $this->server = $server;
     }
 
     /**
@@ -39,7 +45,7 @@
     public function testConnection(){
       try{
         return $this->wsclient->testConnection();
-      }catch(Exception $e){
+      }catch(\Throwable $e){
         return $this->$logging_api->getErrormessage("001", $e);
       }
     }
