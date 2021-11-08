@@ -7,6 +7,7 @@ use ChiaMgmt\Login\Login_Api;
 use ChiaMgmt\RequestHandler\RequestHandler_Api;
 use ChiaMgmt\Sites\Sites_Api;
 use ChiaMgmt\Logging\Logging_Api;
+use ChiaMgmt\System\System_Api;
 
 /**
  * The ChiaWebSocketServer class contains the websocket server itself and it's data processing functions.
@@ -207,7 +208,14 @@ class ChiaWebSocketServer implements MessageComponentInterface {
               $this->users[$from->resourceId]->send(json_encode($this->messageAllNodes($reqData)));
             case "queryCronData":
               echo "[{$this->getDate()}] INFO: Querying cron data.\n";
-              $this->users[$from->resourceId]->send(json_encode($this->messageAllNodes($nodeInfo, $reqData)));
+              if(is_array($loginData) && is_array($backendInfo) && is_array($reqData)){
+                $this_req = $this->requestHandler->processCronRequest($loginData, $backendInfo, $reqData, $nodeInfo, $this);
+                $this->users[$from->resourceId]->send(json_encode($this_req));
+
+                $this->messageFrontendClients(array("siteID" => 3), $this_req);
+              }else{
+                $this->users[$from->resourceId]->send(json_encode(array($backendInfo['method'] => array("status" => 1, "message" => "One of the required arrays has a wrong datatype."))));
+              }
               break;
             default:
               $this->users[$from->resourceId]->send(json_encode(array("status" => 1, "message" => "Socketaction " . $nodeInfo["socketaction"] . " not known.")));

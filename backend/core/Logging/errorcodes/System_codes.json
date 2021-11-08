@@ -6,7 +6,12 @@
     "getSpecificSystemSetting" : "004",
     "checkForUpdates" : "005",
     "getSystemMessages" : "006",
-    "processUpdate" : "007"
+    "processUpdate" : "007",
+    "updateProjectVersion" : "008",
+    "getCronjobEnabled" : "009",
+    "enableCronjob" : "010",
+    "disableCronjob" : "011",
+    "setCurrentCronjobRunTimestamp" : "012"
   },
   "errormessages" : {
     "setSystemSettings" : {
@@ -31,6 +36,26 @@
     },
     "processUpdate" : {
       "001" : [0, "No update needed."]
+    },
+    "updateProjectVersion" : {
+      "001" : [1, "db_update.json file not writable."],
+      "002" : [1, "The stated version is already present in db_update.json file. Skipping."],
+      "003" : [1, "The stated new version is smaller or equal to the current version."],
+      "004" : [1, "Stated project version does not match x.y.z or x.y.z.[YYMMDD]."],
+      "005" : [1, "Not all data stated."],
+      "006" : [1, "Not allowed. Please enable developer mode first in config file."]
+    },
+    "getCronjobEnabled" : {
+      "001" : [0, "Cronjob does not exist."]
+    },
+    "enableCronjob" : {
+      "001" : [2, "An error occured. Could not create the systems cronjob."]
+    },
+    "disableCronjob" : {
+      "001" : [2, "An error occured. Could not disable the systems cronjob."]
+    },
+    "setCurrentCronjobRunTimestamp" : {
+      "001" : [2, "An error occured."]
     }
   }
 }

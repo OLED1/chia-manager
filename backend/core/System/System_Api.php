@@ -6,6 +6,9 @@
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\Nodes\Nodes_Api;
   use ChiaMgmt\Encryption\Encryption_Api;
+  use TiBeN\CrontabManager\CrontabJob;
+  use TiBeN\CrontabManager\CrontabRepository;
+  use TiBeN\CrontabManager\CrontabAdapter;
 
   /**
    * The System_Api class manages all settings and system messages.
@@ -42,6 +45,11 @@
     */
     private $encryption_api;
     /**
+     * Holds an instance to systems cronjob for the apache user.
+     * @var CrontabRepository
+     */
+    private $crontabRepository;
+    /**
      * Holds an instance to the Logging Class.
      * @var Logging_Api
      */
@@ -60,6 +68,7 @@
       $this->system_update_api = new System_Update_Api();
       $this->nodes_api = new Nodes_Api();
       $this->encryption_api = new Encryption_Api();
+      $this->crontabRepository = new CrontabRepository(new CrontabAdapter());
       $this->logging_api = new Logging_Api($this);
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
     }
@@ -248,6 +257,22 @@
         $returndata["count"] = $returndata["count"] + 1;
       }
 
+      //Checking if systems cronjob is enabled
+      $cronjobEnabled = $this->getCronjobEnabled();
+      if($cronjobEnabled["status"] == "012009001"){
+        $returndata["found"]["websocket"] = "The system's automated background task is not enabled. No data can be queried automatically in backbround.";
+        $returndata["count"] = $returndata["count"] + 1;
+      }else if($cronjobEnabled["status"] == 0){
+        $now = new \DateTime("now");
+        $lastexecdate = new \DateTime($cronjobEnabled["data"]);
+        $interval = $now->diff($lastexecdate);
+        $seconds = $interval->s;
+
+        if($seconds > 60){
+          $returndata["found"]["websocket"] = "Last background task run more than 1 minute ago. Something seems to be wrong.";
+          $returndata["count"] = $returndata["count"] + 1;
+        }
+      }
 
       //Checking if all system relevant security features are activated
       try{
@@ -264,6 +289,144 @@
         return array("status" => 0, "message" => "Successfully queried system messages.", "data" => $returndata);
       }catch(Exception $e){
         $returndata = $this->logging_api->getErrormessage("001", $e);
+      }
+    }
+
+    /**
+     * This function is ment for developers of this project.
+     * It sets default values in the project config file and updates the db version. Furhtermore a default entry will be set in the db_update.json.
+     * Function made for: Web(App)client
+     * @param  array  $data                   { NULL } No data is needed query this function.
+     * @param  array $loginData               { NULL } No logindata is needed query this function.
+     * @param  ChiaWebSocketServer $server    An instance to the Webscoket server to be able to communicate with the node
+     * @return array                          {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : "[Found system messages]"}
+     */
+    public function updateProjectVersion(array $data = [], array $loginData = NULL, $server = NULL){
+      if(array_key_exists("developer_mode", $this->ini) && $this->ini["developer_mode"] == "on"){
+        if(array_key_exists("projectversion", $data)){
+          $newversion = $data["projectversion"];
+          if(preg_match("/^((\d+\.)?(\d+\.)?(\d+\.)?(\d{6}))|((\d+\.)(\d+\.)(\*|\d+))/", $newversion)){
+            $currentversion = $this->ini["versnummer"];
+            if(version_compare($currentversion, $newversion, "<")){
+              $updateconfig = $this->system_update_api->updateConfigFile($newversion);
+              if($updateconfig["status"] != 0) return $updateconfig;
+
+              $db_update_file_path = __DIR__."/../System_Update/files/db_update.json";
+              $db_update_file = file_get_contents($db_update_file_path);
+              $db_update_array = json_decode($db_update_file, True);
+              if(!array_key_exists($newversion, $db_update_array)){
+                if(is_writable($db_update_file_path)){
+                  $db_update_array[$newversion]["system_infos"][0] = "UPDATE `system_infos` SET dbversion = '{$newversion}';";
+                  $db_update_file = json_encode($db_update_array, JSON_PRETTY_PRINT);
+                  file_put_contents($db_update_file_path, $db_update_file);
+
+                  $this->system_update_api->checkAndAdjustDatabase();
+                }else{
+                  return $this->logging_api->getErrormessage("001");
+                }
+              }else{
+                return $this->logging_api->getErrormessage("002");
+              }
+            }else{
+              return $this->logging_api->getErrormessage("003");
+            }
+            return array("status" => 0, "message" => "Successfully updated project version and set default values.");
+          }else{
+            return $this->logging_api->getErrormessage("004");
+          }
+        }else{
+          return $this->logging_api->getErrormessage("005");
+        }
+      }else{
+        return $this->logging_api->getErrormessage("006");
+      }
+    }
+
+    /**
+     * Checks if the system cronjob is enabled.
+     * Function made for: Web(App)client
+     * @return array  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
+     */
+    public function getCronjobEnabled(){
+      $enabledCronjobs = $this->crontabRepository->findJobByRegex('/ChiaMgmt\ cronjob\ -\ Do\ not\ remove\ this\ comment/');
+      if(count($enabledCronjobs) > 0){
+        $sql = $this->db_api->execute("SELECT lastcronrun FROM system_infos", array());
+        $lastcronrun = $sql->fetchAll(\PDO::FETCH_ASSOC);
+        return array("status" => 0, "message" => "Cronjob exists.", "data" => $lastcronrun[0]["lastcronrun"]);
+      }else{
+        return $this->logging_api->getErrormessage("001");
+      }
+    }
+
+    /**
+     * Enables the systems cronjob if not enabled already.
+     * Function made for: Web(App)client
+     * @return array  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
+     */
+    public function enableCronjob(){
+      $cronjobEnbled = $this->getCronjobEnabled();
+      if($cronjobEnbled["status"] != 0){
+        $pathtocronjob = realpath(__DIR__."/../CronBackendService/CronBackendService.php");
+        $crontabJob = new CrontabJob();
+        $crontabJob
+        ->setMinutes('*')
+        ->setHours('*')
+        ->setDayOfMonth('*')
+        ->setMonths('*')
+        ->setDayOfWeek('*')
+        ->setTaskCommandLine("php {$pathtocronjob}")
+        ->setComments('ChiaMgmt cronjob - Do not remove this comment'); // Comments are persisted in the crontab
+
+        $this->crontabRepository->addJob($crontabJob);
+        $this->crontabRepository->persist();
+
+        $cronjobEnbled = $this->getCronjobEnabled();
+        if($cronjobEnbled["status"] == 0){
+          return array("status" => 0, "message" => "Cronjob Successfully enabled.");
+        }else{
+          return $this->logging_api->getErrormessage("001");
+        }
+      }
+
+      return $cronjobEnbled;
+    }
+
+    /**
+     * Disables the systems cronjob if not enabled already.
+     * Function made for: Web(App)client
+     * @return array  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
+     */
+    public function disableCronjob(){
+      $cronjobEnbled = $this->getCronjobEnabled();
+      if($cronjobEnbled["status"] == 0){
+        $enabledCronjobs = $this->crontabRepository->findJobByRegex('/ChiaMgmt\ cronjob\ -\ Do\ not\ remove\ this\ comment/');
+        $crontabJob = $enabledCronjobs[0];
+        $this->crontabRepository->removeJob($crontabJob);
+        $this->crontabRepository->persist();
+
+        $cronjobEnbled = $this->getCronjobEnabled();
+        if($cronjobEnbled["status"] != 0){
+          return array("status" => 0, "message" => "Cronjob Successfully disbled.");
+        }else{
+          return $this->logging_api->getErrormessage("001");
+        }
+      }
+
+      return $cronjobEnbled;
+    }
+
+    /**
+     * Updates the cronjobs last run timestamp.
+     * Function made for: Cronjob
+     * @throws Exception $e  Throws an exception on db errors.
+     * @return array         "status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
+     */
+    public function setCurrentCronjobRunTimestamp(){
+      try{
+        $sql = $this->db_api->execute("UPDATE system_infos SET lastcronrun = NOW()", array());
+        return array("status" => 0, "message" => "Successfully set new cronjob last run timestamp.");
+      }catch(Exception $e){
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 

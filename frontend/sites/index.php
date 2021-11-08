@@ -41,6 +41,7 @@
   var userID = {$_COOKIE["user_id"]};
   var sessid = '{$_COOKIE["PHPSESSID"]}';
   var darkmode = {$gui_mode};
+  var intervals = {};
   </script>";
 ?>
 <html lang="en">
@@ -312,7 +313,7 @@
                   <p>
                     Backend programmed in PHP (Version 7.4.3) with MySQL (Version 8.0.26).<br>
                     Backend uses following third party software:<br>
-                    cboden/ratchet (Version 0.4.3), amphp/websocket-client (Version 1.0), phpmailer/phpmailer (Version 6.4) and amphp/amp (Version 2.5).<br>
+                    cboden/ratchet (Version 0.4.3), amphp/websocket-client (Version 1.0), phpmailer/phpmailer (Version 6.4), amphp/amp (Version 2.5) and tiben/crontab-manager (Version 1.0).<br>
                     This project supports and uses composer.<br>
                     Frontend uses following third party software:<br>
                     jQuery (v3.6.0), Bootstrap (5.0.2), ChartJS (v2.9.4), Datatables (1.10.24), FontAwesome (5.15.3), David Stutz Multiselect (Version 2.0), Design SB Admin 2 (v4.1.3).<br>
@@ -336,6 +337,12 @@
                   </p>
                   <p>This project is open source and free and it will be forever.<br>
                   But if you want to support us and this project you can contribute some Mojos to this address: (Coming soon).</p>
+                  <p><strong>External data</strong><br>
+                    External data like the current chia netspace or dollar price is provided by&nbsp;<a class="externallink"  target="_blank" href="https://xchscan.com/">xchscan.com</a>.
+                  </p>
+                  <p><strong>Disclaimer</strong><br>
+                    CHIA NETWORK INC, CHIA™, the CHIA BLOCKCHAIN™, the CHIA PROTOCOL™, CHIALISP™ and the “leaf Logo” (including the leaf logo alone when it refers to or indicates Chia), are trademarks or registered trademarks of Chia Network, Inc., a Delaware corporation. There is no affiliation between this Chia Mgmt project and the main Chia Network project.
+                  </p>
                 </div>
                 <div class="modal-footer">
                   <button class="btn btn-secondary" type="button" data-dismiss="modal">Close</button>

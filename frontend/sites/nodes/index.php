@@ -34,8 +34,8 @@
     <h5>Explanation</h5>
     <div class="card shadow mb-4">
       <div class="card-body">
-        On this page you are able to allow and deny access to websocket backend of the Chia Manager.<br>
-        Please be aware of some settings: If the IP of a node changes, so the change must be accepted otherwise all connections will be declined. You cann allow the connection by pressing the yellow button under "IP Address" which appears in such case.<br>
+        On this page you are able to allow and deny access to the websocket backend of the Chia Manager.<br>
+        Please be aware of some settings: If the IP of a node changes, so the change must be accepted otherwise all connections will be declined. You can allow the connection by pressing the yellow button under "IP Address" which appears in such case.<br>
         In case of a new connection it can be accepted or denied using the buttons located under "Actions".
       </div>
     </div>

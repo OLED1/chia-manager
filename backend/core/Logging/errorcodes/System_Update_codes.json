@@ -42,7 +42,8 @@
       "001" : [2, "An error occured."]
     },
     "updateConfigFile" : {
-      "001" : [2, "Could not set version in config.ini.php file."]
+      "001" : [2, "Config file not writable."],
+      "002" : [2, "Could not set version in config.ini.php file."]
     }
   }
 }

@@ -38,7 +38,7 @@
             <h6 class="m-0 font-weight-bold text-primary">Websocket Server</h6>
           </div>
           <div class="card-body">
-            <p>Get a brief overview about the websocket server status. You also can execute actions in case of malfunction.<p>
+            <p>Get a brief overview about the websocket server status. You also can execute actions in case of malfunction.</p>
             <h6>Server Status</h6>
             <div id="wssstatus" class="col-lg-6 mb-4">
             <?php
@@ -90,10 +90,10 @@
             <h6 class="m-0 font-weight-bold text-primary">Server Security</h6>
           </div>
           <div class="card-body">
-            <p>To ensure your server is as secure as possible you have the following options. Please be aware of some of this settings. For example: Enabling TOTP requires your mailsettings to be checked, tested and confirmed.<p>
+            <p>To ensure your server is as secure as possible you have the following options. Please be aware of some of this settings. For example: Enabling TOTP requires your mailsettings to be checked, tested and confirmed.</p>
             <div class="custom-control custom-checkbox">
-                <input type="checkbox" class="custom-control-input" id="enableTOTP" <?php echo( $security ? "checked" : ""); ?> >
-                <label class="custom-control-label" for="enableTOTP">Enable and enforce TOTP via E-Mail</label>
+              <input type="checkbox" class="custom-control-input" id="enableTOTP" <?php echo( $security ? "checked" : ""); ?> >
+              <label class="custom-control-label" for="enableTOTP">Enable and enforce TOTP via E-Mail</label>
             </div>
           </div>
         </div>
@@ -148,7 +148,7 @@
             <h6 class="m-0 font-weight-bold text-primary">E-Mail Server Settings</h6>
           </div>
           <div class="card-body">
-            <p>If you want to be able to send e-mails via this instance like password resets or (alert) messages, you can set it up here.<p>
+            <p>If you want to be able to send e-mails via this instance like password resets or (alert) messages, you can set it up here.</p>
             <form id="mailsetupform">
               <div class="row">
                 <div class="col col col-sm-3 col-md-2 col-lg-2 col-xl-6">
@@ -268,6 +268,69 @@
         </div>
       </div>
     </div>
+    <div class="row">
+      <div class="col">
+        <div class="card shadow mb-4">
+          <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Automated background tasks</h6>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col mb-4">
+                <?php
+                  $cronjobEnabled = $system_api->getCronjobEnabled();
+                  if($cronjobEnabled["status"] == 0){
+                    $now = new \DateTime("now");
+                    $lastexecdate = new \DateTime($cronjobEnabled["data"]);
+                    $interval = $now->diff($lastexecdate);
+                    $seconds = $interval->s;
+                  }
+                ?>
+                <p>The automated background tasks are needed to query current data in the background.<br>
+                Therefore the system's socalled cronjob for the apache user will be used.<br>
+                The job will executed every minute. To enable it, just hit the checkbox.</p>
+                <?php if($cronjobEnabled["status"] == "012009001"){ ?>
+                  <h5><span id="cronjobbadge" class="badge badge-danger">Cronjob not enabled.</span></h5>
+                <?php }else if($cronjobEnabled["status"] == 0 && $seconds < 60){ ?>
+                  <h5><span id="cronjobbadge" class="badge badge-success">Last Cronjob run <span id="lastcronrun"><?php echo $seconds; ?></span> seconds ago.</span></h5>
+                <?php }else if($cronjobEnabled["status"] == 0 && $seconds >= 60){ ?>
+                  <h5><span id="cronjobbadge" class="badge badge-danger">Last Cronjob run more than 1 minutes ago.</span></h5>
+                <?php } ?>
+                <div class="custom-control custom-checkbox">
+                  <input type="checkbox" class="custom-control-input" id="enableSystemCronjob" <?php echo( $cronjobEnabled["status"] == 0 ? "checked" : ""); ?> >
+                  <label class="custom-control-label" for="enableSystemCronjob">Enable automated background tasks</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <?php if(array_key_exists("developer_mode", $ini) && $ini["developer_mode"] == "on"){ ?>
+    <div class="row">
+      <div class="col">
+        <div class="card shadow mb-4">
+          <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Developer Settings</h6>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col mb-4">
+                <p>Change newest project version, update dbversion and set default values for the db_update.json.</p>
+                <label for="new-project-version">New project version (e.g. x.y.z.[YYMMDD] or x.y.z)</label>
+                <input id="new-project-version" class="form-control" type="text" placeholder="0.1.1.211027">
+              </div>
+            </div>
+            <div class="row">
+              <div class="col">
+                <button type="button" class="btn btn-primary wsbutton" id="save-new-project-version">Save changes<i class="fas fa-spinner fa-spin" style="display: none;"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <?php } ?>
   </div>
 </div>
 

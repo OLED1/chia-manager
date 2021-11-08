@@ -4,6 +4,7 @@ $(function(){
   var url = backend + "/core/WebSocket/WebSocket_Rest.php";
 
   settingConfirmHandler();
+  reloadCronJobExecTimer();
 
   $("#sendmail").on("click",function(){
     $(".smtp").hide();
@@ -144,6 +145,23 @@ $(function(){
     location.reload();
   });
 
+  $("#save-new-project-version").on("click", function(e){
+    var newprojectversion = $("#new-project-version").val().trim();
+    if(newprojectversion.length > 0){
+      window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "updateProjectVersion", { "projectversion" : newprojectversion });
+    }else{
+      showMessage(1, "Project version must not empty.");
+    }
+  });
+
+  $("#enableSystemCronjob").on("click", function(e){
+    if($("#enableSystemCronjob").prop('checked')){
+      window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "enableCronjob", {});
+    }else{
+      window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "disableCronjob", {});
+    }
+  });
+
   function showErrorMessage(messageid,message){
     $("#"+messageid).text(message).show();
     setInterval(function() {
@@ -224,6 +242,20 @@ function settingConfirmHandler(){
   });
 }
 
+function reloadCronJobExecTimer(){
+  if("system" in intervals && "cron" in intervals["system"]){
+    clearTimeout(intervals["system"]["cron"]);
+  }
+
+  if($("#lastcronrun").length > 0){
+    intervals["system"] = {};
+    intervals["system"]["cron"] = setInterval(function () {
+      var currentseconds = parseInt($("#lastcronrun").text());
+      $("#lastcronrun").text(currentseconds + 1);
+    }, 1000);
+  }
+}
+
 function messagesTrigger(data){
   var key = Object.keys(data);
 
@@ -268,6 +300,17 @@ function messagesTrigger(data){
       $("#proceed-update-routine").show();
     }else if(key == "setInstanceUpdating"){
       $(location).attr('href',frontend + '/sites/installer_updater/');
+    }else if(key == "updateProjectVersion"){
+      location.reload();
+    }else if(key == "enableCronjob"){
+      $("#cronjobbadge").removeClass("badge-success").removeClass("badge-danger").addClass("badge-success").text("Cronjob enabled. Next run in some seconds.");
+    }else if(key == "disableCronjob"){
+      $("#cronjobbadge").removeClass("badge-success").removeClass("badge-danger").addClass("badge-danger").text("Cronjob not enabled.");
+    }else if(key == "cronJobExecution"){
+      var now = new Date();
+      var lastexecdate = new Date(data[key]["data"]);
+      $("#cronjobbadge").removeClass("badge-success").removeClass("badge-danger").addClass("badge-success").html("Last Cronjob run <span id='lastcronrun'>0</span> seconds ago.</span>");
+      reloadCronJobExecTimer();
     }
   }else{
     showMessage(2, data["message"]);
@@ -280,11 +323,14 @@ function messagesTrigger(data){
       $("#confirm-update-process").removeAttr("disabled").find("i").hide();
       $(".update-close-button").show();
       $(".updatelogcontainer").append("<span><i class='fas fa-times-circle text-danger'></i>Update failed. Please resolve the issues and redo the update.</span>");
+    }else if(key == "enableCronjob"){
+      $("#enableSystemCronjob").prop( "checked", false );
+    }else if(key == "disableCronjob"){
+      $("#enableSystemCronjob").prop( "checked", true );
     }
   }
 
   if(key == "processingUpdate"){
-    console.log(data[key]);
     if(data[key]["step"] != undefined){
       var message = "<i class='fas " + (data[key]["processing-status"] == 0 ? "fa-check-circle text-success" : (data[key]["processing-status"] == 1 ? "fa-times-circle text-danger" : "fa-circle text-secondary")) + "'></i>&nbsp;" + data[key]["message"];
       $("#updatelogcontainer").append("<span id='step-" + data[key]["step"] + "'>" + message + "</span><br>").show('slow');

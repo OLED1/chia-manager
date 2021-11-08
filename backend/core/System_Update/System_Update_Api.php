@@ -669,13 +669,14 @@
     public function checkAndAdjustDatabase(){
       $config_file = __DIR__.'/../../config/config.ini.php';
       $config_data = parse_ini_file($config_file, true);
-      $db_update_json = file_get_contents("files/db_update.json");
+      $db_update_json = file_get_contents(__DIR__."/files/db_update.json");
       $db_update_array = json_decode($db_update_json, true);
       $alteredtables = [];
 
       try{
         foreach($db_update_array AS $version => $tables){
-          if(version_compare($config_data["application"]["versnummer"], $version) <= 0){
+          if(version_compare($config_data["application"]["versnummer"], $version, "<=")){
+            echo "HIER ";
             foreach($tables AS $tablename => $statements){
               foreach($statements AS $arrkey => $statement){
                 $sql = $this->db_api->execute($statement, array());
@@ -701,16 +702,21 @@
 
     /**
      * Updates the config files with new values.
+     * @param  string $newversion  The new version which should be set. When NULL the data from the $version_file_data will be set.
      * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function updateConfigFile(){
+    public function updateConfigFile(string $newversion = NULL){
       $config_file = __DIR__.'/../../config/config.ini.php';
       $config_data = parse_ini_file($config_file, true);
 
-      $version_file_data = $this->getVersionFileData();
-      $updatechannel = $version_file_data["updatechannel"];
-      $version_file_data = $version_file_data["versionfiledata"];
-      $newversion = $version_file_data[$updatechannel][0]["version"];
+      if(!is_writable($config_file)) return $this->logging_api->getErrormessage("001");
+
+      if(is_null($newversion)){
+        $version_file_data = $this->getVersionFileData();
+        $updatechannel = $version_file_data["updatechannel"];
+        $version_file_data = $version_file_data["versionfiledata"];
+        $newversion = $version_file_data[$updatechannel][0]["version"];
+      }
 
       $key = "application";
       $section = "versnummer";
@@ -733,7 +739,7 @@
       if(array_key_exists("versnummer", $tempini) && $tempini["versnummer"] == $newversion){
         return array("status" => 0, "message" => "Successfully set new version to {$newversion}.");
       }else {
-        return $this->logging_api->getErrormessage("001");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
