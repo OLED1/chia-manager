@@ -7,7 +7,7 @@
   },
   "errormessages" : {
     "onClose" : {
-      "001" : [1, " Connection has disconnected."]
+      "001" : [0, " Connection has disconnected."]
     },
     "onError" : {
       "001" : [2, "An error occured."]

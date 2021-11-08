@@ -8,6 +8,21 @@
    */
   class Logging_Api{
     /**
+     * Holds the $this-instance from the calling class.
+     * @var Object
+     */
+    private $callerClass;
+    /**
+     * Holds a system config json array.
+     * @var array
+     */
+    private $ini;
+    /**
+     * Holds the path where log messages for the api are written and stored locally (not in DB).
+     * @var string
+     */
+    private $logpath;
+    /**
      * Holds a path where the sitecodes translation file for logging-enabled classes are stored.
      * @var string
      */
@@ -17,16 +32,6 @@
      * @var string
      */
     private $errorfilepath;
-    /**
-     * Holds the path where log messages for the api are written and stored locally (not in DB).
-     * @var string
-     */
-    private $logpath;
-    /**
-     * Holds the $this-instance from the calling class.
-     * @var Object
-     */
-    private $callerClass;
 
     /**
      * The constructor initializes all paths which are needed to work properly.
@@ -35,10 +40,20 @@
     public function __construct(Object $caller = NULL){
       if($caller != NULL) $this->callerClass = explode('\\', get_class($caller))[1];
       else $this->callerClass = explode('\\', get_class($this))[1];
+      $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
+
+      $projectroot = realpath(__DIR__."/../../../");
+      $this->logpath = "{$projectroot}/logs/api.log";
+      if(array_key_exists("log_root", $this->ini)){
+        $this->logpath = "{$projectroot}{$this->ini["log_root"]}/api.log";
+      }
+
+      if(!is_dir(dirname($this->logpath))){
+        mkdir(dirname($this->logpath), 0755, true);
+      }
 
       $this->codefilepath = __DIR__."/errorcodes/sitecodes.json";
       $this->errorfilepath = __DIR__."/errorcodes/";
-      $this->logpath = __DIR__."/../../../logs/api.log";
     }
 
     /**

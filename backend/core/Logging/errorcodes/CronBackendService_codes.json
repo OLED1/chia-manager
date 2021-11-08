@@ -1,0 +1,18 @@
+{
+  "functioncodes" : {
+    "queryData" : "001",
+    "getSystemInfo" : "002"
+  },
+  "errormessages" : {
+    "queryData" : {
+      "001" : [0, "Starting cron processing."],
+      "002" : [0, "Starting websocket server."],
+      "003" : [0, "Sending Cron Query Request to WSS."],
+      "004" : [0, "Cron query processed successfully."]
+    },
+    "getSystemInfo" : {
+      "001" : [2, "An error occured."],
+      "002" : [1, "Not all data stated."]
+    }
+  }
+}

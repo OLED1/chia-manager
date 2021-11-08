@@ -36,14 +36,32 @@
      * Queries information from all nodes by calling the websocket's command "queryCronData"
      */
     public function queryData(){
+      echo "{$this->getDate()}: {$this->logging_api->getErrormessage("001")["message"]}\n";
       $wssstatus = $this->websocket_api->testConnection();
+      echo "{$this->getDate()}: {$wssstatus["message"]}\n";
+
+      if($wssstatus["status"] == "016001002"){
+        echo "{$this->getDate()}: {$this->logging_api->getErrormessage("002")["message"]}\n";
+        $wssstatus = $this->websocket_api->startWSS();
+        echo "{$this->getDate()}: {$wssstatus["message"]}\n";
+      };
+
       if($wssstatus["status"] == 0){
-        print_r("Sending Cron Query Request to WSS.\n");
-        print_r($this->websocket_api->sendToWSS("queryCronData"));
-        print_r("Cron query processed.\n");
-      }else{
-        //restartWSS
+        echo "{$this->getDate()}: {$this->logging_api->getErrormessage("003")["message"]}\n";
+        $cronExec = $this->websocket_api->sendToWSS("queryCronData")["cronJobExecution"];
+        $loglevel = ($cronExec["status"] == 0 ? 0 : 2);
+        $this->logging_api->logtofile($loglevel, 0, $cronExec["message"]);
+        echo "{$this->getDate()}: {$this->logging_api->getErrormessage("004")["message"]}\n";
       }
+    }
+
+    /**
+     * Retuns the current formatted date.
+     * This function is only meant for server logging in CLI.
+     * @return DateTime The current date.
+     */
+    private function getDate(){
+      return date("d.m.Y H:i:s");
     }
   }
 

@@ -16,5 +16,6 @@
   "WebSocket" : "015",
   "WebSocketClient" : "016",
   "WebSocketServer" : "017",
-  "System_Update" : "018"
+  "System_Update" : "018",
+  "CronBackendService" : "019"
 }
