@@ -4,3 +4,4 @@ logs/
 .ftpconfig
 frontend/frameworks/bootstrap-samples
 .ftpignore
+.vscode
