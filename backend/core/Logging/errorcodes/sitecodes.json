@@ -17,5 +17,6 @@
   "WebSocketClient" : "016",
   "WebSocketServer" : "017",
   "System_Update" : "018",
-  "CronBackendService" : "019"
+  "CronBackendService" : "019",
+  "Chia_Statistics" : "020"
 }

@@ -124,7 +124,17 @@
                 <span>Harvester</span>
               </a>
             </li>
+            <hr class="sidebar-divider">
 
+            <div class="sidebar-heading">
+                Statistics
+            </div>
+            <li id="nav-chia-statistics" class="nav-item">
+              <a class="nav-link" data-siteid=12 data-nav-target="nav-chia-statistics" href="/sites/chia_statistics">
+                <i class="fas fa-chart-bar"></i>
+                <span>Chia</span>
+              </a>
+            </li>
             <hr class="sidebar-divider">
 
             <div class="sidebar-heading">

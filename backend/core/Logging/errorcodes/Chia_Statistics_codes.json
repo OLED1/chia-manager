@@ -1,0 +1,24 @@
+{
+  "functioncodes" : {
+    "getNetspaceHistory" : "001",
+    "getBlockheightHistory" : "002",
+    "getXCHValueHistory" : "003"
+  },
+  "errormessages" : {
+    "getNetspaceHistory" : {
+      "001" : [2, "An error occured."],
+      "002" : [1, "'From' must be eather a timestamp younger than 'to' or no timestamp has been submitted."],
+      "003" : [1, "Not all data stated."]
+    },
+    "getBlockheightHistory" : {
+      "001" : [2, "An error occured."],
+      "002" : [1, "'From' must be eather a timestamp younger than 'to' or no timestamp has been submitted."],
+      "003" : [1, "Not all data stated."]
+    },
+    "getXCHValueHistory" : {
+      "001" : [2, "An error occured."],
+      "002" : [1, "'From' must be eather a timestamp younger than 'to' or no timestamp has been submitted."],
+      "003" : [1, "Not all data stated."]    
+    }
+  }
+}

@@ -39,6 +39,8 @@
         "system_infos": [
             "INSERT INTO `sites` (`id`, `namespace`) VALUES ('11', 'ChiaMgmt\\\\Logging\\\\Logging_Api');",
             "INSERT INTO `sites_pagestoinform` (`id`, `siteid`, `sitetoinform`) VALUES ('20', '11', '11');",
+            "INSERT INTO `sites` (`id`, `namespace`) VALUES ('12', 'ChiaMgmt\\\\Chia_Statistics\\\\Chia_Statistics_Api');",
+            "INSERT INTO `sites_pagestoinform` (`id`, `siteid`, `sitetoinform`) VALUES (21, '9', '12'), (22, '12', '12');",
             "UPDATE `system_infos` SET dbversion = '0.1.1.211108';"
         ]
     }
