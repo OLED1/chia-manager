@@ -19,6 +19,33 @@
 </div>
 <div class="row">
   <div class="col">
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="container" style="max-width: 100%;">
+          <p>Show the following log entries:</p>
+          <div class="row">
+            <div class='col'>
+              <label class="checkbox">
+                <input type="checkbox" class="level_check" id="level_0" checked value="Info">Info
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" class="level_check" id="level_1" checked value="Warning">Warning
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" class="level_check" id="level_2" checked value="Fatal">Fatal
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" class="level_check" id="level_3" checked value="Unknown">Unknown
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="row">
+  <div class="col">
     <div class="card shadow mb-4">
         <div
             class="card-header py-3 d-flex flex-row align-items-center justify-content-between">

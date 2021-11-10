@@ -14,13 +14,13 @@ var loggingTable = $("#loggingTable").DataTable({
   ],
   "order": [[ 0, "desc" ]],
   "createdRow": function( row, data, dataIndex){
-    if( data[1] ==  `[Info]`){
+    if( data[1] ==  `Info`){
         $(row).addClass('loglevel-info');
-    }else if( data[1] ==  `[Warning]`){
+    }else if( data[1] ==  `Warning`){
         $(row).addClass('loglevel-warn');
-    }else if( data[1] ==  `[Fatal]`){
+    }else if( data[1] ==  `Fatal`){
         $(row).addClass('loglevel-crit');
-    }else if( data[1] ==  `[Unknown]`){
+    }else if( data[1] ==  `Unknown`){
         $(row).addClass('loglevel-unkn');
     }
   },
@@ -37,6 +37,15 @@ var loggingTable = $("#loggingTable").DataTable({
   rowto = rowto + len;
   sendToWSS("ownRequest", "ChiaMgmt\\Logging\\Logging_Api", "Logging_Api", "getMessagesFromFile", { "fromline": rowfrom, "toline" : rowto });
 } );
+
+
+$(".level_check").on("change",function(){
+  var loglevels = $(".level_check:checked").map(function(){
+    return this.value;
+  }).get().join('|');
+
+  loggingTable.column(1).search((loglevels.length == 0 ? "-" : loglevels),true,false).draw();
+});
 
 function messagesTrigger(data){
   var key = Object.keys(data);
@@ -56,15 +65,15 @@ function messagesTrigger(data){
 function formatLoglevel(loglevel){
   switch(parseInt(loglevel)) {
     case 0:
-      return "[Info]";
+      return "Info";
     case 1:
-      return "[Warning]";
+      return "Warning";
     case 2:
-      return "[Fatal]";
+      return "Fatal";
     case 3:
-      return "[Unkown]";
+      return "Unkown";
     default:
-      return "[Unkown]";
+      return "Unkown";
   }
 }
 
