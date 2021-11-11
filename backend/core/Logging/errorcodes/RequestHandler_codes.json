@@ -15,9 +15,6 @@
     "processGetActiveSubscriptions" : {
       "001" : [1, "You are not allowed to query this information."]
     },
-    "processGetActiveSubscriptions" : {
-      "001" : [1, "You are not allowed to query this information."]
-    },
     "processUpdateFrontendViewingSite" : {
       "001" : [1, "This user seems not to be subscribed."],
       "002" : [1, "Not all information stated or you are not allowed to query this information."]

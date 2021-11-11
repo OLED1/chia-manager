@@ -291,11 +291,11 @@
             $returndata["count"] = $returndata["count"] + 1;
           }
         }
-
-        return array("status" => 0, "message" => "Successfully queried system messages.", "data" => $returndata);
       }catch(Exception $e){
         $returndata = $this->logging_api->getErrormessage("001", $e);
       }
+      
+      return array("status" => 0, "message" => "Successfully queried system messages.", "data" => $returndata);
     }
 
     /**
