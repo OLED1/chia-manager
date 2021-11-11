@@ -1,0 +1,34 @@
+{
+    "functioncodes" : {
+      "getTOTPEnabled" : "001",
+      "enableTOTPmobile" : "002",
+      "disableTOTPmobile" : "003",
+      "processUpdateFrontendViewingSite" : "004",
+      "checkKeyValid" : "005"
+    },
+    "errormessages" : {
+      "getTOTPEnabled" : {
+        "001" : [1, "Totp seems not to be enabled."],
+        "002" : [2, "An error occured."],
+        "003" : [1, "Not all data stated."]
+      },
+      "enableTOTPmobile" : {
+        "001" : [2, "An error occured."],
+        "002" : [1, "Not all data stated."]
+      },
+      "disableTOTPmobile" : {
+        "001" : [2, "An error occured."],
+        "002" : [1, "Not all data stated."]
+      },
+      "totpProof" : {
+        "001" : [2, "An error occured."],
+        "002" : [1, "Not all data stated."]
+      },
+      "checkKeyValid" : {
+        "001" : [1, "Entered key does not match current TOTP key."],
+        "002" : [1, "User not found or TOTP not enabled"],
+        "003" : [2, "An error occured."],
+        "004" : [1, "Not all data stated."]
+      }
+    }
+  }

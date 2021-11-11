@@ -14,7 +14,7 @@
   }
 
   $system_api = new System_Api();
-  $system_messages = $system_api->getSystemMessages();
+  $system_messages = $system_api->getSystemMessages(["userID" => $_COOKIE["user_id"]]);
 ?>
 <div class="card mb-4">
   <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">

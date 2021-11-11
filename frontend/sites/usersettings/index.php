@@ -4,10 +4,12 @@
   use ChiaMgmt\Users\Users_Api;
   use ChiaMgmt\UserSettings\UserSettings_Api;
   use ChiaMgmt\Exchangerates\Exchangerates_Api;
+  use ChiaMgmt\Second_Factor\Second_Factor_Api;
 
   $users_api = new Users_Api();
   $user_settings_api = new UserSettings_Api();
   $exchangerates_api = new Exchangerates_Api();
+  $second_factor_api = new Second_Factor_Api();
 
   $userData = array();
   if(array_key_exists("user_id", $_COOKIE)) $userData = $users_api->getOwnUserData($_COOKIE["user_id"]);
@@ -20,6 +22,7 @@
               var userdata = " . json_encode($userData) . ";" .
      "</script>";
 ?>
+<link href="<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/usersettings/css/usersettings.css"?>" rel="stylesheet">
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">User settings</h1>
 </div>
@@ -145,6 +148,25 @@
       <div class="col">
         <div class="card shadow mb-4">
           <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Security settings</h6>
+          </div>
+          <div class="card-body">
+            <p>To ensure your account is as safe as possible you are able to enable a second login factor via a mobile app.<br>
+            This random key will only be questioned when a new browser or device wants to login.</p>
+            <?php $gui_mode = $user_settings_api->getGuiMode($_COOKIE["user_id"])["data"]["gui_mode"]; ?>
+            <div class="custom-control custom-checkbox">
+              <?php $totp_enabled = $second_factor_api->getTOTPEnabled(["userID" => $_COOKIE["user_id"]]); ?>
+              <input type="checkbox" class="custom-control-input" id="enableTOTPmobile" <?php echo( $totp_enabled["status"] == 0 ? "checked" : ""); ?> >
+              <label class="custom-control-label" for="enableTOTPmobile">Enable and enforce second factor (TOTP via mobile app)</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <div class="card shadow mb-4">
+          <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
             <h6 class="m-0 font-weight-bold text-primary">Backup Key</h6>
           </div>
           <div class="card-body" id="personinfo">
@@ -200,6 +222,86 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="totp_enable_dialog" data-verified="false" class="modal" tabindex="-1" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><span class="fas fa-shield-alt"></span>&nbsp;Enable Totp via mobile app</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="taskslog">
+        <div class="row">
+          <div class="col">
+            <div class="card mb-4">
+              <div class="card-body">
+                <div class="row">
+                  <div class="col">
+                    Please scan the QR Code provided with your prefered TOTP Android or iPhone app.<br>
+                    Download the Google Authenticator app here (you can use similar apps too):
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col">
+                    <a class="externallink" target="_blank" href='https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2&hl=de_AT&gl=US&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'>
+                      <img id="playstore-linklogo" alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png'/>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <div class="card mb-4">
+              <div class="card-body">
+                <img id="totpQRCode" src=''>
+                <p id="totpSecret"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+          <div class="card">
+              <div class="card-body">
+                <p>Please enter the shown authkey in the authenticator app:</p>
+                <div class="input-group mb-3">
+                  <input type="text" pattern="\d*" maxlength="6" id="totp_key_check" name="name" class="form-control personinput">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="checkAndSafeTOTP" type="button" class="btn btn-success" disabled>Check code & activate</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="totp_disable_dialog" data-verified="false" class="modal" tabindex="-1" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><span class="fas fa-shield-alt"></span>&nbsp;Disable Totp via mobile app</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="taskslog">
+        Do your really want to disable such an important account security feature?
+      </div>
+      <div class="modal-footer">
+        <button id="disable_totp_btn" type="button" class="btn btn-danger" disabled>Yes, I am really sure! (<span id="totp_disable_timer"></span>)</button>
+        <button type="button" class="btn btn-success" data-dismiss="modal">Abort</button>
       </div>
     </div>
   </div>

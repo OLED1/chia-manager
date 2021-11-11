@@ -43,5 +43,13 @@
             "INSERT INTO `sites_pagestoinform` (`id`, `siteid`, `sitetoinform`) VALUES (21, '9', '12'), (22, '12', '12');",
             "UPDATE `system_infos` SET dbversion = '0.1.1.211108';"
         ]
+    },
+    "0.1.1.211110": {
+        "system_infos": [
+            "ALTER TABLE `users_settings` ADD `totp_enable` TINYINT NOT NULL DEFAULT '0' AFTER `gui_mode`, ADD `totp_secret` VARCHAR(150) NOT NULL AFTER `totp_enable`;",
+            "ALTER TABLE `users_settings` ADD `totp_proofen` TINYINT NULL DEFAULT '0' AFTER `totp_secret`;",
+            "ALTER TABLE `users_settings` CHANGE `totp_secret` `totp_secret` VARCHAR(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL;",
+            "UPDATE `system_infos` SET dbversion = '0.1.1.211110';"
+        ]
     }
 }

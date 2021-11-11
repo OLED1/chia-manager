@@ -1,0 +1,14 @@
+#totpQRCode {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+} 
+
+#totpSecret{
+    word-break: break-all;
+    font-size: 10px;
+}
+
+#playstore-linklogo{
+    width: 10em;
+}

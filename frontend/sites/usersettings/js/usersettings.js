@@ -59,6 +59,58 @@ $(function(){
     sendToWSS("ownRequest", "ChiaMgmt\\UserSettings\\UserSettings_Api", "UserSettings_Api", "setGuiMode", data);
   });
 
+  $("#enableTOTPmobile").on("click", function(e){
+    e.preventDefault();
+    if($("#enableTOTPmobile").prop("checked")){
+      sendToWSS("ownRequest", "ChiaMgmt\\Second_Factor\\Second_Factor_Api", "Second_Factor_Api", "enableTOTPmobile", {"userID" : userid});
+    }else{
+      if("usersettings" in intervals && "totpdisable" in intervals["usersettings"]){
+        clearTimeout(intervals["usersettings"]["totpdisable"]);
+      }
+      
+      $("#totp_disable_timer").text(10);
+      $("#disable_totp_btn").attr("disabled","disabled");
+      $("#totp_disable_dialog").modal("show");
+      intervals["usersettings"] = {};
+      intervals["usersettings"]["totpdisable"] = setInterval(function () {
+        countDisableTotpTimer();
+      }, 1000);
+    }
+  });
+
+  function countDisableTotpTimer(){
+    var timernow = $("#totp_disable_timer").text();
+    if((timernow-1) > 0){
+      $("#totp_disable_timer").text((timernow-1));
+    }else{
+      $("#totp_disable_timer").text(0);
+      $("#disable_totp_btn").removeAttr("disabled");
+      clearTimeout(intervals["usersettings"]["totpdisable"]);
+    }
+  }
+
+  $("#disable_totp_btn").on("click", function(e){
+    sendToWSS("ownRequest", "ChiaMgmt\\Second_Factor\\Second_Factor_Api", "Second_Factor_Api", "disableTOTPmobile", {"userID" : userid});
+  });
+
+  $("#totp_key_check").on("input", function(){
+    var key = $("#totp_key_check").val().trim();
+    if(key.length > 0 && key.length <= 6 && $.isNumeric(key)){
+      $("#checkAndSafeTOTP").removeAttr("disabled");
+    }else{
+      $("#checkAndSafeTOTP").attr("disabled","disabled");
+    }
+  });
+
+  $("#checkAndSafeTOTP").on("click", function(){
+    var key = $("#totp_key_check").val().trim();
+    if(key.length == 6 && $.isNumeric(key)){
+      sendToWSS("ownRequest", "ChiaMgmt\\Second_Factor\\Second_Factor_Api", "Second_Factor_Api", "totpProof", {"userID" : userid, "totpkey" : key });
+    }else{
+      showMessage(1, "The entered code is too short or not a number.");
+    }
+  });
+
   function initLoggedInDevicesTable(){
     $("#loggedInDevices").DataTable();
   }
@@ -181,6 +233,20 @@ function messagesTrigger(data){
       }else if(data[key]["data"] == 2){
         $(".gui-mode-elem").removeClass("gui-mode-light").addClass("gui-mode-dark");
       }
+    }else if(key == "enableTOTPmobile"){
+      $("#totpQRCode").attr("src", data[key]["data"]["qrCodeUri"]);
+      $("#totpSecret").text(data[key]["data"]["secret"]);
+      $("#totp_key_check").val("");
+      $("#checkAndSafeTOTP").attr("disabled","disabled");
+      $("#totp_enable_dialog").modal("show");
+    }else if(key == "totpProof"){
+      $("#totp_enable_dialog").modal("hide");
+      $("#enableTOTPmobile").prop("checked", true);
+    }else if(key == "disableTOTPmobile"){
+      $("#enableTOTPmobile").prop("checked", false);
+      $("#totp_disable_dialog").modal("hide");
     }
+  }else{
+    showMessage(1, data[key]["message"]);
   }
 }

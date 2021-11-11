@@ -18,5 +18,6 @@
   "WebSocketServer" : "017",
   "System_Update" : "018",
   "CronBackendService" : "019",
-  "Chia_Statistics" : "020"
+  "Chia_Statistics" : "020",
+  "Second_Factor" : "021"
 }

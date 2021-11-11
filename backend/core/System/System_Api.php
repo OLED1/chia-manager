@@ -6,6 +6,7 @@
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\Nodes\Nodes_Api;
   use ChiaMgmt\Encryption\Encryption_Api;
+  use ChiaMgmt\Second_Factor\Second_Factor_Api;
   use TiBeN\CrontabManager\CrontabJob;
   use TiBeN\CrontabManager\CrontabRepository;
   use TiBeN\CrontabManager\CrontabAdapter;
@@ -278,6 +279,19 @@
           $returndata["found"]["websocket"] = "Last background task run more than 1 minute ago. Something seems to be wrong.";
           $returndata["count"] = $returndata["count"] + 1;
         }
+      }
+
+      //Checking if TOTP is enabled
+      if(array_key_exists("userID", $data)){
+        $second_factor_api = new Second_Factor_Api();
+        $second_factor_enabled = $second_factor_api->getTOTPEnabled(["userID" => $data["userID"]]);
+        if($second_factor_enabled["status"] != 0){
+          $returndata["found"]["totpenabled"] = "Second factor via mobile app seems not to be enabled. This is a really important security feature. Please enable it in usersettings.";
+          $returndata["count"] = $returndata["count"] + 1;
+        }
+      }else{
+        $returndata["found"]["totpenabled"] = "UserID not set, cannot query TOTP user status.";
+        $returndata["count"] = $returndata["count"] + 1;
       }
 
       //Checking if all system relevant security features are activated
