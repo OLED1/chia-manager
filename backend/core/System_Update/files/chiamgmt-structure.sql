@@ -1,8 +1,8 @@
--- MySQL dump 10.13  Distrib 8.0.26, for Linux (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.27, for Linux (x86_64)
 --
 -- Host: localhost    Database: chiamgmt_edtmair_at
 -- ------------------------------------------------------
--- Server version	8.0.26-0ubuntu0.20.04.3
+-- Server version	8.0.27-0ubuntu0.20.04.1
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -25,10 +25,9 @@ DROP TABLE IF EXISTS `authkeys`;
 CREATE TABLE `authkeys` (
   `id` int NOT NULL AUTO_INCREMENT,
   `usrID` int NOT NULL,
-  `authstring` varchar(200) COLLATE utf8mb4_general_ci NOT NULL,
+  `authstring` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `UserID` (`usrID`),
-  CONSTRAINT `UserID` FOREIGN KEY (`usrID`) REFERENCES `users` (`id`)
+  KEY `UserID` (`usrID`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -42,7 +41,7 @@ DROP TABLE IF EXISTS `chia_farm`;
 CREATE TABLE `chia_farm` (
   `id` int NOT NULL AUTO_INCREMENT,
   `nodeid` int NOT NULL,
-  `farming_status` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `farming_status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `total_chia_farmed` float NOT NULL DEFAULT '0',
   `user_transaction_fees` float NOT NULL DEFAULT '0',
   `block_rewards` float NOT NULL DEFAULT '0',
@@ -67,7 +66,7 @@ DROP TABLE IF EXISTS `chia_farm_challenges`;
 CREATE TABLE `chia_farm_challenges` (
   `id` int NOT NULL AUTO_INCREMENT,
   `date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `hash` varchar(70) COLLATE utf8mb4_general_ci NOT NULL,
+  `hash` varchar(70) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `hash_index` int NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=641 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -97,10 +96,10 @@ CREATE TABLE `chia_infra_sysinfo` (
   `swap_free` bigint NOT NULL,
   `cpu_count` int NOT NULL,
   `cpu_cores` int NOT NULL,
-  `cpu_model` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `cpu_model` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   PRIMARY KEY (`id`),
   KEY `NodeIDSysinfo` (`nodeid`)
-) ENGINE=InnoDB AUTO_INCREMENT=202 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=226 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -113,7 +112,8 @@ DROP TABLE IF EXISTS `chia_overall`;
 CREATE TABLE `chia_overall` (
   `id` int NOT NULL AUTO_INCREMENT,
   `daychange_percent` float NOT NULL,
-  `netspace` varchar(20) COLLATE utf8mb4_general_ci NOT NULL,
+  `netspace` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `xch_blockheight` int NOT NULL DEFAULT '0',
   `netspace_timestamp` datetime NOT NULL,
   `price_usd` float NOT NULL,
   `daymin_24h_usd` float NOT NULL,
@@ -122,7 +122,7 @@ CREATE TABLE `chia_overall` (
   `market_timestamp` datetime NOT NULL,
   `querydate` datetime NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=787 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2034 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -136,11 +136,11 @@ CREATE TABLE `chia_plots` (
   `id` int NOT NULL AUTO_INCREMENT,
   `finalmountid` int NOT NULL,
   `nodeid` int NOT NULL,
-  `k_size` varchar(3) COLLATE utf8mb4_general_ci NOT NULL,
+  `k_size` varchar(3) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `plotcreationdate` datetime NOT NULL,
   `plot_key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `pool_key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `filename` varchar(200) COLLATE utf8mb4_general_ci NOT NULL,
+  `filename` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `status` int NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `filename` (`filename`),
@@ -160,7 +160,7 @@ CREATE TABLE `chia_plots_directories` (
   `nodeid` int NOT NULL,
   `devname` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `mountpoint` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `finalplotsdir` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `finalplotsdir` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `totalsize` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `totalused` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `totalusedpercent` varchar(4) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
@@ -182,10 +182,10 @@ CREATE TABLE `chia_wallets` (
   `id` int NOT NULL AUTO_INCREMENT,
   `nodeid` int NOT NULL,
   `walletid` int NOT NULL,
-  `walletaddress` varchar(62) COLLATE utf8mb4_general_ci NOT NULL,
+  `walletaddress` varchar(62) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `walletheight` int NOT NULL,
-  `syncstatus` varchar(30) COLLATE utf8mb4_general_ci NOT NULL,
-  `wallettype` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `syncstatus` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `wallettype` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `totalbalance` float NOT NULL,
   `pendingtotalbalance` float NOT NULL,
   `spendable` float NOT NULL,
@@ -206,24 +206,24 @@ CREATE TABLE `chia_wallets_transactions` (
   `id` int NOT NULL AUTO_INCREMENT,
   `nodeid` int NOT NULL,
   `wallet_id` int NOT NULL,
-  `parent_coin_info` varchar(66) COLLATE utf8mb4_general_ci NOT NULL,
+  `parent_coin_info` varchar(66) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `amount` bigint NOT NULL,
   `confirmed` tinyint(1) NOT NULL,
   `confirmed_at_height` int NOT NULL,
   `created_at_time` int NOT NULL,
   `fee_amount` int NOT NULL,
-  `name` varchar(66) COLLATE utf8mb4_general_ci NOT NULL,
+  `name` varchar(66) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `removals` json NOT NULL,
   `sent` int NOT NULL,
-  `sent_to` varchar(66) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `spend_bundle` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `to_address` varchar(62) COLLATE utf8mb4_general_ci NOT NULL,
-  `to_puzzle_hash` varchar(66) COLLATE utf8mb4_general_ci NOT NULL,
+  `sent_to` varchar(66) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `spend_bundle` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `to_address` varchar(62) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `to_puzzle_hash` varchar(66) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `trade_id` int DEFAULT NULL,
   `type` int NOT NULL,
   PRIMARY KEY (`id`),
   KEY `NodeIDWalletTrans` (`nodeid`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -241,7 +241,7 @@ CREATE TABLE `exchangerates` (
   `updatedate` date NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `currency_code` (`currency_code`)
-) ENGINE=InnoDB AUTO_INCREMENT=476761 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=825608 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -253,20 +253,20 @@ DROP TABLE IF EXISTS `nodes`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `nodes` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `nodeauthhash` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
-  `hostname` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
-  `scriptversion` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `nodeauthhash` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `hostname` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `scriptversion` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `updatechannel` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `chiaversion` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `chiapath` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `conallow` tinyint(1) NOT NULL,
   `authtype` int NOT NULL,
-  `ipaddress` varchar(15) COLLATE utf8mb4_general_ci NOT NULL,
+  `ipaddress` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `changedIP` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `changeable` tinyint(1) NOT NULL DEFAULT '1',
   `lastseen` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -286,7 +286,7 @@ CREATE TABLE `nodes_status` (
   `querytime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `nodeid` (`nodeid`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -303,7 +303,7 @@ CREATE TABLE `nodetype` (
   PRIMARY KEY (`id`),
   KEY `NodeIDNodetype` (`nodeid`),
   KEY `NotetypesAvail` (`code`)
-) ENGINE=InnoDB AUTO_INCREMENT=109 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=172 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -315,7 +315,7 @@ DROP TABLE IF EXISTS `nodetypes_avail`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `nodetypes_avail` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `description` varchar(35) COLLATE utf8mb4_general_ci NOT NULL,
+  `description` varchar(35) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `code` int NOT NULL,
   `selectable` tinyint(1) NOT NULL DEFAULT '1',
   `allowed_authtype` int NOT NULL,
@@ -333,9 +333,9 @@ DROP TABLE IF EXISTS `sites`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `sites` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `namespace` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `namespace` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -350,7 +350,7 @@ CREATE TABLE `sites_pagestoinform` (
   `siteid` int NOT NULL,
   `sitetoinform` int NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -362,10 +362,12 @@ DROP TABLE IF EXISTS `system_infos`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `system_infos` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `dbversion` varchar(20) COLLATE utf8mb4_general_ci NOT NULL,
+  `dbversion` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `userid_updating` int NOT NULL,
+  `process_update` tinyint NOT NULL DEFAULT '0',
   `lastsucupdate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `maintenance_mode` int NOT NULL,
+  `lastcronrun` timestamp NOT NULL DEFAULT '1970-01-01 22:00:00',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -379,7 +381,7 @@ DROP TABLE IF EXISTS `system_settings`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `system_settings` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `settingtype` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `settingtype` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `settingvalue` json NOT NULL,
   `confirmed` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
@@ -396,12 +398,12 @@ DROP TABLE IF EXISTS `users`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `users` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `username` varchar(15) COLLATE utf8mb4_general_ci NOT NULL,
-  `name` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
-  `lastname` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
-  `password` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
-  `salt` varchar(200) COLLATE utf8mb4_general_ci NOT NULL,
-  `email` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `username` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `lastname` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `password` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `salt` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `creationdate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `enabled` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
@@ -419,13 +421,12 @@ DROP TABLE IF EXISTS `users_authkeys`;
 CREATE TABLE `users_authkeys` (
   `id` int NOT NULL AUTO_INCREMENT,
   `userid` int NOT NULL,
-  `authkey` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `authkey` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `validuntil` datetime NOT NULL,
   `valid` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
-  KEY `UserIDAuthkeys` (`userid`),
-  CONSTRAINT `UserIDAuthkeys` FOREIGN KEY (`userid`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=330 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  KEY `UserIDAuthkeys` (`userid`)
+) ENGINE=InnoDB AUTO_INCREMENT=362 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -441,8 +442,7 @@ CREATE TABLE `users_backupkeys` (
   `backupkey` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `valid` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
-  KEY `UserIDBkpKeys` (`userid`),
-  CONSTRAINT `UserIDBkpKeys` FOREIGN KEY (`userid`) REFERENCES `users` (`id`)
+  KEY `UserIDBkpKeys` (`userid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -474,15 +474,15 @@ CREATE TABLE `users_sessions` (
   `id` int NOT NULL AUTO_INCREMENT,
   `logindate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `userid` int NOT NULL,
-  `sessid` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `sessid` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `authkeypassed` tinyint(1) NOT NULL DEFAULT '0',
+  `totpmobilepassed` tinyint NOT NULL DEFAULT '0',
   `deviceinfo` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `validuntil` datetime DEFAULT NULL,
   `invalidated` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
-  KEY `UserIDSessions` (`userid`),
-  CONSTRAINT `UserIDSessions` FOREIGN KEY (`userid`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=393 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  KEY `UserIDSessions` (`userid`)
+) ENGINE=InnoDB AUTO_INCREMENT=438 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -497,6 +497,9 @@ CREATE TABLE `users_settings` (
   `userid` int NOT NULL,
   `currency_code` varchar(3) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'usd',
   `gui_mode` int NOT NULL DEFAULT '1',
+  `totp_enable` tinyint NOT NULL DEFAULT '0',
+  `totp_secret` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `totp_proofen` tinyint DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `userid` (`userid`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -511,4 +514,4 @@ CREATE TABLE `users_settings` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2021-10-07 11:15:49
+-- Dump completed on 2021-11-12 11:51:27

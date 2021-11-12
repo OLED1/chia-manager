@@ -129,7 +129,7 @@ function sendData(action, data){
           }else{
             $("#server-dependencies-button").hide();
             $("#recheck-dependencies").show();
-            $("#updater-dependencies i").removeClass("fa-spinner").removeClass("fa-spinning").addClass("fa-times").style("color","red");
+            $("#updater-dependencies i").removeClass("fa-spinner").removeClass("fa-spinning").addClass("fa-times").css("color","red");
           }
 
 

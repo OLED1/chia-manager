@@ -160,8 +160,8 @@
       $phpversion = phpversion();
       $versioncompare = version_compare($phpversion, $php_required, ">=");
 
-      $needed_modules = ["standard", "session", "json", "Core", "date", "hash", "filter", "pcre", "curl", "openssl", "mbstring", "iconv", "SPL", "igbinary", "tokenizer", "apcu", "readline", "pcntl", "sockets", "zlib", "intl", "posix", "sysvmsg", "ctype"];
-      $diff = array_diff(get_loaded_extensions(), $needed_modules);
+      $needed_modules = ["standard", "session", "json", "Core", "date", "hash", "filter", "pcre", "curl", "openssl", "mbstring", "iconv", "SPL", "igbinary", "tokenizer", "apcu", "readline", "sockets", "zlib", "intl", "posix", "sysvmsg", "ctype"];
+      $diff = array_diff($needed_modules, get_loaded_extensions());
 
       $returndata = [];
       if(!$versioncompare){
@@ -279,8 +279,6 @@
         "socket_local_port = '{$websocket_config["socket_local_port"]}'\n" .
         "\n" .
         "[extapis]\n" .
-        "netspace_api = 'https://api.chiaprofitability.com/netspace'\n" .
-        "market_api = 'https://api.chiaprofitability.com/market'\n" .
         "exchangerate_api_codes = 'https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies.json'\n" .
         "exchangerate_api_rates = 'https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/usd.json'\n" .
         "xchscan_api = 'https://xchscan.com/api'\n" .
@@ -786,10 +784,10 @@
           continue;
         }else{
           if($item->isDir()){
-            mkdir($dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
+            @mkdir($dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
           }else{
             if(in_array($item->getFilename(), $blacklist)) continue;
-            copy($item, $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
+            @copy($item, $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
           }
         }
       }

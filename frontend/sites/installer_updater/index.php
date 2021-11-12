@@ -204,7 +204,7 @@
                               <div id="dep-php-version" class='alert <?php echo ($php_version["status"] == 0 ? "alert-success" : "alert-danger"); ?>' role='alert'><?php echo $php_version["message"]; ?></div>
                               <div id="dep-php-modules" class='alert <?php echo ($php_modules["status"] == 0 ? "alert-success" : "alert-danger"); ?>' role='alert'><?php echo $php_modules["message"]; ?></div>
 
-                              <button id="server-dependencies-button" data-target="mysql-configuration" data-myid="server-dependencies" class="btn btn-success btn-user btn-block install-step" style="width: 25%;" <?php echo (($php_version["status"] == 0 || $php_modules["status"]) > 0 ? "style='display: none;'" : ""); ?>>Next Step</button>
+                              <button id="server-dependencies-button" data-target="mysql-configuration" data-myid="server-dependencies" class="btn btn-success btn-user btn-block install-step" style="width: 25%; <?php echo ($php_version["status"] > 0 || $php_modules["status"] > 0 ? "display: none;" : ""); ?>">Next Step</button>
                               <?php if($php_version["status"] > 0 || $php_modules["status"] > 0){ ?>
                                 <button id="recheck-dependencies" class="btn btn-success btn-user btn-block" style="float: right; width: 35%; margin: 0 auto;">Reload Page</button>
                               <?php } ?>
