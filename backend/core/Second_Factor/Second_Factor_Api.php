@@ -172,7 +172,7 @@
                 if(count($totpSecret) == 1){
                     $decrypted_totp_secret = $this->encryption_api->decryptString($totpSecret[0]["totp_secret"]);
                     $totp = TOTP::create($decrypted_totp_secret);
-                    print_r($totp->now());
+
                     if($totp->verify($data["totpkey"])){
                         return array("status" => 0, "message" => "Entered key matches current TOTP key."); 
                     }else{

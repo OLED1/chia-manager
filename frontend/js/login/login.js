@@ -1,6 +1,10 @@
 $(function(){
-  if(loggedinstatus == "007008002"){
+  if(loggedinstatus == "007009002"){
     showAuthKeyWindow();
+  }
+
+  if(loggedinstatus == "007009003"){
+    showTOTPKeyWindow();
   }
 
   $("#resend-authkey").on("click", function(e){
@@ -16,7 +20,7 @@ $(function(){
     }
   });
 
-  $("#go-back").on("click", function(e){
+  $(".go-back").on("click", function(e){
     e.preventDefault();
     var url = backend + "/core/Login/Login_Rest.php";
     var action = "invalidateLogin";
@@ -116,6 +120,63 @@ $(function(){
     sendToAPI(url, action, type, data);
   });
 
+  $(".totpinput").on("click", function(){
+    $(this).select();
+  });
+
+  $(".totpinput").on("input", function(){
+    var this_elem = $(this);
+    var this_index = parseInt($(this).attr("data-input-index"));
+    if(this_elem.val().trim().length == 1 && this_index <= 5){
+      $(".totpinput[data-input-index='" + (this_index+1) + "']").focus().select();
+    }
+
+    if(checkTOTPKeyValid()){
+      $("#totpkeybutton").removeAttr("disabled");
+    }else{
+      $("#totpkeybutton").attr("disabled","disabled");
+    }
+  });
+
+  $("#totpkeybutton").on("click", function(e){
+    e.preventDefault();
+    if(checkTOTPKeyValid()){
+      var url = backend + "/core/Login/Login_Rest.php";
+      var action = "checkTOTPKey";
+      var type = "POST";
+      var data = {
+        "totpkey" : getTOTPKey()
+      }
+      $(this).attr("disabled","disabled").find("i").show();
+      sendToAPI(url, action, type, data);
+    }
+  });
+
+  $(".send-backupkey").on("click", function(e){
+    e.preventDefault();
+
+    console.log("HIER");
+  });
+
+  function checkTOTPKeyValid(){
+    var inputsvalid = true;
+    $.each($(".totpinput"), function(){
+      var val = $(this).val();
+      if(!$.isNumeric(val)){
+        inputsvalid = false;
+      }
+    });
+    return inputsvalid;
+  }
+
+  function getTOTPKey(){
+    var key = "";
+    $.each($(".totpinput"), function(){
+      key += $(this).val().toString();
+    });
+    return key;
+  }
+
   function beginLogin(){
     $("#loginbutton").attr("disabled", "disabled").find("i").show();
     $("#inputLogin").attr("disabled", "disabled");
@@ -150,7 +211,19 @@ $(function(){
     if($("#authkeywindow").is(":hidden")){
       $("#loginwindow").hide(500);
       $("#authkeywindow").show(500);
+      $("#inputAuthkey").val("");
       $("#authkeybutton").attr("disabled","disabled");
+    }
+  }
+
+
+  function showTOTPKeyWindow(){
+    if($("#secondFactorTotpWindow").is(":hidden")){
+      $("#loginwindow").hide(500);
+      $("#authkeywindow").hide(500);
+      $("#secondFactorTotpWindow").show(500);
+      $(".totpinput").val("");
+      $("#totpkeybutton").attr("disabled","disabled");
     }
   }
 
@@ -158,6 +231,7 @@ $(function(){
     if($("#loginwindow").is(":hidden")){
       $("#authkeywindow").hide(500);
       $("#pwresetwindow").hide(500);
+      $("#secondFactorTotpWindow").hide(500);
       $("#loginwindow").show(500);
     }
   }
@@ -203,20 +277,26 @@ $(function(){
             showloginwindow();
           }else if(action == "checkAuthKey"){
             $(location).attr('href',frontend + '/index.php');
+          }else if(action == "checkTOTPKey"){
+            $(location).attr('href',frontend + '/index.php');
           }else if(action == "requestUserPasswordReset"){
             $("#pwResetMessage").show();
             $("#pwResetMessage .card-body").text(result["message"]);
             $("#sendResetLinkBtn i").hide();
           }
         }else{
-          if(result["status"] == "007001001"){
+          if(result["status"] == "007001003" || result["status"] == "007001001"){
             showAuthKeyWindow();
-            showMessage("alert-warning", result["message"]);
+          }else if(result["status"] == "007009003" || result["status"] == "007001002"){
+            showTOTPKeyWindow();
           }else{
             showMessage("alert-danger", result["message"]);
           }
           finishLogin();
-          $("#authkeybutton").removeAttr("disabled").find("i").hide();
+          if(result["status"] != "007001003" && result["status"] != "007009003" && result["status"] != "007001001" && result["status"] != "007001002"){
+            $("#authkeybutton").removeAttr("disabled").find("i").hide();
+            $("#totpkeybutton").removeAttr("disabled").find("i").hide();
+          }
         }
       },
       error:function(xhr, status, error){

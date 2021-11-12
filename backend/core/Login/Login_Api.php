@@ -4,6 +4,7 @@
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\Mailing\Mailing_Api;
   use ChiaMgmt\System\System_Api;
+  use ChiaMgmt\Second_Factor\Second_Factor_Api;
   use ChiaMgmt\Encryption\Encryption_Api;
   use ChiaMgmt\Users\Users_Api;
 
@@ -37,6 +38,11 @@
      */
     private $system_api;
     /**
+     * Holds an instance to the Second Factor Class.
+     * @var Second_Factor_Api
+     */
+    private $second_factor_api;
+    /**
      * Holds an instance to the Encryption Class.
      * @var Encryption_Api
      */
@@ -65,6 +71,7 @@
       $this->logging_api = new Logging_Api($this, $server);
       $this->mailing_api = new Mailing_Api();
       $this->system_api = new System_Api();
+      $this->second_factor_api = new Second_Factor_Api();
       $this->encryption_api = new Encryption_Api();
       $this->users_api = new Users_Api();
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
@@ -83,7 +90,7 @@
     public function login(string $username, string $password, bool $stayloggedin){
       $userdata = $this->getCurrentUserInfos($username);
 
-      if(count($userdata["status"]) == 1 && $userdata["status"] == 0){
+      if($userdata["status"] == 0){
         $salted_hash=hash('sha256',$password.$userdata["data"]["salt"].$this->ini['serversalt']);
       }else{
         return $userdata;
@@ -98,7 +105,9 @@
             $security = $this->system_api->getSpecificSystemSetting("security");
             $mailing = $this->system_api->getSpecificSystemSetting("mailing");
             $authkeypassed = 1;
+            $totpmobilepassed = 1;
             $sendauthkey = false;
+            $checktotpmobile = false;
 
             if($security["status"] == 0 && array_key_exists("security", $security["data"]) &&
                 $security["data"]["security"]["TOTP"]["value"] == 1 && $mailing["status"] == 0 &&
@@ -108,26 +117,36 @@
                 $sendauthkey = true;
             }
 
-            $sql = $this->db_api->execute("Insert INTO users_sessions (id, userid, sessid, authkeypassed, deviceinfo, validuntil) VALUES (NULL, ?, ?, ?, ?, " . ($stayloggedin ? "NULL" : "DATE_ADD(now(), INTERVAL 30 MINUTE)" ) . ")",
-                                          array($session["data"]["userid"], $session["data"]["sessid"], $authkeypassed, $_SERVER['HTTP_USER_AGENT']));
+            if($this->second_factor_api->getTOTPEnabled(["userID" => $session["data"]["userid"]])["status"] == 0){
+              $totpmobilepassed = 0;
+              $checktotpmobile = true;
+            }
 
-            if($sendauthkey){
+            $sql = $this->db_api->execute("Insert INTO users_sessions (id, userid, sessid, authkeypassed, totpmobilepassed, deviceinfo, validuntil) VALUES (NULL, ?, ?, ?, ?, ?, " . ($stayloggedin ? "NULL" : "DATE_ADD(now(), INTERVAL 30 MINUTE)" ) . ")",
+                                          array($session["data"]["userid"], $session["data"]["sessid"], $authkeypassed, $totpmobilepassed, $_SERVER['HTTP_USER_AGENT']));
+            
+            if($sendauthkey && !$checktotpmobile){
               $this->generateAndsendAuthKey($session["data"]["userid"], $session["data"]["sessid"]);
               return $this->logging_api->getErrormessage("001");
+            }else if(!$sendauthkey && $checktotpmobile){
+              return $this->logging_api->getErrormessage("002");
+            }else if($sendauthkey && $checktotpmobile){
+              $this->generateAndsendAuthKey($session["data"]["userid"], $session["data"]["sessid"]);
+              return $this->logging_api->getErrormessage("003");
             }
 
             return array("status" => "0", "message" => "Logged in.");
           }catch(Exception $e){
-            return $this->logging_api->getErrormessage("002", $e);
+            return $this->logging_api->getErrormessage("004", $e);
           }
         }
       }else{
-        return $this->logging_api->getErrormessage("003","User with ID " . $userdata["data"]["id"] . " tried to log in from " . $_SERVER['REMOTE_ADDR'] . ".");
+        return $this->logging_api->getErrormessage("005","User with ID " . $userdata["data"]["id"] . " tried to log in from " . $_SERVER['REMOTE_ADDR'] . ".");
       }
     }
 
     /**
-     * Checks if the outkey is valid when second factor via e-mail is enabled.
+     * Checks if the authkey is valid when second factor via e-mail is enabled.
      * Furthermore it will be checked if the user already has valid cookies set. If the session does not exist the user will not be logged in.
      * Function made for: WebGUI/App
      * @throws Exception $e    Throws an exception on db errors.
@@ -150,9 +169,41 @@
             $sql = $this->db_api->execute("UPDATE users_authkeys SET valid = 0 WHERE userid = ?", array($userid));
             $sql = $this->db_api->execute("UPDATE users_sessions SET authkeypassed = 1 WHERE userid = ? AND sessid = ?", array($userid, $sessionid));
 
-            return array("status" => 0, "message" => "Successfully logged in.");
+            //return array("status" => 0, "message" => "Successfully checked authkey.");
+            return $this->checklogin($sessid, $userid);
           }else{
             return $this->logging_api->getErrormessage("001");
+          }
+        }catch(Exception $e){
+          return $this->logging_api->getErrormessage("002", $e);
+        }
+      }else{
+        return $this->logging_api->getErrormessage("003");
+      }
+    }
+
+    /**
+     * Checks if the TOTP mobile key is valid when second factor via TOTP mobile is enabled.
+     * Furthermore it will be checked if the user already has valid cookies set. If the session does not exist the user will not be logged in.
+     * Function made for: WebGUI/App
+     * @throws Exception $e    Throws an exception on db errors.
+     * @param  string $authkey The stated outkey.
+     * @return array           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
+     */
+    public function checkTOTPMobilePassed(string $key){
+      if(array_key_exists('user_id', $_COOKIE) && array_key_exists('PHPSESSID', $_COOKIE)){
+        $userid = $_COOKIE['user_id'];
+        $sessionid = $_COOKIE['PHPSESSID'];
+        $currentdate = new \DateTime();
+
+        try{
+          $totpkeyvalid = $this->second_factor_api->totpProof(["userID" => $userid, "totpkey" => $key]);
+
+          if($totpkeyvalid["status"] == 0){
+            $sql = $this->db_api->execute("UPDATE users_sessions SET totpmobilepassed = 1 WHERE userid = ? AND sessid = ?", array($userid, $sessionid));
+            return $this->checklogin($sessid, $userid);
+          }else{
+            return $totpkeyvalid;
           }
         }catch(Exception $e){
           return $this->logging_api->getErrormessage("002", $e);
@@ -176,7 +227,7 @@
       if($loginstatus == 0){
         return array("status" => 0, "message" => "You are currently logged in. No need to send authkey.");
 
-      }else if($loginstatus == "007008002"){
+      }else if($loginstatus == "007009002"){
 
         if(array_key_exists("user_id", $_COOKIE) || !is_null($userid)){
           if(array_key_exists('user_id', $_COOKIE)) $userid = $_COOKIE['user_id'];
@@ -334,7 +385,7 @@
         $this->invalidateAllNotLoggedin();
 
         try{
-          $sql = $this->db_api->execute("SELECT authkeypassed, validuntil FROM users_sessions WHERE userid = ? AND sessid = ? AND invalidated = 0",
+          $sql = $this->db_api->execute("SELECT authkeypassed, validuntil, totpmobilepassed FROM users_sessions WHERE userid = ? AND sessid = ? AND invalidated = 0",
           array($userid, $sessionid));
 
           $returneddata = $sql->fetchAll(\PDO::FETCH_ASSOC);
@@ -343,7 +394,7 @@
             $returneddata = $returneddata[0];
 
 
-            if($returneddata["authkeypassed"] == 1){
+            if($returneddata["authkeypassed"] == 1 && $returneddata["totpmobilepassed"] == 1){
               if(is_null($returneddata["validuntil"])){
                 return array("status" => "0", "message" => "User with id {$userid} is logged in.");
               }else{
@@ -361,16 +412,18 @@
                 }
               }
             }else{
-              return $this->logging_api->getErrormessage("002");
+              if($returneddata["authkeypassed"] == 0) return $this->logging_api->getErrormessage("002");
+              if($returneddata["totpmobilepassed"] == 0) return $this->logging_api->getErrormessage("003");
+              return $this->logging_api->getErrormessage("004");
             }
           }else{
               return $this->logging_api->getErrormessage("005");
           }
         }catch(Exception $e){
-          return $this->logging_api->getErrormessage("003",$e);
+          return $this->logging_api->getErrormessage("006",$e);
         }
       }else{
-        return $this->logging_api->getErrormessage("004","", false);
+        return $this->logging_api->getErrormessage("007","", false);
       }
     }
 

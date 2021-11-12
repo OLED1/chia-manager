@@ -31,3 +31,13 @@
   height: 2.7em;
   background-image: url('../img/chia_management_logo.svg');
 }
+
+#inputTOTPkey{
+  white-space: nowrap;
+}
+
+#inputTOTPkey .totpinput{
+  width: 15.66%;
+  display: inline-block;
+  text-align: center;
+}

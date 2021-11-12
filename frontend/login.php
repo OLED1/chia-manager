@@ -94,27 +94,58 @@
                       <h1 class="h4 text-gray-900 mb-4">Authkey check</h1>
                       <p>We sent you a authkey to your accounts setup email.</p>
                     </div>
-                      <form class="check-authkey">
-                        <div class="form-group">
-                          <input type="text" class="form-control form-control-user" id="inputAuthkey" placeholder="Authkey">
-                        </div>
-                        <button id="authkeybutton" href="#" class="btn btn-primary btn-user btn-block" disabled>
-                          Check authkey and login&nbsp;
-                          <i class="fas fa-spinner fa-spin" style="display: none;"></i>
-                        </button>
-                        <hr>
-                        <div class="text-center">
-                          <a id="resend-authkey" href="#" class="small" href="#">Resend authkey</a>
-                        </div>
-                        <hr>
-                        <div class="text-center">
-                          <a id="send-backupkey" href="#" class="small" href="#">Send backup key instead</a>
-                        </div>
-                        <div class="text-center">
-                          <a id="go-back" href="#" class="small" href="#">Go back to login</a>
-                        </div>
-                      </form>
+                    <form class="check-authkey">
+                      <div class="form-group">
+                        <input type="text" class="form-control form-control-user" id="inputAuthkey" placeholder="Authkey">
+                      </div>
+                      <button id="authkeybutton" href="#" class="btn btn-primary btn-user btn-block" disabled>
+                        Check authkey and contine&nbsp;
+                        <i class="fas fa-spinner fa-spin" style="display: none;"></i>
+                      </button>
+                      <hr>
+                      <div class="text-center">
+                        <a id="resend-authkey" href="#" class="small" href="#">Resend authkey</a>
+                      </div>
+                      <hr>
+                      <div class="text-center">
+                        <a href="#" class="small send-backupkey" href="#">Send backup key instead</a>
+                      </div>
+                      <div class="text-center">
+                        <a href="#" class="small go-back" href="#">Go back to login</a>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              <div id="secondFactorTotpWindow" class="row" style="display: none;">
+                <div class="col">
+                  <div class="p-5">
+                    <div class="text-center">
+                      <h1 class="h4 text-gray-900 mb-4">Mobile second factor check</h1>
+                      <p>Please open your authenticator app and enter the stated 6 digits key.</p>
                     </div>
+                    <form class="check-authkey">
+                      <div class="form-group" id="inputTOTPkey">
+                        <input type="text" maxlength=1 class="form-control form-control-user totpinput" data-input-index="0">
+                        <input type="text" maxlength=1 class="form-control form-control-user totpinput" data-input-index="1">
+                        <input type="text" maxlength=1 class="form-control form-control-user totpinput" data-input-index="2">
+                        <input type="text" maxlength=1 class="form-control form-control-user totpinput" data-input-index="3">
+                        <input type="text" maxlength=1 class="form-control form-control-user totpinput" data-input-index="4">
+                        <input type="text" maxlength=1 class="form-control form-control-user totpinput" data-input-index="5">
+                      </div>
+                      <button id="totpkeybutton" href="#" class="btn btn-primary btn-user btn-block" disabled>
+                        Check key and continue&nbsp;
+                        <i class="fas fa-spinner fa-spin" style="display: none;"></i>
+                      </button>
+                      <hr>
+                      <div class="text-center">
+                        <a href="#" class="small send-backupkey" href="#">Send backup key instead</a>
+                      </div>
+                      <div class="text-center">
+                        <a href="#" class="small go-back" href="#">Go back to login</a>
+                      </div>
+                    </form>
+                  </div>
                 </div>
               </div>
               <div id="pwresetwindow" class="row" style="display: none;">
@@ -126,8 +157,7 @@
                     </div>
                     <form class="check-authkey">
                       <div class="form-group">
-                        <input type="text" class="form-control form-control-user"
-                            id="inputPWReset" placeholder="max.mustermann">
+                        <input type="text" class="form-control form-control-user" id="inputPWReset" placeholder="max.mustermann">
                       </div>
                       <button id="sendResetLinkBtn" href="#" class="btn btn-primary btn-user btn-block" disabled>
                         Send reset link

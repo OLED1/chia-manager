@@ -22,6 +22,9 @@
   }else if(isset($_POST["action"]) && $_POST["action"] == "checkAuthKey"){
     $authkey = $_POST["data"]["authkey"];
     echo json_encode($login_api->checkAuthKey($authkey));
+  }else if(isset($_POST["action"]) && $_POST["action"] == "checkTOTPKey"){
+    $totpmobilekey = $_POST["data"]["totpkey"];
+    echo json_encode($login_api->checkTOTPMobilePassed($totpmobilekey));
   }else if(isset($_POST["action"]) && $_POST["action"] == "logout"){
     echo json_encode($login_api->invalidateLogin());
   }else{

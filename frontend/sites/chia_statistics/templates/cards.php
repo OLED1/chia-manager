@@ -91,7 +91,7 @@
       <?php if(count($historynetspace) > 0){ ?>
         <ul class="list-group list-group-flush">
           <li class="list-group-item">
-            <canvas id="chia_netspace_history_chart" height="100em"></canvas>
+            <canvas id="chia_netspace_history_chart" height="80"></canvas>
           </li>
           <li class="list-group-item">
           <table class="table table-borderless">
