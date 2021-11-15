@@ -1,12 +1,21 @@
 {
+    "0.1.1" : {
+        "statements" : [
+            "INSERT INTO `nodetype` VALUES (1,1,1),(2,2,2);",
+            "INSERT INTO `nodetypes_avail` VALUES (1,'webClient',1,1,1,'app'),(2,'backendClient',2,0,3,'backend'),(3,'Farmer',3,1,2,'chianode'),(4,'Harvester',4,1,2,'chianode'),(5,'Wallet',5,1,2,'chianode'),(6,'Unknown',99,0,2,'');",
+            "INSERT INTO `sites` VALUES (1,'ChiaMgmt\\\\MainOverview\\\\MainOverview_Api'),(2,'ChiaMgmt\\\\Nodes\\\\Nodes_Api'),(3,'ChiaMgmt\\\\System\\\\System_Api'),(4,'ChiaMgmt\\\\Users\\\\Users_Api'),(5,'ChiaMgmt\\\\Chia_Wallet\\\\Chia_Wallet_Api'),(6,'ChiaMgmt\\\\Chia_Farm\\\\Chia_Farm_Api'),(7,'ChiaMgmt\\\\Chia_Harvester\\\\Chia_Harvester_Api'),(8,'ChiaMgmt\\\\Chia_Infra_Sysinfo\\\\Chia_Infra_Sysinfo_Api'),(9,'ChiaMgmt\\\\Chia_Overall\\\\Chia_Overall_Api'),(10,'ChiaMgmt\\\\System_Update\\\\System_Update_Api');",
+            "INSERT INTO `sites_pagestoinform` VALUES (1,1,1),(2,2,2),(3,2,1),(4,3,3),(5,4,4),(6,5,5),(7,5,1),(8,6,6),(9,6,1),(10,7,7),(11,7,1),(12,2,5),(13,2,6),(14,2,7),(15,8,8),(16,8,1),(17,2,8),(18,9,1),(19,10,1);",
+            "INSERT INTO `users_settings` VALUES (1,1,'usd',2,0,NULL,0);"
+        ]
+    },
     "0.1.1.211014": {
-        "system_infos": [
+        "statements": [
             "ALTER TABLE `system_infos` CHANGE `dbversion` `dbversion` VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL;",
             "UPDATE `system_infos` SET dbversion = '0.1.1.211014';"
         ]
     },
     "0.1.1.211015": {
-        "system_infos": [
+        "statements": [
             "ALTER TABLE `exchangerates` CHANGE `currency_code` `currency_code` VARCHAR(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL;",
             "ALTER TABLE `exchangerates` CHANGE `currency_desc` `currency_desc` VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL;",
             "ALTER TABLE `system_infos` ADD `process_update` TINYINT NOT NULL DEFAULT '0' AFTER `userid_updating`;",
@@ -14,38 +23,38 @@
         ]
     },
     "0.1.1.211027": {
-        "system_infos": [
+        "statements": [
             "UPDATE `system_infos` SET dbversion = '0.1.1.211027';"
         ]
     },
     "0.1.1.211028": {
-        "system_infos": [
+        "statements": [
             "ALTER TABLE `chia_overall` ADD `xch_blockheight` INT NOT NULL AFTER `netspace`;",
             "UPDATE `system_infos` SET dbversion = '0.1.1.211028';"
         ]
     },
     "0.1.1.211103": {
-        "system_infos": [
+        "statements": [
             "ALTER TABLE `system_infos` ADD `lastcronrun` TIMESTAMP NOT NULL DEFAULT '1970-01-01 23:00:00' AFTER `maintenance_mode`;",
             "UPDATE `system_infos` SET dbversion = '0.1.1.211103';"
         ]
     },
     "0.1.1.211105": {
-        "system_infos": [
+        "statements": [
             "UPDATE `system_infos` SET dbversion = '0.1.1.211105';"
         ]
     },
     "0.1.1.211108": {
-        "system_infos": [
+        "statements": [
             "INSERT INTO `sites` (`id`, `namespace`) VALUES ('11', 'ChiaMgmt\\\\Logging\\\\Logging_Api');",
             "INSERT INTO `sites_pagestoinform` (`id`, `siteid`, `sitetoinform`) VALUES ('20', '11', '11');",
             "INSERT INTO `sites` (`id`, `namespace`) VALUES ('12', 'ChiaMgmt\\\\Chia_Statistics\\\\Chia_Statistics_Api');",
-            "INSERT INTO `sites_pagestoinform` (`id`, `siteid`, `sitetoinform`) VALUES (21, '9', '12'), (22, '12', '12');",
+            "INSERT INTO `sites_pagestoinform` (`id`, `siteid`, `sitetoinform`) VALUES (21, '9', '12'),(22, '12', '12');",
             "UPDATE `system_infos` SET dbversion = '0.1.1.211108';"
         ]
     },
     "0.1.1.211110": {
-        "system_infos": [
+        "statements": [
             "ALTER TABLE `users_settings` ADD `totp_enable` TINYINT NOT NULL DEFAULT '0' AFTER `gui_mode`, ADD `totp_secret` VARCHAR(150) NOT NULL AFTER `totp_enable`;",
             "ALTER TABLE `users_settings` ADD `totp_proofen` TINYINT NULL DEFAULT '0' AFTER `totp_secret`;",
             "ALTER TABLE `users_settings` CHANGE `totp_secret` `totp_secret` VARCHAR(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL;",

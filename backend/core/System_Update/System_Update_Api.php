@@ -290,7 +290,7 @@
       fclose($configfile);
 
       //1d. Verifying config
-      $configfile = parse_ini_file(__DIR__.'/../../config/config.ini.php');
+      $configfile = parse_ini_file("{$configdir}/config.ini.php");
       if(!is_array($configfile)){
         $returnarray["data"]["config_file"] = array("status" => 1, "message" => "Error during config file creation.");
         array_push($returnarray["data"]["config_file"]["data"], array("status" => 0, "message" => "The config file were not created successfully."));
@@ -324,54 +324,37 @@
         }
         array_push($returnarray["data"]["db_config"]["data"], array("status" => 0, "message" => "Table structure created successfully."));
         //2c. Insert default values
+        $db_update_raw = file_get_contents("files/db_update.json");
+        $db_update_json = json_decode($db_update_raw, true);
         $this->encryption_api = new Encryption_Api();
         //Default Nodes
         $query = '';
         $web_client_auth_hash = $this->encryption_api->encryptString($web_client_auth_hash);
         $backend_client_auth_hash = $this->encryption_api->encryptString($backend_client_auth_hash);
         $query = "INSERT INTO `nodes` VALUES (1,'{$web_client_auth_hash}','localhost',NULL,NULL,NULL,NULL,1,1,'','',0,NOW()), (2,'{$backend_client_auth_hash}','localhost',NULL,NULL,NULL,NULL,1,3,'','',0,NOW());";
-        //Default Nodetypes
-        $query .= "INSERT INTO `nodetype` VALUES (1,1,1),(2,2,2);";
-        //Default nodetypes available
-        $query .= "INSERT INTO `nodetypes_avail` VALUES (1,'webClient',1,1,1,'app'),
-                                                  (2,'backendClient',2,0,3,'backend'),
-                                                  (3,'Farmer',3,1,2,'chianode'),
-                                                  (4,'Harvester',4,1,2,'chianode'),
-                                                  (5,'Wallet',5,1,2,'chianode'),
-                                                  (6,'Unknown',99,0,2,'');";
-        //Default sites
-        $query .= "INSERT INTO `sites` VALUES (1,'ChiaMgmt\\\\MainOverview\\\\MainOverview_Api'),
-                                        (2,'ChiaMgmt\\\\Nodes\\\\Nodes_Api'),
-                                        (3,'ChiaMgmt\\\\System\\\\System_Api'),
-                                        (4,'ChiaMgmt\\\\Users\\\\Users_Api'),
-                                        (5,'ChiaMgmt\\\\Chia_Wallet\\\\Chia_Wallet_Api'),
-                                        (6,'ChiaMgmt\\\\Chia_Farm\\\\Chia_Farm_Api'),
-                                        (7,'ChiaMgmt\\\\Chia_Harvester\\\\Chia_Harvester_Api'),
-                                        (8,'ChiaMgmt\\\\Chia_Infra_Sysinfo\\\\Chia_Infra_Sysinfo_Api'),
-                                        (9,'ChiaMgmt\\\\Chia_Overall\\\\Chia_Overall_Api'),
-                                        (10,'ChiaMgmt\\\\System_Update\\\\System_Update_Api'),
-                                        (11, 'ChiaMgmt\\\\Logging\\\\Logging_Api');";
-
-        //Default sites_pagestoinform
-        $query .= "INSERT INTO `sites_pagestoinform` VALUES (1,1,1),(2,2,2),(3,2,1),(4,3,3),(5,4,4),
-                                                      (6,5,5),(7,5,1),(8,6,6),(9,6,1),(10,7,7),
-                                                      (11,7,1),(12,2,5),(13,2,6),(14,2,7),(15,8,8),
-                                                      (16,8,1),(17,2,8),(18,9,1),(19,10,1), (20,11,11);";
 
         //Default system_settings
         $query .= "INSERT INTO `system_settings` VALUES (1,'mailing','{}',0),(2,'security','{\"TOTP\": {\"value\": \"0\"}}',0),(3,'updatechannel','{\"branch\": {\"value\": \"{$branch}\"}}',0);";
 
         //Default system_infos
-        $query .= "INSERT INTO `system_infos` VALUES (1,'{$version}',0,NOW(),0);";
-
-        //Set default user settings
-        $query .= "INSERT INTO `users_settings` VALUES (1,1,'usd',2);";
+        $query .= "INSERT INTO `system_infos` VALUES (1,'{$version}',0,0,NOW(),0, NOW());";
 
         //Default user (admin) as configured in installer
         $userpassword = hash('sha256',$webgui_user_config["gui-password"].$dbsalt.$serversalt);
         $query .= "INSERT INTO `users` VALUES (1,'{$webgui_user_config["gui-username"]}','{$webgui_user_config["gui-forename"]}','{$webgui_user_config["gui-lastname"]}','{$userpassword}','{$dbsalt}','{$webgui_user_config["gui-email"]}',NOW(),1);";
 
         $this->db_api->execute($query,[]);
+
+        //Importing changes from version newer than 0.1.1
+        foreach($db_update_json AS $versnummer => $statements){
+          foreach($statements["statements"] AS $arrkey => $query){
+            if(!str_contains($query,"ALTER")){
+              $this->db_api->execute($query,[]);
+            }
+          }
+        }
+
+
         array_push($returnarray["data"]["db_config"]["data"], array("status" => 0, "message" => "Default entries inserted successfully."));
       }catch(\Throwable $e){
         $returnarray["data"]["db_config"]["status"] = 1;
@@ -680,7 +663,6 @@
       try{
         foreach($db_update_array AS $version => $tables){
           if(version_compare($config_data["application"]["versnummer"], $version, "<=")){
-            echo "HIER ";
             foreach($tables AS $tablename => $statements){
               foreach($statements AS $arrkey => $statement){
                 $sql = $this->db_api->execute($statement, array());
