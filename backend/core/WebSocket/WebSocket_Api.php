@@ -46,7 +46,7 @@
       try{
         return $this->wsclient->testConnection();
       }catch(\Throwable $e){
-        return $this->$logging_api->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 
@@ -66,7 +66,7 @@
           return $con_test;
         }
       }else{
-        return $this->$logging_api->getErrormessage("001");
+        return $this->logging_api->getErrormessage("001");
       }
     }
 
@@ -98,10 +98,10 @@
         if($wssstatus["status"] == 0){
           return $wssstatus;
         }else{
-          return $this->$logging_api->getErrormessage("001");
+          return $this->logging_api->getErrormessage("001");
         }
       }else{
-        return $this->$logging_api->getErrormessage("002");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
@@ -119,10 +119,10 @@
         if($wssstatus["status"] == "016001001" || $wssstatus["status"] == "016001002"){
           return array("status" => 0, "message" => "Websocket server stopped.");
         }else{
-          return $this->$logging_api->getErrormessage("001");
+          return $this->logging_api->getErrormessage("001");
         }
       }else{
-        return $this->$logging_api->getErrormessage("002");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
