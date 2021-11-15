@@ -368,7 +368,7 @@
      * @return array  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
     public function getCronjobEnabled(){
-      $enabledCronjobs = $this->crontabRepository->findJobByRegex('/ChiaMgmt\ cronjob\ -\ Do\ not\ remove\ this\ comment/');
+      $enabledCronjobs = $this->crontabRepository->findJobByRegex("/ChiaMgmt\ cronjob\ -\ Do\ not\ remove\ this\ comment\ -\ {$this->ini["serversalt"]}/");
       if(count($enabledCronjobs) > 0){
         $sql = $this->db_api->execute("SELECT lastcronrun FROM system_infos", array());
         $lastcronrun = $sql->fetchAll(\PDO::FETCH_ASSOC);
@@ -395,7 +395,7 @@
         ->setMonths('*')
         ->setDayOfWeek('*')
         ->setTaskCommandLine("php {$pathtocronjob}")
-        ->setComments('ChiaMgmt cronjob - Do not remove this comment'); // Comments are persisted in the crontab
+        ->setComments("ChiaMgmt cronjob - Do not remove this comment - {$this->ini["serversalt"]}"); // Comments are persisted in the crontab
 
         $this->crontabRepository->addJob($crontabJob);
         $this->crontabRepository->persist();
@@ -419,7 +419,7 @@
     public function disableCronjob(){
       $cronjobEnbled = $this->getCronjobEnabled();
       if($cronjobEnbled["status"] == 0){
-        $enabledCronjobs = $this->crontabRepository->findJobByRegex('/ChiaMgmt\ cronjob\ -\ Do\ not\ remove\ this\ comment/');
+        $enabledCronjobs = $this->crontabRepository->findJobByRegex("/ChiaMgmt\ cronjob\ -\ Do\ not\ remove\ this\ comment\ -\ {$this->ini["serversalt"]}/");
         $crontabJob = $enabledCronjobs[0];
         $this->crontabRepository->removeJob($crontabJob);
         $this->crontabRepository->persist();
