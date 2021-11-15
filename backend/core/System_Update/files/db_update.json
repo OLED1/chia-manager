@@ -1,6 +1,6 @@
 {
-    "0.1.1" : {
-        "statements" : [
+    "0.1.1": {
+        "statements": [
             "INSERT INTO `nodetype` VALUES (1,1,1),(2,2,2);",
             "INSERT INTO `nodetypes_avail` VALUES (1,'webClient',1,1,1,'app'),(2,'backendClient',2,0,3,'backend'),(3,'Farmer',3,1,2,'chianode'),(4,'Harvester',4,1,2,'chianode'),(5,'Wallet',5,1,2,'chianode'),(6,'Unknown',99,0,2,'');",
             "INSERT INTO `sites` VALUES (1,'ChiaMgmt\\\\MainOverview\\\\MainOverview_Api'),(2,'ChiaMgmt\\\\Nodes\\\\Nodes_Api'),(3,'ChiaMgmt\\\\System\\\\System_Api'),(4,'ChiaMgmt\\\\Users\\\\Users_Api'),(5,'ChiaMgmt\\\\Chia_Wallet\\\\Chia_Wallet_Api'),(6,'ChiaMgmt\\\\Chia_Farm\\\\Chia_Farm_Api'),(7,'ChiaMgmt\\\\Chia_Harvester\\\\Chia_Harvester_Api'),(8,'ChiaMgmt\\\\Chia_Infra_Sysinfo\\\\Chia_Infra_Sysinfo_Api'),(9,'ChiaMgmt\\\\Chia_Overall\\\\Chia_Overall_Api'),(10,'ChiaMgmt\\\\System_Update\\\\System_Update_Api');",
@@ -60,6 +60,11 @@
             "ALTER TABLE `users_settings` CHANGE `totp_secret` `totp_secret` VARCHAR(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL;",
             "ALTER TABLE `users_sessions` ADD `totpmobilepassed` TINYINT NOT NULL DEFAULT '0' AFTER `authkeypassed`;",
             "UPDATE `system_infos` SET dbversion = '0.1.1.211110';"
+        ]
+    },
+    "0.1.1.211115": {
+        "system_infos": [
+            "UPDATE `system_infos` SET dbversion = '0.1.1.211115';"
         ]
     }
 }
