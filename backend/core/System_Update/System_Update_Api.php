@@ -662,7 +662,7 @@
 
       try{
         foreach($db_update_array AS $version => $tables){
-          if(version_compare($config_data["application"]["versnummer"], $version, "<=")){
+          if(version_compare($config_data["application"]["versnummer"], $version, "<")){
             foreach($tables AS $tablename => $statements){
               foreach($statements AS $arrkey => $statement){
                 $sql = $this->db_api->execute($statement, array());
@@ -766,10 +766,10 @@
           continue;
         }else{
           if($item->isDir()){
-            @mkdir($dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
+            //@mkdir($dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
           }else{
             if(in_array($item->getFilename(), $blacklist)) continue;
-            @copy($item, $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
+            //@copy($item, $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
           }
         }
       }
