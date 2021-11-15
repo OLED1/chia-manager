@@ -766,10 +766,10 @@
           continue;
         }else{
           if($item->isDir()){
-            //@mkdir($dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
+            @mkdir($dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
           }else{
             if(in_array($item->getFilename(), $blacklist)) continue;
-            //@copy($item, $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
+            @copy($item, $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
           }
         }
       }
