@@ -348,7 +348,7 @@ function initShowNodeInfo(){
     });
 
     if($.isNumeric(nodeinfo["cpu_count"]) && $.isNumeric(nodeinfo["cpu_cores"]))
-      $("#cpu_cores_threads").text(nodeinfo["cpu_count"] + " Core(s) / " + (nodeinfo["cpu_count"]*nodeinfo["cpu_cores"]) + " Thread(s)");
+      $("#cpu_cores_threads").text(nodeinfo["cpu_cores"] + " Core(s) / " + nodeinfo["cpu_count"] + " Thread(s)");
 
     if($.isNumeric(nodeinfo["memory_total"]) && $.isNumeric(nodeinfo["swap_total"]))
       $("#ram_swap_size").text((nodeinfo["memory_total"]/1024/1024/1024).toFixed(2) + "GB / " + (nodeinfo["swap_total"]/1024/1024/1024).toFixed(2) + "GB");
