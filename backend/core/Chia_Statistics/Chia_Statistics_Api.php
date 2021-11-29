@@ -82,7 +82,7 @@
       if(array_key_exists("from", $data) && array_key_exists("to", $data)){
         if(strtotime($data["from"]) &&  strtotime($data["to"]) && new \DateTime($data["from"]) < new \DateTime($data["to"])){
           try{
-            $sql = $this->db_api->execute("SELECT querydate, xch_blockheight FROM chia_overall WHERE querydate BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND id mod 6 = 0 ORDER BY querydate ASC", array($data["from"], $data["to"]));
+            $sql = $this->db_api->execute("SELECT querydate, xch_blockheight FROM chia_overall WHERE querydate BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND id mod 3 = 0 ORDER BY querydate ASC", array($data["from"], $data["to"]));
             $historyblockheight = $sql->fetchAll(\PDO::FETCH_ASSOC);
 
             return array("status" => 0, "message" => "Successfully loaded data between {$data["from"]} and {$data["to"]}.", "data" => $historyblockheight);
@@ -106,7 +106,7 @@
       if(array_key_exists("from", $data) && array_key_exists("to", $data)){
         if(strtotime($data["from"]) &&  strtotime($data["to"]) && new \DateTime($data["from"]) < new \DateTime($data["to"])){
           try{
-            $sql = $this->db_api->execute("SELECT querydate, price_usd FROM chia_overall WHERE querydate BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND id mod 6 = 0 ORDER BY querydate ASC", array($data["from"], $data["to"]));
+            $sql = $this->db_api->execute("SELECT querydate, price_usd FROM chia_overall WHERE querydate BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND id mod 3 = 0 ORDER BY querydate ASC", array($data["from"], $data["to"]));
             $historyxchvalue = $sql->fetchAll(\PDO::FETCH_ASSOC);
 
             return array("status" => 0, "message" => "Successfully loaded data between {$data["from"]} and {$data["to"]}.", "data" => $historyxchvalue);
@@ -121,3 +121,4 @@
       }
     }
   }
+?>

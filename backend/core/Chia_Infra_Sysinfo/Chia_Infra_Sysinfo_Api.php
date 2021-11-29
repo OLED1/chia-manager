@@ -89,22 +89,44 @@
     public function getSystemInfo(array $data = NULL, array $loginData = NULL, $server = NULL, int $nodeid = NULL){
         try{
           if(is_null($nodeid)){
-            $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, cif.timestamp, cif.load_1min, cif.load_5min, cif.load_15min,
-                                                  cif.filesystem, cif.memory_total, cif.memory_free, cif.memory_buffers, cif.memory_shared,
-                                                  cif.memory_cached, cif.swap_total, cif.swap_free, cif.cpu_count,
-                                                  cif.cpu_cores, cif.cpu_model
+            $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, 
+                                                  (SELECT cis1.timestamp FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) timestamp,
+                                                  (SELECT cis1.load_1min FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) load_1min,
+                                                  (SELECT cis1.load_5min FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) load_5min,
+                                                  (SELECT cis1.load_15min FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) load_15min,
+                                                  (SELECT cis1.filesystem FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) filesystem,
+                                                  (SELECT cis1.memory_total FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) memory_total,
+                                                  (SELECT cis1.memory_free FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) memory_free,
+                                                  (SELECT cis1.memory_buffers FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) memory_buffers,
+                                                  (SELECT cis1.memory_shared FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) memory_shared,
+                                                  (SELECT cis1.memory_cached FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) memory_cached,
+                                                  (SELECT cis1.swap_total FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) swap_total,
+                                                  (SELECT cis1.swap_free FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) swap_free,
+                                                  (SELECT cis1.cpu_count FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) cpu_count,
+                                                  (SELECT cis1.cpu_cores FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) cpu_cores,
+                                                  (SELECT cis1.cpu_model FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) cpu_model
                                             FROM nodes n
-                                            LEFT JOIN chia_infra_sysinfo cif ON cif.nodeid = n.id AND cif.timestamp = (SELECT max(cif1.timestamp) FROM chia_infra_sysinfo cif1 WHERE cif1.nodeid = n.id)
                                             WHERE n.id = (
                                                 SELECT nt.nodeid FROM nodetype nt WHERE nt.code >= 3 AND nt.code <= 5 AND nt.nodeid = n.id LIMIT 1
                                             )", array());
           }else{
-            $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, cif.timestamp, cif.load_1min,
-                                                  cif.load_5min, cif.load_15min, cif.filesystem, cif.memory_total, cif.memory_shared,
-                                                  cif.memory_free, cif.memory_buffers, cif.memory_cached,
-                                                  cif.swap_total, cif.swap_free, cif.cpu_count, cif.cpu_cores, cif.cpu_model
+            $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, 
+                                                (SELECT cis1.timestamp FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) timestamp,
+                                                (SELECT cis1.load_1min FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) load_1min,
+                                                (SELECT cis1.load_5min FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) load_5min,
+                                                (SELECT cis1.load_15min FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) load_15min,
+                                                (SELECT cis1.filesystem FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) filesystem,
+                                                (SELECT cis1.memory_total FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) memory_total,
+                                                (SELECT cis1.memory_free FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) memory_free,
+                                                (SELECT cis1.memory_buffers FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) memory_buffers,
+                                                (SELECT cis1.memory_shared FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) memory_shared,
+                                                (SELECT cis1.memory_cached FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) memory_cached,
+                                                (SELECT cis1.swap_total FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) swap_total,
+                                                (SELECT cis1.swap_free FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) swap_free,
+                                                (SELECT cis1.cpu_count FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) cpu_count,
+                                                (SELECT cis1.cpu_cores FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) cpu_cores,
+                                                (SELECT cis1.cpu_model FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) cpu_model
                                             FROM nodes n
-                                            LEFT JOIN chia_infra_sysinfo cif ON cif.nodeid = n.id AND cif.timestamp = (SELECT max(cif1.timestamp) FROM chia_infra_sysinfo cif1 WHERE cif1.nodeid = n.id)
                                             WHERE n.id = ?
                                             )", array($data["nodeid"]));
           }
