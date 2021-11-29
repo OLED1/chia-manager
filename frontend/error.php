@@ -1,6 +1,8 @@
 <?php
   if(array_key_exists("code", $_GET)){ $code = $_GET["code"]; }
   else { $code = 404; }
+
+  $ini = parse_ini_file(__DIR__.'/../backend/config/config.ini.php');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -54,17 +56,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Bootstrap core JavaScript-->
-    <script src="/frontend/frameworks/bootstrap/vendor/jquery/jquery.min.js"></script>
-    <script src="/frontend/frameworks/bootstrap/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Core plugin JavaScript-->
-    <script src="/frontend/frameworks/bootstrap/vendor/jquery-easing/jquery.easing.min.js"></script>
-
-    <!-- Custom scripts for all pages-->
-    <script src="/frontend/frameworks/bootstrap/js/sb-admin-2.min.js"></script>
-
 </body>
 
 </html>
