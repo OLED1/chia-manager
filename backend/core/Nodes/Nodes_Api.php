@@ -85,15 +85,18 @@
       $returndata = array();
 
       try{
-        $sql = $this->db_api->execute("SELECT n.id, GROUP_CONCAT(nta.description SEPARATOR ', ') AS nodetype, n.nodeauthhash, n.authtype,
-                                        n.conallow, n.hostname, n.scriptversion, n.chiaversion, n.chiapath, n.ipaddress,
-                                        n.changeable, n.changedIP, MAX(cis.memory_total) AS memory_total, MAX(cis.swap_total) AS swap_total,
-                                        MAX(cis.cpu_cores) AS cpu_cores, MAX(cis.cpu_count) AS cpu_count, MAX(cis.cpu_model) AS cpu_model, lastseen
-                                       FROM nodes n
-                                       JOIN nodetype nt ON nt.nodeid = n.id
-                                       JOIN nodetypes_avail nta ON nta.code = nt.code
-                                       LEFT JOIN chia_infra_sysinfo cis ON cis.timestamp = (SELECT MAX(timestamp) FROM chia_infra_sysinfo WHERE nodeid = n.id) AND cis.nodeid = n.id
-                                       GROUP BY n.id", array());
+        $sql = $this->db_api->execute("SELECT n.id, GROUP_CONCAT(nta.description SEPARATOR ', ') AS nodetype, n.nodeauthhash, n.authtype, n.conallow, n.hostname, n.scriptversion, n.chiaversion, n.chiapath, n.ipaddress,
+                                      n.changeable, n.changedIP, 
+                                      (SELECT cis1.memory_total FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) memory_total,
+                                      (SELECT cis1.swap_total FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) swap_total,
+                                      (SELECT cis1.cpu_cores FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) cpu_cores,
+                                      (SELECT cis1.cpu_count FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) cpu_count,
+                                      (SELECT cis1.cpu_model FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) cpu_model,
+                                      lastseen
+                                      FROM nodes n
+                                      JOIN nodetype nt ON nt.nodeid = n.id
+                                      JOIN nodetypes_avail nta ON nta.code = nt.code
+                                      GROUP BY n.id", array());
 
         $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
         $returnarray = array();
