@@ -8,6 +8,7 @@
   use ChiaMgmt\System_Update\System_Update_Api;
   use ChiaMgmt\Encryption\Encryption_Api;
   use ChiaMgmt\Chia_Overall\Chia_Overall_Api;
+  use ChiaMgmt\Chia_Infra_Sysinfo\Chia_Infra_Sysinfo_Api;
 
   /**
    * The RequestHandler_Api class validates all requests to the websocket api.
@@ -115,17 +116,55 @@
      * @return array                          {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The returnded data] } from subquery.
      */
     public function processCronRequest(array $loginData, array $backendInfo, array $data, array $nodeInfo, $server = NULL){
-      $server->messageAllNodes($nodeInfo, $data);
       $system_api = new System_Api();
       $system_api->setCurrentCronjobRunTimestamp();
-
+      
+      //Query new overall data
       $overall_api = new Chia_Overall_Api();
       $server->messageFrontendClients(array("siteID" => 9), array("queryOverallData" => $overall_api->queryOverallData()));
+      
+      //Query new available performance data from the chia nodes
+      $querydata["data"]["querySystemInfo"] = array(
+        "status" => 0,
+        "message" => "Query systeminfo data.",
+        "data"=> array()
+      );
+      $server->messageAllNodes($querydata);
+
+      //Inform frontend about new sysinfo data
+      $chia_infra_sysinfo_api = new Chia_Infra_Sysinfo_Api();
+      $server->messageFrontendClients(array("siteID" => 8), array("getSystemInfo" => $chia_infra_sysinfo_api->getSystemInfo()));
+
+      //Query new available wallet data from the chia nodes
+      $querydata["data"] = [];
+      $querydata["data"]["queryWalletData"] = array(
+        "status" => 0,
+        "message" => "Query wallet data.",
+        "data"=> array()
+      );
+      $server->messageAllNodes($querydata);
+
+      //Query new available transactions data from the chia nodes
+      $querydata["data"] = [];
+      $querydata["data"]["queryWalletTransactions"] = array(
+        "status" => 0,
+        "message" => "Query wallet transaction data.",
+        "data"=> array()
+      );
+      $server->messageAllNodes($querydata);
+
+      //Query new available farmer data from the chia nodes
+      $querydata["data"] = [];
+      $querydata["data"]["queryFarmData"] = array(
+        "status" => 0,
+        "message" => "Query farm transaction data.",
+        "data"=> array()
+      );
+      $server->messageAllNodes($querydata);
 
       $now = new \Datetime("now");
       return array("cronJobExecution" => array("status" => 0, "message" => "Successfully executed system background jobs.", "data" => $now->format("Y-m-d H:i:s")));
     }
-
 
     /**
      * Return a list of currently connected websocket clients in json format.
