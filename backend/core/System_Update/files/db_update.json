@@ -66,5 +66,15 @@
         "system_infos": [
             "UPDATE `system_infos` SET dbversion = '0.1.1.211115';"
         ]
+    },
+    "0.1.1.211119": {
+        "system_infos": [
+            "INSERT INTO `sites` (`id`, `namespace`) VALUES ('13', 'ChiaMgmt\\System_Statistics\\System_Statistics_Api');",
+            "INSERT INTO `sites_pagestoinform` (`id`, `siteid`, `sitetoinform`) VALUES ( '23' , '13', '13');",
+            "INSERT INTO `sites_pagestoinform` (`id`, `siteid`, `sitetoinform`) VALUES ( '24' , '8', '13');",
+            "INSERT INTO `sites_pagestoinform` (`id`, `siteid`, `sitetoinform`) VALUES ( '25', '9', '5');",
+            "UPDATE `system_infos` SET dbversion = '0.1.1.211119';"
+        ]
     }
+
 }
