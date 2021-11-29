@@ -64,6 +64,7 @@ $(function(){
 
     $("#sitecontent").children().remove();
     $(".breadcrumb-item a").text(sitename);
+    $(".xdsoft_datetimepicker").remove();
 
     if(!history.pushState){
       document.location.href = frontend + "/index.php" + href + "/";
