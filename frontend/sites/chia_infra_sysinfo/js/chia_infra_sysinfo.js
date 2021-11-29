@@ -1,8 +1,10 @@
+var ramswapcharts = {};
+var loadCharts = {};
+
 reloadTables();
 initSysinfoRefresh();
 initSysinfoNodeActions();
 
-Chart.defaults.global.defaultFontColor = (darkmode == 1 ? "#858796" : "#fff");
 
 $("#queryAllNodes").off("click");
 $("#queryAllNodes").on("click", function(){
@@ -70,112 +72,113 @@ function initAndDrawRAMorSWAPChart(nodeid, type){
 
   var target = $("#" + type + "_chart_" + nodeid);
   if(target.length > 0){
-    ctx = document.getElementById(type + "_chart_" + nodeid).getContext("2d");
-    new Chart(ctx, {
+    if(!(nodeid in ramswapcharts)) ramswapcharts[nodeid] = {};
+    var thischartctx = document.getElementById(type + "_chart_" + nodeid).getContext("2d");
+    ramswapcharts[nodeid][type] = new Chart(thischartctx, {
       type: 'doughnut',
       data: {
         labels: labels,
         datasets: [{
           data: data,
-          backgroundColor: ['#428AEC', '#26C59B'],
-          hoverBackgroundColor: ['#4F42EC', '#26C54B'],
-          hoverBorderColor: "rgba(234, 236, 244, 1)",
+          backgroundColor: ['rgba(245, 189, 39, 0.5)','rgba(93, 211, 158, 0.5)'],
         }],
       },
       options: {
         maintainAspectRatio: false,
-        cutoutPercentage: 0,
-        library : {
-          tooltips: {
-            backgroundColor: "rgb(255,255,255)",
-            bodyFontColor: "#858796",
-            borderColor: '#dddfeb',
-            borderWidth: 1,
-            xPadding: 15,
-            yPadding: 15,
-            displayColors: false,
-            caretPadding: 10,
-            callbacks: {
-              label: function(tooltipItem, data){
-                var label = data.labels[tooltipItem.index];
-                var dataset = data.datasets[tooltipItem.datasetIndex];
-                var currentValue = dataset.data[tooltipItem.index];
-                return label + ": " + currentValue + "GB";
-              }
-            }
-          }
-        },
+        responsive: true,
+        resizeDelay: 50,
         legend: {
           display: false
         },
-        cutoutPercentage: 80,
+        plugins: {
+          legend: {
+            display: true,
+            labels: {
+                color: chartcolor
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context){
+                return context.label + ": " + context.formattedValue + " GB";
+              }
+            }
+          }
+        }
       },
     });
-
   }
 }
 
 function initAndDrawLoadChart(nodeid){
   var infodata = sysinfodata[nodeid];
-  var data = [infodata["load_1min"], infodata["load_5min"], infodata["load_15min"]];
-
-  ctx = document.getElementById("cpu_load_chart_" + nodeid).getContext("2d");
-  new Chart(ctx, {
-    type: 'bar',
+  var thischartctx = document.getElementById("cpu_load_chart_" + nodeid).getContext("2d");
+  if(!(nodeid in loadCharts)) loadCharts[nodeid] = {};
+  
+  loadCharts[nodeid]["load"] = new Chart(thischartctx, {
     data: {
-      labels: ["1min", "5min", "15min"],
+      labels: ["Load 1min","Load 5min", "Load 15min"],
       datasets: [{
+        type: 'line',
+        label: "Max load",
+        borderColor: 'rgba(245, 39, 39, 1)',
+        borderDash: [5, 5],
+        borderwidth: 1,
+        data: [(parseInt(infodata["cpu_count"]) * 2),(parseInt(infodata["cpu_count"]) * 2),(parseInt(infodata["cpu_count"]) * 2)],
+        fill: true
+      },{
+        type: 'line',
+        label: "Preferred max load",
+        borderColor: 'rgba(245, 142, 39, 1)',
+        borderDash: [5, 5],
+        borderwidth: 1,
+        data: [parseInt(infodata["cpu_count"]), parseInt(infodata["cpu_count"]), parseInt(infodata["cpu_count"])],
+        fill: false
+      },{
+        type: 'bar',
         label: "Load",
-        backgroundColor: ["#4e73df", "#4e73df", "#4e73df"],
-        hoverBackgroundColor: ["#2e59d9", "#2e59d9", "#2e59d9"],
-        borderColor: "#4e73df",
-        data: data,
-      }],
+        borderColor: ['rgba(111, 180, 255, 1)','rgba(51, 150, 255, 1)','rgba(0, 123, 255, 1)'],
+        backgroundColor: ['rgba(111, 180, 255, 0.5)','rgba(51, 150, 255, 0.5)','rgba(0, 123, 255, 0.5)'],
+        data: [infodata["load_1min"],infodata["load_5min"],infodata["load_15min"]],
+        fill: true
+      }]
     },
     options: {
+      responsive: true,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
       maintainAspectRatio: false,
       cutoutPercentage: 0,
-      layout: {
-        padding: {
-          left: 20,
-          right: 25,
-          top: 25,
-          bottom: 0
-        }
-      },
       scales: {
-        xAxes: [{
-          gridLines: {
-            display: false,
-            drawBorder: false
+        y: {
+          beginAtZero: true,
+            ticks : {
+              color: chartcolor
           }
-        }],
-        yAxes: [{
-          ticks: {
-            min: 0,
-            max: (Math.max.apply(Math,data).toFixed(2) * 1.1),
-            maxTicksLimit: 2
-          }
-        }],
+        },
+        x: {
+            ticks : {
+                color: chartcolor
+            },
+            gridLines: {
+              display: false,
+              drawBorder: false
+            }
+        }
       },
       legend: {
         display: false
       },
-      library : {
-        tooltips: {
-          titleMarginBottom: 10,
-          titleFontColor: '#6e707e',
-          titleFontSize: 14,
-          backgroundColor: "rgb(255,255,255)",
-          bodyFontColor: "#858796",
-          borderColor: '#dddfeb',
-          borderWidth: 1,
-          xPadding: 15,
-          yPadding: 15,
-          displayColors: false,
-          caretPadding: 10
+      plugins: {
+        legend: {
+            display: true,
+            labels: {
+                color: chartcolor
+            }
         }
-      }
+    },
     }
   });
 }

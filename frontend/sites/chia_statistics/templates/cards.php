@@ -60,7 +60,7 @@
           var defaultCurrency = '{$defaultCurrency}';
           var exchangerate = {$exchangerate};
           var historyXCHValue = " . json_encode($historyxchvalue) . ";
-        </script>"
+        </script>";
 ?>
 <div class="row">
   <div class="col">
@@ -91,29 +91,31 @@
       <?php if(count($historynetspace) > 0){ ?>
         <ul class="list-group list-group-flush">
           <li class="list-group-item">
-            <canvas id="chia_netspace_history_chart" height="80"></canvas>
+            <div class="chart-bar" style="min-height: 40vh;">
+              <canvas id="chia_netspace_history_chart"></canvas>
+            </div>
           </li>
           <li class="list-group-item">
-          <table class="table table-borderless">
-            <thead>
-              <tr>
-                <th scope="col">Current</th>
-                <th scope="col">Min</th>
-                <th scope="col">Max</th>
-                <th scope="col">Average</th>
-                <th scope="col">Growth</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td id="netspace_cur"></td>
-                <td id="netspace_min"></td>
-                <td id="netspace_max"></td>
-                <td id="netspace_avg"></td>
-                <td id="netspace_gro"></td>
-              </tr>
-            </tbody>
-          </table>
+            <table class="table table-borderless">
+              <thead>
+                <tr>
+                  <th scope="col">Current</th>
+                  <th scope="col">Min</th>
+                  <th scope="col">Max</th>
+                  <th scope="col">Average</th>
+                  <th scope="col">Growth</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td id="netspace_cur"></td>
+                  <td id="netspace_min"></td>
+                  <td id="netspace_max"></td>
+                  <td id="netspace_avg"></td>
+                  <td id="netspace_gro"></td>
+                </tr>
+              </tbody>
+            </table>
           </li>
         </ul>
         <?php }else{ ?>
@@ -131,7 +133,9 @@
       <?php if(count($historyblockheight) > 0){ ?>
         <ul class="list-group list-group-flush">
           <li class="list-group-item">
-            <canvas id="chia_historyblockheight_history_chart" height="80"></canvas>
+            <div class="chart-bar" style="min-height: 40vh;">
+              <canvas id="chia_historyblockheight_history_chart"></canvas>
+            </div>
           </li>
           <li class="list-group-item">
           <table class="table table-borderless">
@@ -165,7 +169,9 @@
       <?php if(count($historyxchvalue) > 0){ ?>
         <ul class="list-group list-group-flush">
           <li class="list-group-item">
-            <canvas id="chia_xchvalue_history_chart" height="100em"></canvas>
+            <div class="chart-bar" style="min-height: 40vh;">
+              <canvas id="chia_xchvalue_history_chart"></canvas>
+            </div>
           </li>
           <li class="list-group-item">
           <table class="table table-borderless">

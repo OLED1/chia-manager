@@ -41,6 +41,7 @@
   var userID = {$_COOKIE["user_id"]};
   var sessid = '{$_COOKIE["PHPSESSID"]}';
   var darkmode = {$gui_mode};
+  var chartcolor = '" . ($gui_mode == 1 ? "#858796" : "#fff") . "';
   var intervals = {};
   </script>";
 ?>
@@ -133,6 +134,12 @@
               <a class="nav-link" data-siteid=12 data-nav-target="nav-chia-statistics" href="/sites/chia_statistics">
                 <i class="fas fa-chart-bar"></i>
                 <span>Chia</span>
+              </a>
+            </li>
+            <li id="nav-systems-statistics" class="nav-item">
+              <a class="nav-link" data-siteid=13 data-nav-target="nav-systems-statistics" href="/sites/systems_statistics">
+                <i class="fas fa-chart-line"></i>
+                <span>Systems</span>
               </a>
             </li>
             <hr class="sidebar-divider">
@@ -408,7 +415,7 @@
     <!-- Page level plugins -->
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/datatables/jquery.dataTables.min.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/datatables/dataTables.bootstrap4.min.js"></script>
-    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/chart.js/Chart.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/chart.js/dist/chart.min.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/momentjs/moment-with-locales.min.js"></script>
 
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/js/sitewrapper/load_pages.js"></script>

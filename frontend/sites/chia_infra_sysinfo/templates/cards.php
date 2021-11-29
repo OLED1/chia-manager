@@ -60,7 +60,7 @@
                     <div id="filesystem_<?php echo "{$sysinfo["id"]}"; ?>" class="card-body">
                       <h6 class="m-0 font-weight-bold text-primary">Filesystems</h6>
                       <?php foreach(json_decode($sysinfo["filesystem"]) AS $arrkey => $filesystem){ ?>
-                        <h4 class="small font-weight-bold"><?php echo "{$filesystem[0]} => {$filesystem[5]} (Size: {$filesystem[1]} Used: {$filesystem[2]} Available: {$filesystem[3]})"; ?><span class="float-right"><?php echo $filesystem[4]; ?></span></h4>
+                        <h4 class="small font-weight-bold"><?php echo "{$filesystem[0]} => {$filesystem[5]} (Size: " . formatkBytes($filesystem[1]) . " Used: " . formatkBytes($filesystem[2]) . " Available: " . formatkBytes($filesystem[3]) . ")"; ?><span class="float-right"><?php echo $filesystem[4]; ?></span></h4>
                         <div class="progress mb-4">
                           <div class="progress-bar <?php $percent = explode("%",$filesystem[4])[0]; echo ($percent <= 50 ? "bg-success" : ($percent <= 75 ? "bg-warning" : "bg-danger")); ?>" role="progressbar" style="width: <?php echo $filesystem[4]; ?>" aria-valuenow="<?php echo $percent; ?>" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
@@ -82,24 +82,16 @@
                         <?php if(floatval($sysinfo["memory_total"]) > 0){ ?>
                         <div class="col-6">
                           <h7 class="m-0 font-weight-bold text-primary">RAM (<?php echo number_format(floatval($sysinfo["memory_total"])/1024/1024/1024, 2) . "GB"; ?>)</h7>
-                          <div class="chart-pie pt-4 pb-2">
+                          <div class="chart-pie" style="min-height: 20vh;">
                             <canvas id="ram_chart_<?php echo "{$sysinfo["id"]}"; ?>"></canvas>
-                          </div>
-                          <div class="mt-4 text-center small">
-                            <span class="mr-2"><i class="fas fa-circle ram-swap-free" style="color: #26C59B;"></i> RAM free</span>
-                            <span class="mr-2"><i class="fas fa-circle ram-swap-used" style="color: #428AEC;"></i> RAM used</span>
                           </div>
                         </div>
                         <?php } ?>
                         <?php if(floatval($sysinfo["swap_total"]) > 0){ ?>
                         <div class="col-6">
                           <h7 class="m-0 font-weight-bold text-primary">SWAP (<?php echo number_format(floatval($sysinfo["swap_total"])/1024/1024/1024, 2) . "GB"; ?>)</h7>
-                          <div class="chart-pie pt-4 pb-2">
+                          <div class="chart-pie" style="min-height: 20vh;">
                             <canvas id="swap_chart_<?php echo "{$sysinfo["id"]}"; ?>"></canvas>
-                          </div>
-                          <div class="mt-4 text-center small">
-                            <span class="mr-2">  <i class="fas fa-circle ram-swap-free" style="color: #26C59B;"></i> SWAP free</span>
-                            <span class="mr-2"><i class="fas fa-circle ram-swap-used" style="color: #428AEC;"></i> SWAP used</span>
                           </div>
                         </div>
                         <?php } ?>
@@ -110,15 +102,15 @@
               </div>
             </div>
             <div class="row">
-              <div class="col col-md-6 col-lg-6 col-xl-6">
+              <div class="col">
                 <div id="cpu_load_container_<?php echo "{$sysinfo["id"]}"; ?>">
                   <div class="card shadow mb-4">
                     <div class="card-header py-3">
-                      <h7 class="m-0 font-weight-bold text-primary"><?php echo "CPU {$sysinfo["cpu_model"]} - {$sysinfo["cpu_count"]} Cores, " . ($sysinfo["cpu_count"]*$sysinfo["cpu_cores"]) . " Threads"; ?></h7>
+                      <h7 class="m-0 font-weight-bold text-primary"><?php echo "CPU {$sysinfo["cpu_model"]} - {$sysinfo["cpu_cores"]} Cores, {$sysinfo["cpu_count"]} Threads"; ?></h7>
                     </div>
                     <div class="card-body">
                       <h7 class="m-0 font-weight-bold text-primary">CPU Load</h7>
-                      <div class="chart-bar">
+                      <div class="chart-bar" style="min-height: 30vh;">
                         <canvas id="cpu_load_chart_<?php echo "{$sysinfo["id"]}"; ?>"></canvas>
                       </div>
                     </div>
@@ -149,3 +141,13 @@
 </div>
 <?php } ?>
 <script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_infra_sysinfo/js/chia_infra_sysinfo.js"?>></script>
+<?php 
+function formatkBytes(int $size, int $precision = 2)
+{
+    if($size == 0) return "0KB";
+    $base = log($size, 1024);
+    $suffixes = array('KB', 'MB', 'GB', 'TB');   
+
+    return round(pow(1024, $base - floor($base)), $precision) . $suffixes[floor($base)];
+}
+?>

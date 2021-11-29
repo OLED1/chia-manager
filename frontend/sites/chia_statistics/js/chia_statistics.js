@@ -7,8 +7,6 @@ $(function(){
     drawHistoryBlockheightChart();
     drawHistoryXCHValueChart();
 
-    Chart.defaults.global.defaultFontColor = (darkmode == 1 ? "#858796" : "#fff");
-
     $(".datepicker").datetimepicker({
         format: 'Y-m-d H:i:s'
     });
@@ -45,22 +43,50 @@ function drawHistoryNetspaceChart(){
             data: {
                 labels: labels,
                 datasets: [{
-                    label: "History netspace growth (last " + hourspast + " hours)",
+                    label: "Netspace",
                     data: data,
                     backgroundColor: 'rgba(0, 250, 10, 0.5)',
                     borderColor: 'rgba(0, 250, 10, 1)',
-                    borderwidth: 1
+                    borderwidth: 1,
+                    fill: true
                 }]
             },
             options: {
+                plugins: {
+                    title: {
+                        display: true,
+                        text: "History netspace growth (last " + hourspast + " hours)",
+                        color: chartcolor
+                    },
+                    legend: {
+                        display: true,
+                        labels: {
+                            color: chartcolor
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context){
+                                const label = context.dataset.label || '';
+                                return label + ": " + context.formattedValue + " EiB";
+                            }
+                        }
+                    }
+                },
                 scales: {
                     y: {
-                        beginAtZero: true,
                         ticks : {
                             callback: function(value, index, values) {
-                                return value + " EiB";
-                            } 
+                                return value.toFixed(2) + " EiB";
+                            },
+                            color: chartcolor,
+                            beginAtZero: false
                         }
+                    },
+                    x: {
+                        ticks : {
+                            color: chartcolor
+                        } 
                     }
                 },
                 tooltips: {
@@ -68,7 +94,9 @@ function drawHistoryNetspaceChart(){
                       label: (item) => `${item.yLabel} EiB`,
                     },
                 },
-                responsive: true
+                maintainAspectRatio: false,
+                responsive: true,
+                resizeDelay: 50,
             }
         });
 
@@ -95,20 +123,49 @@ function drawHistoryBlockheightChart(){
             data: {
                 labels: labels,
                 datasets: [{
-                    label: "History blockheight growth (last " + hourspast + " hours)",
+                    label: "Blockheight",
                     data: data,
                     backgroundColor: 'rgba(245, 155, 39, 0.5)',
                     borderColor: 'rgba(245, 155, 39, 1)',
-                    borderwidth: 1
+                    borderwidth: 1,
+                    fill: true
                 }]
             },
             options: {
+                plugins: {
+                    title: {
+                        display: true,
+                        text: "History blockheight growth (last " + hourspast + " hours)",
+                        color: chartcolor
+                    },
+                    legend: {
+                        display: true,
+                        labels: {
+                            color: chartcolor
+                        }
+                    },
+                },
                 tooltips: {
                     callbacks: {
                       label: (item) => `${item.yLabel}`,
                     },
                 },
-                responsive: true
+                scales: {
+                    y: {
+                        ticks : {
+                            color: chartcolor,
+                            beginAtZero: false
+                        }
+                    },
+                    x: {
+                        ticks : {
+                            color: chartcolor
+                        } 
+                    }
+                },
+                maintainAspectRatio: false,
+                responsive: true,
+                resizeDelay: 50,
             }
         });
 
@@ -132,30 +189,52 @@ function drawHistoryXCHValueChart(){
             data: {
                 labels: labels,
                 datasets: [{
-                    label: "XCH price in " + defaultCurrency.toUpperCase() + " (last " + hourspast + " hours)",
+                    label: "XCH price",
                     data: data,
                     backgroundColor: 'rgba(43, 82, 252, 0.5)',
                     borderColor: 'rgba(43, 82, 252, 1)',
-                    borderwidth: 1
+                    borderwidth: 1,
+                    fill: true
                 }]
             },
             options: {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks : {
-                            callback: function(value, index, values) {
-                                return value + " " + defaultCurrency.toUpperCase();
-                            } 
+                plugins: {
+                    title: {
+                        display: true,
+                        text: "XCH price in " + defaultCurrency.toUpperCase() + " (last " + hourspast + " hours)",
+                        color: chartcolor
+                    },
+                    legend: {
+                        display: true,
+                        labels: {
+                            color: chartcolor
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context){
+                                const label = context.dataset.label || '';
+                                return label + ": " + context.formattedValue + " " + defaultCurrency.toUpperCase();
+                            }
                         }
                     }
                 },
-                tooltips: {
-                    callbacks: {
-                      label: (item) => `${item.yLabel} ${defaultCurrency.toUpperCase()}`,
+                scales: {
+                    y: {
+                        ticks : {
+                            color: chartcolor,
+                            beginAtZero: false
+                        }
                     },
+                    x: {
+                        ticks : {
+                            color: chartcolor
+                        } 
+                    }
                 },
-                responsive: true
+                maintainAspectRatio: false,
+                responsive: true,
+                resizeDelay: 50,
             }
         });
 

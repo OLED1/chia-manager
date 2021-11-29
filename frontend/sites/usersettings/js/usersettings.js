@@ -228,6 +228,7 @@ function messagesTrigger(data){
         .draw();
     }else if(key == "setGuiMode"){
       darkmode = data[key]["data"];
+      chartcolor = (darkmode == 1 ? "#858796" : "#fff");
       if(data[key]["data"] == 1){
         $(".gui-mode-elem").removeClass("gui-mode-dark").addClass("gui-mode-light");
       }else if(data[key]["data"] == 2){
