@@ -4,6 +4,7 @@
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\Nodes\Nodes_Api;
   use ChiaMgmt\Encryption\Encryption_Api;
+  use ChiaMgmt\Chia_Farm\Data_Objects\Farmdata;
 
   /**
    * The Chia_Farm_Api class contains every needed methods to manage all available farming data.
@@ -62,6 +63,18 @@
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {"nodeid": [nodeid], "data": {[newly added farm data]}}
      */
     public function updateFarmData(array $data, array $loginData = NULL){
+      try{
+        echo "HIER";
+        foreach($data AS $arrkey => $thisfarmerdata){
+          //print_r($thisfarmerdata);
+          $formatted_data = new Farmdata($thisfarmerdata);
+          print_r($formatted_data);
+        }
+      }catch(Exception $e){
+        print_r(array("status" => 1, "message" => "An error occured: {$e->getMessage()}"));
+        return array("status" => 1, "message" => "An error occured: {$e->getMessage()}");
+      }
+      //print_r(json_encode($data, JSON_PRETTY_PRINT));
       if(array_key_exists("farm", $data) && array_key_exists("farming_status", $data["farm"])){
         try{
           $farmdata = $data["farm"];
@@ -93,12 +106,12 @@
 
           $this->updateChallenges($data["farm"], $loginData);
         }catch(Exception $e){
-          return $this->logging->getErrormessage("001", $e);
+          return $this->logging_api->getErrormessage("001", $e);
         }
 
         return array("status" => 0, "message" => "Successfully updated farm information for node $nodeid.", "data" => ["nodeid" => $nodeid, "data" => $this->getFarmData($data, $loginData, $nodeid)["data"]]);
       }else{
-        return $this->logging->getErrormessage("002");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
@@ -139,7 +152,7 @@
 
         return array("status" =>0, "message" => "Successfully loaded chia farm information.", "data" => $returndata);
       }catch(Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 
@@ -162,7 +175,7 @@
         $data["data"] = $nodeid;
         return array("status" => 0, "message" => "Successfully queried farmer status information for node $nodeid.", "data" => $data);
       }catch(Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 
@@ -241,7 +254,7 @@
         $data["data"] = $nodeid;
         return array("status" =>0, "message" => "Successfully queried farmer service restart for node $nodeid.", "data" => $data);
       }catch(Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 
@@ -267,10 +280,10 @@
 
           return array("status" => 0, "message" => "Successfully updated challenges information.");
         }catch(Exception $e){
-          return $this->logging->getErrormessage("001", $e);
+          return $this->logging_api->getErrormessage("001", $e);
         }
       }else{
-        return $this->logging->getErrormessage("002");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
@@ -287,7 +300,7 @@
 
         return array("status" =>0, "message" => "Successfully queried all challenges.", "data" => $sql->fetchAll(\PDO::FETCH_ASSOC));
       }catch(Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
   }
