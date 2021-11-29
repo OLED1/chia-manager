@@ -62,32 +62,33 @@
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {"nodeid": [nodeid], "data": {[newly added wallet data]}}
      */
     public function updateWalletData(array $data, array $loginData = NULL){
-      if(array_key_exists("wallet", $data)){
-        try{
-          $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
-          $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
+      try{
+        $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
+        $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
 
-          foreach($data["wallet"] AS $walletid => $walletdata){
+        foreach($data AS $walletid => $walletdata){
+          if(is_numeric($walletid) && is_array($walletdata)){
             $sql = $this->db_api->execute("SELECT Count(*) as count FROM chia_wallets WHERE walletid = ? AND nodeid = ?", array($walletid, $nodeid));
             $count = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["count"];
+            $syncstatus =  ($walletdata["sync_status"]["syncing"] ? "Syncing" : ($walletdata["sync_status"]["synced"] ? "Synced" : "Not synced"));
+
 
             if($count == 0){
               $sql = $this->db_api->execute("INSERT INTO chia_wallets (id, nodeid, walletid, walletaddress, walletheight, syncstatus, wallettype, totalbalance, pendingtotalbalance, spendable, querydate) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, current_timestamp())",
-              array($nodeid, $walletid, $walletdata["walletaddress"], $walletdata["walletheight"], $walletdata["syncstatus"], $walletdata["wallettype"], $walletdata["totalbalance"], $walletdata["pendingtotalbalance"], $walletdata["spendable"]));
+              array($nodeid, $walletid, $walletdata["address"], $walletdata["height"], $syncstatus, $walletdata["type"], $walletdata["balance"]["confirmed_wallet_balance"], $walletdata["balance"]["unconfirmed_wallet_balance"], $walletdata["balance"]["spendable_balance"]));
             }else{
               $sql = $this->db_api->execute("UPDATE chia_wallets SET  walletaddress = ?, walletheight = ?, syncstatus = ?, wallettype = ?, totalbalance = ?, pendingtotalbalance = ?, spendable = ?, querydate = current_timestamp() WHERE walletid = ? AND nodeid = ?",
-              array($walletdata["walletaddress"], $walletdata["walletheight"], $walletdata["syncstatus"], $walletdata["wallettype"], $walletdata["totalbalance"], $walletdata["pendingtotalbalance"], $walletdata["spendable"], $walletid, $nodeid));
+              array($walletdata["address"], $walletdata["height"], $syncstatus, $walletdata["type"], $walletdata["balance"]["confirmed_wallet_balance"], $walletdata["balance"]["unconfirmed_wallet_balance"], $walletdata["balance"]["spendable_balance"], $walletid, $nodeid));
             }
+          }else{
+            return $this->logging->getErrormessage("001");
           }
-        }catch(Exception $e){
-          return $this->logging->getErrormessage("001", $e);
         }
-
-        return array("status" => 0, "message" => "Successfully updated wallet information for node $nodeid.", "data" => ["nodeid" => $nodeid, "data" => $this->getWalletData($data, $loginData, $nodeid)["data"]]);
-      }else{
-        //TODO Implement correct status code
-        return array("status" =>1, "message" => "Not all data stated.");
+      }catch(Exception $e){
+        return $this->logging->getErrormessage("002", $e);
       }
+
+      return array("status" => 0, "message" => "Successfully updated wallet information for node $nodeid.", "data" => ["nodeid" => $nodeid, "data" => $this->getWalletData($data, $loginData, $nodeid)["data"]]);
     }
 
     /**
@@ -133,9 +134,8 @@
           print_r($e);
           return array("status" => 1, "message" => "An error occured.");
         }
+        return array("status" => 0, "message" => "Successfully added new transaction(s) for node $nodeid.", "data" => ["nodeid" => $nodeid, "data" => $this->getWalletTransactions(["nodeid" => $_GET["nodeid"]])["data"]]);
       }
-
-      return array("status" => 0, "message" => "Successfully added new transaction(s).");
     }
 
     /**
@@ -191,6 +191,7 @@
      * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": [Found wallet data array]}
      */
     public function getWalletData(array $data = NULL, array $loginData = NULL, $server = NULL, int $nodeid = NULL){
+      if(array_key_exists("nodeid", $data) && is_numeric($data["nodeid"])) $nodeid = $data["nodeid"];
       try{
         if(is_null($nodeid)){
           $sql = $this->db_api->execute("SELECT cw.walletid, nt.nodeid, n.nodeauthhash, n.hostname, cw.walletaddress, cw.walletheight, cw.syncstatus, cw.wallettype, cw.totalbalance, cw.pendingtotalbalance, cw.spendable, cw.querydate
@@ -234,10 +235,10 @@
     public function getWalletTransactions(array $data = NULL, array $loginData = NULL){
       $returndata = [];
       try{
-        if(is_null($data)){
+        if(is_null($data) || !is_numeric($data["nodeid"])){
           $sql = $this->db_api->execute("SELECT id, nodeid, wallet_id, parent_coin_info, amount, amount, confirmed, confirmed_at_height, created_at_time, fee_amount, name, removals, sent, sent_to, spend_bundle, to_address, to_puzzle_hash, trade_id, type FROM chia_wallets_transactions ORDER BY created_at_time ASC", array());
-        }else if(!is_null($data) && array_key_exists("nodeid", $data) && array_key_exists("walletid", $data)){
-          $sql = $this->db_api->execute("SELECT id, nodeid, wallet_id, parent_coin_info, amount, amount, confirmed, confirmed_at_height, created_at_time, fee_amount, name, removals, sent, sent_to, spend_bundle, to_address, to_puzzle_hash, trade_id, type FROM chia_wallets_transactions WHERE nodeid = ? AND wallet_id = ? ORDER BY created_at_time ASC", array($data["nodeid"], $data["walletid"]));
+        }else if(!is_null($data) && array_key_exists("nodeid", $data)){
+          $sql = $this->db_api->execute("SELECT id, nodeid, wallet_id, parent_coin_info, amount, amount, confirmed, confirmed_at_height, created_at_time, fee_amount, name, removals, sent, sent_to, spend_bundle, to_address, to_puzzle_hash, trade_id, type FROM chia_wallets_transactions WHERE nodeid = ? ORDER BY created_at_time ASC", array($data["nodeid"]));
         }else{
           //TODO Implement correct status codes
           return array("status" => 1, "message" => "No data found.");
@@ -299,12 +300,12 @@
       $querydata = [];
       $querydata_0["data"]["queryWalletData"] = array(
         "status" => 0,
-        "message" => "Query Wallet data.",
+        "message" => "Query wallet data.",
         "data"=> array()
       );
       $querydata_1["data"]["queryWalletTransactions"] = array(
         "status" => 0,
-        "message" => "Query Wallet transaction data.",
+        "message" => "Query wallet transaction data.",
         "data"=> array()
       );
 

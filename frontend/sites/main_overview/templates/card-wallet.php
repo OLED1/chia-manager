@@ -46,15 +46,16 @@
     if(count($walletData) > 0){
       $hostchecks = "";
       $walletsyncstatus = "";
-      $totalxch = 0.0;
+      $totalmojos = 0;
       foreach ($walletData as $nodeid => $nodedata) {
         $serviceStates = getServiceStates($nodes_states, $nodeid, "Wallet");
         $hostchecks .= "{$nodedata[array_key_first($nodedata)]["hostname"]}:&nbsp;<span id='servicestatus_wallet_{$nodeid}' data-nodeid={$nodeid} class='badge nodestatus " . $serviceStates["statusicon"] . "'>" . $serviceStates["statustext"] . "</span><br>";
         foreach($nodedata AS $walletid => $walletdata){
           $walletsyncstatus .= "{$walletdata["hostname"]} - Wallet {$walletid}:&nbsp;<span id='syncstatus_{$nodeid}_{$walletid}' data-nodeid={$nodeid} data-walletid={$walletid} class='badge walletstatus " . ($walletid > 0 && $walletdata["syncstatus"] == "Synced" ? "badge-success" : "badge-danger") . "'>" . ($walletid > 0 ? $walletdata["syncstatus"]."&nbsp;(Height: {$walletdata["walletheight"]})" : "No data found"). "</span></br>";
-          $totalxch += floatval($walletdata["totalbalance"]);
+          $totalmojos += intval($walletdata["totalbalance"]);
         }
       }
+      $totalxch = $totalmojos / 1000000000000;
       if(array_key_exists("price_usd", $overallData) && array_key_exists("exchangerate", $exchangeData)) $totalincurr = $totalxch * floatval($overallData["price_usd"]) * floatval($exchangeData["exchangerate"]);
       else $totalincurr = "";
   ?>

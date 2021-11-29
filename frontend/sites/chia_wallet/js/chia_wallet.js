@@ -1,13 +1,14 @@
+var transactionsCharts = {};
+var transactionsTables = {};
+
 initRefreshWalletInfo();
 initRestartWalletService();
 createTransactionsTables();
 createTransactionsCharts();
 
-Chart.defaults.global.defaultFontColor = (darkmode == 1 ? "#858796" : "#fff");
-
 $("#queryAllNodes").off("click");
 $("#queryAllNodes").on("click", function(){
-  $.each(chiaWalletData, function(nodeid, farmdata) {
+  $.each(chiaNodes, function(nodeid, nodedata) {
       queryWalletData(nodeid);
   });
 });
@@ -17,7 +18,9 @@ function createTransactionsTables(){
     $.each(transactions, function(walletid, transaction){
       var target = $("#transactions_" + nodeid + "_" + walletid);
       if(target.length > 0){
-        var transactiontable = $(target).DataTable({
+        if(!(nodeid in transactionsTables)) transactionsTables[nodeid] = {};
+        if(transactionsTables[nodeid][walletid] !== undefined) transactionsTables[nodeid][walletid].destroy();
+        transactionsTables[nodeid][walletid] = $(target).DataTable({
           data: transaction,
           columns: [
             { data: "id" },
@@ -39,7 +42,7 @@ function createTransactionsTables(){
 
         $(target).find("tbody").off("click", "button");
         $(target).find("tbody").on("click", "button", function(){
-          var data = transactiontable.row( $(this).parents('tr') ).data();
+          var data = transactionsTables[nodeid][walletid].row( $(this).parents('tr') ).data();
           var this_wallet_adddress = chiaWalletData[nodeid][walletid]["walletaddress"];
 
           $("#transaction-nodeid").text(nodeid);
@@ -65,11 +68,11 @@ function createTransactionsTables(){
 
           $("#transaction-summary .currency_code").text(defaultCurrency.toUpperCase());
           $("#transaction-summary #amount_currency").html(function(){
-            return (parseFloat(currentxchdefaultprice) * (parseInt(data["amount"]) / 1000000000000)) + "&nbsp" + defaultCurrency.toUpperCase();
+            return (parseFloat(chiapricedefcurr) * (parseInt(data["amount"]) / 1000000000000)) + "&nbsp" + defaultCurrency.toUpperCase();
           });
 
           $("#transaction-summary #fee_amount_currency").html(function(){
-            return (parseFloat(currentxchdefaultprice) * (parseInt(data["fee_amount"]) / 1000000000000)) + "&nbsp" + defaultCurrency.toUpperCase();
+            return (parseFloat(chiapricedefcurr) * (parseInt(data["fee_amount"]) / 1000000000000)) + "&nbsp" + defaultCurrency.toUpperCase();
           });
 
           $("#transaction-summary #fee_amount").text(data["fee_amount"] + " mojo(s)");
@@ -90,11 +93,12 @@ function createTransactionsTables(){
 }
 
 function createTransactionsCharts(){
-  const nrofdays = 30;
-  const thirtyDaysAgo =  moment().subtract(nrofdays, 'days');
-
+  
   $.each(transactionData, function(nodeid, transactions){
     $.each(transactions, function(walletid, transaction){
+      const nrofdays = 30;
+      const thirtyDaysAgo =  moment().subtract(nrofdays, 'days');
+      
       var target = $("#transactions_chart_" + nodeid + "_" + walletid);
       if(target.length > 0){
         var labels = [];
@@ -110,41 +114,54 @@ function createTransactionsCharts(){
           var dateString = moment.unix(thistransaction["created_at_time"]).format('DD-MMM-YYYY');
           var valueIndex = labels.indexOf(dateString);
           if(valueIndex > 0){
-            data[valueIndex] += (parseInt(thistransaction["amount"]) / 1000000000000);
+            data[valueIndex] += (parseInt(thistransaction["amount"]));
           }
         });
 
-        var myChart = new Chart(target, {
+        if(!(nodeid in transactionsCharts)) transactionsCharts[nodeid] = {};
+        if(transactionsCharts[nodeid][walletid] !== undefined) transactionsCharts[nodeid][walletid].destroy();
+        transactionsCharts[nodeid][walletid] = new Chart(target, {
             type: "line",
             data: {
               labels: labels,
               datasets: [
                 {
-                  label: "Daily transactions (In-Out) in XCH (" + nrofdays + " days)",
+                  label: "Daily transactions (In-Out) in MOJO (" + nrofdays + " days)",
                   data: data,
                   borderColor: "rgba(52, 161, 235, 0)",
                   backgroundColor: "rgba(52, 161, 235, 0.5)",
+                  fill: true
                 }
               ]
             },
             options: {
               responsive: true,
+              interaction: {
+                mode: 'index',
+                intersect: false,
+              },
+              stacked: false,
               plugins: {
                 legend: {
-                  position: 'top',
-                },
-                title: {
-                  display: true,
-                  text: 'Transactions Chart'
+                    display: true,
+                    labels: {
+                        color: chartcolor
+                    }
                 }
               },
               scales: {
-                yAxes: [{
-                  ticks: {
-                    maxTicksLimit: 5
+                  y: {
+                    ticks : {
+                      color: chartcolor,
+                    },
+                    beginAtZero: false
+                  },
+                  x: {
+                      ticks : {
+                          color: chartcolor
+                      } 
                   }
-                }]
-              }
+              },
             }
         });
       }
@@ -153,8 +170,7 @@ function createTransactionsCharts(){
 }
 
 function queryWalletData(nodeid){
-  var walletid = $(this).attr("data-wallet-id");
-  var authhash = chiaWalletData[nodeid][Object.keys(chiaWalletData[nodeid])]["nodeauthhash"];
+  var authhash = chiaNodes[nodeid]["nodeauthhash"];
 
   var dataforclient = {
     "nodeid" : nodeid,
@@ -211,16 +227,54 @@ function setWalletBadge(nodeid, status, message){
   targetbadge.text(message);
 }
 
+function setNewWalletData(nodeid){
+  $.each(chiaWalletData[nodeid], function(walletid, walletdata){
+    $("#walletstatus_" + nodeid + "_" + walletid)
+      .removeClass("bg-success")
+      .removeClass("bg-danger")
+      .addClass((walletdata['syncstatus'] == "Synced" ? "bg-success" : "bg-danger"))
+      .find(".card-body")
+      .html("Walletstatus: " + walletdata["syncstatus"] +
+            "<div class='text-white-50 small'>Height: " + walletdata["walletheight"] + "</div>");
+
+    var syncpercent = ((walletdata['walletheight'] / chiaoveralldata["xch_blockheight"] * 100).toFixed(2));
+    $("#sync_progress_" + nodeid + "_" + walletid).css("width", syncpercent+"%").attr("aria-valuenow", syncpercent).html(syncpercent +"% - " + walletdata['walletheight'] + "&nbsp;/&nbsp;" + chiaoveralldata["xch_blockheight"]);
+  
+    $("#totalbalance_xch_" + nodeid + "_" + walletid).text("XCH " + (parseInt(walletdata['totalbalance']) / 1000000000000).toFixed(7));
+    $("#totalbalance_def_currency_" + nodeid + "_" + walletid).html(defaultCurrency + "&nbsp;" + (chiapricedefcurr*(walletdata['totalbalance'] / 1000000000000)).toFixed(7));
+    $("#walletaddress_" + nodeid + "_" + walletid).text(walletdata['walletaddress']);
+    $("#totalbalance_balance_chart_" + nodeid + "_" + walletid).text((walletdata['totalbalance'] / 1000000000000).toFixed(7) + " xch (" + walletdata['totalbalance'] + " mojo)");
+    $("#pendingtotalbalance_balance_chart_" + nodeid + "_" + walletid).text((walletdata['pendingtotalbalance'] / 1000000000000).toFixed(7) + " xch (" + walletdata['pendingtotalbalance'] + " mojo)");
+    $("#spendable_balance_chart_" + nodeid + "_" + walletid).text((walletdata['spendable'] / 1000000000000).toFixed(7)  + " xch (" + walletdata['spendable']+ " mojo)");
+  });
+}
+
 function messagesTrigger(data){
   var key = Object.keys(data);
 
   if(data[key]["status"] == 0){
-    if(key == "updateWalletData" || key == "updateWalletTransactions"){
-      $('#walletcontainer').load(frontend + "/sites/chia_wallet/templates/cards.php");
-
-      initRefreshWalletInfo();
-      initRefreshWalletInfo();
-      initRestartWalletService();
+    if(key == "updateWalletData"){
+      var nodeid = data[key]["data"]["nodeid"];
+      
+      if($(".dataTable_" + nodeid).length == 0){
+        var carddata = { "nodeid" : nodeid, "defaultCurrency" : defaultCurrency, "exchangerate" : exchangerate, "chiapriceindefcurr" : chiapricedefcurr, "chia_overall_data" : chiaoveralldata};
+        $.get(frontend + "/sites/chia_wallet/templates/cards.php", carddata, function(response) {
+          $('#walletcontainer_' + nodeid).html(response);
+          initRefreshWalletInfo();
+          initRestartWalletService();
+        });
+      }
+      chiaWalletData[nodeid] = data[key]["data"]["data"][nodeid];
+      setNewWalletData(nodeid);
+    }else if(key == "updateWalletTransactions"){
+      var nodeid = data[key]["data"]["nodeid"];
+      transactionData[nodeid] = data[key]["data"]["data"][nodeid];
+      setTimeout(
+        function() 
+        {
+          createTransactionsCharts();
+          createTransactionsTables();
+        }, ($(".dataTable_" + nodeid).children().length == 0 ? 2000 : 0));
     }else if(key == "walletStatus"){
       setTimeout(function(){
         setWalletBadge(data[key]["data"]["data"], data[key]["data"]["status"], data[key]["data"]["message"]);
@@ -234,6 +288,11 @@ function messagesTrigger(data){
         if(condata["onlinestatus"] == 1){
           setWalletBadge(nodeid, condata["onlinestatus"], "Node not reachable");
         }
+      });
+    }else if(key == "queryOverallData"){
+      chiaoveralldata = data[key]["data"];
+      $.each(chiaNodes, function(nodeid, nodedata) {
+          setNewWalletData(nodeid);
       });
     }
   }else if(data[key]["status"] == "014003001"){

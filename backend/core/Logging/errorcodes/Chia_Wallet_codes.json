@@ -7,7 +7,8 @@
   },
   "errormessages" : {
     "updateWalletData" : {
-      "001" : [2, "An error occured."]
+      "001" : [1, "Data not valid."],
+      "002" : [2, "An error occured."]
     },
     "getWalletData" : {
       "001" : [2, "An error occured."]
