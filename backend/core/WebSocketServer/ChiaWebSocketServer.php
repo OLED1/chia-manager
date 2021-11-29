@@ -103,7 +103,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
      */
     public function onMessage(ConnectionInterface $from, $msg) {
       $data = json_decode($msg, true);
-
+      
       if(array_key_exists("node" , $data) && array_key_exists("request" , $data)
          && array_key_exists("data" , $data["request"]) && array_key_exists("backendInfo" , $data["request"])){
 
@@ -277,8 +277,8 @@ class ChiaWebSocketServer implements MessageComponentInterface {
     public function onError(ConnectionInterface $conn, \Exception $e) {
         echo "[{$this->getDate()}] CRITICAL: An error has occurred: {$e->getMessage()}.\n";
         $this->logging->getErrormessage("001", $e->getMessage());
-
-        $conn->close();
+        //Do not close the connection to client on exception, only log.
+        //$conn->close();
     }
 
     /**
