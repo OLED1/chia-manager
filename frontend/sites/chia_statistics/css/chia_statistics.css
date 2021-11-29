@@ -1,3 +1,7 @@
 .datepicker-panel{
     color: #040404;
 }
+
+.load-table td{
+    padding: 0;
+}
