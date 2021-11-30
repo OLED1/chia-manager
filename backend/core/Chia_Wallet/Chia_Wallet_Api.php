@@ -4,6 +4,8 @@
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\Nodes\Nodes_Api;
   use ChiaMgmt\Encryption\Encryption_Api;
+  use ChiaMgmt\Chia_Wallet\Data_Objects\Walletdata;
+  use ChiaMgmt\Chia_Wallet\Data_Objects\Wallettransaction;
 
   /**
    * The Chia_Wallet_Api class contains every needed methods to manage all available wallet data.
@@ -70,22 +72,21 @@
           if(is_numeric($walletid) && is_array($walletdata)){
             $sql = $this->db_api->execute("SELECT Count(*) as count FROM chia_wallets WHERE walletid = ? AND nodeid = ?", array($walletid, $nodeid));
             $count = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["count"];
-            $syncstatus =  ($walletdata["sync_status"]["syncing"] ? "Syncing" : ($walletdata["sync_status"]["synced"] ? "Synced" : "Not synced"));
-
+            $formatted_data = new Walletdata($walletdata);
 
             if($count == 0){
               $sql = $this->db_api->execute("INSERT INTO chia_wallets (id, nodeid, walletid, walletaddress, walletheight, syncstatus, wallettype, totalbalance, pendingtotalbalance, spendable, querydate) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, current_timestamp())",
-              array($nodeid, $walletid, $walletdata["address"], $walletdata["height"], $syncstatus, $walletdata["type"], $walletdata["balance"]["confirmed_wallet_balance"], $walletdata["balance"]["unconfirmed_wallet_balance"], $walletdata["balance"]["spendable_balance"]));
+              array($nodeid, $walletid, $formatted_data->get_address(), $formatted_data->get_height(), $formatted_data->get_syncstatus(), $formatted_data->get_type(), $formatted_data->get_confirmed_wallet_balance(), $formatted_data->get_unconfirmed_wallet_balance(), $formatted_data->get_spendable_balance()));
             }else{
               $sql = $this->db_api->execute("UPDATE chia_wallets SET  walletaddress = ?, walletheight = ?, syncstatus = ?, wallettype = ?, totalbalance = ?, pendingtotalbalance = ?, spendable = ?, querydate = current_timestamp() WHERE walletid = ? AND nodeid = ?",
-              array($walletdata["address"], $walletdata["height"], $syncstatus, $walletdata["type"], $walletdata["balance"]["confirmed_wallet_balance"], $walletdata["balance"]["unconfirmed_wallet_balance"], $walletdata["balance"]["spendable_balance"], $walletid, $nodeid));
+              array($formatted_data->get_address(), $formatted_data->get_height(), $formatted_data->get_syncstatus(), $formatted_data->get_type(), $formatted_data->get_confirmed_wallet_balance(), $formatted_data->get_unconfirmed_wallet_balance(), $formatted_data->get_spendable_balance(), $walletid, $nodeid));
             }
           }else{
-            return $this->logging->getErrormessage("001");
+            return $this->logging_api->getErrormessage("001");
           }
         }
-      }catch(Exception $e){
-        return $this->logging->getErrormessage("002", $e);
+      }catch(\Exception $e){
+        return $this->logging_api->getErrormessage("002", $e);
       }
 
       return array("status" => 0, "message" => "Successfully updated wallet information for node $nodeid.", "data" => ["nodeid" => $nodeid, "data" => $this->getWalletData($data, $loginData, $nodeid)["data"]]);
@@ -116,25 +117,24 @@
           foreach($data AS $walletid => $transactions){
             if(array_key_exists("transactions", $transactions)){
               foreach($transactions["transactions"] AS $arrkey => $transactiondata){
-                if(!in_array($transactiondata["name"], $found_transactions)){
+                $formatted_data = new Wallettransaction($transactiondata);
+                if(!in_array($formatted_data->get_transaction_name(), $found_transactions)){
                   $sql = $this->db_api->execute("INSERT INTO chia_wallets_transactions (id, nodeid, wallet_id, parent_coin_info, amount, confirmed, confirmed_at_height, created_at_time, fee_amount, name, removals, sent, sent_to, spend_bundle, to_address, to_puzzle_hash, trade_id, type) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                  array($nodeid, $walletid, $transactiondata["additions"][0]["parent_coin_info"], $transactiondata["amount"],
-                        $transactiondata["confirmed"], $transactiondata["confirmed_at_height"], $transactiondata["created_at_time"], $transactiondata["fee_amount"],
-                        $transactiondata["name"], json_encode($transactiondata["removals"]), $transactiondata["sent"], json_encode($transactiondata["sent_to"]),
-                        $transactiondata["spend_bundle"], $transactiondata["to_address"], $transactiondata["to_puzzle_hash"], (is_null($transactiondata["trade_id"]) ? 0 : $transactiondata["trade_id"]),
-                        $transactiondata["type"]
+                  array($nodeid, $walletid, $formatted_data->get_parent_coin_info(), $formatted_data->get_amount(),
+                        $formatted_data->get_confirmed(), $formatted_data->get_confirmed_at_height(), $formatted_data->get_created_at_time(), $formatted_data->get_fee_amount(),
+                        $formatted_data->get_transaction_name(), $formatted_data->get_removals(), $formatted_data->get_sent(), $transactiondata["sent_to"],
+                        $formatted_data->get_spend_bundle(), $formatted_data->get_to_address(), $formatted_data->get_to_puzzle_hash(), (is_null($formatted_data->get_trade_id()) ? 0 : $formatted_data->get_trade_id()),
+                        $formatted_data->get_type()
                       ));
                 }
               }
             }
           }
 
-        }catch(Exception $e){
-          //TODO Implement correct status code
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
+          return array("status" => 0, "message" => "Successfully added new transaction(s) for node $nodeid.", "data" => ["nodeid" => $nodeid, "data" => $this->getWalletTransactions(["nodeid" => $nodeid])["data"]]);
+        }catch(\Exception $e){
+          return $this->logging_api->getErrormessage("001", $e);
         }
-        return array("status" => 0, "message" => "Successfully added new transaction(s) for node $nodeid.", "data" => ["nodeid" => $nodeid, "data" => $this->getWalletTransactions(["nodeid" => $_GET["nodeid"]])["data"]]);
       }
     }
 
@@ -172,10 +172,8 @@
           }
 
           return array("status" => 0, "message" => "Successfully queried latest transaction date for wallet with id " . json_decode($data["wallet_id"]) .".", "data" => $returnarray);
-        }catch(Exception $e){
-          //TODO Implement correct status code
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
+        }catch(\Exception $e){
+          return $this->logging_api->getErrormessage("001", $e);
         }
       }
     }
@@ -216,7 +214,7 @@
         }
 
         return array("status" =>0, "message" => "Successfully loaded chia wallet information.", "data" => $returndata);
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging->getErrormessage("001", $e);
       }
     }
@@ -254,13 +252,9 @@
         }
 
         return array("status" =>0, "message" => "Successfully loaded chia wallet information.", "data" => $returndata);
-      }catch(Exception $e){
-        //TODO Implement correct status codes
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
+      }catch(\Exception $e){
+        return $this->logging->getErrormessage("001", $e);
       }
-
-      return array("status" =>0, "message" => "Successfully loaded chia wallet information.", "data" => $returndata);
     }
 
     /**
@@ -281,7 +275,7 @@
 
         $data["data"] = $nodeid;
         return array("status" =>0, "message" => "Successfully queried wallet status information for node $nodeid.", "data" => $data);
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging->getErrormessage("001", $e);
       }
     }
@@ -367,7 +361,7 @@
 
         $data["data"] = $nodeid;
         return array("status" =>0, "message" => "Successfully queried wallet service restart for node $nodeid.", "data" => $data);
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging->getErrormessage("001", $e);
       }
     }

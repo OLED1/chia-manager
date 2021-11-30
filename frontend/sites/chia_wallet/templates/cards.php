@@ -85,9 +85,9 @@
           <div class='col-5'>
             <div class='row'>
               <div class='col mb-4'>
-                <div id="<?php echo "walletstatus_{$nodeid}_{$thiswallet['walletid']}"; ?>" class='card <?php echo ($thiswallet['syncstatus'] == "Synced" ? "bg-success" : "bg-danger"); ?> text-white shadow'>
+                <div id="<?php echo "walletstatus_{$nodeid}_{$thiswallet['walletid']}"; ?>" class='card <?php echo ($thiswallet['syncstatus'] == 2 ? "bg-success" : ($thiswallet['syncstatus'] == 1 ? "bg-warning" : "bg-danger")); ?> text-white shadow'>
                   <div class='card-body'>
-                    Walletstatus: <?php echo $thiswallet['syncstatus']; ?>
+                    Walletstatus: <?php echo ($thiswallet['syncstatus'] == 2 ? "Synced" : ($thiswallet['syncstatus'] == 1 ? "Syncing" : "Not synced")); ?>
                     <div class='text-white-50 small'>Height: <?php echo $thiswallet['walletheight']; ?></div>
                   </div>
                 </div>

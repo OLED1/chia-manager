@@ -232,9 +232,9 @@ function setNewWalletData(nodeid){
     $("#walletstatus_" + nodeid + "_" + walletid)
       .removeClass("bg-success")
       .removeClass("bg-danger")
-      .addClass((walletdata['syncstatus'] == "Synced" ? "bg-success" : "bg-danger"))
+      .addClass((walletdata['syncstatus'] == 2 ? "bg-success" : (walletdata['syncstatus'] == 1 ? "bg-warning" : "bg-danger")))
       .find(".card-body")
-      .html("Walletstatus: " + walletdata["syncstatus"] +
+      .html("Walletstatus: " + (walletdata['syncstatus'] == 2 ? "Synced" : (walletdata['syncstatus'] == 1 ? "Syncing" : "Not synced")) +
             "<div class='text-white-50 small'>Height: " + walletdata["walletheight"] + "</div>");
 
     var syncpercent = ((walletdata['walletheight'] / chiaoveralldata["xch_blockheight"] * 100).toFixed(2));

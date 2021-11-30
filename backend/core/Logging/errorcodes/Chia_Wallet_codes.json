@@ -1,16 +1,28 @@
 {
   "functioncodes" : {
     "updateWalletData" : "001",
-    "getWalletData" : "002",
-    "walletStatus" : "003",
-    "walletServiceRestart" : "004"
+    "updateWalletTransactions" : "002",
+    "getLatestTransactionDate" : "003",
+    "getWalletData" : "004",
+    "getWalletTransactions" : "005",
+    "walletStatus" : "006",
+    "walletServiceRestart" : "007"
   },
   "errormessages" : {
     "updateWalletData" : {
       "001" : [1, "Data not valid."],
       "002" : [2, "An error occured."]
     },
+    "updateWalletTransactions" : {
+      "001" : [2, "An error occured."]
+    },
+    "getLatestTransactionDate" : {
+      "001" : [2, "An error occured."]
+    },
     "getWalletData" : {
+      "001" : [2, "An error occured."]
+    },
+    "getWalletTransactions" : {
       "001" : [2, "An error occured."]
     },
     "walletStatus" : {
