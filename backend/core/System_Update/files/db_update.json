@@ -73,6 +73,11 @@
             "INSERT INTO `sites_pagestoinform` (`id`, `siteid`, `sitetoinform`) VALUES ( '23' , '13', '13');",
             "INSERT INTO `sites_pagestoinform` (`id`, `siteid`, `sitetoinform`) VALUES ( '24' , '8', '13');",
             "INSERT INTO `sites_pagestoinform` (`id`, `siteid`, `sitetoinform`) VALUES ( '25', '9', '5');",
+            "ALTER TABLE `chia_wallets` CHANGE `syncstatus` `syncstatus` TINYINT NOT NULL;",
+            "ALTER TABLE `chia_wallets` CHANGE `wallettype` `wallettype` TINYINT NOT NULL;",
+            "ALTER TABLE `chia_wallets` CHANGE `totalbalance` `totalbalance` INT NOT NULL;",
+            "ALTER TABLE `chia_wallets` CHANGE `pendingtotalbalance` `pendingtotalbalance` INT NOT NULL;",
+            "ALTER TABLE `chia_wallets` CHANGE `spendable` `spendable` INT NOT NULL;",
             "UPDATE `system_infos` SET dbversion = '0.1.1.211119';"
         ]
     }
