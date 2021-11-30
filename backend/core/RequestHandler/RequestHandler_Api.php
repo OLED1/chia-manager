@@ -95,7 +95,7 @@
           $return = $this_class->{$backendInfo['method']}($data, $loginData, $this->server);
 
           return array($backendInfo['method'] => $return);
-        }catch(Exception $e){
+        }catch(\Exception $e){
           $returndata[$backendInfo['method']] = $this->logging->getErrormessage("002", "Class {$backendInfo['namespace']} or function {$backendInfo['method']} not existing.");
           return $returndata;
         }
@@ -375,7 +375,7 @@
           }else{
             return $this->logging->getErrormessage("008");
           }
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging->getErrormessage("009", $e);
         }
       }else{

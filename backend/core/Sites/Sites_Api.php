@@ -84,7 +84,7 @@
           }
 
           return array("status" => 0, "message" => "Successfully loaded site(s) information.", "data" => $returndata);
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging->getErrormessage("002", $e);
         }
       }else{

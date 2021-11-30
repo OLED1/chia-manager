@@ -87,7 +87,7 @@
               $promise = array();
           }
           return $promise;
-        }catch(\Throwable $e){
+        }catch(\Exception $e){
           return $this->logging_api->getErrormessage("001", $e);
         }
       }

@@ -70,7 +70,7 @@
           ));
 
           return array("status" => 0, "message" => "Successfully updated system information for node $nodeid.", "data" => ["nodeid" => $nodeid]);
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging->getErrormessage("001", $e);
         }
       }
@@ -139,7 +139,7 @@
           }
 
           return array("status" => 0, "message" => "Successfully loaded latest system information.", "data" => $returnarray);
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging->getErrormessage("001", $e);
         }
     }

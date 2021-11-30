@@ -77,7 +77,7 @@
                 }else{
                     return $this->logging_api->getErrormessage("001");
                 }
-            }catch(Exception $e){
+            }catch(\Exception $e){
                 return $this->logging_api->getErrormessage("002", $e);
             }
         }else{
@@ -119,7 +119,7 @@
                 }else{
                     return $userdata;
                 }
-            }catch(Exception $e){
+            }catch(\Exception $e){
                 return $this->logging_api->getErrormessage("001", $e);
             }
         }else{
@@ -135,7 +135,7 @@
                     $sql = $this->db_api->execute("UPDATE users_settings SET totp_enable = 0, totp_secret = NULL, totp_proofen = 0 WHERE userid = ?", array($data["userID"]));
         
                     return array("status" => 0, "message" => "Successfully disabled TOTP mobile for user with ID: {$data["userID"]}");
-                }catch(Exception $e){
+                }catch(\Exception $e){
                     return $this->logging_api->getErrormessage("001", $e);
                 }
             }else{
@@ -153,7 +153,7 @@
                 try{
                     $sql = $this->db_api->execute("UPDATE users_settings SET totp_proofen = 1 WHERE userid = ?", array($data["userID"]));
 
-                }catch(Exception $e){
+                }catch(\Exception $e){
                     return $this->logging_api->getErrormessage("001", $e);
                 }
             }
@@ -181,7 +181,7 @@
                 }else{
                     return $this->logging_api->getErrormessage("002");
                 }    
-            }catch(Exception $e){
+            }catch(\Exception $e){
                 return $this->logging_api->getErrormessage("003", $e);
             }
         }else{

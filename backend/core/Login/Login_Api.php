@@ -136,7 +136,7 @@
             }
 
             return array("status" => "0", "message" => "Logged in.");
-          }catch(Exception $e){
+          }catch(\Exception $e){
             return $this->logging_api->getErrormessage("004", $e);
           }
         }
@@ -174,7 +174,7 @@
           }else{
             return $this->logging_api->getErrormessage("001");
           }
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging_api->getErrormessage("002", $e);
         }
       }else{
@@ -205,7 +205,7 @@
           }else{
             return $totpkeyvalid;
           }
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging_api->getErrormessage("002", $e);
         }
       }else{
@@ -250,7 +250,7 @@
             $mailingstatus = $this->mailing_api->sendMail(array($email), "Chia Management Loginkey" , $message);
 
             return array("status" => 0, "message" => "Successfully (re)sent authmail.");
-          }catch(Exception $e){
+          }catch(\Exception $e){
             return $this->logging_api->getErrormessage("001", $e);
           }
         }else{
@@ -277,7 +277,7 @@
           setcookie('PHPSESSID', null, -1, '/');
 
           return array("status" => 0, "message" => "Successfully invalidated (pending) login.");
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging_api->getErrormessage("001", $e);
         }
 
@@ -304,8 +304,7 @@
         $data = $sql->fetch(\PDO::FETCH_ASSOC);
 
         return array("status" => 0,"message" => "Data successfully loaded.","data" => $data);
-      }catch(Exception $e){
-        //return array("status" => 0,"message" => "Data successfully loaded.","data" => $data);
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("002", $e);
       }
     }
@@ -345,7 +344,7 @@
 
 
         return array("status" => 0, "message" => "Session successfully set!", "data" => array("userid" => $userid, "sessid" => $sessionID));
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("001",$e);
       }
     }
@@ -363,7 +362,7 @@
 
         session_destroy();
         return $this->logging_api->getErrormessage("001","User with ID " . $userid . " logged out.");
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("002",$e);
       }
     }
@@ -419,7 +418,7 @@
           }else{
               return $this->logging_api->getErrormessage("005");
           }
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging_api->getErrormessage("006",$e);
         }
       }else{
@@ -444,7 +443,7 @@
                                         END", array());
 
         return array("status" => 0, "message" => "Successfully invalidated not logged in session.");
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("001",$e);
       }
     }

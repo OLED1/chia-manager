@@ -108,7 +108,7 @@
           }
 
           return $this->getOverallChiaData($fromtime);
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging_api->getErrormessage("002", $e);
         }
       }else{
@@ -137,7 +137,7 @@
         }else{
           //Return historical data
         }
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("002", $e);
       }
     }

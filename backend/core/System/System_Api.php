@@ -108,7 +108,7 @@
           }
 
           return array("status" => 0, "message" => "Successfully updated system settings for settingtype $settingtype.", "data" => $settingtype);
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging_api->getErrormessage("001", $e);
         }
       }
@@ -125,7 +125,7 @@
         $sql = $this->db_api->execute("SELECT settingtype, settingvalue, confirmed FROM system_settings", array());
 
         return array("status" => 0, "message" => "Successfully loaded all system settings.", "data" => $this->formatSetting($sql->fetchAll(\PDO::FETCH_ASSOC)));
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("001", $e);
       }
     }
@@ -146,7 +146,7 @@
           $sql = $this->db_api->execute("UPDATE system_settings SET confirmed = ? WHERE settingtype = ?", array(1, $settingtype));
 
           return array("status" => 0, "message" => "Successfully confirmed settingtype $settingtype.", "data" => array("settingtype" => $settingtype));
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging_api->getErrormessage("001", $e);
         }
       }else{
@@ -166,7 +166,7 @@
         $sql = $this->db_api->execute("SELECT settingtype, settingvalue, confirmed FROM system_settings WHERE settingtype = ?", array($settingtype));
 
         return array("status" => 0, "message" => "Successfully loaded all system settings.", "data" => $this->formatSetting($sql->fetchAll(\PDO::FETCH_ASSOC)));
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("001", $e);
       }
     }
@@ -305,7 +305,7 @@
             $returndata["count"] = $returndata["count"] + 1;
           }
         }
-      }catch(Exception $e){
+      }catch(\Exception $e){
         $returndata = $this->logging_api->getErrormessage("001", $e);
       }
       
@@ -445,7 +445,7 @@
       try{
         $sql = $this->db_api->execute("UPDATE system_infos SET lastcronrun = NOW()", array());
         return array("status" => 0, "message" => "Successfully set new cronjob last run timestamp.");
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("001", $e);
       }
     }

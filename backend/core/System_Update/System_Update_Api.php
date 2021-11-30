@@ -69,7 +69,7 @@
           $this->db_api->execute("UPDATE system_infos SET userid_updating = ?, process_update = ?", array($data["userid"],$data["updatestate"]));
 
           return array("status" => 0, "message" => "Successfully set updater mode.");
-        }catch(\Throwable $e){
+        }catch(\Exception $e){
           $this->logging_api->getErrormessage("001", $e);
         }
       }else{
@@ -143,7 +143,7 @@
         }
 
         return array("status" => 0, "message" => "Successfully queried system update state.", "data" => $returndata);
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("001", $e);
       }
     }
@@ -202,7 +202,7 @@
         try{
           $db_api = new DB_Api();
           return $try_con = $db_api->testConnection($db_name, $db_host, $db_user, $db_password);
-        }catch(\Throwable $e){
+        }catch(\Exception $e){
           return array("status" => 1, "message" => $e->getMessage());
         }
     }
@@ -356,7 +356,7 @@
 
 
         array_push($returnarray["data"]["db_config"]["data"], array("status" => 0, "message" => "Default entries inserted successfully."));
-      }catch(\Throwable $e){
+      }catch(\Exception $e){
         $returnarray["data"]["db_config"]["status"] = 1;
         $returnarray["data"]["db_config"]["message"] = "Error during database configuration.";
         array_push($returnarray["data"]["db_config"]["data"], array("status" => 0, "message" => $e->getMessage()));
@@ -671,7 +671,7 @@
             array_push($alteredtables, $tablename);
           }
         }
-      }catch(\Throwable $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("001", $e);
       }
 

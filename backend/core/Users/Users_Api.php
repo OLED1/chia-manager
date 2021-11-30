@@ -74,7 +74,7 @@
                     array($data["name"], $data["lastname"], $data["email"], $data["username"], $data["userID"]));
 
             return array("status" => 0, "message" => "Updated userdata successfully.", "data" => $data);
-          }catch(Exeption $e){
+          }catch(\Exception $e){
             return $this->logging_api->getErrormessage("001", $e);
           }
         }else{
@@ -116,7 +116,7 @@
 
               unset($data["password"]);
               return array("status" => 0, "message" => "Updated userdata successfully.", "data" => $newData);
-            }catch(Exception $e){
+            }catch(\Exception $e){
               return $this->logging_api->getErrormessage("001", $e);
             }
           }else{
@@ -188,7 +188,7 @@
             $sql = $this->db_api->execute("UPDATE users_sessions SET invalidated = 1 WHERE id = ?", array($data["userID"]));
 
             return array("status" => 0, "message" => "Successfully disabled user with ID {$data["userID"]}.", "data" => $data);
-          }catch(Exception $e){
+          }catch(\Exception $e){
             return $this->logging_api->getErrormessage("001", $e);
           }
         }else{
@@ -213,7 +213,7 @@
           $sql = $this->db_api->execute("UPDATE users SET enabled = 1 WHERE id = ?", array($data["userID"]));
 
           return array("status" => 0, "message" => "Successfully enabled user with ID {$data["userID"]}.", "data" => $data);
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging_api->getErrormessage("001", $e);
         }
       }else{
@@ -257,7 +257,7 @@
           $returndata = $sql->fetchAll(\PDO::FETCH_ASSOC)[0];
         }
         return array("status" => 0, "message" => "Successfully loaded user information.", "data" => $returndata);
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("001", $e);
       }
     }
@@ -288,7 +288,7 @@
         }else{
           return $this->logging_api->getErrormessage("001");
         }
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("002",$e);
       }
     }
@@ -323,7 +323,7 @@
                                         array($data["userID"], $encryptedbackupkey));
 
           return array("status" => 0, "message" => "Generated new backup key for User {$data["userID"]}.", "data" => $backupkey);
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging_api->getErrormessage("001", $e);
         }
 
@@ -352,7 +352,7 @@
         }
 
         return array("status" => 0, "message" => "Successfully loaded user information.", "data" => $decryptedkey);
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("001", $e);
       }
     }
@@ -385,7 +385,7 @@
           }else{
             return $this->logging_api->getErrormessage("002");
           }
-        }catch(Exeption $e){
+        }catch(\Exception $e){
           return $this->logging_api->getErrormessage("003",$e);
         }
       }else{
@@ -444,7 +444,7 @@
             }else{
               return $this->logging_api->getErrormessage("002");
             }
-          }catch(Exeption $e){
+          }catch(\Exception $e){
             return $this->logging_api->getErrormessage("003",$e);
           }
         }else{
@@ -479,7 +479,7 @@
         }
 
         return array("status" => 0, "message" => "Successfully loaded all logged in devices.", "data" => $sqreturndata);
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("001", $e);
       }
     }
@@ -501,7 +501,7 @@
                                         array(1, $data["userid"], $deviceID));
 
           return array("status" => 0, "message" => "Successfully logged out device.", "data" => array("deviceid" => $deviceID));
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging_api->getErrormessage("001", $e);
         }
       }else{
@@ -585,7 +585,7 @@
         }
 
         return array("status" => 0, "message" => "Successfully sent email with resetlink to user {$username}.");
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("002", $e);
       }
     }
@@ -607,7 +607,7 @@
         }else{
           return $this->logging_api->getErrormessage("001");
         }
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("002", $e);
       }
     }
@@ -642,7 +642,7 @@
         }
 
         return array("status" => 0, "message" => "Successfully set new password.");
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("002", $e);
       }
     }

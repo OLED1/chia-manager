@@ -72,7 +72,7 @@
             }
 
             return array("status" => 0, "message" => "Successfully set gui mode to {$data["gui_mode"]}.", "data" => $data["gui_mode"]);
-          }catch(Exception $e){
+          }catch(\Exception $e){
             return $this->logging_api->getErrormessage("001", $e);
           }
         }else{
@@ -110,7 +110,7 @@
           }
 
           return array("status" => 0, "message" => "Successfully loaded gui mode for user.", "data" => $returndata);
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging_api->getErrormessage("001", $e);
         }
       }else{

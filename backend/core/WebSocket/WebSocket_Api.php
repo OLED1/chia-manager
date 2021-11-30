@@ -45,7 +45,7 @@
     public function testConnection(){
       try{
         return $this->wsclient->testConnection();
-      }catch(\Throwable $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("001", $e);
       }
     }

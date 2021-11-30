@@ -62,7 +62,7 @@
             }
 
             return array("status" => 0, "message" => "Successfully loaded data between {$data["from"]} and {$data["to"]}.", "data" => $historynetspace);
-          }catch(\Throwable $e){
+          }catch(\Exception $e){
             return $this->logging_api->getErrormessage("001", $e);
           }
         }else{
@@ -86,7 +86,7 @@
             $historyblockheight = $sql->fetchAll(\PDO::FETCH_ASSOC);
 
             return array("status" => 0, "message" => "Successfully loaded data between {$data["from"]} and {$data["to"]}.", "data" => $historyblockheight);
-          }catch(\Throwable $e){
+          }catch(\Exception $e){
             return $this->logging_api->getErrormessage("001", $e);
           }
         }else{
@@ -110,7 +110,7 @@
             $historyxchvalue = $sql->fetchAll(\PDO::FETCH_ASSOC);
 
             return array("status" => 0, "message" => "Successfully loaded data between {$data["from"]} and {$data["to"]}.", "data" => $historyxchvalue);
-          }catch(\Throwable $e){
+          }catch(\Exception $e){
             return $this->logging_api->getErrormessage("001", $e);
           }
         }else{

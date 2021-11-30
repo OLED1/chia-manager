@@ -73,15 +73,13 @@
             }
 
             return array("status" => 0, "message" => "Successfully loaded data between {$data["from"]} and {$data["to"]}.", "data" => $returndata);
-          }catch(\Throwable $e){
-            //An error occured
+          }catch(\Exception $e){
             return $this->logging_api->getErrormessage("001", $e);
           }
         }else{
           return $this->logging_api->getErrormessage("002");
         }
       }else{
-        //Not all data stated
         return $this->logging_api->getErrormessage("003");
       }
     }
@@ -115,8 +113,7 @@
             }
 
             return array("status" => 0, "message" => "Successfully loaded data between {$data["from"]} and {$data["to"]}.", "data" => $returndata);
-          }catch(\Throwable $e){
-            //An error occured
+          }catch(\Exception $e){
             return $this->logging_api->getErrormessage("001", $e);
           }
         }else{
@@ -157,15 +154,13 @@
             }
 
             return array("status" => 0, "message" => "Successfully loaded data between {$data["from"]} and {$data["to"]}.", "data" => $returndata);
-          }catch(\Throwable $e){
-            //An error occured
+          }catch(\Exception $e){
             return $this->logging_api->getErrormessage("001", $e);
           }
         }else{
           return $this->logging_api->getErrormessage("002");
         }
       }else{
-        //Not all data stated
         return $this->logging_api->getErrormessage("003");
       }
     }

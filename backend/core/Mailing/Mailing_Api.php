@@ -142,8 +142,7 @@
           $mail->send();
 
           return array("status" => 0, "message" => "Message has been sent.");
-        }catch (Exception $e) {
-          //return array("status" => 1, "message" => "Message could not be sent. Mailer Error: {$mail->ErrorInfo}.");
+        }catch (\Exception $e) {
           return $this->logging_api->getErrormessage("001","Message could not be sent. Mailer Error: {$mail->ErrorInfo}.");
         }
       }

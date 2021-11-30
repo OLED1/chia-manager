@@ -22,7 +22,7 @@
           try{
             $this->con = new \PDO("mysql:dbname={$ini["db_name"]};host={$ini['db_host']}", $ini['db_user'], $ini['db_password']);
             $this->con->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-          }catch(\Throwable $e){
+          }catch(\Exception $e){
             throw new \Exception($e);
           }
         }
@@ -43,7 +43,7 @@
         $con->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
         return array("status" => 0, "message" => "Database connection successfull.");
-      }catch(\Throwable $e){
+      }catch(\Exception $e){
         throw new \Exception($e);
       }
     }
@@ -61,7 +61,7 @@
         $sql->execute($this->removeHTMLEntities($parameter));
 
         return $sql;
-      }catch(\Throwable $e){
+      }catch(\Exception $e){
         throw new \Exception($e);
       }
     }

@@ -108,7 +108,7 @@
 
         return array("status" => 0, "message" => "Sucessfully loaded all client data.", "data" => $returnarray);
       }
-      catch(Exception $e){
+      catch(\Exception $e){
         return $this->logging_api->getErrormessage("001", $e);
       }
     }
@@ -130,7 +130,7 @@
         }
 
         return array("status" => 0, "message" => "Sucessfully loaded all available nodetypes.", "data" => $returndata);
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("001", $e);
       }
     }
@@ -165,7 +165,7 @@
           }
 
           return array("status" => 0, "message" => "IP Change saved for node {$data["nodeid"]}.");
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging_api->getErrormessage("001", $e);
         }
       }
@@ -222,7 +222,7 @@
           }else{
             return $this->logging_api->getErrormessage("001");
           }
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging_api->getErrormessage("002", $e);
         }
       }else{
@@ -257,7 +257,7 @@
           }
 
           return $returnmessage;
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging_api->getErrormessage("001", $e);
         }
       }else{
@@ -307,7 +307,7 @@
           }else{
             return $this->logging_api->getErrormessage("002");
           }
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging_api->getErrormessage("003", $e);
         }
       }
@@ -333,7 +333,7 @@
           $sqldata = $sql->fetchAll(\PDO::FETCH_ASSOC)[0];
 
           return array("status" => 0, "method" => "loginStatus", "message" => "This node is logged in.", "data" => $sqldata);
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging_api->getErrormessage("001", $e);
         }
       }else{
@@ -355,7 +355,7 @@
           $sql = $this->db_api->execute("UPDATE nodes SET scriptversion = ?, chiaversion = ?, chiapath = ? WHERE nodeauthhash = ?", array($data["scriptversion"], $data["chia"]["version"], $data["chia"]["path"], $this->encryption_api->encryptString($loginData["authhash"])));
 
           return array("status" =>0, "message" => "Successfully updated version.");
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging_api->getErrormessage("001", $e);
         }
       }else{
@@ -377,7 +377,7 @@
         $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
 
         return array("status" => 0, "message" => "Successfully queried node update status.", "data" => array("nodeid" => $nodeid, "status" => $data));
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("001", $e);
       }
     }
@@ -431,7 +431,7 @@
         }
 
         return array("status" =>0, "message" => "Successfully loaded all requested data.", "data" => $returndata);
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("001", $e);
       }
     }
@@ -536,7 +536,7 @@
                                             VALUES(NULL, ?, ?, ?, ?, ?, ?)",
                                             array($nodedata["nodeid"], $onlinestatus, $walletstatus, $farmerstatus, $harvesterstatus, $now->format("Y-m-d H:i:s")));
           }
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging_api->getErrormessage("001", $e);
         }
       }
@@ -607,7 +607,7 @@
             $sqreturn[$sqreturn[$i]["nodeid"]] = $sqreturn[$i];
             unset($sqreturn[$i]);
           }
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging_api->getErrormessage("001", $e);
         }
       }else{

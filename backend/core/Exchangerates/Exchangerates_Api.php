@@ -96,7 +96,7 @@
           }
 
           return $this->getExchangerate($currency_code);
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging->getErrormessage("001", $e);
         }
       }else{
@@ -116,7 +116,7 @@
         $sql = $this->db_api->execute("SELECT currency_code, currency_desc FROM exchangerates  ORDER BY currency_code ASC", array());
 
         return array("status" => 0, "message" => "Successfully loaded all available currencies.", "data" => $sql->fetchAll(\PDO::FETCH_ASSOC));
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging->getErrormessage("001", $e);
       }
     }
@@ -147,7 +147,7 @@
           }
 
           return array("status" => 0, "message" => "Successfully loaded all available currencies.", "data" => $returndata);
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging->getErrormessage("001", $e);
         }
       }else{
@@ -176,7 +176,7 @@
           }
 
           return array("status" => 0, "message" => "Successfully set default currency to {$data["currency_code"]}.", "data" => $data["currency_code"]);
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging->getErrormessage("001", $e);
         }
       }else{
@@ -201,7 +201,7 @@
         }else{
           return $this->logging->getErrormessage("001", "Currency {$currency_code} not found or not existing.");
         }
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging->getErrormessage("002", $e);
       }
     }

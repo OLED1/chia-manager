@@ -117,7 +117,7 @@
               }
             }
           }
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging->getErrormessage("001", $e);
         }
 
@@ -186,7 +186,7 @@
             }
           }
         }
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging->getErrormessage("001", $e);
       }
     }
@@ -209,7 +209,7 @@
         }else{
           return array("status" => 1, "message" => "More than one row was returned. Aborting deleting from db for security reasons.");
         }
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging->getErrormessage("001", $e);
       }
     }
@@ -227,7 +227,7 @@
         $sql = $this->db_api->execute("SELECT finalmountid, k_size, plotcreationdate, plot_key, pool_key, filename, status FROM chia_plots WHERE finalmountid = ? AND nodeid = ?", array($finalmountid, $nodeid));
 
         return array("status" =>0, "message" => "Successfully loaded chia plots information for node {$nodeid} and mountid {$finalmountid}.", "data" => $sql->fetchAll(\PDO::FETCH_ASSOC));
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging->getErrormessage("001", $e);
       }
     }
@@ -274,7 +274,7 @@
         }
 
         return array("status" =>0, "message" => "Successfully loaded chia harvester information.", "data" => $returndata);
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging->getErrormessage("001", $e);
       }
     }
@@ -355,7 +355,7 @@
 
         $data["data"] = $nodeid;
         return array("status" =>0, "message" => "Successfully queried harvester status information for node $nodeid.", "data" => $data);
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging->getErrormessage("001", $e);
       }
     }
@@ -376,7 +376,7 @@
 
         $data["data"] = $nodeid;
         return array("status" =>0, "message" => "Successfully queried harvester service restart for node $nodeid.", "data" => $data);
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging->getErrormessage("001", $e);
       }
     }
