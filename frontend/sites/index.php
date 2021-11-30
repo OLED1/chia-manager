@@ -68,6 +68,8 @@
     <link href="<?php echo $frontendurl; ?>/css/custom.css" rel="stylesheet">
     <link href="<?php echo $frontendurl; ?>/css/gui-modes/dark-mode.css" rel="stylesheet">
     <link href="<?php echo $frontendurl; ?>/frameworks/davidstutz-multiselect/css/bootstrap-multiselect.min.css" rel="stylesheet">
+    <!-- Styles for vendor products -->
+    <link href="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
 </head>
 
 <body id="page-top" class="gui-mode-elem <?php echo $gui_mode_string; ?>" style="overflow: auto;">
