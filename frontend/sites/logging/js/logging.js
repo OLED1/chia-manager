@@ -1,6 +1,17 @@
 var rowfrom = 0;
 var rowto = 0;
 
+var htmlEntityMap = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+  '/': '&#x2F;',
+  '`': '&#x60;',
+  '=': '&#x3D;'
+};
+
 var loggingTable = $("#loggingTable").DataTable({
   "initComplete": function(settings, json) {
     var info = $(this).DataTable().page.info();
@@ -77,10 +88,16 @@ function formatLoglevel(loglevel){
   }
 }
 
+function escapeHtml(string) {
+  return String(string).replace(/[&<>"'`=\/]/g, function (s) {
+    return htmlEntityMap[s];
+  });
+}
+
 function addLogLines(logdata){
   $.each(logdata, function(arrkey, logentry){
     var rowNode = loggingTable
-    .row.add( [ logentry[0], formatLoglevel(logentry[1]), logentry[2], logentry[3], logentry[4] ] )
+    .row.add( [ logentry[0], formatLoglevel(logentry[1]), logentry[2], escapeHtml(logentry[3]), logentry[4] ] )
     .draw(false)
     .node();
   });
