@@ -9,8 +9,7 @@
   },
   "errormessages" : {
     "updateFarmData" : {
-      "001" : [2, "An error occured."],
-      "002" : [1, "Not all data stated."]
+      "001" : [2, "An error occured."]
     },
     "getFarmData" : {
       "001" : [2, "An error occured."]

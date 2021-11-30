@@ -64,54 +64,34 @@
      */
     public function updateFarmData(array $data, array $loginData = NULL){
       try{
-        echo "HIER";
         foreach($data AS $arrkey => $thisfarmerdata){
-          //print_r($thisfarmerdata);
           $formatted_data = new Farmdata($thisfarmerdata);
           print_r($formatted_data);
-        }
-      }catch(Exception $e){
-        print_r(array("status" => 1, "message" => "An error occured: {$e->getMessage()}"));
-        return array("status" => 1, "message" => "An error occured: {$e->getMessage()}");
-      }
-      //print_r(json_encode($data, JSON_PRETTY_PRINT));
-      if(array_key_exists("farm", $data) && array_key_exists("farming_status", $data["farm"])){
-        try{
-          $farmdata = $data["farm"];
+
           $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
           $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
 
           $sql = $this->db_api->execute("SELECT Count(*) as count FROM chia_farm WHERE nodeid = ?", array($nodeid));
           $count = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["count"];
 
-          if(array_key_exists("total_chia_farmed", $farmdata)){
-            $totalchiafarmed = $farmdata["total_chia_farmed"];
-            $usertransactionfees = $farmdata["user_transaction_fees"];
-            $blockrewards = $farmdata["block_rewards"];
-            $lastheigthfarmed = $farmdata["last_height_farmed"];
-          }else{
-            $totalchiafarmed = 0;
-            $usertransactionfees = 0;
-            $blockrewards = 0;
-            $lastheigthfarmed = 0;
-          }
-
           if($count == 0){
             $sql = $this->db_api->execute("INSERT INTO chia_farm (id, nodeid, farming_status, total_chia_farmed, user_transaction_fees, block_rewards, last_height_farmed, plot_count, total_size_of_plots, estimated_network_space, expected_time_to_win) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            array($nodeid, $farmdata["farming_status"], $totalchiafarmed, $usertransactionfees, $blockrewards, $lastheigthfarmed, $farmdata["plot_count_for_all_harvesters"], $farmdata["total_size_of_plots"], $farmdata["estimated_network_space"], $farmdata["expected_time_to_win"]));
+            array($nodeid, $formatted_data.get_farming_status(), $formatted_data.get_total_chia_farmed(), $formatted_data.get_user_transaction_fees(), 
+                  $formatted_data.get_block_rewards(), $formatted_data.get_last_height_farmed(), $formatted_data.get_plot_count(), $formatted_data.get_total_size_of_plots(), 
+                  $formatted_data.get_estimated_network_space(), $formatted_data.get_expected_time_to_win()));
           }else{
             $sql = $this->db_api->execute("UPDATE chia_farm SET farming_status = ?, total_chia_farmed = ?, user_transaction_fees = ?, block_rewards = ?, last_height_farmed = ?, plot_count = ?, total_size_of_plots = ?, estimated_network_space = ?, expected_time_to_win = ? WHERE nodeid = ?",
-            array($farmdata["farming_status"], $totalchiafarmed, $usertransactionfees, $blockrewards, $lastheigthfarmed, $farmdata["plot_count_for_all_harvesters"], $farmdata["total_size_of_plots"], $farmdata["estimated_network_space"], $farmdata["expected_time_to_win"], $nodeid));
+            array($formatted_data.get_farming_status(), $formatted_data.get_total_chia_farmed(), $formatted_data.get_user_transaction_fees(), 
+                  $formatted_data.get_block_rewards(), $formatted_data.get_last_height_farmed(), $formatted_data.get_plot_count(), $formatted_data.get_total_size_of_plots(), 
+                  $formatted_data.get_estimated_network_space(), $formatted_data.get_expected_time_to_win(), $nodeid));
           }
-
-          $this->updateChallenges($data["farm"], $loginData);
-        }catch(Exception $e){
-          return $this->logging_api->getErrormessage("001", $e);
         }
 
+        $this->updateChallenges($data["farm"], $loginData);
         return array("status" => 0, "message" => "Successfully updated farm information for node $nodeid.", "data" => ["nodeid" => $nodeid, "data" => $this->getFarmData($data, $loginData, $nodeid)["data"]]);
-      }else{
-        return $this->logging_api->getErrormessage("002");
+      }catch(\Exception $e){
+        print_r(array("status" => 1, "message" => "An error occured: {$e->getMessage()}"));
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 
@@ -151,7 +131,7 @@
         }
 
         return array("status" =>0, "message" => "Successfully loaded chia farm information.", "data" => $returndata);
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("001", $e);
       }
     }
@@ -174,7 +154,7 @@
 
         $data["data"] = $nodeid;
         return array("status" => 0, "message" => "Successfully queried farmer status information for node $nodeid.", "data" => $data);
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("001", $e);
       }
     }
@@ -253,7 +233,7 @@
 
         $data["data"] = $nodeid;
         return array("status" =>0, "message" => "Successfully queried farmer service restart for node $nodeid.", "data" => $data);
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("001", $e);
       }
     }
@@ -270,7 +250,7 @@
         try{
           $now = new \DateTime("now");
 
-          $sql = $this->db_api->execute("DELETE FROM chia_farm_challenges", array());
+          //$sql = $this->db_api->execute("DELETE FROM chia_farm_challenges", array());
 
           foreach ($data["challenges"] as $arrkey => $challenge) {
             $exploded = explode(" ", $challenge);
@@ -279,7 +259,7 @@
           }
 
           return array("status" => 0, "message" => "Successfully updated challenges information.");
-        }catch(Exception $e){
+        }catch(\Exception $e){
           return $this->logging_api->getErrormessage("001", $e);
         }
       }else{
@@ -299,7 +279,7 @@
         $sql = $this->db_api->execute("SELECT date, hash, hash_index FROM chia_farm_challenges", array());
 
         return array("status" =>0, "message" => "Successfully queried all challenges.", "data" => $sql->fetchAll(\PDO::FETCH_ASSOC));
-      }catch(Exception $e){
+      }catch(\Exception $e){
         return $this->logging_api->getErrormessage("001", $e);
       }
     }
