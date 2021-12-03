@@ -18,9 +18,6 @@ class Walletdata{
     private $spendable_balance; //in mojo(s)
 
     public function __construct(array $reportedwalletdata){
-        if(is_null($reportedwalletdata["address"]) || !is_string($reportedwalletdata["address"])){
-            throw new \InvalidArgumentException("The reported data for the key 'address' are not fully set. Expected: 'address': <string>, but got {" . json_encode($reportedwalletdata["address"]) . "}");
-        }
         if(is_null($reportedwalletdata["height"]) || !is_int($reportedwalletdata["height"])){
             throw new \InvalidArgumentException("The reported data for the key 'height' are not fully set. Expected: 'height': <int>, but got {" . json_encode($reportedwalletdata["height"]) . "}");
         }
@@ -43,7 +40,7 @@ class Walletdata{
             throw new \InvalidArgumentException("The reported data for the key 'balance' are not fully set. Expected: 'balance': { 'confirmed_wallet_balance' : <int>, 'unconfirmed_wallet_balance' : <int>, 'spendable_balance' : <int> }, but got {" . json_encode($reportedfwalletdata["balance"]) . "}");
         }
 
-        $this->address = $reportedwalletdata["address"];
+        $this->address = (is_null($reportedwalletdata["address"]) ? "" : $reportedwalletdata["address"]);
         $this->height = $reportedwalletdata["height"];
         $this->syncstatus = ($reportedwalletdata["sync_status"]["syncing"] ? 0 : (!$reportedwalletdata["sync_status"]["synced"] ? 1 : 2)); //0 = Syncing, 1 = Not synced, 2 = Synced
         $this->type = $reportedwalletdata["type"];
