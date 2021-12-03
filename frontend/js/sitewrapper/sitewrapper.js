@@ -1,11 +1,3 @@
-$(window).on('load', function() {
-  $("#sitecontent").css("height", window.getVisible());
-});
-
-$(window).resize(function() {
-  $("#sitecontent").css("height", window.getVisible());
-});
-
 $(function(){
   $("#completely-logout").on("click",function(){
     logout();

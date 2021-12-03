@@ -2,7 +2,6 @@
   include("../standard_headers.php");
   echo "<script nonce={$ini["nonce_key"]}> var siteID = 11; </script>";
 ?>
-<link href="<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/logging/css/logging.css"?>" rel="stylesheet">
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Logging</h1>
 </div>

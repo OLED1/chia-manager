@@ -2,7 +2,6 @@
   include("../standard_headers.php");
   echo "<script nonce={$ini["nonce_key"]}> var siteID = 12; </script>";
 ?>
-<link href="<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/frameworks/jquery-datetimepicker/build/jquery.datetimepicker.min.css"?>" rel="stylesheet">
 <link href="<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_statistics/css/chia_statistics.css"?>" rel="stylesheet">
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">

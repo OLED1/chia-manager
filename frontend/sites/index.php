@@ -62,14 +62,15 @@
     <!-- Custom fonts for this template-->
     <link href="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
     <link href="<?php echo $ini["frontend_url"]; ?>/css/google_fonts/nunito/nunito-font.css" rel="stylesheet">
-    <!-- Custom styles for this template-->
-    <link href="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Styles for vendor products -->
     <link href="<?php echo $frontendurl; ?>/frameworks/bootstrap/css/sb-admin-2.min.css" rel="stylesheet">
+    <link href="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="<?php echo $frontendurl; ?>/frameworks/davidstutz-multiselect/css/bootstrap-multiselect.min.css" rel="stylesheet">
+    <link href="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
+    <link href="<?php echo $frontendurl; ?>/frameworks/jquery-datetimepicker/build/jquery.datetimepicker.min.css" rel="stylesheet">
+    <!-- Custom styles for this template-->
     <link href="<?php echo $frontendurl; ?>/css/custom.css" rel="stylesheet">
     <link href="<?php echo $frontendurl; ?>/css/gui-modes/dark-mode.css" rel="stylesheet">
-    <link href="<?php echo $frontendurl; ?>/frameworks/davidstutz-multiselect/css/bootstrap-multiselect.min.css" rel="stylesheet">
-    <!-- Styles for vendor products -->
-    <link href="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
 </head>
 
 <body id="page-top" class="gui-mode-elem <?php echo $gui_mode_string; ?>" style="overflow: auto;">
@@ -174,17 +175,18 @@
                 Personal
             </div>
             <li id="nav-personal-settings" class="nav-item">
-              <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePersonal"
-                  aria-expanded="true" aria-controls="collapsePersonal">
-                  <i class="fas fa-user-cog"></i>
-                  <span>Personal</span>
+              <a class="nav-link" data-siteid=5 data-nav-target="nav-personal-settings" href="/sites/usersettings">
+                <i class="fas fa-user-cog"></i>
+                <span>Profile & Settings</span>
               </a>
-              <div id="collapsePersonal" class="collapse" aria-labelledby="headingPages" data-parent="#accordionSidebar">
-                  <div class="bg-white py-2 collapse-inner rounded">
-                      <a class="collapse-item" data-siteid=5 data-nav-target="nav-personal-settings" href="/sites/usersettings"><span>Profile & Settings</span></a>
-                      <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">Logout</a>
-                  </div>
-              </div>
+            </li>
+
+            <hr class="sidebar-divider">
+            <li id="nav-personal-settings" class="nav-item">
+              <a class="nav-link" href="#" data-toggle="modal" data-target="#logoutModal">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+              </a>
             </li>
 
             <hr class="sidebar-divider d-none d-md-block">
@@ -278,19 +280,19 @@
                     </ul>
                 </nav>
                 <main>
-                  <div id="messagecontainer" style="margin-top: 4em;">
+                  <div id="messagecontainer">
                   </div>
                   <div class="container-fluid" id="sitecontent" style="overflow: auto;">
                   </div>
                 </main>
-            </div>
-            <footer class="sticky-footer bg-white gui-mode-elem <?php echo $gui_mode_string; ?>">
-                <div class="container my-auto">
-                    <div class="copyright text-center my-auto">
-                        <span>Copyright &copy; ChiaMgmt Version <?php echo $ini["versnummer"]; ?>. All rights reserved.</span>
+                <footer class="sticky-footer bg-white gui-mode-elem <?php echo $gui_mode_string; ?>">
+                    <div class="container my-auto">
+                        <div class="copyright text-center my-auto">
+                            <span>Copyright &copy; ChiaMgmt Version <?php echo $ini["versnummer"]; ?>. All rights reserved.</span>
+                        </div>
                     </div>
-                </div>
-            </footer>
+                </footer>
+            </div>
         </div>
     </div>
     <a id="scrolltopagetop" class="scroll-to-top rounded" href="#">
@@ -419,6 +421,7 @@
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/datatables/dataTables.bootstrap4.min.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/chart.js/dist/chart.min.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/momentjs/moment-with-locales.min.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/jquery-datetimepicker/build/jquery.datetimepicker.full.min.js"></script>
 
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/js/sitewrapper/load_pages.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/js/sitewrapper/transfer.js"></script>

@@ -205,5 +205,4 @@
     </div>
   </div>
 </div>
-<script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/frameworks/jquery-datetimepicker/build/jquery.datetimepicker.full.min.js"?>></script>
 <script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_statistics/js/chia_statistics.js"?>></script>

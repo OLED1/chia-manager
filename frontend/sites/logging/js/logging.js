@@ -26,13 +26,13 @@ var loggingTable = $("#loggingTable").DataTable({
   "order": [[ 0, "desc" ]],
   "createdRow": function( row, data, dataIndex){
     if( data[1] ==  `Info`){
-        $(row).addClass('loglevel-info');
+        $(row).addClass('bg-primary');
     }else if( data[1] ==  `Warning`){
-        $(row).addClass('loglevel-warn');
+        $(row).addClass('bg-warning');
     }else if( data[1] ==  `Fatal`){
-        $(row).addClass('loglevel-crit');
+        $(row).addClass('bg-danger');
     }else if( data[1] ==  `Unknown`){
-        $(row).addClass('loglevel-unkn');
+        $(row).addClass('bg-secondary');
     }
   },
   "lengthMenu": [[50, 100], [50, 100]]
