@@ -31,7 +31,6 @@
     var historyFilesystemData = {};
   </script>";
 ?>
-<link href="<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/frameworks/jquery-datetimepicker/build/jquery.datetimepicker.min.css"?>" rel="stylesheet">
 <link href="<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/systems_statistics/css/systems_statistics.css"?>" rel="stylesheet">
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -124,5 +123,4 @@
   </div>
   <?php } ?>
 </div>
-<script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/frameworks/jquery-datetimepicker/build/jquery.datetimepicker.full.min.js"?>></script>
 <script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/systems_statistics/js/systems_statistics.js"?>></script>
