@@ -82,163 +82,145 @@
       <?php if(is_numeric($thiswallet['walletid'])){ ?>
       <div class='card-body'>
         <div class='row'>
-          <div class='col-5'>
-            <div class='row'>
-              <div class='col mb-4'>
-                <div id="<?php echo "walletstatus_{$nodeid}_{$thiswallet['walletid']}"; ?>" class='card <?php echo ($thiswallet['syncstatus'] == 2 ? "bg-success" : ($thiswallet['syncstatus'] == 1 ? "bg-warning" : "bg-danger")); ?> text-white shadow'>
-                  <div class='card-body'>
-                    Walletstatus: <?php echo ($thiswallet['syncstatus'] == 2 ? "Synced" : ($thiswallet['syncstatus'] == 1 ? "Syncing" : "Not synced")); ?>
-                    <div class='text-white-50 small'>Height: <?php echo $thiswallet['walletheight']; ?></div>
+          <div class='col-12 col-md-6 mb-4'>
+            <div id="<?php echo "walletstatus_{$nodeid}_{$thiswallet['walletid']}"; ?>" class='card <?php echo ($thiswallet['syncstatus'] == 2 ? "bg-success" : ($thiswallet['syncstatus'] == 1 ? "bg-warning" : "bg-danger")); ?> text-white shadow'>
+              <div class='card-body'>
+                Walletstatus: <?php echo ($thiswallet['syncstatus'] == 2 ? "Synced" : ($thiswallet['syncstatus'] == 1 ? "Syncing" : "Not synced")); ?>
+                <div class='text-white-50 small'>Height: <?php echo $thiswallet['walletheight']; ?></div>
+              </div>
+            </div>
+          </div>
+          <div class='col-12 col-md-6 mb-4'>
+            <div class='card text-white shadow'>
+              <div class='card-body'>
+                Current blocks synced
+                <div class="progress">
+                  <?php $syncpercent = number_format(($thiswallet['walletheight'] / $_GET["chia_overall_data"]["xch_blockheight"] * 100), 2); ?>
+                  <div id="<?php echo "sync_progress_{$nodeid}_{$thiswallet['walletid']}"; ?>" class="progress-bar bg-primary" role="progressbar" style="width: <?php echo "{$syncpercent}"; ?>%;" aria-valuenow="<?php echo "{$syncpercent}"; ?>" aria-valuemin="0" aria-valuemax="100"><?php echo "{$syncpercent}% - {$thiswallet['walletheight']}&nbsp;/&nbsp;{$_GET["chia_overall_data"]["xch_blockheight"]}" ?></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class='row'>
+          <div class='col-12 col-md-6 mb-4'>
+            <div class='card border-left-success shadow h-100 py-2'>
+              <div class='card-body'>
+                <div class='row no-gutters align-items-center'>
+                  <div class='col mr-2'>
+                    <div class='text-xs font-weight-bold text-success text-uppercase mb-1'>Total XCH owning</div>
+                    <div id="<?php echo "totalbalance_xch_{$nodeid}_{$thiswallet['walletid']}"; ?>" class='h5 mb-0 font-weight-bold text-gray-800'>XCH <?php echo number_format(($thiswallet['totalbalance'] / 1000000000000), 7); ?></div>
                   </div>
-                </div>
-              </div>
-            </div>
-            <div class='row'>
-              <div class='col'>
-                <div class='row'>
-                  <div class='col mb-4'>
-                    <div class='card text-white shadow'>
-                      <div class='card-body'>
-                        Current blocks synced
-                        <div class="progress">
-                          <?php $syncpercent = number_format(($thiswallet['walletheight'] / $_GET["chia_overall_data"]["xch_blockheight"] * 100), 2); ?>
-                          <div id="<?php echo "sync_progress_{$nodeid}_{$thiswallet['walletid']}"; ?>" class="progress-bar bg-primary" role="progressbar" style="width: <?php echo "{$syncpercent}"; ?>%;" aria-valuenow="<?php echo "{$syncpercent}"; ?>" aria-valuemin="0" aria-valuemax="100"><?php echo "{$syncpercent}% - {$thiswallet['walletheight']}&nbsp;/&nbsp;{$_GET["chia_overall_data"]["xch_blockheight"]}" ?></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class='row'>
-              <div class='col mb-4'>
-                <div class='card border-left-success shadow h-100 py-2'>
-                  <div class='card-body'>
-                    <div class='row no-gutters align-items-center'>
-                      <div class='col mr-2'>
-                        <div class='text-xs font-weight-bold text-success text-uppercase mb-1'>Total XCH owning</div>
-                        <div id="<?php echo "totalbalance_xch_{$nodeid}_{$thiswallet['walletid']}"; ?>" class='h5 mb-0 font-weight-bold text-gray-800'>XCH <?php echo number_format(($thiswallet['totalbalance'] / 1000000000000), 7); ?></div>
-                      </div>
-                      <div class='col-auto'>
-                        <i class='fas fa-wallet fa-2x text-gray-300'></i>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class='row'>
-              <div class='col mb-4'>
-                <div class='card border-left-primary shadow h-100 py-2'>
-                  <div class='card-body'>
-                    <div class='row no-gutters align-items-center'>
-                      <div class='col mr-2'>
-                        <div class='text-xs font-weight-bold text-primary text-uppercase mb-1'>Total XCH in <?php echo $defaultCurrency; ?></div>
-                        <div id="<?php echo "totalbalance_def_currency_{$nodeid}_{$thiswallet['walletid']}"; ?>" class='h5 mb-0 font-weight-bold text-gray-800 text-uppercase'><?php echo "{$defaultCurrency}&nbsp;" . number_format($chiapriceindefcurr*($thiswallet['totalbalance'] / 1000000000000), 7); ?></div>
-                      </div>
-                      <div class='col-auto'>
-                        <i class='fas fa-money-bill-wave fa-2x text-gray-300'></i>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <?php if($thiswallet['wallettype'] < 9){ ?>
-            <div class="row">
-              <div class="col">
-                <div class='card shadow mb-4'>
-                  <div class='card-header'>Wallet Address</div>
-                  <div id="<?php echo "walletaddress_{$nodeid}_{$thiswallet['walletid']}"; ?>" class='card-body'><?php  echo $thiswallet['walletaddress']; ?></div>
-                </div>
-              </div>
-            </div>
-            <?php } ?>
-            <div class="row">
-              <div class="col">
-                <div class='card shadow mb-4'>
-                  <div class='card-header'>Balance</div>
-                  <div class='card-body'>
-                    <div class='table-responsive'>
-                      <table class='table table-bordered' width='100%' cellspacing='0'>
-                        <tbody>
-                          <tr><td><strong>Total Balance</strong></td><td id="<?php echo "totalbalance_balance_chart_{$nodeid}_{$thiswallet['walletid']}"; ?>"><?php echo number_format(($thiswallet['totalbalance'] / 1000000000000), 7) . " xch ({$thiswallet['totalbalance']} mojo)"; ?></td></tr>
-                          <tr><td><strong>Pending Total Balance</strong></td><td id="<?php echo "pendingtotalbalance_balance_chart_{$nodeid}_{$thiswallet['walletid']}"; ?>"><?php echo number_format(($thiswallet['pendingtotalbalance'] / 1000000000000), 7) . " xch ({$thiswallet['pendingtotalbalance']} mojo)"; ?></td></tr>
-                          <tr><td><strong>Spendable</strong></td><td id="<?php echo "spendable_balance_chart_{$nodeid}_{$thiswallet['walletid']}"; ?>"><?php echo number_format(($thiswallet['spendable'] / 1000000000000), 7) ." xch ({$thiswallet['spendable']} mojo)"; ?></td></tr>
-                        </tbody>
-                      </table>
-                    </div>
+                  <div class='col-auto'>
+                    <i class='fas fa-wallet fa-2x text-gray-300'></i>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <div class='col-7'>
-            <div class='row'>
-              <div class='col'>
-                <div class='card shadow mb-4'>
-                  <div class='card-body'>
-                    <h6>Transactions Chart</h6>
-                    <?php
-                      if(array_key_exists($nodeid, $transactiondata["data"]) && count($transactiondata["data"][$nodeid][$thiswallet['walletid']]) > 0){
-                    ?>
-                    <canvas id="<?php echo "transactions_chart_{$nodeid}_{$thiswallet['walletid']}"; ?>" class="transactionchart_<?php echo $nodeid; ?>"></canvas>
-                    <?php
-                      }else{
-                        echo "<div class='card bg-warning text-white shadow'>
-                                <div class='card-body'>
-                                  There are currently no transactions to show.
-                                </div>
-                              </div>";
-                      }
-                    ?>
+          <div class='col-12 col-md-6 mb-4'>
+            <div class='card border-left-primary shadow h-100 py-2'>
+              <div class='card-body'>
+                <div class='row no-gutters align-items-center'>
+                  <div class='col mr-2'>
+                    <div class='text-xs font-weight-bold text-primary text-uppercase mb-1'>Total XCH in <?php echo $defaultCurrency; ?></div>
+                    <div id="<?php echo "totalbalance_def_currency_{$nodeid}_{$thiswallet['walletid']}"; ?>" class='h5 mb-0 font-weight-bold text-gray-800 text-uppercase'><?php echo "{$defaultCurrency}&nbsp;" . number_format($chiapriceindefcurr*($thiswallet['totalbalance'] / 1000000000000), 7); ?></div>
+                  </div>
+                  <div class='col-auto'>
+                    <i class='fas fa-money-bill-wave fa-2x text-gray-300'></i>
                   </div>
                 </div>
               </div>
             </div>
-            <div class='row'>
-              <div class='col'>
-                <div class='card shadow mb-4'>
-                  <div class='card-body'>
-                    <h6>Transactions Table</h6>
-                    <?php
-                      if(array_key_exists($nodeid, $transactiondata["data"]) && count($transactiondata["data"][$nodeid][$thiswallet['walletid']]) > 0){
-                    ?>
-                    <div class="table-responsive">
-                        <table class="table table-bordered dataTable_<?php echo $nodeid; ?>" id="<?php echo "transactions_{$nodeid}_{$thiswallet['walletid']}"; ?>" width="100%" cellspacing="0">
-                            <thead>
-                                <tr>
-                                  <th>ID</th>
-                                  <th>Date</th>
-                                  <th>Amount</th>
-                                  <th>Receiver</th>
-                                  <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                  <th>ID</th>
-                                  <th>Date</th>
-                                  <th>Amount</th>
-                                  <th>Receiver</th>
-                                  <th>Actions</th>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                    <?php
-                      }else{
-                        echo "<div class='card bg-warning text-white shadow'>
-                                <div class='card-body'>
-                                  There are currently no transactions to show.
-                                </div>
-                              </div>";
-                      }
-                    ?>
-                  </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-12 col-md-6 mb-4">
+            <div class='card shadow'>
+              <div class='card-header'>Balance</div>
+              <div class='card-body'>
+                <div class='table-responsive'>
+                  <table class='table table-bordered' width='100%' cellspacing='0'>
+                    <tbody>
+                      <tr><td><strong>Total Balance</strong></td><td id="<?php echo "totalbalance_balance_chart_{$nodeid}_{$thiswallet['walletid']}"; ?>"><?php echo number_format(($thiswallet['totalbalance'] / 1000000000000), 7) . " xch ({$thiswallet['totalbalance']} mojo)"; ?></td></tr>
+                      <tr><td><strong>Pending Total Balance</strong></td><td id="<?php echo "pendingtotalbalance_balance_chart_{$nodeid}_{$thiswallet['walletid']}"; ?>"><?php echo number_format(($thiswallet['pendingtotalbalance'] / 1000000000000), 7) . " xch ({$thiswallet['pendingtotalbalance']} mojo)"; ?></td></tr>
+                      <tr><td><strong>Spendable</strong></td><td id="<?php echo "spendable_balance_chart_{$nodeid}_{$thiswallet['walletid']}"; ?>"><?php echo number_format(($thiswallet['spendable'] / 1000000000000), 7) ." xch ({$thiswallet['spendable']} mojo)"; ?></td></tr>
+                    </tbody>
+                  </table>
                 </div>
+              </div>
+            </div>
+          </div>
+          <?php if($thiswallet['wallettype'] < 9){ ?>
+          <div class="col-12 col-md-6 mb-4">
+            <div class='card shadow'>
+              <div class='card-header'>Wallet Address</div>
+              <div id="<?php echo "walletaddress_{$nodeid}_{$thiswallet['walletid']}"; ?>" class='card-body'><?php  echo $thiswallet['walletaddress']; ?></div>
+            </div>
+          </div>
+        </div>
+        <?php } ?>
+        <div class='row'>
+          <div class='col-12 col-md-6 mb-4'>
+            <div class='card shadow mb-4'>
+              <div class='card-body'>
+                <h6>Transactions Chart</h6>
+                <?php
+                  if(array_key_exists($nodeid, $transactiondata["data"]) && count($transactiondata["data"][$nodeid][$thiswallet['walletid']]) > 0){
+                ?>
+                <canvas id="<?php echo "transactions_chart_{$nodeid}_{$thiswallet['walletid']}"; ?>" class="transactionchart_<?php echo $nodeid; ?>"></canvas>
+                <?php
+                  }else{
+                    echo "<div class='card bg-warning text-white shadow'>
+                            <div class='card-body'>
+                              There are currently no transactions to show.
+                            </div>
+                          </div>";
+                  }
+                ?>
+              </div>
+            </div>
+          </div>
+          <div class='col-12 col-md-6 mb-4'>
+            <div class='card shadow mb-4'>
+              <div class='card-body'>
+                <h6>Transactions Table</h6>
+                <?php
+                  if(array_key_exists($nodeid, $transactiondata["data"]) && count($transactiondata["data"][$nodeid][$thiswallet['walletid']]) > 0){
+                ?>
+                <div class="table-responsive">
+                    <table class="table table-bordered dataTable_<?php echo $nodeid; ?>" id="<?php echo "transactions_{$nodeid}_{$thiswallet['walletid']}"; ?>" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                              <th>ID</th>
+                              <th>Date</th>
+                              <th>Amount</th>
+                              <th>Receiver</th>
+                              <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                              <th>ID</th>
+                              <th>Date</th>
+                              <th>Amount</th>
+                              <th>Receiver</th>
+                              <th>Actions</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <?php
+                  }else{
+                    echo "<div class='card bg-warning text-white shadow'>
+                            <div class='card-body'>
+                              There are currently no transactions to show.
+                            </div>
+                          </div>";
+                  }
+                ?>
               </div>
             </div>
           </div>
