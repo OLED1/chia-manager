@@ -5,6 +5,7 @@
   use ChiaMgmt\Nodes\Nodes_Api;
   use ChiaMgmt\Encryption\Encryption_Api;
   use ChiaMgmt\Chia_Farm\Data_Objects\Farmdata;
+  use ChiaMgmt\Chia_Farm\Data_Objects\SignagePointsData;
 
   /**
    * The Chia_Farm_Api class contains every needed methods to manage all available farming data.
@@ -62,36 +63,34 @@
      * @param  array  $loginData  {"logindata": {"authhash": "[authhash]"}
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {"nodeid": [nodeid], "data": {[newly added farm data]}}
      */
-    public function updateFarmData(array $data, array $loginData = NULL){
+    public function updateFarmData(array $data, array $loginData = NULL): array
+    {
       try{
-        foreach($data AS $arrkey => $thisfarmerdata){
-          $formatted_data = new Farmdata($thisfarmerdata);
-          print_r($formatted_data);
+        $formatted_data = new Farmdata($data);
 
-          $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
-          $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
+        $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
+        $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
 
-          $sql = $this->db_api->execute("SELECT Count(*) as count FROM chia_farm WHERE nodeid = ?", array($nodeid));
-          $count = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["count"];
+        $sql = $this->db_api->execute("SELECT Count(*) as count FROM chia_farm WHERE nodeid = ?", array($nodeid));
+        $count = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["count"];
 
-          if($count == 0){
-            $sql = $this->db_api->execute("INSERT INTO chia_farm (id, nodeid, farming_status, total_chia_farmed, user_transaction_fees, block_rewards, last_height_farmed, plot_count, total_size_of_plots, estimated_network_space, expected_time_to_win) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            array($nodeid, $formatted_data.get_farming_status(), $formatted_data.get_total_chia_farmed(), $formatted_data.get_user_transaction_fees(), 
-                  $formatted_data.get_block_rewards(), $formatted_data.get_last_height_farmed(), $formatted_data.get_plot_count(), $formatted_data.get_total_size_of_plots(), 
-                  $formatted_data.get_estimated_network_space(), $formatted_data.get_expected_time_to_win()));
-          }else{
-            $sql = $this->db_api->execute("UPDATE chia_farm SET farming_status = ?, total_chia_farmed = ?, user_transaction_fees = ?, block_rewards = ?, last_height_farmed = ?, plot_count = ?, total_size_of_plots = ?, estimated_network_space = ?, expected_time_to_win = ? WHERE nodeid = ?",
-            array($formatted_data.get_farming_status(), $formatted_data.get_total_chia_farmed(), $formatted_data.get_user_transaction_fees(), 
-                  $formatted_data.get_block_rewards(), $formatted_data.get_last_height_farmed(), $formatted_data.get_plot_count(), $formatted_data.get_total_size_of_plots(), 
-                  $formatted_data.get_estimated_network_space(), $formatted_data.get_expected_time_to_win(), $nodeid));
-          }
+        if($count == 0){
+          $sql = $this->db_api->execute("INSERT INTO chia_farm (id, nodeid, syncstatus, total_chia_farmed, user_transaction_fees, block_rewards, last_height_farmed, plot_count, total_size_of_plots, estimated_network_space, expected_time_to_win, querydate) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, current_timestamp())",
+          array($nodeid, $formatted_data->get_farming_status(), $formatted_data->get_total_chia_farmed(), $formatted_data->get_user_transaction_fees(), 
+                $formatted_data->get_block_rewards(), $formatted_data->get_last_height_farmed(), $formatted_data->get_plot_count(), $formatted_data->get_total_size_of_plots(), 
+                $formatted_data->get_estimated_network_space(), $formatted_data->get_expected_time_to_win()));
+        }else{
+          $sql = $this->db_api->execute("UPDATE chia_farm SET syncstatus = ?, total_chia_farmed = ?, user_transaction_fees = ?, block_rewards = ?, last_height_farmed = ?, plot_count = ?, total_size_of_plots = ?, estimated_network_space = ?, expected_time_to_win = ?, querydate = current_timestamp() WHERE nodeid = ?",
+          array($formatted_data->get_farming_status(), $formatted_data->get_total_chia_farmed(), $formatted_data->get_user_transaction_fees(), 
+                $formatted_data->get_block_rewards(), $formatted_data->get_last_height_farmed(), $formatted_data->get_plot_count(), $formatted_data->get_total_size_of_plots(), 
+                $formatted_data->get_estimated_network_space(), $formatted_data->get_expected_time_to_win(), $nodeid));
         }
 
-        $this->updateChallenges($data["farm"], $loginData);
+        $this->updateChallenges($data["signage_points"], $loginData);
         return array("status" => 0, "message" => "Successfully updated farm information for node $nodeid.", "data" => ["nodeid" => $nodeid, "data" => $this->getFarmData($data, $loginData, $nodeid)["data"]]);
       }catch(\Exception $e){
         print_r(array("status" => 1, "message" => "An error occured: {$e->getMessage()}"));
-        return $this->logging_api->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("002", $e);
       }
     }
 
@@ -106,17 +105,18 @@
      * @param  int $nodeid                    The node id to get only node specific data. Can be NULL if all data will be queried. Will be deprecated as soon as the method needs to be called outsite of the web gui.
      * @return array                          Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
      */
-    public function getFarmData(array $data = NULL, array $loginData = NULL, $server = NULL, int $nodeid = NULL){
+    public function getFarmData(array $data = NULL, array $loginData = NULL, $server = NULL, int $nodeid = NULL): array
+    {
       try{
         if(is_null($nodeid)){
-          $sql = $this->db_api->execute("SELECT nt.nodeid, cf.farming_status, n.hostname, n.nodeauthhash, cf.total_chia_farmed, cf.user_transaction_fees, cf.block_rewards, cf.last_height_farmed, cf.plot_count, cf.total_size_of_plots, cf.estimated_network_space, cf.expected_time_to_win, cf.querydate
+          $sql = $this->db_api->execute("SELECT nt.nodeid, cf.syncstatus, n.hostname, n.nodeauthhash, cf.total_chia_farmed, cf.user_transaction_fees, cf.block_rewards, cf.last_height_farmed, cf.plot_count, cf.total_size_of_plots, cf.estimated_network_space, cf.expected_time_to_win, cf.querydate
                                           FROM nodetype nt
                                           JOIN nodes n ON n.id = nt.nodeid
                                           LEFT JOIN chia_farm cf ON cf.nodeid = nt.nodeid
                                           WHERE nt.code = 3"
                                           , array());
         }else{
-          $sql = $this->db_api->execute("SELECT nt.nodeid, cf.farming_status, n.hostname, n.nodeauthhash, cf.total_chia_farmed, cf.user_transaction_fees, cf.block_rewards, cf.last_height_farmed, cf.plot_count, cf.total_size_of_plots, cf.estimated_network_space, cf.expected_time_to_win, cf.querydate
+          $sql = $this->db_api->execute("SELECT nt.nodeid, cf.syncstatus, n.hostname, n.nodeauthhash, cf.total_chia_farmed, cf.user_transaction_fees, cf.block_rewards, cf.last_height_farmed, cf.plot_count, cf.total_size_of_plots, cf.estimated_network_space, cf.expected_time_to_win, cf.querydate
                                           FROM nodetype nt
                                           JOIN nodes n ON n.id = nt.nodeid
                                           LEFT JOIN chia_farm cf ON cf.nodeid = nt.nodeid
@@ -145,7 +145,8 @@
      * @param  array $loginData  { NULL } No logindata is needed to query this method.
      * @return array             Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
      */
-    public function farmerStatus(array $data = NULL, array $loginData = NULL){
+    public function farmerStatus(array $data = NULL, array $loginData = NULL): array
+    {
       try{
         $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
         $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
@@ -169,7 +170,8 @@
      * @param  ChiaWebSocketServer $server  An instance to the websocket server to be able to send data to the connected clients.
      * @return array                        Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}} from the subfunction calls.
      */
-    public function queryFarmData(array $data = NULL, array $loginData = NULL, $server = NULL){
+    public function queryFarmData(array $data = NULL, array $loginData = NULL, $server = NULL): array
+    {
       $querydata = [];
       $querydata["data"]["queryFarmData"] = array(
         "status" => 0,
@@ -200,7 +202,8 @@
      * @param  ChiaWebSocketServer $server    An instance to the websocket server to be able to send data to the connected clients.
      * @return array                          Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}} from the subfunction call.
      */
-    public function restartFarmerService(array $data = NULL, array $loginData = NULL, $server = NULL){
+    public function restartFarmerService(array $data = NULL, array $loginData = NULL, $server = NULL): array
+    {
       $querydata = [];
       $querydata["data"]["restartFarmerService"] = array(
         "status" => 0,
@@ -226,7 +229,8 @@
      * @param  array $loginData { authhash: [Querying Node's Authhash] }
      * @return array            Returns {"status": [0|>0], "message": [Status message], "data": { "status": [0 = Success, 1 = Failed], "message": [Specific message about service restart for the WebGUI], nodeid: [Querying Node's ID] }}
      */
-    public function farmerServiceRestart(array $data = NULL, array $loginData = NULL){
+    public function farmerServiceRestart(array $data = NULL, array $loginData = NULL): array
+    {
       try{
         $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
         $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
@@ -245,7 +249,27 @@
      * @param  array $loginData { NULL } No logindata needed to query this function.
      * @return array            Returns {"status": [0|>0], "message": [Status message] }
      */
-    public function updateChallenges(array $data = NULL, array $loginData = NULL){
+    public function updateChallenges(array $data = NULL, array $loginData = NULL): array
+    {
+      try{
+        $valuesstring = "";
+        $valuesarray = [];
+        foreach($data AS $arrkey => $this_signage_point){
+          $this_signage_point_formatted = new SignagePointsData($this_signage_point);
+          $valuesstring .= "(NULL, current_timestamp(), ?, ?, ?, ?, ?, ?, ?, ?)";
+          if(array_key_exists($arrkey+1, $data)) $valuesstring .= ",";
+          array_push($valuesarray, $this_signage_point_formatted->get_proofs(), $this_signage_point_formatted->get_proofcount(), $this_signage_point_formatted->get_challenge_chain_sp(), $this_signage_point_formatted->get_challenge_hash(), $this_signage_point_formatted->get_difficulty(), 
+          $this_signage_point_formatted->get_reward_chain_sp(), $this_signage_point_formatted->get_signage_point_index(), $this_signage_point_formatted->get_sub_slot_iters());
+        }
+
+        if(count($valuesarray) > 0){ 
+          $sql = $this->db_api->execute("INSERT INTO chia_farm_challenges (id,date,proofs,proofcount,challenge_chain_sp,challenge_hash,difficulty,reward_chain_sp,signage_point_index,sub_slot_iters) VALUES {$valuesstring} ON DUPLICATE KEY UPDATE date = current_timestamp()", $valuesarray);
+        }
+
+        return array("status" => 0, "message" => "Successfully updated challenges information.");
+      }catch(\Exception $e){
+        return $this->logging_api->getErrormessage("001", $e);
+      }
       if(array_key_exists("challenges", $data)){
         try{
           $now = new \DateTime("now");
@@ -272,13 +296,32 @@
      * Function made for: Web GUI/App
      * @param  array $data      { NULL } No data needed to query this function.
      * @param  array $loginData { NULL } No logindata needed to query this function.
+     * @return array            Returns {"status": [0|>0], "message": [Status message], "data" => [DB fond data] }
+     */
+    public function getAllChallenges(array $data = NULL, array $loginData = NULL): array
+    {
+      try{
+        $sql = $this->db_api->execute("SELECT id, date, proofs, proofcount, challenge_chain_sp, challenge_hash, difficulty, reward_chain_sp, signage_point_index, sub_slot_iters FROM chia_farm_challenges ORDER BY date DESC", array());
+
+        return array("status" => 0, "message" => "Successfully queried all challenges.", "data" => $sql->fetchAll(\PDO::FETCH_ASSOC));
+      }catch(\Exception $e){
+        return $this->logging_api->getErrormessage("001", $e);
+      }
+    }
+
+    /**
+     * Returns the latest 50 challenges from the database.
+     * Function made for: Web GUI/App
+     * @param  array $data      { NULL } No data needed to query this function.
+     * @param  array $loginData { NULL } No logindata needed to query this function.
      * @return array            Returns {"status": [0|>0], "message": [Status message] }
      */
-    public function getAllChallenges(array $data = NULL, array $loginData = NULL){
+    public function getLatestChallenges(array $data = NULL, array $loginData = NULL): array
+    {
       try{
-        $sql = $this->db_api->execute("SELECT date, hash, hash_index FROM chia_farm_challenges", array());
+        $sql = $this->db_api->execute("SELECT id, date, proofs, proofcount, challenge_chain_sp, challenge_hash, difficulty, reward_chain_sp, signage_point_index, sub_slot_iters FROM chia_farm_challenges ORDER BY date DESC LIMIT 50", array());
 
-        return array("status" =>0, "message" => "Successfully queried all challenges.", "data" => $sql->fetchAll(\PDO::FETCH_ASSOC));
+        return array("status" => 0, "message" => "Successfully queried all challenges.", "data" => $sql->fetchAll(\PDO::FETCH_ASSOC));
       }catch(\Exception $e){
         return $this->logging_api->getErrormessage("001", $e);
       }

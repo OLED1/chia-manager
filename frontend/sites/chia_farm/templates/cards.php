@@ -3,6 +3,7 @@
   use ChiaMgmt\Chia_Farm\Chia_Farm_Api;
   use ChiaMgmt\Nodes\Nodes_Api;
   require __DIR__ . '/../../../../vendor/autoload.php';
+  include __DIR__ . "/functions.php";
 
   $login_api = new Login_Api();
   $ini = parse_ini_file(__DIR__.'/../../../../backend/config/config.ini.php');
@@ -16,7 +17,7 @@
   $nodes_api = new Nodes_Api();
   $nodes_states = $nodes_api->queryNodesServicesStatus()["data"];
   $farm_api_data = $chia_farm_api->getFarmData();
-  $challenges = $chia_farm_api->getAllChallenges();
+  $challenges = $chia_farm_api->getLatestChallenges();
 
   if(array_key_exists("data", $farm_api_data) && count($farm_api_data["data"]) > 0){
     echo "<script nonce={$ini["nonce_key"]}> var chiaFarmData = " . json_encode($farm_api_data["data"]) . "; </script>";
@@ -27,7 +28,7 @@
     <div class="card shadow mb-4">
       <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
         <h6 class='m-0 font-weight-bold text-primary'>Farmdata for host <?php echo $farmdata["hostname"]; ?> with id <?php echo $nodeid; ?>&nbsp;
-        <?php if(is_null($farmdata["farming_status"])){ ?>
+        <?php if(is_null($farmdata["syncstatus"])){ ?>
           <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-danger'>No data found</span>
         <?php
           }else{
@@ -61,7 +62,7 @@
           </div>
         </div>
       </div>
-      <?php if(is_null($farmdata["farming_status"])){ ?>
+      <?php if(is_null($farmdata["syncstatus"])){ ?>
       <div class="card-body">
         <div class="card bg-danger text-white shadow">
           <div class="card-body">
@@ -76,7 +77,7 @@
             <div class="card shadow mb-4">
               <div class="card-body">
                 <h5>Farming Status</h5>
-                <h4 class='<?php echo ($farmdata["farming_status"] == "Farming" ? "text-success" : "text-danger") ?>'><?php echo $farmdata["farming_status"]; ?><span>&#8226;</span></h4>
+                <h4 class='<?php echo ($farmdata['syncstatus'] == 2 ? "text-success" : ($farmdata['syncstatus'] == 0 ? "text-warning" : "text-danger")); ?>'><?php echo ($farmdata['syncstatus'] == 2 ? "Synced" : ($farmdata['syncstatus'] == 0 ? "Syncing" : "Not synced")); ?><span>&#8226;</span></h4>
                 <h7>&nbsp;</h7>
               </div>
             </div>
@@ -85,7 +86,7 @@
             <div class="card shadow mb-4">
               <div class="card-body">
                 <h5>XCH Total Chia Farmed</h5>
-                <h4><?php echo ($farmdata["total_chia_farmed"]); ?></h4>
+                <h4><?php echo $calc_xch($farmdata["total_chia_farmed"]); ?></h4>
                 <h7>&nbsp;</h7>
               </div>
             </div>
@@ -94,7 +95,7 @@
             <div class="card shadow mb-4">
               <div class="card-body">
                 <h5>XCH Block Rewards</h5>
-                <h4><?php echo ($farmdata["block_rewards"]); ?></h4>
+                <h4><?php echo $calc_xch($farmdata["block_rewards"]); ?></h4>
                 <h7>Without fees</h7>
               </div>
             </div>
@@ -105,7 +106,7 @@
             <div class="card shadow mb-4">
               <div class="card-body">
                 <h5>XCH User Transaction Fees</h5>
-                <h4><?php echo ($farmdata["user_transaction_fees"]); ?></h4>
+                <h4><?php echo $calc_xch($farmdata["user_transaction_fees"]); ?></h4>
                 <h7>&nbsp;</h7>
               </div>
             </div>
@@ -114,8 +115,8 @@
             <div class="card shadow mb-4">
               <div class="card-body">
                 <h5>Last Height Farmed</h5>
-                <h4><?php echo ($farmdata["last_height_farmed"]); ?></h4>
-                <h7>No blocks farmed yet</h7>
+                <h4><?php echo $farmdata["last_height_farmed"]; ?></h4>
+                <h7><?php echo ($farmdata["last_height_farmed"] == 0 ? "No blocks farmed yet" : ""); ?></h7>
               </div>
             </div>
           </div>
@@ -134,7 +135,7 @@
             <div class="card shadow mb-4">
               <div class="card-body">
                 <h5>Total Size of Plots</h5>
-                <h4><?php echo ($farmdata["total_size_of_plots"]); ?></h4>
+                <h4><?php echo $format_spaces($farmdata["total_size_of_plots"]); ?></h4>
                 <h7>&nbsp;</h7>
               </div>
             </div>
@@ -143,7 +144,7 @@
             <div class="card shadow mb-4">
               <div class="card-body">
                 <h5>Total Network Space</h5>
-                <h4><?php echo ($farmdata["estimated_network_space"]); ?></h4>
+                <h4><?php echo $format_spaces($farmdata["estimated_network_space"]); ?></h4>
                 <h7>Best estimate over last 24 hours</h7>
               </div>
             </div>
@@ -152,7 +153,7 @@
             <div class="card shadow mb-4">
               <div class="card-body">
                 <h5>Estimated time to Win</h5>
-                <h4><?php echo ($farmdata["expected_time_to_win"]); ?></h4>
+                <h4><?php echo $calc_time($farmdata["expected_time_to_win"]); ?></h4>
                 <h7>&nbsp;</h7>
               </div>
             </div>
@@ -174,7 +175,7 @@
   <div class="col">
     <div class="card shadow mb-4">
       <div class="card-body">
-        There are currently no wallets to show.<br>
+        There is currently no farm info to show.<br>
         Please try to rescan all data on the nodes page by pressing the button "Query all available information from all nodes".
       </div>
     </div>
@@ -191,8 +192,10 @@
             <thead>
               <tr>
                 <th>Date</th>
-                <th>Hash</th>
                 <th>Index</th>
+                <th>Difficulty</th>
+                <th>Proofs</th>
+                <th>Hash</th>
               </tr>
             </thead>
             <tbody>
@@ -202,8 +205,10 @@
               ?>
                 <tr>
                   <td><?php echo $challenge["date"]; ?></td>
-                  <td><?php echo $challenge["hash"]; ?></td>
-                  <td><?php echo $challenge["hash_index"]; ?></td>
+                  <td><?php echo $challenge["signage_point_index"]; ?></td>
+                  <td><?php echo $challenge["difficulty"]; ?></td>
+                  <td><?php echo $challenge["proofcount"]; ?></td>
+                  <td><?php echo $challenge["challenge_hash"]; ?></td>
                 </tr>
               <?php
                   }
@@ -213,8 +218,10 @@
             <tfoot>
               <tr>
                 <th>Date</th>
-                <th>Hash</th>
                 <th>Index</th>
+                <th>Difficulty</th>
+                <th>Proofs</th>
+                <th>Hash</th>
               </tr>
             </tfoot>
           </table>

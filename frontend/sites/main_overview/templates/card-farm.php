@@ -34,7 +34,7 @@
   </div>
   <?php
     if(count($farmData) > 0){
-      $sizes = array("" => 1,"MiB" => 1,"GiB" => 1024,"TiB" => pow(1024,2),"PiB" =>  pow(1024,3),"EiB" =>  pow(1024,4));
+      //$sizes = array("" => 1,"MiB" => 1,"GiB" => 1024,"TiB" => pow(1024,2),"PiB" =>  pow(1024,3),"EiB" =>  pow(1024,4));
       $hostchecks = "";
       $farmingstatus = "";
       $totalplotcount = 0;
@@ -43,25 +43,13 @@
       foreach($farmData AS $nodeid => $nodedata){
         $serviceStates = getServiceStates($nodes_states, $nodeid, "Farmer");
         $hostchecks .= "{$nodedata["hostname"]}:&nbsp;<span id='servicestatus_farmer_{$nodeid}' data-nodeid={$nodeid} class='badge nodestatus " . $serviceStates["statusicon"] . "'>" . $serviceStates["statustext"] . "</span><br>";
-        $farmingstatus .= "{$nodedata["hostname"]}:&nbsp;<span id='farmingstatus_{$nodeid}' data-nodeid={$nodeid} class='badge farmerstatus " . (!is_null($nodedata["farming_status"]) ? ($nodedata["farming_status"] == "Farming" ? "badge-success" : "badge-danger") : "badge-danger") . "'>" . (is_null($nodedata["farming_status"]) ? "No data found" : $nodedata["farming_status"]) . "</span></br>";
+        $farmingstatus .= "{$nodedata["hostname"]}:&nbsp;<span id='farmingstatus_{$nodeid}' data-nodeid={$nodeid} class='badge farmerstatus " . ($nodedata['syncstatus'] == 2 ? "badge-success" : ($nodedata['syncstatus'] == 1 ? "badge-warning" : "badge-danger")) . "'>" . ($nodeid > 0 ? ($nodedata['syncstatus'] == 2 ? "Synced" : ($nodedata['syncstatus'] == 1 ? "Syncing" : "Not synced"))."&nbsp;" : "No data found") . "</span></br>";
         $totalplotcount += intval($nodedata["plot_count"]);
         $plotinfoexpl = explode(" ",$nodedata["total_size_of_plots"]);
-        $totalsizeofplots += floatval($plotinfoexpl[0]) * intval($sizes[$plotinfoexpl[1]]);
+        $totalsizeofplots += $nodedata["total_size_of_plots"];
       }
 
-      if($totalsizeofplots >= 1099511627776){
-        $totalsizeofplots = $totalsizeofplots/pow(1024,4);
-        $size = "EiB";
-      }else if($totalsizeofplots >= 1073741824){
-        $totalsizeofplots = $totalsizeofplots/pow(1024,3);
-        $size = "PiB";
-      }else if($totalsizeofplots >= 1048576){
-        $totalsizeofplots = $totalsizeofplots/pow(1024,2);
-        $size = "TiB";
-      }else{
-        $totalsizeofplots = $totalsizeofplots/(1024);
-        $size = "GiB";
-      }
+      $totalsizeofplots = format_spaces($totalsizeofplots);
   ?>
   <div class="card-body">
     <div class="row">
@@ -76,7 +64,7 @@
                     <?php echo $hostchecks; ?>
                   </div>
                   <div class="col-auto">
-                    <i class="fas fa-network-wired fa-3x text-gray-300"></i>
+                    <i class="fas fa-network-wired fa-2x text-gray-300"></i>
                   </div>
                 </div>
               </div>
@@ -95,7 +83,7 @@
                     <?php echo $farmingstatus; ?>
                   </div>
                   <div class="col-auto">
-                    <i class="fas fa-tasks fa-3x text-gray-300"></i>
+                    <i class="fas fa-tasks fa-2x text-gray-300"></i>
                   </div>
                 </div>
               </div>
@@ -106,11 +94,11 @@
       <div class="col-xl-3 col-md-6 mb-4">
         <div class="row">
           <div class="col">
-            <div class="card border-left-secondary shadow h-100 py-2">
+            <div class="card border-left-success shadow h-100 py-2">
               <div class="card-body">
                 <div class="row no-gutters align-items-center">
                   <div class="col mr-2">
-                    <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Total Plot count (all Farmer)</div>
+                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Plot count (all Farmer)</div>
                     <div class="h5 mb-0 font-weight-bold text-gray-900"><?php echo $totalplotcount; ?></div>
                   </div>
                   <div class="col-auto">
@@ -123,12 +111,12 @@
         </div>
         <div class="row">
           <div class="col">
-            <div class="card border-left-dark shadow h-100 py-2">
+            <div class="card border-left-primary shadow h-100 py-2">
               <div class="card-body">
                 <div class="row no-gutters align-items-center">
                   <div class="col mr-2">
-                    <div class="text-xs font-weight-bold text-dark text-uppercase mb-1">Total size of Plots (all Farmer)</div>
-                    <div class="h5 mb-0 font-weight-bold text-gray-900"><?php echo floatval($totalsizeofplots) . " {$size}";?></div>
+                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total size of Plots (all Farmer)</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-900"><?php echo $totalsizeofplots;?></div>
                   </div>
                   <div class="col-auto">
                     <i class="fas fa-save fa-2x text-gray-300"></i>

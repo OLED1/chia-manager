@@ -38,12 +38,13 @@ class Farmdata{
         ){
             throw new \InvalidArgumentException("The reported data for the key 'farming_status' are not fully set. Expected: 'farming_status': { 'sync_mode': <bool>, 'synced' : <bool> }, but got {" . json_encode($reportedfarmdata["farming_status"]) . "}");
         }
-        if(!array_key_exists("estimated_network_space", $reportedfarmdata) || !is_int($estimated_network_space["estimated_network_space"])){
-            throw new \InvalidArgumentException("The reported data for the key 'estimated_network_space' are not fully set. Expected: 'estimated_network_space': <int>, but got {" . json_encode($reportedfarmdata["estimated_network_space"]) . "}");
+
+        if(!array_key_exists("estimated_network_space", $reportedfarmdata) || (!is_double($reportedfarmdata["estimated_network_space"]) && !is_int($reportedfarmdata["estimated_network_space"]))){
+            throw new \InvalidArgumentException("The reported data for the key 'estimated_network_space' are not fully set. Expected: 'estimated_network_space': <double>, but got {" . json_encode($reportedfarmdata["estimated_network_space"]) . "}");
         }
 
-        $this->expected_time_to_win = $expected_time_to_win["expected_time_to_win"];
-        $this->total_size_of_plots = $expected_time_to_win["total_size_of_plots"];
+        $this->expected_time_to_win = $reportedfarmdata["expected_time_to_win"];
+        $this->total_size_of_plots = $reportedfarmdata["total_size_of_plots"];
         $this->plot_count = $reportedfarmdata["plot_count"];
 
         if(array_key_exists("total_chia_farmed", $reportedfarmdata) && !is_array($reportedfarmdata["total_chia_farmed"])){
@@ -59,15 +60,15 @@ class Farmdata{
           }
 
         if($reportedfarmdata["farming_status"]["sync_mode"]) $this->farming_status = 0; //Syncing  
-        else if(!$reportedfarmdata["sync"]["synced"]) $this->farming_status = 1; //Not synced or not connected to peers
+        else if(!$reportedfarmdata["farming_status"]["synced"]) $this->farming_status = 1; //Not synced or not connected to peers
         else $this->farming_status = 2; //Farming
 
-        $this->estimated_network_space = $estimated_network_space["estimated_network_space"];
+        $this->estimated_network_space = $reportedfarmdata["estimated_network_space"];
     }
 
     public function get_total_chia_farmed(): int
     {
-        return $this->get_total_chia_farmed;
+        return $this->total_chia_farmed;
     }
 
     public function get_block_rewards(): int
@@ -102,10 +103,10 @@ class Farmdata{
 
     public function get_plot_count(): int
     {
-        return $this->use_plot_count;
+        return $this->plot_count;
     }
 
-    public function get_estimated_network_space(): int
+    public function get_estimated_network_space(): float
     {
         return $this->estimated_network_space;
     }
