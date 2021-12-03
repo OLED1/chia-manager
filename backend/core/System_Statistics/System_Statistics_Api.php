@@ -51,13 +51,13 @@
             if(array_key_exists("node_ids", $data) && is_array($data["node_ids"])){
               $sql = $this->db_api->execute("SELECT n.id, n.hostname, cis.timestamp, cis.load_1min, cis.load_5min, cis.load_15min, cis.cpu_count, cis.cpu_cores FROM nodes n 
                                             INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id
-                                            WHERE n.authtype = 2 AND n.id in (?) AND cis.timestamp BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND cis.id mod 6 = 0
+                                            WHERE n.authtype = 2 AND n.id in (?) AND cis.timestamp BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND cis.id mod 10 = 0
                                             ORDER BY timestamp ASC", 
                                             array(implode(",", $data["node_ids"]), $data["from"], $data["to"]));  
             }else{
-              $sql = $this->db_api->execute("SELECT n.id, n.hostname, cis.timestamp, cis.load_1min, cis.load_5min, cis.load_15min FROM nodes n 
+              $sql = $this->db_api->execute("SELECT n.id, n.hostname, cis.timestamp, cis.load_1min, cis.load_5min, cis.load_15min, cis.cpu_count, cis.cpu_cores FROM nodes n 
                                               INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id
-                                              WHERE n.authtype = 2 AND cis.timestamp BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND is.id mod 6 = 0
+                                              WHERE n.authtype = 2 AND cis.timestamp BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND cis.id mod 10 = 0
                                               ORDER BY timestamp ASC", 
                                               array($data["from"], $data["to"]));
             }
@@ -91,13 +91,13 @@
             if(array_key_exists("node_ids", $data) && is_array($data["node_ids"])){
               $sql = $this->db_api->execute("SELECT n.id, n.hostname, cis.timestamp, cis.memory_total, cis.memory_free, cis.memory_buffers, cis.memory_cached, cis.memory_shared, cis.swap_total, cis.swap_free FROM nodes n 
                                             INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id
-                                            WHERE n.authtype = 2 AND n.id in (?) AND cis.timestamp BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND cis.id mod 6 = 0
+                                            WHERE n.authtype = 2 AND n.id in (?) AND cis.timestamp BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND cis.id mod 10 = 0
                                             ORDER BY timestamp ASC", 
                                             array(implode(",", $data["node_ids"]), $data["from"], $data["to"]));    
             }else{
               $sql = $this->db_api->execute("SELECT n.id, n.hostname, cis.timestamp, cis.memory_total, cis.memory_free, cis.memory_buffers, cis.memory_cached, cis.memory_shared, cis.swap_total, cis.swap_free FROM nodes n 
                                               INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id
-                                              WHERE n.authtype = 2 AND cis.timestamp BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND cis.id mod 6 = 0
+                                              WHERE n.authtype = 2 AND cis.timestamp BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND cis.id mod 10 = 0
                                               ORDER BY timestamp ASC", 
                                               array($data["from"], $data["to"]));   
             }
@@ -132,13 +132,13 @@
             if(array_key_exists("node_ids", $data) && is_array($data["node_ids"])){
               $sql = $this->db_api->execute("SELECT n.id, n.hostname, cis.timestamp, cis.filesystem FROM nodes n 
                                             INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id
-                                            WHERE n.authtype = 2 AND n.id in (?) AND cis.timestamp BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND cis.id mod 6 = 0
+                                            WHERE n.authtype = 2 AND n.id in (?) AND cis.timestamp BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND cis.id mod 10 = 0
                                             ORDER BY timestamp ASC", 
                                             array(implode(",", $data["node_ids"]), $data["from"], $data["to"]));    
             }else{
               $sql = $this->db_api->execute("SELECT n.id, n.hostname, cis.timestamp, cis.filesystem FROM nodes n 
                                               INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id
-                                              WHERE n.authtype = 2 AND cis.timestamp BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND cis.id mod 6 = 0
+                                              WHERE n.authtype = 2 AND cis.timestamp BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND cis.id mod 10 = 0
                                               ORDER BY timestamp ASC", 
                                               array($data["from"], $data["to"]));
             }
