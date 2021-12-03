@@ -249,8 +249,6 @@ class ChiaWebSocketServer implements MessageComponentInterface {
 
       if($found_client){
         $this->logging->getErrormessage("001", $message);
-
-        unset($this->users[$conn->resourceId]);
         unset($this->connectedNodesInformed[$conn->resourceId]);
 
         $changed = false;
