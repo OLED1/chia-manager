@@ -51,7 +51,7 @@
         $serviceStates = getServiceStates($nodes_states, $nodeid, "Wallet");
         $hostchecks .= "{$nodedata[array_key_first($nodedata)]["hostname"]}:&nbsp;<span id='servicestatus_wallet_{$nodeid}' data-nodeid={$nodeid} class='badge nodestatus " . $serviceStates["statusicon"] . "'>" . $serviceStates["statustext"] . "</span><br>";
         foreach($nodedata AS $walletid => $walletdata){
-          $walletsyncstatus .= "{$walletdata["hostname"]} - Wallet {$walletid}:&nbsp;<span id='syncstatus_{$nodeid}_{$walletid}' data-nodeid={$nodeid} data-walletid={$walletid} class='badge walletstatus " . ($walletid > 0 && $walletdata["syncstatus"] == "Synced" ? "badge-success" : "badge-danger") . "'>" . ($walletid > 0 ? $walletdata["syncstatus"]."&nbsp;(Height: {$walletdata["walletheight"]})" : "No data found"). "</span></br>";
+          $walletsyncstatus .= "{$walletdata["hostname"]} - Wallet {$walletid}:&nbsp;<span id='syncstatus_{$nodeid}_{$walletid}' data-nodeid={$nodeid} data-walletid={$walletid} class='badge walletstatus " . ($walletid > 0 && $walletdata['syncstatus'] == 2 ? "badge-success" : ($walletdata['syncstatus'] == 1 ? "badge-warning" : "badge-danger")) . "'>" . ($walletid > 0 ? ($walletdata['syncstatus'] == 2 ? "Synced" : ($walletdata['syncstatus'] == 1 ? "Syncing" : "Not synced"))."&nbsp;(Height: {$walletdata["walletheight"]})" : "No data found"). "</span></br>";
           $totalmojos += intval($walletdata["totalbalance"]);
         }
       }
@@ -72,7 +72,7 @@
                       <?php echo $hostchecks; ?>
                   </div>
                   <div class="col-auto">
-                    <i class="fas fa-network-wired fa-3x text-gray-300"></i>
+                    <i class="fas fa-network-wired fa-2x text-gray-300"></i>
                   </div>
                 </div>
               </div>
@@ -91,7 +91,7 @@
                       <?php echo $walletsyncstatus; ?>
                   </div>
                   <div class="col-auto">
-                    <i class="fas fa-sync fa-3x text-gray-300"></i>
+                    <i class="fas fa-sync fa-2x text-gray-300"></i>
                   </div>
                 </div>
               </div>

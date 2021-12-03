@@ -21,7 +21,18 @@
         Successfully running services
         <div class="text-white-50">
           <h3 id="ok-service-count">?</h3>
-          <div class="text-white-50">No actions needed</div>
+          <div class="text-white-50">No actions required</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-3 mb-4">
+    <div class="card bg-warning text-white shadow">
+      <div class="card-body">
+        Warning services
+        <div class="text-white-50">
+          <h3 id="warn-service-count">?</h3>
+          <div class="text-white-50">Actions maybe required</div>
         </div>
       </div>
     </div>
@@ -32,45 +43,47 @@
         Critical services
         <div class="text-white-50">
           <h3 id="crit-service-count">?</h3>
-          <div class="text-white-50">Urgent actions needed</div>
+          <div class="text-white-50">Urgent actions required</div>
         </div>
       </div>
     </div>
   </div>
 </div>
-<div class="row">
-  <div id="card-system" class="col">
-    <?php
-      include("templates/card-system.php");
-    ?>
+<div id="services">
+  <div class="row">
+    <div id="card-system" class="col">
+      <?php
+        include("templates/card-system.php");
+      ?>
+    </div>
   </div>
-</div>
-<div class="row">
-  <div id="card-overall" class="col">
-    <?php
-      include("templates/card-overall.php");
-    ?>
+  <div class="row">
+    <div id="card-overall" class="col">
+      <?php
+        include("templates/card-overall.php");
+      ?>
+    </div>
   </div>
-</div>
-<div class="row">
-  <div id="card-wallet" class="col">
-    <?php
-      include("templates/card-wallet.php");
-    ?>
+  <div class="row">
+    <div id="card-wallet" class="col">
+      <?php
+        include("templates/card-wallet.php");
+      ?>
+    </div>
   </div>
-</div>
-<div class="row">
-  <div id="card-farm" class="col">
-    <?php
-      include("templates/card-farm.php");
-    ?>
+  <div class="row">
+    <div id="card-farm" class="col">
+      <?php
+        include("templates/card-farm.php");
+      ?>
+    </div>
   </div>
-</div>
-<div class="row">
-  <div id="card-harvester" class="col">
-    <?php
-      include("templates/card-harvester.php");
-    ?>
+  <div class="row">
+    <div id="card-harvester" class="col">
+      <?php
+        include("templates/card-harvester.php");
+      ?>
+    </div>
   </div>
 </div>
 

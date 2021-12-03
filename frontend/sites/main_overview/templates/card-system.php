@@ -36,7 +36,7 @@
       ?>
       <div class="col">
         <div class="row">
-          <div class="col-xl-6 mb-4">
+          <div class="col">
             <?php foreach($system_messages["data"]["found"] AS $type => $message){ ?>
               <div class="card bg-warning text-white shadow">
                   <div class="card-body">

@@ -65,7 +65,7 @@
                     <?php echo $hostchecks; ?>
                   </div>
                   <div class="col-auto">
-                    <i class="fas fa-network-wired fa-3x text-gray-300"></i>
+                    <i class="fas fa-network-wired fa-2x text-gray-300"></i>
                   </div>
                 </div>
               </div>
@@ -84,7 +84,7 @@
                     <?php echo $criticalmount; ?>
                   </div>
                   <div class="col-auto">
-                    <i class="fas fa-database fa-3x text-gray-300"></i>
+                    <i class="fas fa-database fa-2x text-gray-300"></i>
                   </div>
                 </div>
               </div>

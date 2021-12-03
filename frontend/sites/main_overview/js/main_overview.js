@@ -1,10 +1,12 @@
 setServiceCount();
 
 function setServiceCount(){
-  var critServices = $("#sitecontent .badge-danger").length;
-  var okServices = $("#sitecontent .badge-success").length;
+  var critServices = $("#services .badge-danger").length + $("#services .bg-danger").length;
+  var warnServices = $("#services .badge-warning").length + $("#services .bg-warning").length;
+  var okServices = $("#services .badge-success").length + $("#services .bg-success").length;
 
   $("#ok-service-count").text(okServices);
+  $("#warn-service-count").text(warnServices);
   $("#crit-service-count").text(critServices);
 }
 
