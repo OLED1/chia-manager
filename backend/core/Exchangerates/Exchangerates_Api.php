@@ -97,10 +97,10 @@
 
           return $this->getExchangerate($currency_code);
         }catch(\Exception $e){
-          return $this->logging->getErrormessage("001", $e);
+          return $this->logging_api->getErrormessage("001", $e);
         }
       }else{
-        return $this->logging->getErrormessage("002");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
@@ -117,7 +117,7 @@
 
         return array("status" => 0, "message" => "Successfully loaded all available currencies.", "data" => $sql->fetchAll(\PDO::FETCH_ASSOC));
       }catch(\Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 
@@ -148,10 +148,10 @@
 
           return array("status" => 0, "message" => "Successfully loaded all available currencies.", "data" => $returndata);
         }catch(\Exception $e){
-          return $this->logging->getErrormessage("001", $e);
+          return $this->logging_api->getErrormessage("001", $e);
         }
       }else{
-        return $this->logging->getErrormessage("002");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
@@ -177,10 +177,10 @@
 
           return array("status" => 0, "message" => "Successfully set default currency to {$data["currency_code"]}.", "data" => $data["currency_code"]);
         }catch(\Exception $e){
-          return $this->logging->getErrormessage("001", $e);
+          return $this->logging_api->getErrormessage("001", $e);
         }
       }else{
-        return $this->logging->getErrormessage("002");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
@@ -199,10 +199,10 @@
         if(array_key_exists("0", $sqdata)){
           return array("status" => 0, "message" => "Successfully loaded exchangerate from usd to {$currency_code}.", "data" => array($currency_code => $sqdata[0]));
         }else{
-          return $this->logging->getErrormessage("001", "Currency {$currency_code} not found or not existing.");
+          return $this->logging_api->getErrormessage("001", "Currency {$currency_code} not found or not existing.");
         }
       }catch(\Exception $e){
-        return $this->logging->getErrormessage("002", $e);
+        return $this->logging_api->getErrormessage("002", $e);
       }
     }
 
@@ -229,7 +229,7 @@
 
         return array("defaultCurrency" => $defaultCurrency, "exchangerate" => $exchangerate);
       }else{
-        return $this->logging->getErrormessage("001");
+        return $this->logging_api->getErrormessage("001");
       }
     }
   }
