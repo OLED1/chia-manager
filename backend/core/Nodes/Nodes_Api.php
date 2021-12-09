@@ -81,7 +81,11 @@
      * @throws Exception $e       Throws an exception on db errors.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB stored node information]}
      */
-    public function getConfiguredNodes(){
+    public function getConfiguredNodes(array $data = []){
+      $nodetype = "";
+      if(array_key_exists("nodetypenum", $data) && is_numeric($data["nodetypenum"]) && 
+        $data["nodetypenum"] > 0 && $data["nodetypenum"] < 6) $nodetype = "AND nt.code = {$data["nodetypenum"]}";
+
       $returndata = array();
 
       try{
@@ -91,7 +95,7 @@
                                               MAX(cis.cpu_cores) AS cpu_cores, MAX(cis.cpu_count) AS cpu_count, MAX(cis.cpu_model) AS cpu_model, lastseen
                                       FROM nodes n
                                       JOIN nodetype nt ON nt.nodeid = n.id
-                                      JOIN nodetypes_avail nta ON nta.code = nt.code
+                                      JOIN nodetypes_avail nta ON nta.code = nt.code {$nodetype}
                                       LEFT JOIN chia_infra_sysinfo cis ON cis.timestamp = (SELECT MAX(timestamp) FROM chia_infra_sysinfo WHERE nodeid = n.id) AND cis.nodeid = n.id
                                       GROUP BY n.id", array());
 
