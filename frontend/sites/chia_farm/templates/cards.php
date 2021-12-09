@@ -17,7 +17,7 @@
   $nodes_api = new Nodes_Api();
   $nodes_states = $nodes_api->queryNodesServicesStatus()["data"];
   $farm_api_data = $chia_farm_api->getFarmData();
-  $challenges = $chia_farm_api->getLatestChallenges();
+  $challenges = $chia_farm_api->getChallenges(["limit" => 50]);
 
   if(array_key_exists("data", $farm_api_data) && count($farm_api_data["data"]) > 0){
     echo "<script nonce={$ini["nonce_key"]}> var chiaFarmData = " . json_encode($farm_api_data["data"]) . "; </script>";
@@ -159,6 +159,51 @@
             </div>
           </div>
         </div>
+        <div class="row">
+          <div class="col">
+            <div class="card shadow mb-4">
+              <div class="card-body">
+                <h5>Latest Challenges</h5>
+                <div class="table-responsive">
+                  <table class="table table-bordered challengestables" width="100%" cellspacing="0">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Index</th>
+                        <th>Difficulty</th>
+                        <th>Hash</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <?php
+                        if(array_key_exists("data", $challenges) && array_key_exists($nodeid, $challenges["data"]) && count($challenges["data"][$nodeid]) > 0){
+                          foreach($challenges["data"][$nodeid] AS $arrkey => $challenge){
+                      ?>
+                        <tr>
+                          <td><?php echo $challenge["date"]; ?></td>
+                          <td><?php echo $challenge["signage_point_index"]; ?></td>
+                          <td><?php echo $challenge["difficulty"]; ?></td>
+                          <td><?php echo $challenge["challenge_hash"]; ?></td>
+                        </tr>
+                      <?php
+                          }
+                        }
+                      ?>
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <th>Date</th>
+                        <th>Index</th>
+                        <th>Difficulty</th>
+                        <th>Hash</th>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="card-footer">
         Data queried at: <span id="querydate_<?php echo "{$nodeid}"; ?>"><?php echo "{$farmdata["querydate"]}"; ?></span>
@@ -182,50 +227,5 @@
   </div>
 </div>
 <?php } ?>
-<div class="row">
-  <div class="col">
-    <div class="card shadow mb-4">
-      <div class="card-body">
-        <h5>Latest Challenges</h5>
-        <div class="table-responsive">
-          <table class="table table-bordered" id="challengestable" width="100%" cellspacing="0">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Index</th>
-                <th>Difficulty</th>
-                <th>Hash</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php
-                if(array_key_exists("data", $challenges) && count($challenges["data"]) > 0){
-                  foreach($challenges["data"] AS $arrkey => $challenge){
-              ?>
-                <tr>
-                  <td><?php echo $challenge["date"]; ?></td>
-                  <td><?php echo $challenge["signage_point_index"]; ?></td>
-                  <td><?php echo $challenge["difficulty"]; ?></td>
-                  <td><?php echo $challenge["challenge_hash"]; ?></td>
-                </tr>
-              <?php
-                  }
-                }
-              ?>
-            </tbody>
-            <tfoot>
-              <tr>
-                <th>Date</th>
-                <th>Index</th>
-                <th>Difficulty</th>
-                <th>Hash</th>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 
 <script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_farm/js/chia_farm.js"?>></script>

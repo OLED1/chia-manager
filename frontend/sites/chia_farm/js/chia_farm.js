@@ -33,7 +33,7 @@ function initRestartFarmerService(){
 }
 
 function initChallengesTables(nodeid){
-  $("#challengestable").DataTable();
+  $(".challengestables").DataTable();
 }
 
 function queryFarmData(nodeid){
