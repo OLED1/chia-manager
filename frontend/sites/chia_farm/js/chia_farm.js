@@ -2,9 +2,11 @@ initRefreshFarmInfos();
 initRestartFarmerService();
 initChallengesTables();
 
+console.log(chiaNodes);
+
 $("#queryAllNodes").off("click");
 $("#queryAllNodes").on("click", function(){
-  $.each(chiaFarmData, function(nodeid, farmdata) {
+  $.each(chiaNodes, function(nodeid, nodedata) {
       queryFarmData(nodeid);
   });
 });

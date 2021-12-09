@@ -1,6 +1,26 @@
 <?php
+  use ChiaMgmt\Nodes\Nodes_Api;
   include("../standard_headers.php");
-  echo "<script nonce={$ini["nonce_key"]}> var siteID = 6; </script>";
+
+  $nodes_api = new Nodes_Api();
+  $all_nodes = $nodes_api->getConfiguredNodes(["nodetypenum" => 3]);
+  $chia_nodes = [];
+  if(array_key_exists("data", $all_nodes)){
+    foreach($all_nodes["data"] AS $nodeid => $nodedata){
+      if($nodedata["authtype"] == 2){
+        $thishostinfo["hostname"] = $nodedata["hostname"];
+        $thishostinfo["nodeid"] = $nodedata["id"];
+        $thishostinfo["nodeauthhash"] = $nodedata["nodeauthhash"];
+        $chia_nodes[$nodedata["id"]] = $thishostinfo;
+      }
+    }
+  }
+
+  echo "<script nonce={$ini["nonce_key"]}> 
+          var siteID = 6;
+          var chiaNodes = " . json_encode($chia_nodes) . ";
+          var chiaFarmData = {}; 
+        </script>";
 ?>
 <!-- Page Heading -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -28,8 +48,13 @@
   </div>
 </div>
 <h5>Overview</h5>
-<div id="farminfocards">
-<?php include("templates/cards.php"); ?>
-</div>
-<!-- <h5>Last Attempted Proof</h5>
-<h5>Last Block Challenges</h5>-->
+<?php foreach($chia_nodes AS $nodeid => $nodeinfo){ ?>
+  <div id="farmercontainer_<?php echo $nodeid; ?>">
+    <?php
+        $_GET['nodeid'] = $nodeid;
+        include("templates/cards.php");
+    ?> 
+  </div>
+<?php } ?>
+<script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_farm/js/chia_farm.js"?>></script>
+

@@ -107,6 +107,7 @@
      */
     public function getFarmData(array $data = NULL, array $loginData = NULL, $server = NULL, int $nodeid = NULL): array
     {
+      if(array_key_exists("nodeid", $data) && is_numeric($data["nodeid"]) && $data["nodeid"] > 0) $nodeid = $data["nodeid"];
       try{
         if(is_null($nodeid)){
           $sql = $this->db_api->execute("SELECT nt.nodeid, cf.syncstatus, n.hostname, n.nodeauthhash, cf.total_chia_farmed, cf.user_transaction_fees, cf.block_rewards, cf.last_height_farmed, cf.plot_count, cf.total_size_of_plots, cf.estimated_network_space, cf.expected_time_to_win, cf.querydate
@@ -289,7 +290,9 @@
     public function getChallenges(array $data = NULL, array $loginData = NULL): array
     {
       $limit = "";
-      if(!array_key_exists("datalimit", $data)) $limit = "LIMIT {$data["limit"]}";
+      $nodeid = "";
+      if(array_key_exists("datalimit", $data) && is_numeric($data["limit"]) && $data["limit"] > 0) $limit = "LIMIT {$data["limit"]}";
+      if(array_key_exists("nodeid", $data) && is_numeric($data["nodeid"]) && $data["nodeid"] > 0) $nodeid = "AND n.id = {$data["nodeid"]}";
 
       try{
         $sql = $this->db_api->execute("SELECT cfc.id, n.id AS nodeid, cfc.date, cfc.challenge_chain_sp, cfc.challenge_hash, cfc.difficulty, cfc.reward_chain_sp, cfc.signage_point_index, cfc.sub_slot_iters
@@ -298,7 +301,7 @@
                                             SELECT * FROM chia_farm_challenges WHERE nodeid = n.id {$limit}
                                         ) as cfc
                                         ON cfc.nodeid = n.id
-                                        WHERE n.authtype = 2", array());
+                                        WHERE n.authtype = 2 {$nodeid}", array());
         $foundchallenges = $sql->fetchAll(\PDO::FETCH_ASSOC);
         
         $returndata = [];

@@ -5,7 +5,7 @@
   include("../standard_headers.php");
 
   $nodes_api = new Nodes_Api();
-  $all_nodes = $nodes_api->getConfiguredNodes();
+  $all_nodes = $nodes_api->getConfiguredNodes(["nodetypenum" => 5]);
   $chia_nodes = [];
   if(array_key_exists("data", $all_nodes)){
     foreach($all_nodes["data"] AS $nodeid => $nodedata){

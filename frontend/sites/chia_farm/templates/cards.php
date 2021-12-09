@@ -16,11 +16,11 @@
   $chia_farm_api = new Chia_Farm_Api();
   $nodes_api = new Nodes_Api();
   $nodes_states = $nodes_api->queryNodesServicesStatus()["data"];
-  $farm_api_data = $chia_farm_api->getFarmData();
-  $challenges = $chia_farm_api->getChallenges(["limit" => 50]);
+  $farm_api_data = $chia_farm_api->getFarmData(["nodeid" => $_GET["nodeid"]]);
+  $challenges = $chia_farm_api->getChallenges(["limit" => 50, "nodeid" => $_GET["nodeid"]]);
 
   if(array_key_exists("data", $farm_api_data) && count($farm_api_data["data"]) > 0){
-    echo "<script nonce={$ini["nonce_key"]}> var chiaFarmData = " . json_encode($farm_api_data["data"]) . "; </script>";
+    echo "<script nonce={$ini["nonce_key"]}> chiaFarmData[{$_GET["nodeid"]}] = " . json_encode($farm_api_data["data"][$_GET["nodeid"]]) . "; </script>";
     foreach($farm_api_data["data"] AS $nodeid => $farmdata){
 ?>
 <div class="row">
@@ -227,5 +227,3 @@
   </div>
 </div>
 <?php } ?>
-
-<script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_farm/js/chia_farm.js"?>></script>
