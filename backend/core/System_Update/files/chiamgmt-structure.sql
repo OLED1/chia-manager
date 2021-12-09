@@ -41,19 +41,19 @@ DROP TABLE IF EXISTS `chia_farm`;
 CREATE TABLE `chia_farm` (
   `id` int NOT NULL AUTO_INCREMENT,
   `nodeid` int NOT NULL,
-  `farming_status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `syncstatus` tinyint(1) NOT NULL,
   `total_chia_farmed` float NOT NULL DEFAULT '0',
   `user_transaction_fees` float NOT NULL DEFAULT '0',
   `block_rewards` float NOT NULL DEFAULT '0',
   `last_height_farmed` int DEFAULT '0',
   `plot_count` int NOT NULL DEFAULT '0',
   `total_size_of_plots` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `estimated_network_space` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `estimated_network_space` float DEFAULT NULL,
   `expected_time_to_win` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `querydate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `NodeIDFarm` (`nodeid`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -66,10 +66,15 @@ DROP TABLE IF EXISTS `chia_farm_challenges`;
 CREATE TABLE `chia_farm_challenges` (
   `id` int NOT NULL AUTO_INCREMENT,
   `date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `hash` varchar(70) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `hash_index` int NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=641 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `challenge_chain_sp` varchar(66) COLLATE utf8mb4_general_ci NOT NULL,
+  `challenge_hash` varchar(66) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `difficulty` int NOT NULL,
+  `reward_chain_sp` varchar(66) COLLATE utf8mb4_general_ci NOT NULL,
+  `signage_point_index` int NOT NULL,
+  `sub_slot_iters` int NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `challenge_chain_sp` (`challenge_chain_sp`)
+) ENGINE=InnoDB AUTO_INCREMENT=54841 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -86,7 +91,6 @@ CREATE TABLE `chia_infra_sysinfo` (
   `load_1min` float NOT NULL,
   `load_5min` float NOT NULL,
   `load_15min` float NOT NULL,
-  `filesystem` json NOT NULL,
   `memory_total` bigint NOT NULL,
   `memory_free` bigint NOT NULL,
   `memory_buffers` bigint NOT NULL,
@@ -98,8 +102,29 @@ CREATE TABLE `chia_infra_sysinfo` (
   `cpu_cores` int NOT NULL,
   `cpu_model` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `NodeIDSysinfo` (`nodeid`)
-) ENGINE=InnoDB AUTO_INCREMENT=226 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  KEY `NodeIDSysinfo` (`nodeid`),
+  KEY `timestamp` (`timestamp`)
+) ENGINE=InnoDB AUTO_INCREMENT=11913 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `chia_infra_sysinfo_filesystems`
+--
+
+DROP TABLE IF EXISTS `chia_infra_sysinfo_filesystems`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `chia_infra_sysinfo_filesystems` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `sysinfo_id` int NOT NULL,
+  `device` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `size` int NOT NULL,
+  `used` int NOT NULL,
+  `avail` int NOT NULL,
+  `mountpoint` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `sysinfo_id` (`sysinfo_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=43647 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -122,7 +147,7 @@ CREATE TABLE `chia_overall` (
   `market_timestamp` datetime NOT NULL,
   `querydate` datetime NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2034 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8275 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -158,17 +183,11 @@ DROP TABLE IF EXISTS `chia_plots_directories`;
 CREATE TABLE `chia_plots_directories` (
   `id` int NOT NULL AUTO_INCREMENT,
   `nodeid` int NOT NULL,
-  `devname` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `mountpoint` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `finalplotsdir` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `totalsize` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `totalused` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `totalusedpercent` varchar(4) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `plotcount` int NOT NULL DEFAULT '0',
   `querydate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `NodeIDPlotsDir` (`nodeid`)
-) ENGINE=InnoDB AUTO_INCREMENT=122 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -184,15 +203,15 @@ CREATE TABLE `chia_wallets` (
   `walletid` int NOT NULL,
   `walletaddress` varchar(62) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `walletheight` int NOT NULL,
-  `syncstatus` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `wallettype` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `totalbalance` float NOT NULL,
-  `pendingtotalbalance` float NOT NULL,
-  `spendable` float NOT NULL,
+  `syncstatus` tinyint NOT NULL,
+  `wallettype` tinyint NOT NULL,
+  `totalbalance` int NOT NULL,
+  `pendingtotalbalance` int NOT NULL,
+  `spendable` int NOT NULL,
   `querydate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `NodeIDWallet` (`nodeid`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -223,7 +242,7 @@ CREATE TABLE `chia_wallets_transactions` (
   `type` int NOT NULL,
   PRIMARY KEY (`id`),
   KEY `NodeIDWalletTrans` (`nodeid`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -241,7 +260,7 @@ CREATE TABLE `exchangerates` (
   `updatedate` date NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `currency_code` (`currency_code`)
-) ENGINE=InnoDB AUTO_INCREMENT=825608 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2434944 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -265,8 +284,9 @@ CREATE TABLE `nodes` (
   `changedIP` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `changeable` tinyint(1) NOT NULL DEFAULT '1',
   `lastseen` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  PRIMARY KEY (`id`),
+  KEY `id` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -286,7 +306,7 @@ CREATE TABLE `nodes_status` (
   `querytime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `nodeid` (`nodeid`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -303,7 +323,7 @@ CREATE TABLE `nodetype` (
   PRIMARY KEY (`id`),
   KEY `NodeIDNodetype` (`nodeid`),
   KEY `NotetypesAvail` (`code`)
-) ENGINE=InnoDB AUTO_INCREMENT=172 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=191 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -335,7 +355,7 @@ CREATE TABLE `sites` (
   `id` int NOT NULL AUTO_INCREMENT,
   `namespace` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -350,7 +370,7 @@ CREATE TABLE `sites_pagestoinform` (
   `siteid` int NOT NULL,
   `sitetoinform` int NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -426,7 +446,7 @@ CREATE TABLE `users_authkeys` (
   `valid` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   KEY `UserIDAuthkeys` (`userid`)
-) ENGINE=InnoDB AUTO_INCREMENT=362 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=373 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -482,7 +502,7 @@ CREATE TABLE `users_sessions` (
   `invalidated` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `UserIDSessions` (`userid`)
-) ENGINE=InnoDB AUTO_INCREMENT=438 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=447 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -514,4 +534,4 @@ CREATE TABLE `users_settings` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2021-11-12 11:51:27
+-- Dump completed on 2021-12-09  8:17:49
