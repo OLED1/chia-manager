@@ -1,5 +1,5 @@
-@media screen and (min-width: 750px){
-  #messagecontainer{
+@media screen and (min-width: 750px) {
+  #messagecontainer {
     z-index: 9999;
     position: fixed;
     width: auto;
@@ -9,8 +9,8 @@
   }
 }
 
-@media screen and (max-width: 749px){
-  #messagecontainer{
+@media screen and (max-width: 749px) {
+  #messagecontainer {
     z-index: 9999;
     position: fixed;
     top: 0.5em;
@@ -24,30 +24,26 @@
   background-repeat: no-repeat;
 }
 
-body#page-top{
+body#page-top, div#wrapper {
   height: 100vh;
 }
 
-div#wrapper {
-  height: 100vh;
-}
-
-#accordionSidebar{
+#accordionSidebar {
   overflow: auto;
 }
 
 #content-wrapper {
-	overflow: hidden;
-	height: 100vh;
+  overflow: hidden;
+  height: 100vh;
 }
 
 nav.navbar {
-	height: 5vh;
-	margin-bottom: 0 !important;
+  height: 5vh;
+  margin-bottom: 0 !important;
 }
 
 .topbar .nav-item .nav-link {
-	height: 5vh;
+  height: 5vh;
 }
 
 main {
@@ -61,10 +57,10 @@ main {
 }
 
 footer.sticky-footer {
-	position: fixed;
-	bottom: 0;
-	width: 100%;
-	height: 5vh;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  height: 5vh;
   padding: 0 !important;
 }
 
@@ -72,7 +68,7 @@ a.nav-link {
   width: 100% !important;
 }
 
-footer.sticky-footer .copyright{
+footer.sticky-footer .copyright {
   position: absolute;
   left: 45%;
   top: 50%;
@@ -80,11 +76,11 @@ footer.sticky-footer .copyright{
   transform: translate(-50%, -50%);
 }
 
-body#page-top{
+body#page-top {
   overflow: hidden !important;
 }
 
-.chialogo{
+.chialogo {
   width: 50%;
   text-align: center;
   display: block;
@@ -92,34 +88,35 @@ body#page-top{
   margin-right: auto;
 }
 
-.projectlogo{
+.projectlogo {
   width: 2.7em;
   height: 2.7em;
-  background-image: url('../img/chia_management_logo.svg');
+  background-image: url("../img/chia_management_logo.svg");
 }
 
-#inputTOTPkey{
+#inputTOTPkey {
   white-space: nowrap;
 }
 
-#inputTOTPkey .totpinput{
+#inputTOTPkey .totpinput {
   width: 15.66%;
   display: inline-block;
   text-align: center;
 }
 
-.text-success{
+.text-success {
   color: #1cc88a !important;
 }
 
 .no-gutters > .col, .no-gutters > [class*="col-"] {
-	padding-left: 1em !important;
+  padding-left: 1em !important;
 }
 
 .no-gutters > .col, .no-gutters > [class*="col-"] {
-	padding-right: 0.5em !important;
+  padding-right: 0.5em !important;
 }
 
 body {
-	font-family: Nunito,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji" !important;
+  font-family: Nunito,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji" !important;
 }
+/*# sourceMappingURL=custom.css.map */

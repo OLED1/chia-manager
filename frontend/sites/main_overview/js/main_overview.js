@@ -41,6 +41,7 @@ function messagesTrigger(data){
         $('#card-harvester').load(frontend + "/sites/main_overview/templates/card-harvester.php");
     }else if(key == "queryOverallData"){
       $('#card-overall').load(frontend + "/sites/main_overview/templates/card-overall.php");
+      $('#card-overall-luca').load(frontend + "/sites/main_overview/templates/card-overall-luca.php");
     }else if(key == "connectedNodesChanged"){
       sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryNodesServicesStatus", {});
     }else if(key == "queryNodesServicesStatus"){

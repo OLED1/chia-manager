@@ -1,0 +1,123 @@
+@media screen and (min-width: 750px) {
+    #messagecontainer {
+      z-index: 9999;
+      position: fixed;
+      width: auto;
+      top: 0.5em;
+      right: 0.5em;
+      margin-top: 4em;
+    }
+  }
+  
+  @media screen and (max-width: 749px) {
+    #messagecontainer {
+      z-index: 9999;
+      position: fixed;
+      top: 0.5em;
+      right: 0.5em;
+      left: 0.5em;
+      margin-top: 4em;
+    }
+  }
+  
+  .sidebar-brand-icon {
+    background-repeat: no-repeat;
+  }
+  
+  body#page-top, div#wrapper {
+    height: 100vh;
+  }
+  
+  #accordionSidebar {
+    overflow: auto;
+  }
+  
+  #content-wrapper {
+    overflow: hidden;
+    height: 100vh;
+  }
+  
+  nav.navbar {
+    height: 5vh;
+    margin-bottom: 0 !important;
+  }
+  
+  .topbar .nav-item .nav-link {
+    height: 5vh;
+  }
+  
+  main {
+    overflow: hidden;
+    height: 90vh;
+  }
+  
+  #sitecontent {
+    padding-top: 1em;
+    height: 90vh;
+  }
+  
+  footer.sticky-footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    height: 5vh;
+    padding: 0 !important;
+  }
+  
+  a.nav-link {
+    width: 100% !important;
+  }
+  
+  footer.sticky-footer .copyright {
+    position: absolute;
+    left: 45%;
+    top: 50%;
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+  }
+  
+  body#page-top {
+    overflow: hidden !important;
+  }
+  
+  .chialogo {
+    width: 50%;
+    text-align: center;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  .projectlogo {
+    width: 2.7em;
+    height: 2.7em;
+    background-image: url('../img/chia_management_logo.svg');
+  }
+  
+  #inputTOTPkey {
+    white-space: nowrap;
+  
+    .totpinput {
+      width: 15.66%;
+      display: inline-block;
+      text-align: center;
+    }
+  }
+  
+  .text-success {
+    color: #1cc88a !important;
+  }
+  
+  .no-gutters > {
+    .col, [class*="col-"] {
+      padding-left: 1em !important;
+    }
+  
+    .col, [class*="col-"] {
+      padding-right: 0.5em !important;
+    }
+  }
+  
+  body {
+    font-family: Nunito,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji" !important;
+  }

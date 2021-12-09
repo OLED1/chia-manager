@@ -58,6 +58,13 @@
     </div>
   </div>
   <div class="row">
+    <div id="card-overall-luca" class="col">
+      <?php
+        include("templates/card-overall-luca.php");
+      ?>
+    </div>
+  </div>
+  <div class="row">
     <div id="card-overall" class="col">
       <?php
         include("templates/card-overall.php");
