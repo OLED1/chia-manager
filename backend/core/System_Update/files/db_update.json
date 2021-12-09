@@ -108,6 +108,7 @@
             "ALTER TABLE `users_sessions` ADD INDEX(`userid`);",
             "ALTER TABLE `users_settings` ADD INDEX(`userid`);",
             "ALTER TABLE `chia_plots_directories` ADD INDEX(`nodeid`);",
+            "ALTER TABLE `chia_farm_challenges` ADD `nodeid` INT NOT NULL AFTER `id`, ADD INDEX `nodeid` (`nodeid`);",
             "UPDATE `system_infos` SET dbversion = '0.1.1.211119';"
         ]
     }
