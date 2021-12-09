@@ -17,10 +17,18 @@
   $nodes_states = $nodes_api->queryNodesServicesStatus()["data"];
   $harvesterdata = $chia_harvester_api->getHarvesterData();
 
-  echo "<script nonce={$ini["nonce_key"]}> var siteID = 7; </script>";
+  if(array_key_exists("data", $harvesterdata) && count($harvesterdata["data"]) > 0){
+    $harvesterdata = $harvesterdata["data"];
+  }else{
+    $harvesterdata = [];
+  }
+
+  echo "<script nonce={$ini["nonce_key"]}> 
+          var siteID = 7;
+          var chiaHarvesterData = " . json_encode($harvesterdata["data"]) . "; 
+        </script>";
 
   if(array_key_exists("data", $harvesterdata) && count($harvesterdata["data"]) > 0){
-    echo "<script nonce={$ini["nonce_key"]}> var chiaHarvesterData = " . json_encode($harvesterdata["data"]) . "; </script>";
 
     foreach($harvesterdata["data"] AS $nodeid => $harvesterinfos){
 ?>
@@ -160,7 +168,7 @@
   <div class="col">
     <div class="card shadow mb-4">
       <div class="card-body">
-        There are currently no wallets to show.<br>
+        There are currently no harvester information to show.<br>
         Please try to rescan all data on the nodes page by pressing the button "Query all available information from all nodes".
       </div>
     </div>

@@ -180,7 +180,7 @@
         $this->logging_api->getErrormessage("002", "The external api {$this->ini["xchscan_api"]} returned an error.");
       }
 
-      if(!array_key_exists("blocks", $xch_height_result) && !array_key_exists(0, $xch_height_result["blocks"])){
+      if(is_null($xch_height_result) || !array_key_exists("blocks", $xch_height_result) && !array_key_exists(0, $xch_height_result["blocks"])){
         $overall = false;
         $this->logging_api->getErrormessage("003", "The external api {$this->ini["xchscan_api"]} returned an empty output.");
       }

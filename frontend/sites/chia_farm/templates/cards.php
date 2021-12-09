@@ -194,7 +194,6 @@
                 <th>Date</th>
                 <th>Index</th>
                 <th>Difficulty</th>
-                <th>Proofs</th>
                 <th>Hash</th>
               </tr>
             </thead>
@@ -207,7 +206,6 @@
                   <td><?php echo $challenge["date"]; ?></td>
                   <td><?php echo $challenge["signage_point_index"]; ?></td>
                   <td><?php echo $challenge["difficulty"]; ?></td>
-                  <td><?php echo $challenge["proofcount"]; ?></td>
                   <td><?php echo $challenge["challenge_hash"]; ?></td>
                 </tr>
               <?php
@@ -220,7 +218,6 @@
                 <th>Date</th>
                 <th>Index</th>
                 <th>Difficulty</th>
-                <th>Proofs</th>
                 <th>Hash</th>
               </tr>
             </tfoot>

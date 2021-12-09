@@ -166,7 +166,7 @@
               <div class='card-body'>
                 <h6>Transactions Chart</h6>
                 <?php
-                  if(array_key_exists($nodeid, $transactiondata["data"]) && count($transactiondata["data"][$nodeid][$thiswallet['walletid']]) > 0){
+                  if(array_key_exists($nodeid, $transactiondata["data"]) && array_key_exists($thiswallet['walletid'], $transactiondata["data"][$nodeid]) && count($transactiondata["data"][$nodeid][$thiswallet['walletid']]) > 0){
                 ?>
                 <canvas id="<?php echo "transactions_chart_{$nodeid}_{$thiswallet['walletid']}"; ?>" class="transactionchart_<?php echo $nodeid; ?>"></canvas>
                 <?php

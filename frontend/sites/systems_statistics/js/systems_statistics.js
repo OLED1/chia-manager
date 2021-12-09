@@ -469,28 +469,31 @@ function initAndCreateFilesystemsChart(){
         var labels = [];
         var data = {};
         var sizes = [];
-        $.each(filesystemdata, function(arrkey, filesysteminfo){
-            labels.push(filesysteminfo["timestamp"]);
-            $.each($.parseJSON(filesysteminfo["filesystem"]), function(filesystemkey, thisfilesystem){
-                if(!(thisfilesystem[5] in data)) data[thisfilesystem[5]] = {};
+        $.each(filesystemdata, function(mounted_on, thismountdata){
+            $.each(thismountdata, function(arrkey, thisfsdata){
+                if(!(mounted_on in data)) data[mounted_on] = {};
                 
-                if(!("max" in data[thisfilesystem[5]])) data[thisfilesystem[5]]["max"] = [];
-                var max_formatted = formatKBytes(thisfilesystem[1]);
-                data[thisfilesystem[5]]["max"].push(max_formatted["formatted_size"]);
+                if(!("max" in data[mounted_on])) data[mounted_on]["max"] = [];
+                var max_formatted = formatKBytes(thisfsdata["size"]);
+                data[mounted_on]["max"].push(max_formatted["formatted_size"]);
                 
-                if(!("used" in data[thisfilesystem[5]])) data[thisfilesystem[5]]["used"] = [];
-                data[thisfilesystem[5]]["used"].push(forceFormatTo(thisfilesystem[2], max_formatted["formatted_string"]));
+                if(!("used" in data[mounted_on])) data[mounted_on]["used"] = [];
+                data[mounted_on]["used"].push(forceFormatTo(thisfsdata["used"], max_formatted["formatted_string"]));
                 
-                if(!("avail" in data[thisfilesystem[5]])) data[thisfilesystem[5]]["avail"] = [];
-                data[thisfilesystem[5]]["avail"].push(forceFormatTo(thisfilesystem[3], max_formatted["formatted_string"]));
+                if(!("avail" in data[mounted_on])) data[mounted_on]["avail"] = [];
+                data[mounted_on]["avail"].push(forceFormatTo(thisfsdata["avail"], max_formatted["formatted_string"]));
 
-                if(!("unit" in data[thisfilesystem[5]])) data[thisfilesystem[5]]["unit"] = [];
-                data[thisfilesystem[5]]["unit"].push(max_formatted["formatted_string"]);
+                if(!("unit" in data[mounted_on])) data[mounted_on]["unit"] = [];
+                data[mounted_on]["unit"].push(max_formatted["formatted_string"]);
 
-                if(!("filesystem" in data[thisfilesystem[5]])) data[thisfilesystem[5]]["filesystem"] = [];
-                data[thisfilesystem[5]]["filesystem"].push(thisfilesystem[0]);
+                if(!("filesystem" in data[mounted_on])) data[mounted_on]["filesystem"] = [];
+                data[mounted_on]["filesystem"].push(thisfsdata["device"]);
+
+                if(!("labels" in data[mounted_on])) data[mounted_on]["labels"] = [];
+                data[mounted_on]["labels"].push(thisfsdata["timestamp"]);
             });
         });
+
         $.each(data, function(mounted_on, fsdata){
             if(!(nodeid in filesystemsCharts)) filesystemsCharts[nodeid] = {};
 
@@ -498,7 +501,7 @@ function initAndCreateFilesystemsChart(){
             filesystemsCharts[nodeid][mounted_on] = new Chart(thisfilesystemchartctx, {
                 type: 'line',
                 data: {
-                    labels: labels,
+                    labels: fsdata["labels"],
                     datasets: [
                     {
                         label: "Size",
@@ -644,7 +647,7 @@ function destroyRAMSwapCharts(){
 }
 
 function addNewData(data){
-    console.log(data);
+    //console.log(data);
     /*var querydate = data["querydate"];
     var netspace = data["netspace"].split(" ")[0];
     var xch_blockheight = data["xch_blockheight"];

@@ -32,20 +32,19 @@
   }
 
   echo "<script nonce={$ini["nonce_key"]}>
-            historyFilesystemData[" . $_GET["nodeid"] . "] = " . json_encode($historyFilesystemData[$_GET["nodeid"]]) . ";
+            historyFilesystemData[" . $_GET["nodeid"] . "] = " . json_encode($historyFilesystemData[$_GET["nodeid"]]) .";
         </script>";
 ?>
     <?php if($alldatastated ){ ?>
         <?php if(count($historyFilesystemData) > 0){ ?>
-            <?php foreach($historyFilesystemData AS $arrkey => $filesystemsdata){
-                    $filesystems = json_decode($filesystemsdata[0]["filesystem"]);
-                    foreach($filesystems AS $fsarrkey => $thisfilesystem){
+            <?php foreach($historyFilesystemData AS $nodeid => $filesystemsdata){
+                foreach($filesystemsdata AS $mountpoint => $thisfilesystem){
             ?>
 <div class="card shadow mb-4">
     <ul class="list-group list-group-flush">
         <li class="list-group-item">
             <div class="chart-bar" style="min-height: 30vh;">
-                <canvas class="sysinfo_filesystem_chart_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $thisfilesystem[5]; ?>"></canvas>
+                <canvas class="sysinfo_filesystem_chart_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $mountpoint; ?>"></canvas>
             </div>
         </li>
         <li class="list-group-item">
@@ -62,24 +61,24 @@
             <tbody>
             <tr>
                     <td>Size</td>
-                    <td id="filesystem_cur_size_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $thisfilesystem[5]; ?>"></td>
-                    <td id="filesystem_min_size_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $thisfilesystem[5]; ?>"></td>
-                    <td id="filesystem_max_size_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $thisfilesystem[5]; ?>"></td>
-                    <td id="filesystem_avg_size_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $thisfilesystem[5]; ?>"></td>
+                    <td id="filesystem_cur_size_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $mountpoint; ?>"></td>
+                    <td id="filesystem_min_size_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $mountpoint; ?>"></td>
+                    <td id="filesystem_max_size_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $mountpoint; ?>"></td>
+                    <td id="filesystem_avg_size_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $mountpoint; ?>"></td>
                 </tr>
                 <tr>
                     <td>Used</td>
-                    <td id="filesystem_cur_used_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $thisfilesystem[5]; ?>"></td>
-                    <td id="filesystem_min_used_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $thisfilesystem[5]; ?>"></td>
-                    <td id="filesystem_max_used_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $thisfilesystem[5]; ?>"></td>
-                    <td id="filesystem_avg_used_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $thisfilesystem[5]; ?>"></td>
+                    <td id="filesystem_cur_used_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $mountpoint; ?>"></td>
+                    <td id="filesystem_min_used_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $mountpoint; ?>"></td>
+                    <td id="filesystem_max_used_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $mountpoint; ?>"></td>
+                    <td id="filesystem_avg_used_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $mountpoint; ?>"></td>
                 </tr>
                 <tr>
                     <td>Available</td>
-                    <td id="filesystem_cur_free_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $thisfilesystem[5]; ?>"></td>
-                    <td id="filesystem_min_free_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $thisfilesystem[5]; ?>"></td>
-                    <td id="filesystem_max_free_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $thisfilesystem[5]; ?>"></td>
-                    <td id="filesystem_avg_free_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $thisfilesystem[5]; ?>"></td>
+                    <td id="filesystem_cur_free_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $mountpoint; ?>"></td>
+                    <td id="filesystem_min_free_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $mountpoint; ?>"></td>
+                    <td id="filesystem_max_free_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $mountpoint; ?>"></td>
+                    <td id="filesystem_avg_free_<?php echo $_GET["nodeid"]; ?>" data-mounted-on="<?php echo $mountpoint; ?>"></td>
                 </tr>
             </tbody>
         </table>

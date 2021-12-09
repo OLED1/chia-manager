@@ -258,12 +258,12 @@
           $this_signage_point_formatted = new SignagePointsData($this_signage_point);
           $valuesstring .= "(NULL, current_timestamp(), ?, ?, ?, ?, ?, ?, ?, ?)";
           if(array_key_exists($arrkey+1, $data)) $valuesstring .= ",";
-          array_push($valuesarray, $this_signage_point_formatted->get_proofs(), $this_signage_point_formatted->get_proofcount(), $this_signage_point_formatted->get_challenge_chain_sp(), $this_signage_point_formatted->get_challenge_hash(), $this_signage_point_formatted->get_difficulty(), 
+          array_push($valuesarray, $this_signage_point_formatted->get_challenge_chain_sp(), $this_signage_point_formatted->get_challenge_hash(), $this_signage_point_formatted->get_difficulty(), 
           $this_signage_point_formatted->get_reward_chain_sp(), $this_signage_point_formatted->get_signage_point_index(), $this_signage_point_formatted->get_sub_slot_iters());
         }
 
         if(count($valuesarray) > 0){ 
-          $sql = $this->db_api->execute("INSERT INTO chia_farm_challenges (id,date,proofs,proofcount,challenge_chain_sp,challenge_hash,difficulty,reward_chain_sp,signage_point_index,sub_slot_iters) VALUES {$valuesstring} ON DUPLICATE KEY UPDATE date = current_timestamp()", $valuesarray);
+          $sql = $this->db_api->execute("INSERT INTO chia_farm_challenges (id,date,challenge_chain_sp,challenge_hash,difficulty,reward_chain_sp,signage_point_index,sub_slot_iters) VALUES {$valuesstring} ON DUPLICATE KEY UPDATE date = current_timestamp(), proofcount = proofcount + ?", $valuesarray);
         }
 
         return array("status" => 0, "message" => "Successfully updated challenges information.");
@@ -301,7 +301,7 @@
     public function getAllChallenges(array $data = NULL, array $loginData = NULL): array
     {
       try{
-        $sql = $this->db_api->execute("SELECT id, date, proofs, proofcount, challenge_chain_sp, challenge_hash, difficulty, reward_chain_sp, signage_point_index, sub_slot_iters FROM chia_farm_challenges ORDER BY date DESC", array());
+        $sql = $this->db_api->execute("SELECT id, date, challenge_chain_sp, challenge_hash, difficulty, reward_chain_sp, signage_point_index, sub_slot_iters FROM chia_farm_challenges ORDER BY date DESC", array());
 
         return array("status" => 0, "message" => "Successfully queried all challenges.", "data" => $sql->fetchAll(\PDO::FETCH_ASSOC));
       }catch(\Exception $e){
@@ -319,7 +319,7 @@
     public function getLatestChallenges(array $data = NULL, array $loginData = NULL): array
     {
       try{
-        $sql = $this->db_api->execute("SELECT id, date, proofs, proofcount, challenge_chain_sp, challenge_hash, difficulty, reward_chain_sp, signage_point_index, sub_slot_iters FROM chia_farm_challenges ORDER BY date DESC LIMIT 50", array());
+        $sql = $this->db_api->execute("SELECT id, date, challenge_chain_sp, challenge_hash, difficulty, reward_chain_sp, signage_point_index, sub_slot_iters FROM chia_farm_challenges ORDER BY date DESC LIMIT 50", array());
 
         return array("status" => 0, "message" => "Successfully queried all challenges.", "data" => $sql->fetchAll(\PDO::FETCH_ASSOC));
       }catch(\Exception $e){

@@ -130,26 +130,29 @@
         if(strtotime($data["from"]) &&  strtotime($data["to"]) && new \DateTime($data["from"]) < new \DateTime($data["to"])){
           try{
             if(array_key_exists("node_ids", $data) && is_array($data["node_ids"])){
-              $sql = $this->db_api->execute("SELECT n.id, n.hostname, cis.timestamp, cis.filesystem FROM nodes n 
+              $sql = $this->db_api->execute("SELECT n.id, n.hostname, cis.timestamp, cisf.device, cisf.size, cisf.used, cisf.avail, cisf.mountpoint FROM nodes n 
                                             INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id
+                                            INNER JOIN chia_infra_sysinfo_filesystems cisf ON cisf.sysinfo_id = cis.id
                                             WHERE n.authtype = 2 AND n.id in (?) AND cis.timestamp BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND cis.id mod 10 = 0
                                             ORDER BY timestamp ASC", 
                                             array(implode(",", $data["node_ids"]), $data["from"], $data["to"]));    
             }else{
-              $sql = $this->db_api->execute("SELECT n.id, n.hostname, cis.timestamp, cis.filesystem FROM nodes n 
+              $sql = $this->db_api->execute("SELECT n.id, n.hostname, cis.timestamp, cisf.device, cisf.size, cisf.used, cisf.avail, cisf.mountpoint FROM nodes n 
                                               INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id
+                                              INNER JOIN chia_infra_sysinfo_filesystems cisf ON cisf.sysinfo_id = cis.id
                                               WHERE n.authtype = 2 AND cis.timestamp BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND cis.id mod 10 = 0
                                               ORDER BY timestamp ASC", 
                                               array($data["from"], $data["to"]));
             }
             
-            $historicalLoadData = $sql->fetchAll(\PDO::FETCH_ASSOC);
+            $historicalFSdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
             $returndata = [];
-            foreach($historicalLoadData AS $arrkey => $loaddata){
-              if(!array_key_exists($loaddata["id"], $returndata)){
-                $returndata[$loaddata["id"]][0] = $loaddata;
+            foreach($historicalFSdata AS $arrkey => $fsdata){
+              if(!array_key_exists($fsdata["id"], $returndata)) $returndata[$fsdata["id"]] = [];
+              if(!array_key_exists($fsdata["mountpoint"], $returndata[$fsdata["id"]])){
+                $returndata[$fsdata["id"]][$fsdata["mountpoint"]] = [$fsdata];
               }else{
-                array_push($returndata[$loaddata["id"]], $loaddata);
+                array_push($returndata[$fsdata["id"]][$fsdata["mountpoint"]], $fsdata);
               }
             }
 

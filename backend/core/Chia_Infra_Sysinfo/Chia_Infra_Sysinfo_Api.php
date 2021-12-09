@@ -61,17 +61,29 @@
           $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
           $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
 
-          $sql = $this->db_api->execute("INSERT INTO chia_infra_sysinfo (id, nodeid, load_1min, load_5min, load_15min, filesystem, memory_total, memory_free, memory_buffers, memory_cached, memory_shared, swap_total, swap_free, cpu_count, cpu_cores, cpu_model) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          $sql = $this->db_api->execute("INSERT INTO chia_infra_sysinfo (id, nodeid, load_1min, load_5min, load_15min, memory_total, memory_free, memory_buffers, memory_cached, memory_shared, swap_total, swap_free, cpu_count, cpu_cores, cpu_model) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           array($nodeid, $data["system"]["load"]["1min"], $data["system"]["load"]["5min"], $data["system"]["load"]["15min"],
-                json_encode($data["system"]["filesystem"]),
                 $data["system"]["memory"]["total"], $data["system"]["memory"]["free"], $data["system"]["memory"]["buffers"], $data["system"]["memory"]["cached"], $data["system"]["memory"]["shared"],
                 $data["system"]["swap"]["total"], $data["system"]["swap"]["free"],
                 $data["system"]["cpu"]["count"], $data["system"]["cpu"]["cores"], $data["system"]["cpu"]["model"]
           ));
 
+          $statement_string = "";
+          $statement_data = [];
+          $last_insert_id = $this->db_api->lastInsertId();
+          foreach($data["system"]["filesystem"] AS $arrkey => $thisfsdata){
+            array_push($statement_data, $thisfsdata[0], $thisfsdata[1], $thisfsdata[2], $thisfsdata[3], $thisfsdata[5]);
+            $statement_string .= "(NULL, {$last_insert_id}, ?, ?, ?, ?, ?)";
+            if(array_key_exists($arrkey+1, $data["system"]["filesystem"])) $statement_string .= ",";
+          }
+
+          if(count($statement_data) > 0){
+            $sql = $this->db_api->execute("INSERT INTO chia_infra_sysinfo_filesystems (id, sysinfo_id, device, size, used, avail, mountpoint) VALUES {$statement_string}", $statement_data);
+          }
+
           return array("status" => 0, "message" => "Successfully updated system information for node $nodeid.", "data" => ["nodeid" => $nodeid]);
         }catch(\Exception $e){
-          return $this->logging->getErrormessage("001", $e);
+          return $this->logging_api->getErrormessage("001", $e);
         }
       }
     }
@@ -87,61 +99,51 @@
      * @return array                        {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": [Found system information data array]}
      */
     public function getSystemInfo(array $data = NULL, array $loginData = NULL, $server = NULL, int $nodeid = NULL){
-        try{
-          if(is_null($nodeid)){
-            $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, 
-                                                  (SELECT cis1.timestamp FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) timestamp,
-                                                  (SELECT cis1.load_1min FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) load_1min,
-                                                  (SELECT cis1.load_5min FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) load_5min,
-                                                  (SELECT cis1.load_15min FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) load_15min,
-                                                  (SELECT cis1.filesystem FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) filesystem,
-                                                  (SELECT cis1.memory_total FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) memory_total,
-                                                  (SELECT cis1.memory_free FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) memory_free,
-                                                  (SELECT cis1.memory_buffers FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) memory_buffers,
-                                                  (SELECT cis1.memory_shared FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) memory_shared,
-                                                  (SELECT cis1.memory_cached FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) memory_cached,
-                                                  (SELECT cis1.swap_total FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) swap_total,
-                                                  (SELECT cis1.swap_free FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) swap_free,
-                                                  (SELECT cis1.cpu_count FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) cpu_count,
-                                                  (SELECT cis1.cpu_cores FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) cpu_cores,
-                                                  (SELECT cis1.cpu_model FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) cpu_model
-                                            FROM nodes n
-                                            WHERE n.id = (
-                                                SELECT nt.nodeid FROM nodetype nt WHERE nt.code >= 3 AND nt.code <= 5 AND nt.nodeid = n.id LIMIT 1
-                                            )", array());
-          }else{
-            $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, 
-                                                (SELECT cis1.timestamp FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) timestamp,
-                                                (SELECT cis1.load_1min FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) load_1min,
-                                                (SELECT cis1.load_5min FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) load_5min,
-                                                (SELECT cis1.load_15min FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) load_15min,
-                                                (SELECT cis1.filesystem FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) filesystem,
-                                                (SELECT cis1.memory_total FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) memory_total,
-                                                (SELECT cis1.memory_free FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) memory_free,
-                                                (SELECT cis1.memory_buffers FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) memory_buffers,
-                                                (SELECT cis1.memory_shared FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) memory_shared,
-                                                (SELECT cis1.memory_cached FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) memory_cached,
-                                                (SELECT cis1.swap_total FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) swap_total,
-                                                (SELECT cis1.swap_free FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) swap_free,
-                                                (SELECT cis1.cpu_count FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) cpu_count,
-                                                (SELECT cis1.cpu_cores FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) cpu_cores,
-                                                (SELECT cis1.cpu_model FROM `chia_infra_sysinfo` cis1 WHERE cis1.nodeid = n.id ORDER BY timestamp DESC LIMIT 1) cpu_model
-                                            FROM nodes n
-                                            WHERE n.id = ?
-                                            )", array($data["nodeid"]));
-          }
+      if(!is_null($data) && array_key_exists("nodeid", $data) && is_numeric($data["nodeid"])) $nodeid = $data["nodeid"];
 
-          $returnarray = [];
-          foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $sysinfodata){
+      try{
+        if(is_null($nodeid)){
+          $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, cis.id AS sysinfoid, cis.timestamp,cis.load_1min,cis.load_5min,cis.load_15min,cis.memory_total,cis.memory_free,
+                                                cis.memory_buffers,cis.memory_shared,cis.memory_cached,cis.swap_total,cis.swap_free,cis.cpu_count,cis.cpu_cores,cis.cpu_model,
+                                                cisf.device, cisf.size, cisf.used, cisf.avail, cisf.mountpoint
+                                          FROM nodes n
+                                          INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id AND cis.timestamp = (SELECT max(cis1.timestamp) FROM chia_infra_sysinfo cis1 WHERE cis1.nodeid = n.id)
+                                          INNER JOIN chia_infra_sysinfo_filesystems cisf ON cisf.sysinfo_id = cis.id AND cis.timestamp = (SELECT max(cis1.timestamp) FROM chia_infra_sysinfo cis1 WHERE cis1.nodeid = n.id)
+                                          WHERE n.id = (
+                                              SELECT nt.nodeid FROM nodetype nt WHERE nt.code >= 3 AND nt.code <= 5 AND nt.nodeid = n.id LIMIT 1
+                                          )", array());
+        }else{
+          $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, cis.id AS sysinfoid, cis.timestamp,cis.load_1min,cis.load_5min,cis.load_15min,cis.memory_total,cis.memory_free,
+                                                cis.memory_buffers,cis.memory_shared,cis.memory_cached,cis.swap_total,cis.swap_free,cis.cpu_count,cis.cpu_cores,cis.cpu_model,
+                                                cisf.device, cisf.size, cisf.used, cisf.avail, cisf.mountpoint
+                                          FROM nodes n
+                                          INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id AND cis.timestamp = (SELECT max(cis1.timestamp) FROM chia_infra_sysinfo cis1 WHERE cis1.nodeid = n.id)
+                                          INNER JOIN chia_infra_sysinfo_filesystems cisf ON cisf.sysinfo_id = cis.id AND cis.timestamp = (SELECT max(cis1.timestamp) FROM chia_infra_sysinfo cis1 WHERE cis1.nodeid = n.id)
+                                          WHERE n.id = ?", array($data["nodeid"]));
+        }
+        
+        $returnarray = [];
+        foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $sysinfodata){
+          if(!array_key_exists($sysinfodata["id"], $returnarray)){
             $returnarray[$sysinfodata["id"]] = $sysinfodata;
             $returnarray[$sysinfodata["id"]]["nodeauthhash"] = $this->encryption_api->decryptString($sysinfodata["nodeauthhash"]);
-
+            $returnarray[$sysinfodata["id"]]["filesystems"] = [[$sysinfodata["device"], $sysinfodata["size"], $sysinfodata["used"], $sysinfodata["avail"], $sysinfodata["mountpoint"]]];
+            unset(
+              $returnarray[$sysinfodata["id"]]["device"],
+              $returnarray[$sysinfodata["id"]]["size"],
+              $returnarray[$sysinfodata["id"]]["used"],
+              $returnarray[$sysinfodata["id"]]["avail"],
+              $returnarray[$sysinfodata["id"]]["mountpoint"]
+            ); 
+          }else{
+            array_push($returnarray[$sysinfodata["id"]]["filesystems"], [$sysinfodata["device"], $sysinfodata["size"], $sysinfodata["used"], $sysinfodata["avail"], $sysinfodata["mountpoint"]]);
           }
-
-          return array("status" => 0, "message" => "Successfully loaded latest system information.", "data" => $returnarray);
-        }catch(\Exception $e){
-          return $this->logging->getErrormessage("001", $e);
         }
+
+        return array("status" => 0, "message" => "Successfully loaded latest system information.", "data" => $returnarray);
+      }catch(\Exception $e){
+        return $this->logging_api->getErrormessage("001", $e);
+      }
     }
 
     /**

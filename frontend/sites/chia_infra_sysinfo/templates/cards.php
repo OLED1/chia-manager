@@ -59,10 +59,11 @@
                   <div class="card shadow mb-4">
                     <div id="filesystem_<?php echo "{$sysinfo["id"]}"; ?>" class="card-body">
                       <h6 class="m-0 font-weight-bold text-primary">Filesystems</h6>
-                      <?php foreach(json_decode($sysinfo["filesystem"]) AS $arrkey => $filesystem){ ?>
-                        <h4 class="small font-weight-bold"><?php echo "{$filesystem[0]} => {$filesystem[5]} (Size: " . formatkBytes($filesystem[1]) . " Used: " . formatkBytes($filesystem[2]) . " Available: " . formatkBytes($filesystem[3]) . ")"; ?><span class="float-right"><?php echo $filesystem[4]; ?></span></h4>
+                      <?php foreach($sysinfo["filesystems"] AS $arrkey => $filesystem){ ?>
+                        <?php $percent = number_format(($filesystem[2]/$filesystem[1])*100, 2); ?>
+                        <h4 class="small font-weight-bold"><?php echo "{$filesystem[0]} => {$filesystem[4]} (Size: " . formatkBytes($filesystem[1]) . " Used: " . formatkBytes($filesystem[2]) . " Available: " . formatkBytes($filesystem[3]) . ")"; ?><span class="float-right"><?php echo $percent; ?>%</span></h4>
                         <div class="progress mb-4">
-                          <div class="progress-bar <?php $percent = explode("%",$filesystem[4])[0]; echo ($percent <= 50 ? "bg-success" : ($percent <= 75 ? "bg-warning" : "bg-danger")); ?>" role="progressbar" style="width: <?php echo $filesystem[4]; ?>" aria-valuenow="<?php echo $percent; ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                          <div class="progress-bar <?php echo ($percent <= 50 ? "bg-success" : ($percent <= 75 ? "bg-warning" : "bg-danger")); ?>" role="progressbar" style="width: <?php echo $percent; ?>%" aria-valuenow="<?php echo $percent; ?>" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
                       <?php } ?>
                     </div>
