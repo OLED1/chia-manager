@@ -81,13 +81,13 @@
             "ALTER TABLE `chia_farm` CHANGE `farming_status` `syncstatus` TINYINT(1) NOT NULL;",
             "ALTER TABLE `chia_farm_challenges` CHANGE `hash` `challenge_hash` VARCHAR(66) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL;",
             "ALTER TABLE `chia_farm_challenges` CHANGE `hash_index` `signage_point_index` INT NOT NULL;",
-            "ALTER TABLE `chia_farm_challenges` ADD `proofs` JSON NOT NULL AFTER `date`;",
             "ALTER TABLE `chia_farm_challenges` ADD `proofcount` INT NOT NULL AFTER `proofs`;",
             "ALTER TABLE `chia_farm_challenges` ADD `challenge_chain_sp` VARCHAR(66) NOT NULL AFTER `proofs`;",
             "ALTER TABLE `chia_farm_challenges` ADD `difficulty` INT NOT NULL AFTER `challenge_hash`;",
             "ALTER TABLE `chia_farm_challenges` ADD `sub_slot_iters` INT NOT NULL AFTER `signage_point_index`;",
             "ALTER TABLE `chia_farm_challenges` ADD `reward_chain_sp` VARCHAR(66) NOT NULL AFTER `difficulty`;",
             "ALTER TABLE `chia_farm_challenges` ADD UNIQUE(`challenge_chain_sp`);",
+            "ALTER TABLE `chia_plots_directories` DROP `devname`, DROP `finalplotsdir`, DROP `totalsize`, DROP `totalused`, DROP `totalusedpercent`;",
             "UPDATE `system_infos` SET dbversion = '0.1.1.211119';"
         ]
     }
