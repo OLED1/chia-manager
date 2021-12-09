@@ -37,10 +37,11 @@
      * @param  string $db_password   The database password which should be used for the connection.
      * @return array                 An positive status code array or an exception.
      */
-    public function testConnection(string $db_name, string $db_host, string $db_user, string $db_password){
+    public function testConnection(string $db_name, string $db_host, string $db_user, string $db_password): array
+    {
       try{
-        $con = new \PDO("mysql:dbname={$db_name};host={$db_host}", $db_user, $db_password);
-        $con->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $this->con = new \PDO("mysql:dbname={$db_name};host={$db_host}", $db_user, $db_password);
+        $this->con->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
         return array("status" => 0, "message" => "Database connection successfull.");
       }catch(\Exception $e){
@@ -54,10 +55,10 @@
      * @param  array  $parameter The parameters if they are needed. They will be inserted in statement where "?" is stated. The values in the array must be sorted to be inserted correctly.
      * @return array  Returns the all data stated by the database command. E.g. Select return values.
      */
-    public function execute(string $statement, array $parameter){
+    public function execute(string $statement, array $parameter): object
+    {
       try{
-        $con = $this->con;
-        $sql=$con->prepare($statement);
+        $sql = $this->con->prepare($statement);
         $sql->execute($this->removeHTMLEntities($parameter));
 
         return $sql;
@@ -67,11 +68,21 @@
     }
 
     /**
+     * Returns the id of the last inserted command execute.
+     *
+     * @return integer Returns the last insert id.
+     */
+    public function lastInsertId(): int{
+      return $this->con->lastInsertId();
+    }
+
+    /**
      * This method prevents JavaScript injection before statements are put to database.
      * @param  array $parameter The mysql parameters list.
      * @return array            Returns the cleaned up parameters list.
      */
-    private function removeHTMLEntities(array $parameter){
+    private function removeHTMLEntities(array $parameter): array
+    {
       $cleanedup = [];
       foreach($parameter AS $arrkey => $parameter){
         $cleanedup[$arrkey] = htmlentities($parameter, ENT_NOQUOTES);
