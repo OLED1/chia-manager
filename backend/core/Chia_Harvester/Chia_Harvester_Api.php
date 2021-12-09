@@ -1,6 +1,7 @@
 <?php
   namespace ChiaMgmt\Chia_Harvester;
   use ChiaMgmt\DB\DB_Api;
+  use ChiaMgmt\Chia_Infra_Sysinfo\Chia_Infra_Sysinfo_Api;
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\Nodes\Nodes_Api;
   use ChiaMgmt\Encryption\Encryption_Api;
@@ -20,6 +21,11 @@
      * @var DB_Api
      */
     private $db_api;
+    /**
+     * Holds an instance to the Infra Sysinfo Class.
+     * @var Chia_Infra_Sysinfo
+     */
+    private $chia_infra_sysinfo_api;
     /**
      * Holds an instance to the Logging Class.
      * @var Logging_Api
@@ -46,6 +52,7 @@
      */
     public function __construct(object $server = NULL){
       $this->db_api = new DB_Api();
+      $this->chia_infra_sysinfo_api = new Chia_Infra_Sysinfo_Api();
       $this->logging_api = new Logging_Api($this, $server);
       $this->nodes_api = new Nodes_Api();
       $this->encryption_api = new Encryption_Api();
@@ -62,6 +69,25 @@
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {"nodeid": [nodeid], "data": {[newly added harvester data]}}
      */
     public function updateHarvesterData(array $data, array $loginData = NULL){
+      print_r(json_encode($data, JSON_PRETTY_PRINT));
+
+      try{
+        $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
+        $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
+
+        print_r($this->chia_infra_sysinfo_api->getSystemInfo(["nodeid" => $nodeid]));
+
+        foreach($data AS $finalmointpoint => $plots){
+          print_r($finalmointpoint);
+          print_r($plots);
+          echo "\n"; 
+        }
+        //$sql = $this->db_api->execute("INSERT INTO chia_farm_challenges (id,date,challenge_chain_sp,challenge_hash,difficulty,reward_chain_sp,signage_point_index,sub_slot_iters) VALUES {$valuesstring} ON DUPLICATE KEY UPDATE date = current_timestamp(), proofcount = proofcount + ?", $valuesarray);
+
+      }catch(\Exception $e){
+        return array("status" => 1, "message" => "An error occured. {$e->getMessage()}");
+      }
+
       if(array_key_exists("harvester", $data)){
         $harvesterdata = $data["harvester"];
 
@@ -118,12 +144,12 @@
             }
           }
         }catch(\Exception $e){
-          return $this->logging->getErrormessage("001", $e);
+          return $this->logging_api->getErrormessage("001", $e);
         }
 
         return array("status" => 0, "message" => "Successfully updated farmer information for node $nodeid.", "data" => ["nodeid" => $nodeid, "data" => $this->getHarvesterData($data, $loginData, $nodeid, false)["data"]]);
       }else{
-        return $this->logging->getErrormessage("002");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
@@ -187,7 +213,7 @@
           }
         }
       }catch(\Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 
@@ -210,7 +236,7 @@
           return array("status" => 1, "message" => "More than one row was returned. Aborting deleting from db for security reasons.");
         }
       }catch(\Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 
@@ -228,7 +254,7 @@
 
         return array("status" =>0, "message" => "Successfully loaded chia plots information for node {$nodeid} and mountid {$finalmountid}.", "data" => $sql->fetchAll(\PDO::FETCH_ASSOC));
       }catch(\Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 
@@ -244,6 +270,10 @@
      * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": [Found harvester data array]}
      */
     public function getHarvesterData(array $data = NULL, array $loginData = NULL, $server = NULL, int $nodeid = NULL, bool $getPlots = true){
+
+      $returndata = [];
+      return array("status" =>0, "message" => "Successfully loaded chia harvester information.", "data" => $returndata);      
+
       try{
         if(is_null($nodeid)){
           $sql = $this->db_api->execute("SELECT cp.id, nt.nodeid, n.nodeauthhash, n.hostname, cp.devname, cp.mountpoint, cp.finalplotsdir, cp.totalsize, cp.totalused, cp.totalusedpercent, cp.plotcount, cp.querydate
@@ -275,7 +305,7 @@
 
         return array("status" =>0, "message" => "Successfully loaded chia harvester information.", "data" => $returndata);
       }catch(\Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 
@@ -356,7 +386,7 @@
         $data["data"] = $nodeid;
         return array("status" =>0, "message" => "Successfully queried harvester status information for node $nodeid.", "data" => $data);
       }catch(\Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 
@@ -377,7 +407,7 @@
         $data["data"] = $nodeid;
         return array("status" =>0, "message" => "Successfully queried harvester service restart for node $nodeid.", "data" => $data);
       }catch(\Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
   }
