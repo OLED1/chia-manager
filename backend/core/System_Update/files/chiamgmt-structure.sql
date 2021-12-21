@@ -53,7 +53,24 @@ CREATE TABLE `chia_farm` (
   `querydate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `NodeIDFarm` (`nodeid`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `chia_farm_challanges_proofcount`
+--
+
+DROP TABLE IF EXISTS `chia_farm_challanges_proofcount`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `chia_farm_challanges_proofcount` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nodeid` int NOT NULL,
+  `chia_farm_challanges_id` int NOT NULL,
+  `proofcount` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `chia_farm_challanges_id` (`chia_farm_challanges_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -65,6 +82,7 @@ DROP TABLE IF EXISTS `chia_farm_challenges`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `chia_farm_challenges` (
   `id` int NOT NULL AUTO_INCREMENT,
+  `nodeid` int NOT NULL,
   `date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `challenge_chain_sp` varchar(66) COLLATE utf8mb4_general_ci NOT NULL,
   `challenge_hash` varchar(66) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
@@ -73,8 +91,9 @@ CREATE TABLE `chia_farm_challenges` (
   `signage_point_index` int NOT NULL,
   `sub_slot_iters` int NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `challenge_chain_sp` (`challenge_chain_sp`)
-) ENGINE=InnoDB AUTO_INCREMENT=54841 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  UNIQUE KEY `challenge_chain_sp` (`challenge_chain_sp`),
+  KEY `nodeid` (`nodeid`)
+) ENGINE=InnoDB AUTO_INCREMENT=851214 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -104,7 +123,7 @@ CREATE TABLE `chia_infra_sysinfo` (
   PRIMARY KEY (`id`),
   KEY `NodeIDSysinfo` (`nodeid`),
   KEY `timestamp` (`timestamp`)
-) ENGINE=InnoDB AUTO_INCREMENT=11913 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=19240 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -123,8 +142,9 @@ CREATE TABLE `chia_infra_sysinfo_filesystems` (
   `avail` int NOT NULL,
   `mountpoint` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `sysinfo_id` (`sysinfo_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=43647 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  KEY `sysinfo_id` (`sysinfo_id`),
+  KEY `mountpoint` (`mountpoint`)
+) ENGINE=InnoDB AUTO_INCREMENT=107723 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -147,7 +167,7 @@ CREATE TABLE `chia_overall` (
   `market_timestamp` datetime NOT NULL,
   `querydate` datetime NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8275 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=12471 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -159,18 +179,22 @@ DROP TABLE IF EXISTS `chia_plots`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `chia_plots` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `finalmountid` int NOT NULL,
-  `nodeid` int NOT NULL,
-  `k_size` varchar(3) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `plotcreationdate` datetime NOT NULL,
-  `plot_key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `pool_key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `filename` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `status` int NOT NULL DEFAULT '1',
+  `cpd_id` int NOT NULL,
+  `file_size` bigint NOT NULL,
+  `filename` varchar(250) COLLATE utf8mb4_general_ci NOT NULL,
+  `plot_seed` varchar(66) COLLATE utf8mb4_general_ci NOT NULL,
+  `plot_id` varchar(66) COLLATE utf8mb4_general_ci NOT NULL,
+  `plot_public_key` varchar(98) COLLATE utf8mb4_general_ci NOT NULL,
+  `pool_contract_puzzle_hash` varchar(100) COLLATE utf8mb4_general_ci NOT NULL,
+  `pool_public_key` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `size` int NOT NULL,
+  `time_modified` datetime NOT NULL,
+  `last_reported` datetime NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `filename` (`filename`),
-  KEY `NodeIDPlots` (`nodeid`)
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  UNIQUE KEY `plot_id` (`plot_id`),
+  UNIQUE KEY `plot_seed` (`plot_seed`),
+  KEY `NodeIDPlots` (`cpd_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7948 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -185,9 +209,13 @@ CREATE TABLE `chia_plots_directories` (
   `nodeid` int NOT NULL,
   `mountpoint` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `plotcount` int NOT NULL DEFAULT '0',
+  `firstreported` datetime NOT NULL,
+  `lastupdated` datetime NOT NULL,
   `querydate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  PRIMARY KEY (`id`),
+  KEY `nodeid` (`nodeid`),
+  KEY `mountpoint` (`mountpoint`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -211,7 +239,7 @@ CREATE TABLE `chia_wallets` (
   `querydate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `NodeIDWallet` (`nodeid`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -242,7 +270,7 @@ CREATE TABLE `chia_wallets_transactions` (
   `type` int NOT NULL,
   PRIMARY KEY (`id`),
   KEY `NodeIDWalletTrans` (`nodeid`)
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -260,7 +288,7 @@ CREATE TABLE `exchangerates` (
   `updatedate` date NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `currency_code` (`currency_code`)
-) ENGINE=InnoDB AUTO_INCREMENT=2434944 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3832114 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -286,27 +314,44 @@ CREATE TABLE `nodes` (
   `lastseen` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `id` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=34 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `nodes_status`
+-- Table structure for table `nodes_services_status`
 --
 
-DROP TABLE IF EXISTS `nodes_status`;
+DROP TABLE IF EXISTS `nodes_services_status`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `nodes_status` (
+CREATE TABLE `nodes_services_status` (
+  `id` int NOT NULL,
+  `nodeid` int NOT NULL,
+  `farmer_service` tinyint NOT NULL,
+  `wallet_service` tinyint NOT NULL,
+  `harvester_service` tinyint NOT NULL,
+  `firstreported` datetime NOT NULL,
+  `lastreported` datetime NOT NULL,
+  KEY `lastreported` (`lastreported`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `nodes_up_status`
+--
+
+DROP TABLE IF EXISTS `nodes_up_status`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `nodes_up_status` (
   `id` int NOT NULL AUTO_INCREMENT,
   `nodeid` int NOT NULL,
   `onlinestatus` int NOT NULL,
-  `walletstatus` int NOT NULL,
-  `farmerstatus` int NOT NULL,
-  `harvesterstatus` int NOT NULL,
-  `querytime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `firstreported` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `lastreported` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `nodeid` (`nodeid`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -323,7 +368,7 @@ CREATE TABLE `nodetype` (
   PRIMARY KEY (`id`),
   KEY `NodeIDNodetype` (`nodeid`),
   KEY `NotetypesAvail` (`code`)
-) ENGINE=InnoDB AUTO_INCREMENT=191 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=195 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -446,7 +491,7 @@ CREATE TABLE `users_authkeys` (
   `valid` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   KEY `UserIDAuthkeys` (`userid`)
-) ENGINE=InnoDB AUTO_INCREMENT=373 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=374 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -502,7 +547,7 @@ CREATE TABLE `users_sessions` (
   `invalidated` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `UserIDSessions` (`userid`)
-) ENGINE=InnoDB AUTO_INCREMENT=447 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=448 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -534,4 +579,4 @@ CREATE TABLE `users_settings` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2021-12-09  8:17:49
+-- Dump completed on 2021-12-16 13:07:51

@@ -109,8 +109,28 @@
             "ALTER TABLE `users_settings` ADD INDEX(`userid`);",
             "ALTER TABLE `chia_plots_directories` ADD INDEX(`nodeid`);",
             "ALTER TABLE `chia_farm_challenges` ADD `nodeid` INT NOT NULL AFTER `id`, ADD INDEX `nodeid` (`nodeid`);",
+            "ALTER TABLE `chia_plots_directories` ADD `firstreported` DATETIME NOT NULL AFTER `plotcount`, ADD `lastupdated` DATETIME NOT NULL AFTER `firstreported`;",
+            "ALTER TABLE `chia_plots_directories` ADD INDEX(`mountpoint`);",
+            "ALTER TABLE `chia_infra_sysinfo_filesystems` ADD INDEX(`mountpoint`);",
+            "ALTER TABLE `chia_plots` DROP `finalmountid`, DROP `k_size`, DROP `plotcreationdate`, DROP `plot_key`, DROP `pool_key`, DROP `filename`,DROP `status`;",
+            "ALTER TABLE `chia_plots` ADD `file_size` INT NOT NULL AFTER `nodeid`, ADD `filename` VARCHAR(250) NOT NULL AFTER `file_size`, ADD `plot_seed` VARCHAR(66) NOT NULL AFTER `filename`, ADD `plot_id` VARCHAR(66) NOT NULL AFTER `plot_seed`, ADD `plot_public_key` VARCHAR(98) NOT NULL AFTER `plot_id`, ADD `pool_contract_puzzle_hash` VARCHAR(100) NOT NULL AFTER `plot_public_key`, ADD `pool_public_key` VARCHAR(100) NULL AFTER `pool_contract_puzzle_hash`, ADD `size` INT NOT NULL AFTER `pool_public_key`, ADD `time_modified` DATETIME NOT NULL AFTER `size`, ADD `last_reported` DATETIME NOT NULL AFTER `time_modified`;",
+            "ALTER TABLE `chia_plots` CHANGE `nodeid` `cpd_id` INT NOT NULL;",
+            "ALTER TABLE `chia_plots` ADD UNIQUE(`plot_id`);",
+            "ALTER TABLE `chia_plots` ADD UNIQUE(`plot_seed`);",
+            "ALTER TABLE `chia_plots` CHANGE `file_size` `file_size` BIGINT NOT NULL;",
+            "ALTER TABLE `nodes_status` CHANGE `querytime` `firstreported` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;",
+            "ALTER TABLE `nodes_status` ADD `lastreported` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `firstreported`;",
+            "RENAME TABLE `chiamgmt_edtmair_at`.`nodes_status` TO `chiamgmt_edtmair_at`.`nodes_up_status`;",
+            "ALTER TABLE `nodes_up_status` DROP `walletstatus`, DROP `farmerstatus`, DROP `harvesterstatus`;",
+            "CREATE TABLE `nodes_services_status` (`id` int NOT NULL, `nodeid` int NOT NULL, `farmer_service` tinyint NOT NULL, `wallet_service` tinyint NOT NULL, `harvester_service` tinyint NOT NULL, `firstreported` datetime NOT NULL, `lastreported` datetime NOT NULL, KEY `lastreported` (`lastreported`))",
+            "ALTER TABLE `nodes_up_status` DROP INDEX `nodeid`",
+            "ALTER TABLE `nodes_services_status` DROP `wallet_service`, DROP `harvester_service`;",
+            "ALTER TABLE `nodes_services_status` CHANGE `farmer_service` `serviceid` TINYINT NOT NULL;",
+            "ALTER TABLE `nodes_services_status` ADD `servicestate` TINYINT NOT NULL AFTER `serviceid`;",
+            "ALTER TABLE `nodes_services_status` ADD PRIMARY KEY(`id`);",
+            "ALTER TABLE `nodes_services_status` CHANGE `id` `id` INT NOT NULL AUTO_INCREMENT;",
+            "ALTER TABLE `nodes_services_status` ADD INDEX(`nodeid`);",
             "UPDATE `system_infos` SET dbversion = '0.1.1.211119';"
         ]
     }
-
 }
