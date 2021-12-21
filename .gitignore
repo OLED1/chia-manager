@@ -1,4 +1,5 @@
 backend/config/config.ini.php
+backend/core/WebSocketServer/*.file
 logs/
 *.log
 .ftpconfig
