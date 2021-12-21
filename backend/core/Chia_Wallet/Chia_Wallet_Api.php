@@ -102,7 +102,6 @@
      * @return array             [description]
      */
     public function updateWalletTransactions(array $data = NULL, array $loginData = []){
-      if(Count($data) > 0){
         try{
           $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
           $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
@@ -130,12 +129,10 @@
               }
             }
           }
-
-          return array("status" => 0, "message" => "Successfully added new transaction(s) for node $nodeid.", "data" => ["nodeid" => $nodeid, "data" => $this->getWalletTransactions(["nodeid" => $nodeid])["data"]]);
+          return array("status" => 0, "message" => "Successfully added new transaction(s) for node $nodeid.", "data" => ["nodeid" => $nodeid]);
         }catch(\Exception $e){
           return $this->logging_api->getErrormessage("001", $e);
         }
-      }
     }
 
     /**
@@ -189,7 +186,9 @@
      * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": [Found wallet data array]}
      */
     public function getWalletData(array $data = NULL, array $loginData = NULL, $server = NULL, int $nodeid = NULL){
+      $return_transactions = true;
       if(!is_null($data) && array_key_exists("nodeid", $data) && is_numeric($data["nodeid"])) $nodeid = $data["nodeid"];
+      if(!is_null($data) && array_key_exists("return_transactions", $data) && is_bool($data["return_transactions"])) $return_transactions = $data["return_transactions"];
       try{
         if(is_null($nodeid)){
           $sql = $this->db_api->execute("SELECT cw.walletid, nt.nodeid, n.nodeauthhash, n.hostname, cw.walletaddress, cw.walletheight, cw.syncstatus, cw.wallettype, cw.totalbalance, cw.pendingtotalbalance, cw.spendable, cw.querydate
@@ -209,8 +208,25 @@
 
         $returndata = [];
         foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $walletinfo){
+          $nodeid = $walletinfo["nodeid"];
           $walletinfo["nodeauthhash"] = $this->encryption_api->decryptString($walletinfo["nodeauthhash"]);
-          $returndata[$walletinfo["nodeid"]][(is_numeric($walletinfo["walletid"]) ? $walletinfo["walletid"] : 0)] = $walletinfo;
+          if(!array_key_exists($nodeid, $returndata)) $returndata[$nodeid] = [];
+          if(!array_key_exists("hostinfo", $returndata[$nodeid])){
+            $returndata[$nodeid]["hostinfo"] = [
+              "hostname" => $walletinfo["hostname"],
+              "nodeauthhash" => $walletinfo["nodeauthhash"]
+            ];
+          }
+          unset($walletinfo["hostname"], $walletinfo["nodeauthhash"], $walletinfo["nodeid"]);
+          $returndata[$nodeid]["walletinfo"][(is_numeric($walletinfo["walletid"]) ? $walletinfo["walletid"] : 0)] = $walletinfo;
+          if($return_transactions && !array_key_exists("transactions", $returndata[$nodeid])){
+            $found_transactions = $this->getWalletTransactions(["nodeid" => $nodeid]);
+            if(array_key_exists("data", $found_transactions) && array_key_exists($nodeid, $found_transactions["data"])){
+              $returndata[$nodeid]["transactions"] = $found_transactions["data"][$nodeid];
+            }else{
+              $returndata[$nodeid]["transactions"] = [];
+            }
+          }
         }
 
         return array("status" =>0, "message" => "Successfully loaded chia wallet information.", "data" => $returndata);
@@ -258,29 +274,6 @@
     }
 
     /**
-     * Sets the current walletstatus sent in from the node client.
-     * Function made for: Node Client
-     * @throws Exception $e       Throws an exception on db errors.
-     * @see https://files.chiamgmt.edtmair.at/docs/classes/ChiaMgmt-Encryption-Encryption-Api.html#method_encryptString
-     * @param  array $data       { status: [0 = Running |1 = Not Running] } No data is needed to query this method.
-     * @param  array $loginData  { NULL } No logindata is needed to query this method.
-     * @return array             Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
-     */
-    public function walletStatus(array $data = NULL, array $loginData = NULL){
-      try{
-        $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
-        $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
-
-        $this->nodes_api->setNodeServiceStats(["type" => 5, "stat" => ($data["status"] == 0 ? 0 : 1), "nodeid" => $nodeid]);
-
-        $data["data"] = $nodeid;
-        return array("status" =>0, "message" => "Successfully queried wallet status information for node $nodeid.", "data" => $data);
-      }catch(\Exception $e){
-        return $this->logging->getErrormessage("001", $e);
-      }
-    }
-
-    /**
      * Informs the node client to query new wallet data.
      * Function made for: Communication WebGUI -> Node Client
      * @see https://files.chiamgmt.edtmair.at/docs/classes/ChiaMgmt-WebSocketServer-ChiaWebSocketServer.html#method_messageSpecificNode
@@ -304,8 +297,9 @@
       );
 
       $callfunction = "messageAllNodes";
-      if(array_key_exists("nodeinfo", $querydata) && array_key_exists("authhash", $querydata["nodeinfo"])){
-        $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+      if(array_key_exists("nodeinfo", $data) && array_key_exists("authhash", $data["nodeinfo"])){
+        $querydata_0["nodeinfo"]["authhash"] = $data["nodeinfo"]["authhash"];
+        $querydata_1["nodeinfo"]["authhash"] = $data["nodeinfo"]["authhash"];
         $callfunction = "messageSpecificNode";
       }
 

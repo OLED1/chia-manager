@@ -127,7 +127,7 @@
       $querydata["data"]["querySystemInfo"] = array(
         "status" => 0,
         "message" => "Query systeminfo data.",
-        "data"=> array()
+        "data"=> []
       );
       $server->messageAllNodes($querydata);
 
@@ -140,7 +140,7 @@
       $querydata["data"]["queryWalletData"] = array(
         "status" => 0,
         "message" => "Query wallet data.",
-        "data"=> array()
+        "data"=>[]
       );
       $server->messageAllNodes($querydata);
 
@@ -149,7 +149,7 @@
       $querydata["data"]["queryWalletTransactions"] = array(
         "status" => 0,
         "message" => "Query wallet transaction data.",
-        "data"=> array()
+        "data"=> []
       );
       $server->messageAllNodes($querydata);
 
@@ -158,9 +158,21 @@
       $querydata["data"]["queryFarmData"] = array(
         "status" => 0,
         "message" => "Query farm transaction data.",
-        "data"=> array()
+        "data"=> []
       );
       $server->messageAllNodes($querydata);
+
+      //Query new available harvester data from the chia nodes
+      $querydata["data"] = [];
+      $querydata["data"]["queryHarvesterData"] = array(
+        "status" => 0,
+        "message" => "Query harvester transaction data.",
+        "data"=> []
+      );
+      $server->messageAllNodes($querydata);
+
+      //Query current farmer/harvester/wallet status or all at once
+      $this->processRequest($loginData, ["namespace" => "ChiaMgmt\Nodes\Nodes_Api", "method" => "queryNodesServicesStatus"], []);
 
       $now = new \Datetime("now");
       return array("cronJobExecution" => array("status" => 0, "message" => "Successfully executed system background jobs.", "data" => $now->format("Y-m-d H:i:s")));
@@ -228,18 +240,6 @@
       }else{
         return $this->logging->getErrormessage("002");
       }
-    }
-
-    /**
-     * Informs the frontend that a/some node(s) has joined or disjoined the websocket server.
-     * Function made for: Communication between Backend and Web/App Client
-     * @param  array  $subscriptions A list of subscriptions given from the websocket server.
-     * @param  array  $changedtypes  An array which contains the node types where the connection has changed.
-     * @param  int    $connstatus    The connection status. Either 0 or 1.
-     * @return array                 { "status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : ["subscriptions" : [A list of current active clients], "changedtypes" => [An array of the changed types], "connstatus" => [0 = disconnected|1 = connected]] }
-     */
-    public function processNodeConnectionChanged(array $subscriptions, array $changedtypes, int $connstatus){
-      return array("connectedNodesChanged" => array("status" => 0, "message" => "Successfully handeled connection request.", "data" => ["subscriptions" => $subscriptions, "changedtypes" => $changedtypes, "connstatus" => $connstatus]));
     }
 
     /**

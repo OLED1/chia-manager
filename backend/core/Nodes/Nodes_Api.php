@@ -59,7 +59,8 @@
      * Function made for: Backend / Web GUI
      * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[List of nodes of active subscriptions]}
      */
-    public function getActiveSubscriptions(){
+    public function getActiveSubscriptions(): array
+    {
       $this->websocket_api = new WebSocket_Api();
       return $this->websocket_api->sendToWSS("getActiveSubscriptions")["getActiveSubscriptions"];
     }
@@ -70,7 +71,8 @@
      * Function made for: Backend / Web GUI
      * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[List of nodes of active requests]}
      */
-    public function getActiveRequests(){
+    public function getActiveRequests(): array
+    {
       $this->websocket_api = new WebSocket_Api();
       return $this->websocket_api->sendToWSS("getActiveRequests")["getActiveRequests"];
     }
@@ -81,10 +83,19 @@
      * @throws Exception $e       Throws an exception on db errors.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB stored node information]}
      */
-    public function getConfiguredNodes(array $data = []){
+    public function getConfiguredNodes(array $data = []): array
+    {
+      $nodeid = "";
       $nodetype = "";
-      if(array_key_exists("nodetypenum", $data) && is_numeric($data["nodetypenum"]) && 
-        $data["nodetypenum"] > 0 && $data["nodetypenum"] < 6) $nodetype = "AND nt.code = {$data["nodetypenum"]}";
+
+      if(array_key_exists("nodeid", $data) && is_numeric($data["nodeid"]) && $data["nodeid"] > 0){
+        $nodeid = "WHERE n.id = {$data["nodeid"]}";
+      }
+
+      if(array_key_exists("nodetypenum", $data) && (is_numeric($data["nodetypenum"]) || is_array($data["nodetypenum"]))){
+        if(is_numeric($data["nodetypenum"] && $data["nodetypenum"] > 0 && $data["nodetypenum"] < 6)) $nodetype = "AND nt.code = {$data["nodetypenum"]}";
+        else if(is_array($data["nodetypenum"])) $nodetype = "AND nt.code IN (" . implode(",", $data["nodetypenum"]) . ")";
+      }
 
       $returndata = array();
 
@@ -97,6 +108,7 @@
                                       JOIN nodetype nt ON nt.nodeid = n.id
                                       JOIN nodetypes_avail nta ON nta.code = nt.code {$nodetype}
                                       LEFT JOIN chia_infra_sysinfo cis ON cis.timestamp = (SELECT MAX(timestamp) FROM chia_infra_sysinfo WHERE nodeid = n.id) AND cis.nodeid = n.id
+                                      {$nodeid}
                                       GROUP BY n.id", array());
 
         $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
@@ -120,7 +132,8 @@
      * @throws Exception $e       Throws an exception on db errors.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB stored node type information]}
      */
-    public function getNodeTypes(){
+    public function getNodeTypes(): array
+    {
       try{
         $sql = $this->db_api->execute("SELECT id, description, code, allowed_authtype, nodetype FROM nodetypes_avail WHERE selectable = 1", array());
 
@@ -145,7 +158,8 @@
      * @param  ChiaWebSocketServer $server    An instance to the Webscoket server to be able to communicate with the node
      * @return array                          {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function acceptIPChange(array $data, array $loginData = NULL, $server = NULL){
+    public function acceptIPChange(array $data, array $loginData = NULL, $server = NULL): array
+    {
       if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data)){
         try{
           $sql = $this->db_api->execute("UPDATE nodes SET ipaddress = changedIP, changedIP = ? WHERE id = ?", array("", $data["nodeid"]));
@@ -181,7 +195,8 @@
      * @param  ChiaWebSocketServer $server     An instance to the Webscoket server to be able to communicate with the node
      * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function acceptNodeRequest(array $data, array $loginData = NULL, $server = NULL){
+    public function acceptNodeRequest(array $data, array $loginData = NULL, $server = NULL): array
+    {
       if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data) && array_key_exists("nodetypes", $data)){
         try{
           $sql = $this->db_api->execute("SELECT id, allowed_authtype, nodetype FROM nodetypes_avail WHERE selectable = 1 AND id IN ({$data["nodetypes"]})", array());
@@ -240,7 +255,8 @@
      * @param  ChiaWebSocketServer $server     An instance to the Webscoket server to be able to communicate with the node.
      * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function declineNodeRequest(array $data, array $loginData = NULL, $server = NULL){
+    public function declineNodeRequest(array $data, array $loginData = NULL, $server = NULL): array
+    {
       if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data)){
         try{
           $sql = $this->db_api->execute("UPDATE nodes SET conallow = 0 WHERE id = ? AND changeable = 1 AND (conallow = 1 OR conallow = 2)", array($data["nodeid"]));
@@ -275,7 +291,8 @@
      * @param  ChiaWebSocketServer $server    An instance to the Webscoket server to be able to communicate with the node
      * @return array                          {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function removeNodeAndData(array $data, array $loginData = NULL, $server = NULL){
+    public function removeNodeAndData(array $data, array $loginData = NULL, $server = NULL): array
+    {
       if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data)){
         try{
           $sql = $this->db_api->execute("SELECT changeable FROM nodes WHERE id = ?", array($data["nodeid"]));
@@ -322,7 +339,8 @@
      * @param  array $loginData [description]
      * @return array            [description]
      */
-    public function loginStatus(array $data, array $loginData = NULL){
+    public function loginStatus(array $data, array $loginData = NULL): array
+    {
       if(array_key_exists("authhash", $loginData)){
         try{
           $sql = $this->db_api->execute("SELECT n.id, GROUP_CONCAT(nta.description SEPARATOR ', ') AS nodetype, n.hostname
@@ -350,7 +368,8 @@
      * @param  array $loginData                { NULL } No logindata needed to query this function.
      * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function updateScriptVersion(array $data, array $loginData = NULL){
+    public function updateScriptVersion(array $data, array $loginData = NULL): array
+    {
       if(array_key_exists("authhash", $loginData) && array_key_exists("scriptversion", $data) && array_key_exists("chia", $data)){
         try{
           $sql = $this->db_api->execute("UPDATE nodes SET scriptversion = ?, chiaversion = ?, chiapath = ? WHERE nodeauthhash = ?", array($data["scriptversion"], $data["chia"]["version"], $data["chia"]["path"], $this->encryption_api->encryptString($loginData["authhash"])));
@@ -372,7 +391,8 @@
      * @param  array $loginData                { "authhash" : [Node's authhash] }
      * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function nodeUpdateStatus(array $data, array $loginData = NULL){
+    public function nodeUpdateStatus(array $data, array $loginData = NULL): array
+    {
       try{
         $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
         $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
@@ -391,7 +411,8 @@
      * @param  array $loginData                { NULL } No loginData needed to query this function.
      * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" => ["Requested infos - array"]}
      */
-    public function checkUpdatesAndChannels(array $data = [], array $loginData = NULL){
+    public function checkUpdatesAndChannels(array $data = [], array $loginData = NULL): array
+    {
       $updatepackagepath = "https://files.chiamgmt.edtmair.at/client/";
       $version_file_json = file_get_contents("{$updatepackagepath}/versions.json");
       $version_file_data = json_decode($version_file_json, true);
@@ -445,7 +466,8 @@
      * @param  array $loginData { NULL } No $loginData needed to query this function.
      * @return array            {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : ["branch" => [branchname], "nodeid" => [nodeid]]}
      */
-    public function updateNodeBranch(array $data, array $loginData = NULL){
+    public function updateNodeBranch(array $data, array $loginData = NULL): array
+    {
       if(array_key_exists("branch", $data) && array_key_exists("nodeid", $data)){
         $allowedbranches = array("dev","staging","main");
         if(in_array($data["branch"], $allowedbranches)){
@@ -466,19 +488,17 @@
 
     /**
      * Queries the current states of the chia nodes (Node UP/DOWN, Services running).
-     * The result will be cached in the database for 30 seconds if the node state itself does not change in this time.
-     * Function made for: Web GUI
+     * It refreshes the history data of the nodes and queries the current service stats from all clients.
+     * Function made for: CronJob / Backend Client -> Chia Nodes
      * @throws Exception $e                    Throws an exception on db errors.
      * @param  array  $data                    { NULL } No data needed to query this function.
      * @param  array $loginData                { NULL } No loginData needed to query this function.
-     * @param  ChiaWebSocketServer $server     An instance to the Webscoket server to be able to communicate with the nodes directly
-     * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The cached or queried node states from the subquery]}
+     * @param  Object $server     An instance to the Webscoket server to be able to communicate with the nodes directly.
+     * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function queryNodesServicesStatus(array $data = [], array $loginData = NULL, $server = NULL){
-      $allNodeStatus = $this->getNodeStatus($data);
-      if($allNodeStatus["status"] > 0) return $allNodeStatus;
-
-      $allNodeStatus = $allNodeStatus["data"];
+    public function queryNodesServicesStatus(array $data = [], array $loginData = NULL, Object $server = NULL): array
+    {
+      $client_nodes = $this->getConfiguredNodes(["nodetypenum" => [3,4,5]]);        
       if(!is_null($server)){
         $activeSubscriptions = $server->getActiveSubscriptions($loginData)["getActiveSubscriptions"];
       }else{
@@ -486,161 +506,205 @@
         $activeSubscriptions = $this->websocket_api->sendToWSS("getActiveSubscriptions")["getActiveSubscriptions"];
       }
 
-      $foundnode = [];
-      $datatosave = [];
-
-      $now = new \DateTime();
-      if(!is_null($activeSubscriptions) && $activeSubscriptions["status"] == 0 && array_key_exists("data", $activeSubscriptions)){
-        foreach($activeSubscriptions["data"] AS $nodetype => $allnodesconnected){
-          if($nodetype != "webClient" && $nodetype != "backendClient"){
-            foreach($allnodesconnected AS $connid => $nodedata){
-              if(array_key_exists($nodedata["nodeid"], $allNodeStatus) && !in_array($nodedata["nodeid"], $foundnode)){
-                array_push($foundnode, $nodedata["nodeid"]);
+      if(array_key_exists("data", $activeSubscriptions)){
+        foreach($client_nodes["data"] AS $nodeid => $nodedata){
+          $found = false;
+          foreach(explode(",",$nodedata["nodetype"]) AS $arrkey => $nodetype){
+            if(array_key_exists($nodetype, $activeSubscriptions["data"])){
+              foreach($activeSubscriptions["data"][$nodetype] AS $connectionnr => $conninfo){
+                if($conninfo["nodeid"] == $nodeid){
+                  $found = true;
+                  $this->setNodeUpDown(["nodeid" => $nodeid, "updown" => 1]);
+                  if(!is_null($server)){
+                    $querydata = ["data" => ["get_chia_status" => ["status" => 0,"message" => "Query chia wallet/farmer/harvester running status.","data"=> []]],"nodeinfo" => ["authhash" => $nodedata["nodeauthhash"]]];
+                    $this->server->messageSpecificNode($querydata);
+                  }
+                  break;
+                }
               }
             }
+            if($found) break;
           }
+          if(!$found){
+            $this->setNodeUpDown(["nodeid" => $nodeid, "updown" => 0]);
+            $this->updateChiaStatus(["nodeid" => $nodeid, "farmer" => ["status" => 1], "wallet" => ["status" => 1], "harvester" => ["status" => 1]]);
+          } 
         }
-      }else{
-        return $activeSubscriptions;
-      }
+      }  
+      
+      return array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => ["onlinestatus" => 0]);
+    }
 
-      //Onlinestatus: 0 = Disconnected, 1 = Connected, 2 = Querying
-      foreach($allNodeStatus AS $arrkey => $nodedata){
-        if(in_array($nodedata["nodeid"], $foundnode)){
-          $onlinestatus = 0;
-          $walletstatus = 2;
-          $farmerstatus = 2;
-          $harvesterstatus = 2;
-        }else{
-          $onlinestatus = 1;
-          $walletstatus = 1;
-          $farmerstatus = 1;
-          $harvesterstatus = 1;
-        }
-
+    /**
+     * Changes the Nodes Upstatus in the database. Informs the frontend about changes.
+     * 0 = Node DOWN, 1 = Node UP
+     * @param array $data   { "nodeid" : [The systems node id], "updown" : [0=Node Down/1=Node UP] }
+     * @return array        Returnes the current status information stored in the database.
+     */
+    public function setNodeUpDown(array $data): array
+    {
+      if(array_key_exists("nodeid", $data) && is_numeric($data["nodeid"]) && $data["nodeid"] > 0 && array_key_exists("updown", $data) && is_numeric($data["updown"]) && ($data["updown"] == 0 || $data["updown"] == 1)){
         try{
-          if(array_key_exists($nodedata["nodeid"], $allNodeStatus)){
-            $querytime = new \DateTime($allNodeStatus[$nodedata["nodeid"]]["querytime"]);
-            $querytime->modify('+10 seconds');
+          $sql = $this->db_api->execute("SELECT id, nodeid, onlinestatus, lastreported FROM nodes_up_status WHERE nodeid = ? ORDER BY firstreported DESC LIMIT 1", array($data["nodeid"]));
+          $founddata = $sql->fetchAll(\PDO::FETCH_ASSOC);
 
-            //If the previous node status is not the current node state, safe new state
-            if($now > $querytime || $allNodeStatus[$nodedata["nodeid"]]["onlinestatus"] != $onlinestatus){
-              $this->queryDataFromNode($nodedata, $server);
+          /*echo json_encode($founddata, JSON_PRETTY_PRINT);
+          echo json_encode($data, JSON_PRETTY_PRINT);*/
 
-              $sql = $this->db_api->execute("UPDATE nodes_status SET onlinestatus = ?, walletstatus = ?, farmerstatus = ?, harvesterstatus = ?, querytime = ? WHERE nodeid = ?",
-                                            array($onlinestatus, $walletstatus, $farmerstatus, $harvesterstatus, $now->format("Y-m-d H:i:s"), $nodedata["nodeid"]));
+          if(!array_key_exists(0, $founddata) || $founddata[0]["onlinestatus"] != $data["updown"]){
+            //echo "Onlinestatus for node {$data["nodeid"]} changed from {$founddata[0]["onlinestatus"]} to {$data["updown"]}.\n";
+            $this->db_api->execute("INSERT INTO nodes_up_status (id, nodeid, onlinestatus, firstreported, lastreported) VALUES(NULL, ?, ?, current_timestamp(), current_timestamp())", array($data["nodeid"], $data["updown"]));
+          }
+          //echo "Updating existing entry for node {$data["nodeid"]}, state: {$founddata[0]["onlinestatus"]}.\n";
+          if(count($founddata) == 1) $this->db_api->execute("UPDATE nodes_up_status SET lastreported = current_timestamp() WHERE id = ?", array($founddata[0]["id"]));
+        }catch(\Exception $e){
+          //@TODO Implement correct status code
+          return array("status" => 1, "message" => "An error occured. {$e->getMessage()}");
+        }
+
+        return array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => []);
+      }else{
+        //@TODO Implement correct status code
+        return array("status" => 1, "message" => "Not all data stated.");
+      }
+    }
+
+    /**
+     * Changes the Nodes Services Upstatus in the database. Informs the frontend about changes.
+     * Data sent in status: 
+     * Service Status: 0 = Service DOWN, 1 = Service UP
+     * Service ID's: 3 = Farmer, 4 = Harvester, 5 = Wallet
+     * @param array $data         { "nodeid" : [The systems node id], "wallet" : { "status" => [0=Service Down/1=Service UP] }, "farmer" : { "status" => [0=Service Down/1=Service UP] }, "harvester" : { "status" => [0=Service Down/1=Service UP] }}
+     * @param array $loginData   { "authhash" => [The node's authhash] } *Must be set when no nodeid is set in $data  
+     * @return array              Returnes the current status information stored in the database.
+     */
+    public function updateChiaStatus(array $data, array $loginData = NULL): array
+    {
+      try{
+        if(array_key_exists("wallet", $data) && array_key_exists("farmer", $data) && array_key_exists("harvester", $data)){
+          $nodeid = NULL;
+          if(array_key_exists("nodeid", $data) && is_int($data["nodeid"]) && $data["nodeid"] > 0) $nodeid = $data["nodeid"];
+          else if(!is_null($loginData) && array_key_exists("authhash", $loginData) && is_string($loginData["authhash"])){
+            $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
+            $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
+          }
+  
+          if(!is_null($nodeid) && $nodeid > 0){        
+            $sql = $this->db_api->execute("SELECT nt.nodeid, n.hostname, n.nodeauthhash, nta.code AS serviceid, LOWER(nta.description) AS description, nss.id AS curr_service_state_id, nss.servicestate, nss.firstreported, nss.lastreported
+                                            FROM nodetype nt
+                                            LEFT JOIN nodes n ON n.id = nt.nodeid
+                                            LEFT JOIN LATERAL (
+                                              SELECT id, nodeid, serviceid, servicestate, firstreported, lastreported FROM nodes_services_status WHERE nodeid = n.id AND serviceid = nt.code ORDER BY firstreported DESC LIMIT 1
+                                            ) AS nss
+                                            ON nss.serviceid = nt.code
+                                            JOIN nodetypes_avail nta ON nta.code = nt.code
+                                            WHERE nt.code IN (3,4,5) AND n.id = ?", array($nodeid));
+
+            $founddata = $sql->fetchAll(\PDO::FETCH_ASSOC);
+            if(count($founddata) > 0){
+              //print_r(json_encode($founddata, JSON_PRETTY_PRINT));
+              foreach($founddata AS $arrkey => $savedstates){
+                $reported_service_state = intval(!boolval($data[$savedstates["description"]]["status"]));
+                if((is_numeric($savedstates["servicestate"]) || is_null($savedstates["servicestate"])) && array_key_exists($savedstates["description"], $data) && (($reported_service_state != $savedstates["servicestate"]) || is_null($savedstates["servicestate"]))){
+                  $this->db_api->execute("INSERT INTO nodes_services_status (id, nodeid, serviceid, servicestate, firstreported, lastreported) VALUES(NULL, ?, ?, ?, current_timestamp(), current_timestamp())", array($nodeid, $savedstates["serviceid"], $reported_service_state));
+                }
+                if(is_numeric($savedstates["servicestate"])){
+                  $this->db_api->execute("UPDATE nodes_services_status SET lastreported = current_timestamp() WHERE id = ?", array($savedstates["curr_service_state_id"]));
+                }
+              }
+            }else{
+              //@TODO Implement correct status code
+              return array("status" => 1, "message" => "This node has no chia services registered.");
             }
+  
+            return array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => []);
           }else{
-            $this->queryDataFromNode($nodedata, $server);
-
-            $sql = $this->db_api->execute("INSERT INTO nodes_status (id, nodeid, onlinestatus, walletstatus, farmerstatus, harvesterstatus, querytime)
-                                            VALUES(NULL, ?, ?, ?, ?, ?, ?)",
-                                            array($nodedata["nodeid"], $onlinestatus, $walletstatus, $farmerstatus, $harvesterstatus, $now->format("Y-m-d H:i:s")));
+            //@TODO Implement correct status code
+            return array("status" => 1, "message" => "No valid nodeids found.");
           }
-        }catch(\Exception $e){
-          return $this->logging_api->getErrormessage("001", $e);
-        }
-      }
-
-      return $this->getNodeStatus($data);
-    }
-
-    /**
-     * Sets the nodes service stat reported from the nodes specific method (farmerstatus, harvesterstatus, walletstatus) given in the one of these three classes: Farmer_Api, Harvester_Api, Wallet_Api.
-     * Function made for: Backend Client
-     * @param  array  $data                    { "type" : ["nodetype" - 0|1|3], "stat" : ["the service stat 0|1" - int], "nodeid" : [The reporting node's id - int] }
-     * @param  array $loginData                { NULL } No loginData needed to query this function.
-     * @param  ChiaWebSocketServer $server     An instance to the Webscoket server to be able to communicate with the nodes directly
-     * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The cached or queried node states from the subquery]}
-     */
-    public function setNodeServiceStats(array $data = []){
-      if(array_key_exists("type", $data) && array_key_exists("stat", $data) && array_key_exists("nodeid", $data)){
-        if(is_numeric($data["stat"]) && $data["type"] >= 3 && $data["type"] <= 5){
-          if($data["type"] == 3){
-            $updateCol = "farmerstatus";
-          }else if($data["type"] == 4){
-            $updateCol = "harvesterstatus";
-          }else if($data["type"] == 5){
-            $updateCol = "walletstatus";
-          }
-
-          $sql = $this->db_api->execute("UPDATE nodes_status SET $updateCol = ? WHERE nodeid = ?", array($data["stat"], $data["nodeid"]));
-
-          return array("status" => 0, "message" => "Successfully updated $updateCol for node {$data["nodeid"]}.");
         }else{
-          return $this->logging_api->getErrormessage("001", "Stat {$data["stat"]} no known.");
+          //@TODO Implement correct status code
+          return array("status" => 1, "message" => "Not all data stated.");
         }
-      }else{
-        return $this->logging_api->getErrormessage("002");
+      }catch(\Exception $e){
+        //@TODO Implement correct status code
+        print_r($e->getMessage());
+        return array("status" => 1, "message" => "An error occured. {$e->getMessage()}");
       }
     }
 
     /**
-     * Returns the status of a specific node or all nodes.
-     * Function made for: Web GUI
-     * @throws Exception $e                    Throws an exception on db errors.
-     * @param  array  $data                    { "Node ID's as" - array }
-     * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The requested data as array]}
+     * Undocumented function
+     *
+     * @param array $data
+     * @param [type] $loginData
+     * @param [type] $server
+     * @return array
      */
-    private function getNodeStatus(array $nodedata = []){
-      if(count($nodedata) == 0){
-        $sql = $this->db_api->execute("SELECT n.id AS nodeid, n.nodeauthhash FROM nodetype nt JOIN nodes n ON n.id = nt.nodeid WHERE code >= 3 AND code <= 5 GROUP by n.id", array());
-        $nodedata = $sql->fetchAll(\PDO::FETCH_ASSOC);
-      }
+    public function getCurrentChiaNodesUPAndServiceStatus(array $data = [], array $loginData = NULL, $server = NULL): array
+    {
+      try{
+        $nodeid = NULL;
+        $nodetypes = NULL;
 
-      $nodeids = [];
-      if(count($nodedata) > 0){
-        $or_statement = "WHERE ";
-        for($i = 0; $i < count($nodedata); $i++){
-          if(array_key_exists($i+1, $nodedata)){
-            $or_statement .= "nodeid = ? OR ";
-          }else{
-            $or_statement .= "nodeid = ?";
+        //if(array_key_exists("nodeid", $data) && is_int($data["nodeid"]) && $data["nodeid"] > 0) $nodeid = $data["nodeid"];
+        //if(array_key_exists("nodetypes", $data) && (is_array($data["nodetypes"]) || is_string($data["nodetypes"])) $nodetypes = 
+
+        $sql = $this->db_api->execute("SELECT nt.nodeid, n.hostname, nus.onlinestatus, nus.firstreported AS node_firstreported, nus.lastreported AS node_lastreported, nta.description, nss.serviceid, nss.servicestate, nss.firstreported AS service_firstreported, nss.lastreported AS service_lastreported
+                                        FROM nodetype nt
+                                        INNER JOIN nodes n ON n.id = nt.nodeid
+                                        INNER JOIN LATERAL (
+                                          SELECT nodeid, onlinestatus, firstreported, lastreported FROM nodes_up_status WHERE nodeid = n.id ORDER BY firstreported DESC, lastreported DESC LIMIT 1
+                                        ) AS nus ON nus.nodeid = nt.nodeid
+                                        INNER JOIN LATERAL (
+                                          SELECT id, nodeid, serviceid, servicestate, firstreported, lastreported FROM nodes_services_status WHERE nodeid = n.id AND serviceid = nt.code ORDER BY firstreported DESC, lastreported DESC LIMIT 1
+                                        ) AS nss
+                                        INNER JOIN nodetypes_avail nta ON nta.code = nt.code
+                                        WHERE nt.code IN (3,4,5)", array());
+
+        $returndata = [];
+        foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $serviceinfo){
+          if(!array_key_exists($serviceinfo["nodeid"], $returndata)){
+            $returndata[$serviceinfo["nodeid"]] = [
+              "nodeinfo" => [
+                "nodeid" => $serviceinfo["nodeid"],
+                "hostname" => $serviceinfo["hostname"]
+              ],
+              "onlinestatus" => [
+                "status" => $serviceinfo["onlinestatus"],
+                "node_firstreported" => $serviceinfo["node_firstreported"],
+                "node_lastreported" => $serviceinfo["node_lastreported"]
+              ],
+              "services" => []
+            ];
           }
-          array_push($nodeids, $nodedata[$i]["nodeid"]);
+          $returndata[$serviceinfo["nodeid"]]["services"][$serviceinfo["serviceid"]] = [
+            "servicestate" => $serviceinfo["servicestate"],
+            "service_desc" => $serviceinfo["description"],
+            "service_firstreported" => $serviceinfo["service_firstreported"],
+            "service_lastreported" => $serviceinfo["service_lastreported"]
+          ];
         }
 
-        try{
-          $sql = $this->db_api->execute("SELECT nodeid, onlinestatus, walletstatus, farmerstatus, harvesterstatus, querytime FROM nodes_status $or_statement", $nodeids);
-          $sqreturn = $sql->fetchAll(\PDO::FETCH_ASSOC);
-
-          for($i = 0; $i < count($sqreturn); $i++){
-            $sqreturn[$sqreturn[$i]["nodeid"]] = $sqreturn[$i];
-            unset($sqreturn[$i]);
-          }
-        }catch(\Exception $e){
-          return $this->logging_api->getErrormessage("001", $e);
-        }
-      }else{
-        $sqreturn = [];
+        return array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => $returndata);
+      }catch(\Exception $e){
+        //@TODO Implement correct status code
+        print_r($e->getMessage());
+        return array("status" => 1, "message" => "An error occured. {$e->getMessage()}");
       }
-      return array("status" => 0, "message" => "Successfully loaded requested node status.", "data" => $sqreturn);
     }
 
     /**
-     * Queries specific service data from a specific node.
-     * Function made for: communication Web GUI => Node Client
-     * @param  array  $nodedata                { "nodeid" : [The target node's id - int]}
-     * @param  ChiaWebSocketServer $server     An instance to the Websocket server to be able to communicate with the nodes directly
+     * Undocumented function
+     *
+     * @param array $data
+     * @param [type] $loginData
+     * @param [type] $server
+     * @return array
      */
-    private function queryDataFromNode(array $nodedata, $server = NULL){
-      $sql = $this->db_api->execute("SELECT na.description, n.nodeauthhash FROM nodetype nt JOIN nodetypes_avail na ON na.code = nt.code JOIN nodes n ON n.id = nt.nodeid WHERE nt.code >= 3 AND nt.code <= 5 AND nt.nodeid = ?", array($nodedata["nodeid"]));
-
-      foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $infos){
-        $querydata = [];
-        $querydata["data"]["query" . $infos["description"] . "Status"] = array(
-          "status" => 0,
-          "message" => "Query " . $infos["description"] . " running status.",
-          "data"=> array()
-        );
-        $querydata["nodeinfo"]["authhash"] = $this->encryption_api->decryptString($infos["nodeauthhash"]);
-        if(!is_null($server)){
-          $server->messageSpecificNode($querydata);
-        }else{
-          $this->websocket_api = new WebSocket_Api();
-          $activeSubscriptions = $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
-        }
-      }
+    public function getCurrentChiaNodesStatusHistory(array $data, array $loginData = NULL, $server = NULL):array
+    {
+      return array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => []);
     }
   }
 ?>

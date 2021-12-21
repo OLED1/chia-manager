@@ -99,6 +99,7 @@
      * @return array                        {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": [Found system information data array]}
      */
     public function getSystemInfo(array $data = NULL, array $loginData = NULL, $server = NULL, int $nodeid = NULL){
+      $limitstring = "";
       if(!is_null($data) && array_key_exists("nodeid", $data) && is_numeric($data["nodeid"])) $nodeid = $data["nodeid"];
 
       try{
@@ -108,7 +109,7 @@
                                                 cisf.device, cisf.size, cisf.used, cisf.avail, cisf.mountpoint
                                           FROM nodes n
                                           INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id AND cis.timestamp = (SELECT max(cis1.timestamp) FROM chia_infra_sysinfo cis1 WHERE cis1.nodeid = n.id)
-                                          INNER JOIN chia_infra_sysinfo_filesystems cisf ON cisf.sysinfo_id = cis.id AND cis.timestamp = (SELECT max(cis1.timestamp) FROM chia_infra_sysinfo cis1 WHERE cis1.nodeid = n.id)
+                                          INNER JOIN chia_infra_sysinfo_filesystems cisf ON cisf.sysinfo_id = cis.id
                                           WHERE n.id = (
                                               SELECT nt.nodeid FROM nodetype nt WHERE nt.code >= 3 AND nt.code <= 5 AND nt.nodeid = n.id LIMIT 1
                                           )", array());
@@ -118,7 +119,7 @@
                                                 cisf.device, cisf.size, cisf.used, cisf.avail, cisf.mountpoint
                                           FROM nodes n
                                           INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id AND cis.timestamp = (SELECT max(cis1.timestamp) FROM chia_infra_sysinfo cis1 WHERE cis1.nodeid = n.id)
-                                          INNER JOIN chia_infra_sysinfo_filesystems cisf ON cisf.sysinfo_id = cis.id AND cis.timestamp = (SELECT max(cis1.timestamp) FROM chia_infra_sysinfo cis1 WHERE cis1.nodeid = n.id)
+                                          INNER JOIN chia_infra_sysinfo_filesystems cisf ON cisf.sysinfo_id = cis.id
                                           WHERE n.id = ?", array($data["nodeid"]));
         }
         
@@ -155,22 +156,27 @@
      * @param  ChiaWebSocketServer $server    An instance to the websocket server to be able to send data to the connected clients.
      * @return array                          Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}} from the subfunction calls.
      */
-    public function querySystemInfo(array $data = NULL, array $loginData = NULL, $server = NULL){
+    public function querySystemInfo(array $data = NULL, array $loginData = NULL, $server = NULL): array
+    {
       $querydata = [];
       $querydata["data"]["querySystemInfo"] = array(
         "status" => 0,
         "message" => "Query systeminfo data.",
         "data"=> array()
       );
-      $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+
+      $callfunction = "messageAllNodes";
+      if(array_key_exists("nodeinfo", $data) && array_key_exists("authhash", $data["nodeinfo"])){
+        $querydata["nodeinfo"]["authhash"] = $data["nodeinfo"]["authhash"];
+        $callfunction = "messageSpecificNode";
+      }
 
       if(!is_null($server)){
-        return $server->messageSpecificNode($querydata);
+        return $server->$callfunction($querydata);
       }else{
         $this->websocket_api = new WebSocket_Api();
-        return $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
+        return $this->websocket_api->sendToWSS($callfunction, $querydata);
       }
     }
   }
-
 ?>

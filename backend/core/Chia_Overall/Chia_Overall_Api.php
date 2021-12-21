@@ -65,7 +65,7 @@
 
         $now = new \DateTime("now");
         $lastquerytime = new \DateTime($sqdata[0]["querydate"]);
-        $lastquerytime->modify("+5 minutes");
+        $lastquerytime->modify("+2 minutes");
 
         try{
           if(count($sqdata) == 0 || $lastquerytime <= $now){
@@ -158,31 +158,34 @@
       //XCHSCAN API Netspace
       curl_setopt($curl, CURLOPT_URL, "{$this->ini["xchscan_api"]}/netspace");
       curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+      curl_setopt($curl, CURLOPT_TIMEOUT_MS, 2000);
       $xch_netspace_result = json_decode(curl_exec($curl), true);
       //XCHSCAN API Chia Price
       curl_setopt($curl, CURLOPT_URL, "{$this->ini["xchscan_api"]}/chia-price");
       curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+      curl_setopt($curl, CURLOPT_TIMEOUT_MS, 2000);
       $xch_chiaprice_result = json_decode(curl_exec($curl), true);
       //XCHSCAN API Blockheight
       curl_setopt($curl, CURLOPT_URL, "{$this->ini["xchscan_api"]}/blocks?limit=10&offset=0");
       curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+      curl_setopt($curl, CURLOPT_TIMEOUT_MS, 2000);
       $xch_height_result = json_decode(curl_exec($curl), true);
 
       curl_close($curl);
 
       if(is_null($xch_netspace_result) || !array_key_exists("netspace", $xch_netspace_result)){
         $overall = false;
-        $this->logging_api->getErrormessage("001", "The external api {$this->ini["xchscan_api"]} returned an error.");
+        $this->logging_api->getErrormessage("001", "The external api {$this->ini["xchscan_api"]} returned an error on netspace query.");
       }
 
       if(is_null($xch_chiaprice_result) || !array_key_exists("usd", $xch_chiaprice_result)){
         $overall = false;
-        $this->logging_api->getErrormessage("002", "The external api {$this->ini["xchscan_api"]} returned an error.");
+        $this->logging_api->getErrormessage("002", "The external api {$this->ini["xchscan_api"]} returned an error on price query.");
       }
 
       if(is_null($xch_height_result) || !array_key_exists("blocks", $xch_height_result) && !array_key_exists(0, $xch_height_result["blocks"])){
         $overall = false;
-        $this->logging_api->getErrormessage("003", "The external api {$this->ini["xchscan_api"]} returned an empty output.");
+        $this->logging_api->getErrormessage("003", "The external api {$this->ini["xchscan_api"]} returned an empty output on block query.");
       }
 
       if($overall){

@@ -85,10 +85,10 @@ class Wallettransaction{
         $this->removals = json_encode($reportedtransactiondata["removals"]);
         $this->sent = $reportedtransactiondata["sent"];
         $this->sent_to = json_encode($reportedtransactiondata["sent_to"]);
-        $this->spend_bundle = $reportedtransactiondata["spend_bundle"];
+        $this->spend_bundle = (is_Null($reportedtransactiondata["spend_bundle"]) ? "" : $reportedtransactiondata["spend_bundle"]);
         $this->to_address = $reportedtransactiondata["to_address"];
         $this->to_puzzle_hash = $reportedtransactiondata["to_puzzle_hash"];
-        $this->trade_id = $reportedtransactiondata["trade_id"];
+        $this->trade_id = (is_Null($reportedtransactiondata["trade_id"]) ? 0 : $reportedtransactiondata["trade_id"]);
         $this->type = $reportedtransactiondata["type"];
     }
 

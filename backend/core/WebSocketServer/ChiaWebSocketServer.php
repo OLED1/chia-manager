@@ -154,7 +154,9 @@ class ChiaWebSocketServer implements MessageComponentInterface {
             echo "[{$this->getDate()}] INFO: Newly connected {$type} client connected.\n";
             if(!in_array($from->resourceId, $this->connectedNodesInformed)){
               array_push($this->connectedNodesInformed, $from->resourceId);
-              $this->messageFrontendClients(array("siteID" => 2), $this->requestHandler->processNodeConnectionChanged($this->subscription, [$type], 1));
+              //Set Node to UP
+              $set_node_up_down = $this->requestHandler->processRequest([], ['namespace' => 'ChiaMgmt\Nodes\Nodes_Api', 'method' => 'setNodeUpDown'], ["nodeid" => $requesterLogin["nodeinfo"]["nodedata"]["nodeid"], "updown" => 1]); 
+              $this->messageFrontendClients([], $set_node_up_down, $from->resourceId, ['namespace' => 'ChiaMgmt\Nodes\Nodes_Api']);
             }
           }else{
             echo "[{$this->getDate()}] INFO: Detected backend Client or existing connection.\n";
@@ -163,7 +165,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
 
         echo "[{$this->getDate()}] INFO: New backendRequest from {$nodeInfo["nodeinfo"]["hostname"]}.\n";
         echo "[{$this->getDate()}] INFO: Requested socketaction: {$nodeInfo["socketaction"]} from {$from->resourceId}.\n";
-        echo "[{$this->getDate()}] INFO: Transmitted data {$msg}.\n";
+        echo "[{$this->getDate()}] INFO: Transmitted data {$msg}\n";
 
         switch($nodeInfo["socketaction"]){
           case "wssonlinestatus":
@@ -256,6 +258,11 @@ class ChiaWebSocketServer implements MessageComponentInterface {
         foreach($this->subscription AS $type => $connections){
           foreach($connections AS $conid => $values){
             if($conid == $conn->resourceId){
+              if(!$changed) {
+                //Set Node to DOWN
+                $set_node_up_down = $this->requestHandler->processRequest([], ['namespace' => 'ChiaMgmt\Nodes\Nodes_Api', 'method' => 'setNodeUpDown'], ["nodeid" => $this->subscription[$type][$conid]["nodeid"], "updown" => 0]); 
+                $this->messageFrontendClients([], $set_node_up_down, $from->resourceId, ['namespace' => 'ChiaMgmt\Nodes\Nodes_Api']); 
+              }          
               unset($this->subscription[$type][$conid]);
               array_push($types, $type);
               $changed = true;
@@ -268,10 +275,6 @@ class ChiaWebSocketServer implements MessageComponentInterface {
             unset($this->requests[$authhash]);
             $changed = true;
           }
-        }
-
-        if($changed){
-          $this->messageFrontendClients(array("siteID" => 2), $this->requestHandler->processNodeConnectionChanged($this->subscription, $types, 0));
         }
       }else{
         $message = "Backendconnection {$conn->resourceId} has disconnected.\n";
