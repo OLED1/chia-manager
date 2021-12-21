@@ -6,6 +6,13 @@
 
   $nodes_api = new Nodes_Api();
   $all_nodes = $nodes_api->getConfiguredNodes(["nodetypenum" => 5]);
+  $services_states = $nodes_api->getCurrentChiaNodesUPAndServiceStatus();
+  if(array_key_exists("data", $services_states)){
+    $services_states = $services_states["data"];
+  }else{
+    $services_states = [];
+  }
+
   $chia_nodes = [];
   if(array_key_exists("data", $all_nodes)){
     foreach($all_nodes["data"] AS $nodeid => $nodedata){
@@ -45,6 +52,7 @@
     var exchangerate = {$exchangerate};
     var chiapricedefcurr = {$chiapriceindefcurr};
     var chiaoveralldata = " . json_encode($chia_overall_data["data"]) . ";
+    var services_states = " . json_encode($services_states) . ";
   </script>";
 ?>
 <!-- Page Heading -->

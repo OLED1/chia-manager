@@ -1,8 +1,8 @@
 <?php
   use ChiaMgmt\Login\Login_Api;
   use ChiaMgmt\Chia_Farm\Chia_Farm_Api;
-  use ChiaMgmt\Nodes\Nodes_Api;
   require __DIR__ . '/../../../../vendor/autoload.php';
+  include_once("functions.php");
 
   $login_api = new Login_Api();
   $ini = parse_ini_file(__DIR__.'/../../../../backend/config/config.ini.php');
@@ -12,12 +12,9 @@
     header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/login.php");
   }
 
-  include_once("functions.php");
+  $servicesStates = $_GET["services_states"];
   $chia_farm_api = new Chia_Farm_Api();
   $farmData = $chia_farm_api->getFarmData()["data"];
-
-  $nodes_api = new Nodes_Api();
-  $nodes_states = $nodes_api->queryNodesServicesStatus()["data"];
 ?>
 <div class="card mb-4">
   <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
@@ -41,7 +38,7 @@
       $totalsizeofplots = 0;
 
       foreach($farmData AS $nodeid => $nodedata){
-        $serviceStates = getServiceStates($nodes_states, $nodeid, "Farmer");
+        $serviceStates = getServiceStates($servicesStates[$nodeid], 3);
         $hostchecks .= "{$nodedata["hostname"]}:&nbsp;<span id='servicestatus_farmer_{$nodeid}' data-nodeid={$nodeid} class='badge nodestatus " . $serviceStates["statusicon"] . "'>" . $serviceStates["statustext"] . "</span><br>";
         $farmingstatus .= "{$nodedata["hostname"]}:&nbsp;<span id='farmingstatus_{$nodeid}' data-nodeid={$nodeid} class='badge farmerstatus " . ($nodedata['syncstatus'] == 2 ? "badge-success" : ($nodedata['syncstatus'] == 1 ? "badge-warning" : "badge-danger")) . "'>" . ($nodeid > 0 ? ($nodedata['syncstatus'] == 2 ? "Synced" : ($nodedata['syncstatus'] == 1 ? "Syncing" : "Not synced"))."&nbsp;" : "No data found") . "</span></br>";
         $totalplotcount += intval($nodedata["plot_count"]);
@@ -116,7 +113,7 @@
                 <div class="row no-gutters align-items-center">
                   <div class="col mr-2">
                     <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total size of Plots (all Farmer)</div>
-                    <div class="h5 mb-0 font-weight-bold text-gray-900"><?php echo $totalsizeofplots;?></div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-900"><?php echo $totalsizeofplots; ?></div>
                   </div>
                   <div class="col-auto">
                     <i class="fas fa-save fa-2x text-gray-300"></i>
@@ -145,4 +142,3 @@
   </div>
   <?php } ?>
 </div>
-<script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/main_overview/js/card_farm.js"?>></script>

@@ -1,34 +1,36 @@
 <?php
-  function getServiceStates($nodes_states, $nodeid, $type){
-    $statusname = strtolower($type)."status";
-
+  function getServiceStates($nodes_states, $serviceid): array
+  {
     if(is_null($nodes_states)){
       return array("statustext" => "Node not reachable.", "statusicon" => "badge-danger");
     }
-    
-    if($nodes_states[$nodeid]["onlinestatus"] == 1){
+   
+    if($nodes_states["onlinestatus"]["status"] == 0){
       $statustext = "Node not reachable";
       $statusicon = "badge-danger";
-    }else if($nodes_states[$nodeid]["onlinestatus"] == 0){
-      if($nodes_states[$nodeid][$statusname] == 1){
-        $statustext = "{$type} service not running";
+    }else if($nodes_states["onlinestatus"]["status"] == 1){
+      $servicestate = $nodes_states["services"][$serviceid]["servicestate"];
+      $servicedesc = $nodes_states["services"][$serviceid]["service_desc"];
+      if($servicestate == 0){
+        $statustext = "{$servicedesc} service not running";
         $statusicon = "badge-danger";
-      }else if($nodes_states[$nodeid][$statusname] == 0){
-        $statustext = "{$type} service running";
+      }else if($servicestate == 1){
+        $statustext = "{$servicedesc} service running";
         $statusicon = "badge-success";
       }else{
-        $statustext = "Querying service status";
-        $statusicon = "badge-secondary";
+        $statustext = "{$servicedesc} service state unknown";
+        $statusicon = "badge-warning";
       }
     }
 
     return array("statustext" => $statustext, "statusicon" => $statusicon);
   }
 
-  function format_spaces(float $bytesize, $precision = 3){
-    if($bytesize == 0) return "0 Byte";
+  function format_spaces(float $bytesize, $precision = 2): string
+  {
+    if($bytesize == 0) return "0 byte";
     $base = log($bytesize, 1024);
-    $suffixes = array('', 'Byte', 'KiB', 'MiB', 'GiB', 'TiB','EiB');
+    $suffixes = array('byte','kiB','MiB','GiB','TiB','EiB');
 
     return round(pow(1024, $base - floor($base)), $precision) .' '. $suffixes[floor($base)];
   }

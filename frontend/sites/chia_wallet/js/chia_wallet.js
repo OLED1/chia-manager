@@ -1,6 +1,10 @@
 var transactionsCharts = {};
 var transactionsTables = {};
 
+setTimeout(function(){
+  setServiceBadge();
+}, 700);
+
 initRefreshWalletInfo();
 initRestartWalletService();
 createTransactionsTables();
@@ -18,8 +22,8 @@ function createTransactionsTables(){
     $.each(transactions, function(walletid, transaction){
       var target = $("#transactions_" + nodeid + "_" + walletid);
       if(target.length > 0){
+        if((nodeid in transactionsTables) && transactionsTables[nodeid] !== undefined && transactionsTables[nodeid][walletid] !== undefined) transactionsTables[nodeid][walletid].destroy();
         if(!(nodeid in transactionsTables)) transactionsTables[nodeid] = {};
-        if(transactionsTables[nodeid][walletid] !== undefined) transactionsTables[nodeid][walletid].destroy();
         transactionsTables[nodeid][walletid] = $(target).DataTable({
           data: transaction,
           columns: [
@@ -118,8 +122,8 @@ function createTransactionsCharts(){
           }
         });
 
+        if((nodeid in transactionsCharts) && transactionsCharts[nodeid][walletid] !== undefined) transactionsCharts[nodeid][walletid].destroy();
         if(!(nodeid in transactionsCharts)) transactionsCharts[nodeid] = {};
-        if(transactionsCharts[nodeid][walletid] !== undefined) transactionsCharts[nodeid][walletid].destroy();
         transactionsCharts[nodeid][walletid] = new Chart(target, {
             type: "line",
             data: {
@@ -171,10 +175,11 @@ function createTransactionsCharts(){
 
 function queryWalletData(nodeid){
   var authhash = chiaNodes[nodeid]["nodeauthhash"];
-
   var dataforclient = {
-    "nodeid" : nodeid,
-    "authhash": authhash
+    "nodeinfo" : {
+      "nodeid" : nodeid,
+      "authhash": authhash
+    }
   }
 
   sendToWSS("backendRequest", "ChiaMgmt\\Chia_Wallet\\Chia_Wallet_Api", "Chia_Wallet_Api", "queryWalletData", dataforclient);
@@ -211,41 +216,30 @@ function queryWalletStatus(nodeid){
     {"nodeid" : nodeid, "nodeauthhash" : chiaWalletData[nodeid][Object.keys(chiaWalletData[nodeid])]["nodeauthhash"]}
   ];
 
-  sendToWSS("ownRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryWalletStatus", data);
+  sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getCurrentChiaNodesUPAndServiceStatus", {});
 }
 
-function setWalletBadge(nodeid, status, message){
-  var targetbadge = $("#servicestatus_" + nodeid);
-  targetbadge.removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-danger");
-  if(status == 0){
-    targetbadge.addClass("badge-success");
-  }else if(status == 1){
-    targetbadge.addClass("badge-danger");
-  }else if(status == 2){
-    targetbadge.addClass("badge-secondary");
-  }
-  targetbadge.text(message);
-}
+function setServiceBadge(){
+  $.each(services_states, function(nodeid, nodedata){
+    if(nodedata === "undefined" || nodedata["onlinestatus"]["status"] == 0){
+      statustext = "Node not reachable";
+      statusicon = "badge-danger";
+    }else if(nodedata["onlinestatus"]["status"] == 1){
+      servicestate = nodedata["services"][5]["servicestate"];
+      servicedesc =  nodedata["services"][5]["service_desc"];
+      if(servicestate == 0){
+        statustext = servicedesc + " service not running";
+        statusicon = "badge-danger";
+      }else if(servicestate == 1){
+        statustext = servicedesc + " service running";
+        statusicon = "badge-success";
+      }else{
+        statustext = servicedesc + " service state unknown";
+        statusicon = "badge-warning";
+      }
+    }
 
-function setNewWalletData(nodeid){
-  $.each(chiaWalletData[nodeid], function(walletid, walletdata){
-    $("#walletstatus_" + nodeid + "_" + walletid)
-      .removeClass("bg-success")
-      .removeClass("bg-danger")
-      .addClass((walletdata['syncstatus'] == 2 ? "bg-success" : (walletdata['syncstatus'] == 1 ? "bg-warning" : "bg-danger")))
-      .find(".card-body")
-      .html("Walletstatus: " + (walletdata['syncstatus'] == 2 ? "Synced" : (walletdata['syncstatus'] == 1 ? "Syncing" : "Not synced")) +
-            "<div class='text-white-50 small'>Height: " + walletdata["walletheight"] + "</div>");
-
-    var syncpercent = ((walletdata['walletheight'] / chiaoveralldata["xch_blockheight"] * 100).toFixed(2));
-    $("#sync_progress_" + nodeid + "_" + walletid).css("width", syncpercent+"%").attr("aria-valuenow", syncpercent).html(syncpercent +"% - " + walletdata['walletheight'] + "&nbsp;/&nbsp;" + chiaoveralldata["xch_blockheight"]);
-  
-    $("#totalbalance_xch_" + nodeid + "_" + walletid).text("XCH " + (parseInt(walletdata['totalbalance']) / 1000000000000).toFixed(7));
-    $("#totalbalance_def_currency_" + nodeid + "_" + walletid).html(defaultCurrency + "&nbsp;" + (chiapricedefcurr*(walletdata['totalbalance'] / 1000000000000)).toFixed(7));
-    $("#walletaddress_" + nodeid + "_" + walletid).text(walletdata['walletaddress']);
-    $("#totalbalance_balance_chart_" + nodeid + "_" + walletid).text((walletdata['totalbalance'] / 1000000000000).toFixed(7) + " xch (" + walletdata['totalbalance'] + " mojo)");
-    $("#pendingtotalbalance_balance_chart_" + nodeid + "_" + walletid).text((walletdata['pendingtotalbalance'] / 1000000000000).toFixed(7) + " xch (" + walletdata['pendingtotalbalance'] + " mojo)");
-    $("#spendable_balance_chart_" + nodeid + "_" + walletid).text((walletdata['spendable'] / 1000000000000).toFixed(7)  + " xch (" + walletdata['spendable']+ " mojo)");
+    $(".statusbadge[data-node-id='" + nodeid + "'").removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-warning").removeClass("badge-danger").addClass(statusicon).text(statustext);
   });
 }
 
@@ -254,47 +248,27 @@ function messagesTrigger(data){
 
   if(data[key]["status"] == 0){
     if(key == "updateWalletData"){
-      var nodeid = data[key]["data"]["nodeid"];
-      
-      if($(".dataTable_" + nodeid).length == 0){
-        var carddata = { "nodeid" : nodeid, "defaultCurrency" : defaultCurrency, "exchangerate" : exchangerate, "chiapriceindefcurr" : chiapricedefcurr, "chia_overall_data" : chiaoveralldata};
-        $.get(frontend + "/sites/chia_wallet/templates/cards.php", carddata, function(response) {
-          $('#walletcontainer_' + nodeid).html(response);
-          initRefreshWalletInfo();
-          initRestartWalletService();
-        });
-      }
-      chiaWalletData[nodeid] = data[key]["data"]["data"][nodeid];
-      setNewWalletData(nodeid);
-    }else if(key == "updateWalletTransactions"){
-      var nodeid = data[key]["data"]["nodeid"];
-      transactionData[nodeid] = data[key]["data"]["data"][nodeid];
-      setTimeout(
-        function() 
-        {
-          createTransactionsCharts();
-          createTransactionsTables();
-        }, ($(".dataTable_" + nodeid).children().length == 0 ? 2000 : 0));
-    }else if(key == "walletStatus"){
-      setTimeout(function(){
-        setWalletBadge(data[key]["data"]["data"], data[key]["data"]["status"], data[key]["data"]["message"]);
-      }, 1000);
-    }else if(key == "walletServiceRestart"){
-      setWalletBadge(data[key]["data"]["data"], data[key]["data"]["status"], data[key]["data"]["message"]);
-    }else if(key == "connectedNodesChanged"){
-      sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryNodesServicesStatus", {});
-    }else if(key == "queryNodesServicesStatus"){
-      $.each(data[key]["data"], function(nodeid, condata){
-        if(condata["onlinestatus"] == 1){
-          setWalletBadge(nodeid, condata["onlinestatus"], "Node not reachable");
-        }
+      var nodeid = data[key]["data"]["nodeid"];  
+      var carddata = { "nodeid" : nodeid, "defaultCurrency" : defaultCurrency, "exchangerate" : exchangerate, "chiapriceindefcurr" : chiapricedefcurr, "chia_overall_data" : chiaoveralldata};
+      $.get(frontend + "/sites/chia_wallet/templates/cards.php", carddata, function(response) {
+        $('#walletcontainer_' + nodeid).html(response);
+        initRefreshWalletInfo();
+        initRestartWalletService();
+        createTransactionsTables();
+        createTransactionsCharts();
       });
     }else if(key == "queryOverallData"){
       chiaoveralldata = data[key]["data"];
-      $.each(chiaNodes, function(nodeid, nodedata) {
-          setNewWalletData(nodeid);
-      });
+    }else if(key == "queryNodesServicesStatus" || key == "updateChiaStatus" || key == "setNodeUpDown"){
+      sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getCurrentChiaNodesUPAndServiceStatus", {});
+    }else if(key == "getCurrentChiaNodesUPAndServiceStatus"){
+      if("data" in data[key]){
+        services_states = data[key]["data"];
+      }
     }
+    setTimeout(function(){
+      setServiceBadge();
+    }, 600);
   }else if(data[key]["status"] == "014003001"){
     $(".statusbadge").each(function(){
       var thisnodeid = $(this).attr("data-node-id");
@@ -304,9 +278,3 @@ function messagesTrigger(data){
     });
   }
 }
-
-setTimeout(function(){
-  if($(".statusbadge.badge-secondary").length > 0){
-    sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryNodesServicesStatus", {});
-  }
-}, 9000);

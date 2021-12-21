@@ -1,7 +1,6 @@
 <?php
   use ChiaMgmt\Login\Login_Api;
   use ChiaMgmt\Chia_Farm\Chia_Farm_Api;
-  use ChiaMgmt\Nodes\Nodes_Api;
   require __DIR__ . '/../../../../vendor/autoload.php';
   include __DIR__ . "/functions.php";
 
@@ -14,8 +13,6 @@
   }
 
   $chia_farm_api = new Chia_Farm_Api();
-  $nodes_api = new Nodes_Api();
-  $nodes_states = $nodes_api->queryNodesServicesStatus()["data"];
   $farm_api_data = $chia_farm_api->getFarmData(["nodeid" => $_GET["nodeid"]]);
   $challenges = $chia_farm_api->getChallenges(["limit" => 50, "nodeid" => $_GET["nodeid"]]);
 
@@ -32,23 +29,8 @@
           <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-danger'>No data found</span>
         <?php
           }else{
-            if($nodes_states[$nodeid]["onlinestatus"] == 1){
-              $statustext = "Node not reachable.";
-              $statusicon = "badge-danger";
-            }else if($nodes_states[$nodeid]["onlinestatus"] == 0){
-              if($nodes_states[$nodeid]["farmerstatus"] == 1){
-                $statustext = "Farmer service not running.";
-                $statusicon = "badge-danger";
-              }else if($nodes_states[$nodeid]["farmerstatus"] == 0){
-                $statustext = "Farmer service running.";
-                $statusicon = "badge-success";
-              }else{
-                $statustext = "Querying service status";
-                $statusicon = "badge-secondary";
-              }
-            }
         ?>
-          <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge <?php echo $statusicon; ?>'><?php echo $statustext; ?></span>
+          <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-secondary'>Processing...</span>
         <?php } ?>
         </h6>
         <div class='dropdown no-arrow'>
@@ -176,7 +158,7 @@
                     </thead>
                     <tbody>
                       <?php
-                        if(array_key_exists("data", $challenges) && array_key_exists($nodeid, $challenges["data"]) && count($challenges["data"][$nodeid]) > 0){
+                        if(array_key_exists("data", $challenges) && array_key_exists($nodeid, $challenges["data"]) && count($challenges["data"][$nodeid]) > 0 && !is_Null($challenges["data"][$nodeid][0]["id"])){
                           foreach($challenges["data"][$nodeid] AS $arrkey => $challenge){
                       ?>
                         <tr>

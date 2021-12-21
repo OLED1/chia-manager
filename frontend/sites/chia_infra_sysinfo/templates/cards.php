@@ -60,8 +60,8 @@
                     <div id="filesystem_<?php echo "{$sysinfo["id"]}"; ?>" class="card-body">
                       <h6 class="m-0 font-weight-bold text-primary">Filesystems</h6>
                       <?php foreach($sysinfo["filesystems"] AS $arrkey => $filesystem){ ?>
-                        <?php $percent = number_format(($filesystem[2]/$filesystem[1])*100, 2); ?>
-                        <h4 class="small font-weight-bold"><?php echo "{$filesystem[0]} => {$filesystem[4]} (Size: " . formatkBytes($filesystem[1]) . " Used: " . formatkBytes($filesystem[2]) . " Available: " . formatkBytes($filesystem[3]) . ")"; ?><span class="float-right"><?php echo $percent; ?>%</span></h4>
+                        <?php $percent = number_format((($filesystem[1]-$filesystem[3])/$filesystem[1])*100, 2); ?>
+                        <h4 class="small font-weight-bold"><?php echo "{$filesystem[0]} => {$filesystem[4]} (Size: " . formatkBytes($filesystem[1]) . " Used: " . formatkBytes($filesystem[1]-$filesystem[3]) . " Available: " . formatkBytes($filesystem[3]) . ")"; ?><span class="float-right"><?php echo $percent; ?>%</span></h4>
                         <div class="progress mb-4">
                           <div class="progress-bar <?php echo ($percent <= 50 ? "bg-success" : ($percent <= 75 ? "bg-warning" : "bg-danger")); ?>" role="progressbar" style="width: <?php echo $percent; ?>%" aria-valuenow="<?php echo $percent; ?>" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
@@ -141,7 +141,6 @@
   </div>
 </div>
 <?php } ?>
-<script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_infra_sysinfo/js/chia_infra_sysinfo.js"?>></script>
 <?php 
 function formatkBytes(int $size, int $precision = 2)
 {

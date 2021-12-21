@@ -3,6 +3,13 @@
   include("../standard_headers.php");
 
   $nodes_api = new Nodes_Api();
+  $services_states = $nodes_api->getCurrentChiaNodesUPAndServiceStatus();
+  if(array_key_exists("data", $services_states)){
+    $services_states = $services_states["data"];
+  }else{
+    $services_states = [];
+  }
+
   $all_nodes = $nodes_api->getConfiguredNodes(["nodetypenum" => 3]);
   $chia_nodes = [];
   if(array_key_exists("data", $all_nodes)){
@@ -19,7 +26,8 @@
   echo "<script nonce={$ini["nonce_key"]}> 
           var siteID = 6;
           var chiaNodes = " . json_encode($chia_nodes) . ";
-          var chiaFarmData = {}; 
+          var chiaFarmData = {};
+          var services_states = " . json_encode($services_states) . ";
         </script>";
 ?>
 <!-- Page Heading -->

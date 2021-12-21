@@ -18,15 +18,15 @@
   }
 
   $data = [
-      "from" => $_GET["from"]->format("Y-m-d H:i:s"),
-      "to" => $_GET["to"]->format("Y-m-d H:i:s"),
+      "from" => $_GET["from"],
+      "to" => $_GET["to"],
       "node_ids" => [$_GET["nodeid"]]
   ];
 
   $system_statistics_api = new System_Statistics_Api();
   $historySystemsLoadData = $system_statistics_api->getSystemsLoadHistory($data);
-  if(array_key_exists("data", $historySystemsLoadData)){
-    $historySystemsLoadData = $historySystemsLoadData["data"];
+  if(array_key_exists("data", $historySystemsLoadData) && array_key_exists($_GET["nodeid"], $historySystemsLoadData["data"])){
+    $historySystemsLoadData = $historySystemsLoadData["data"][$_GET["nodeid"]];
   }else{
     $historySystemsLoadData = [];
   }
@@ -37,11 +37,11 @@
   echo "</pre>";*/
 
   echo "<script nonce={$ini["nonce_key"]}>
-            historySystemsLoadData[" . $_GET["nodeid"] . "] = " . json_encode($historySystemsLoadData[$_GET["nodeid"]]) . ";
+            historySystemsLoadData[" . $_GET["nodeid"] . "] = " . json_encode($historySystemsLoadData) . ";
         </script>";
 ?>
 <div class="card shadow mb-4">
-    <?php if($alldatastated ){ ?>
+    <?php if($alldatastated){ ?>
         <?php if(count($historySystemsLoadData) > 0){ ?>
             <ul class="list-group list-group-flush">
                 <li class="list-group-item">
@@ -50,40 +50,40 @@
                     </div>
                 </li>
                 <li class="list-group-item">
-                <table class="table table-borderless load-table">
-                    <thead>
-                    <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">Current</th>
-                        <th scope="col">Min</th>
-                        <th scope="col">Max</th>
-                        <th scope="col">Average</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td>Load 1min</td>
-                        <td id="load1min_cur-<?php echo $_GET["nodeid"]; ?>"></td>
-                        <td id="load1min_min-<?php echo $_GET["nodeid"]; ?>"></td>
-                        <td id="load1min_max-<?php echo $_GET["nodeid"]; ?>"></td>
-                        <td id="load1min_avg-<?php echo $_GET["nodeid"]; ?>"></td>
-                    </tr>
-                    <tr>
-                        <td>Load 5min</td>
-                        <td id="load5min_cur-<?php echo $_GET["nodeid"]; ?>"></td>
-                        <td id="load5min_min-<?php echo $_GET["nodeid"]; ?>"></td>
-                        <td id="load5min_max-<?php echo $_GET["nodeid"]; ?>"></td>
-                        <td id="load5min_avg-<?php echo $_GET["nodeid"]; ?>"></td>
-                    </tr>
-                    <tr>
-                        <td>Load 15min</td>
-                        <td id="load15min_cur-<?php echo $_GET["nodeid"]; ?>"></td>
-                        <td id="load15min_min-<?php echo $_GET["nodeid"]; ?>"></td>
-                        <td id="load15min_max-<?php echo $_GET["nodeid"]; ?>"></td>
-                        <td id="load15min_avg-<?php echo $_GET["nodeid"]; ?>"></td>
-                    </tr>
-                    </tbody>
-                </table>
+                    <table class="table table-borderless load-table">
+                        <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Current</th>
+                            <th scope="col">Min</th>
+                            <th scope="col">Max</th>
+                            <th scope="col">Average</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>Load 1min</td>
+                            <td id="load1min_cur-<?php echo $_GET["nodeid"]; ?>"></td>
+                            <td id="load1min_min-<?php echo $_GET["nodeid"]; ?>"></td>
+                            <td id="load1min_max-<?php echo $_GET["nodeid"]; ?>"></td>
+                            <td id="load1min_avg-<?php echo $_GET["nodeid"]; ?>"></td>
+                        </tr>
+                        <tr>
+                            <td>Load 5min</td>
+                            <td id="load5min_cur-<?php echo $_GET["nodeid"]; ?>"></td>
+                            <td id="load5min_min-<?php echo $_GET["nodeid"]; ?>"></td>
+                            <td id="load5min_max-<?php echo $_GET["nodeid"]; ?>"></td>
+                            <td id="load5min_avg-<?php echo $_GET["nodeid"]; ?>"></td>
+                        </tr>
+                        <tr>
+                            <td>Load 15min</td>
+                            <td id="load15min_cur-<?php echo $_GET["nodeid"]; ?>"></td>
+                            <td id="load15min_min-<?php echo $_GET["nodeid"]; ?>"></td>
+                            <td id="load15min_max-<?php echo $_GET["nodeid"]; ?>"></td>
+                            <td id="load15min_avg-<?php echo $_GET["nodeid"]; ?>"></td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </li>
             </ul>
         <?php }else{ ?>

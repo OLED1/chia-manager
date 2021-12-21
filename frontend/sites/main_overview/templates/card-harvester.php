@@ -1,8 +1,8 @@
 <?php
   use ChiaMgmt\Login\Login_Api;
   use ChiaMgmt\Chia_Harvester\Chia_Harvester_Api;
-  use ChiaMgmt\Nodes\Nodes_Api;
   require __DIR__ . '/../../../../vendor/autoload.php';
+  include_once("functions.php");
 
   $login_api = new Login_Api();
   $ini = parse_ini_file(__DIR__.'/../../../../backend/config/config.ini.php');
@@ -12,12 +12,9 @@
     header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/login.php");
   }
 
-  include_once("functions.php");
+  $servicesStates = $_GET["services_states"];
   $chia_harvester_api = new Chia_Harvester_Api();
   $harvesterData = $chia_harvester_api->getHarvesterData()["data"];
-
-  $nodes_api = new Nodes_Api();
-  $nodes_states = $nodes_api->queryNodesServicesStatus()["data"];
 ?>
 <div class="card mb-4">
   <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
@@ -26,7 +23,7 @@
         <a class='dropdown-toggle' href='#' role='button' id='harvesterMenu' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
           <i class='fas fa-ellipsis-v fa-sm fa-fw text-gray-400'></i>
         </a>
-        <div class='dropdown-menu dropdown-menu-right shadow animated--fade-in' aria-labelledby='haresterMenu'>
+        <div class='dropdown-menu dropdown-menu-right shadow animated--fade-in' aria-labelledby='harvesterMenu'>
           <div class='dropdown-header'>Actions:</div>
           <button id="refreshHarvesterInfo" class='dropdown-item wsbutton' href=''>Refresh</button>
         </div>
@@ -37,17 +34,19 @@
     $hostchecks = "";
     $criticalmount = "";
     foreach($harvesterData AS $nodeid => $nodedata){
-      $serviceStates = getServiceStates($nodes_states, $nodeid, "Harvester");
+      $serviceStates = getServiceStates($servicesStates[$nodeid], 4);
       $hostchecks .= "{$nodedata["hostname"]}:&nbsp;<span id='servicestatus_harvester_{$nodeid}' data-nodeid={$nodeid} class='badge nodestatus " . $serviceStates["statusicon"] . "'>" . $serviceStates["statustext"] . "</span><br>";
       $nodes = array();
-      foreach($nodedata["plotdirs"] AS $finalplotsdir => $plotdata){
-        if(is_null($plotdata["devname"]) && $finalplotsdir != "Unknown"){
-          if(!in_array($nodedata["hostname"], $nodes)){
-            $criticalmount .= "{$nodedata["hostname"]}:<br>";
-            array_push($nodes, $nodedata["hostname"]);
-          }
-          $criticalmount .= "<span id='plot_crit_{$plotdata["id"]}' data-nodeid={$nodeid} class='badge harvesterstatus badge-danger'>{$finalplotsdir}</span></br>";
-
+      
+      foreach($nodedata["plotdirs"] AS $mountpoint => $plotdir){
+        if(!in_array($nodedata["hostname"], $nodes)){
+          $criticalmount .= "{$nodedata["hostname"]}:<br>";
+          array_push($nodes, $nodedata["hostname"]);
+        }
+        if(array_key_exists("mount_device", $plotdir) && is_null($plotdir["mount_device"])){
+          $criticalmount .= "<span id='plot_crit_{$nodeid}_{$mountpoint}' data-nodeid={$nodeid} class='badge harvesterstatus badge-danger'>{$mountpoint}</span></br>";
+        }else{
+          $criticalmount .= "<span id='plot_crit_{$nodeid}_no_plot_dirs_found' data-nodeid={$nodeid} class='badge harvesterstatus badge-danger'>No plotdirectories are configured</span></br>";
         }
       }
     }
@@ -110,4 +109,3 @@
   </div>
   <?php } ?>
 </div>
-<script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/main_overview/js/card_harvester.js"?>></script>

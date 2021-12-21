@@ -2,16 +2,18 @@ var ramswapcharts = {};
 var loadCharts = {};
 
 reloadTables();
+reinitQueryAllButton();
 initSysinfoRefresh();
 initSysinfoNodeActions();
 
-
-$("#queryAllNodes").off("click");
-$("#queryAllNodes").on("click", function(){
-  $.each(sysinfodata, function(nodeid, farmdata) {
+function reinitQueryAllButton(){
+  $("#queryAllNodes").off("click");
+  $("#queryAllNodes").on("click", function(){
+    $.each(sysinfodata, function(nodeid, farmdata) {
       querySystemInfo(nodeid);
+    });
   });
-});
+}
 
 
 function reloadTables(){
@@ -33,8 +35,10 @@ function initSysinfoRefresh(){
 function querySystemInfo(nodeid){
   var authhash = sysinfodata[nodeid]["nodeauthhash"];
   var dataforclient = {
-    "nodeid" : nodeid,
-    "authhash": authhash
+    "nodeinfo" : {
+      "nodeid" : nodeid,
+      "authhash": authhash
+    }
   }
 
   sendToWSS("backendRequest", "ChiaMgmt\\Chia_Infra_Sysinfo\\Chia_Infra_Sysinfo_Api", "Chia_Infra_Sysinfo_Api", "querySystemInfo", dataforclient);
@@ -73,6 +77,8 @@ function initAndDrawRAMorSWAPChart(nodeid, type){
   var target = $("#" + type + "_chart_" + nodeid);
   if(target.length > 0){
     if(!(nodeid in ramswapcharts)) ramswapcharts[nodeid] = {};
+    else if((nodeid in ramswapcharts) && (type in ramswapcharts[nodeid])) ramswapcharts[nodeid][type].destroy();
+
     var thischartctx = document.getElementById(type + "_chart_" + nodeid).getContext("2d");
     ramswapcharts[nodeid][type] = new Chart(thischartctx, {
       type: 'doughnut',
@@ -114,6 +120,7 @@ function initAndDrawLoadChart(nodeid){
   var infodata = sysinfodata[nodeid];
   var thischartctx = document.getElementById("cpu_load_chart_" + nodeid).getContext("2d");
   if(!(nodeid in loadCharts)) loadCharts[nodeid] = {};
+  else if((nodeid in loadCharts)) loadCharts[nodeid]["load"].destroy();
   
   loadCharts[nodeid]["load"] = new Chart(thischartctx, {
     data: {
@@ -202,8 +209,13 @@ function messagesTrigger(data){
 
   if(data[key]["status"] == 0){
     if(key == "updateSystemInfo"){
-      $('#all_node_sysinfo_container').load(frontend + "/sites/chia_infra_sysinfo/templates/cards.php");
-      reloadTables();
+      $.get(frontend + "/sites/chia_infra_sysinfo/templates/cards.php", {}, function(response) {
+        $('#all_node_sysinfo_container').html(response);
+        reloadTables();
+        reinitQueryAllButton();
+        initSysinfoRefresh();
+        initSysinfoNodeActions();
+      });
     }else if(key == "connectedNodesChanged"){
       sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryNodesServicesStatus", {});
     }else if(key == "queryNodesServicesStatus"){

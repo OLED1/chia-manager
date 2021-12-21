@@ -72,17 +72,17 @@
 </div>
 <div class="card shadow mb-4">
   <?php if(count($chia_nodes) > 0){ ?>
-  <ul class="nav nav-tabs" id="myTab" role="tablist">
+  <ul class="nav nav-tabs" role="tablist">
     <?php foreach($chia_nodes AS $arrkey => $nodeinfo){ ?>
     <li class="nav-item">
         <a class="nav-link <?php echo ($arrkey == 0 ? "active" : "" ); ?>" id="sysinfo_tab-<?php echo $nodeinfo["nodeid"]; ?>" data-toggle="tab" href="#sysinfo_<?php echo $nodeinfo["nodeid"]; ?>" role="tab" aria-controls="content_<?php echo $arrkey; ?>" aria-selected="<?php echo ($arrkey == 0 ? "true" : "" ); ?>"><?php echo $nodeinfo["hostname"]; ?></a>
     </li>
     <?php } ?>
   </ul>
-  <div class="tab-content" id="myTabContent">
+  <div class="tab-content">
     <?php foreach($chia_nodes AS $arrkey => $nodeinfo){ ?>
       <div class="tab-pane fade <?php echo ($arrkey == 0 ? "show active" : "" ); ?>" id="sysinfo_<?php echo $nodeinfo["nodeid"]; ?>" role="tabpanel" aria-labelledby="sysinfo_tab-<?php echo $nodeinfo["nodeid"]; ?>">
-        <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <ul class="nav nav-tabs" role="tablist">
           <li class="nav-item">
               <a class="nav-link active" id="cpuinfo_tab-<?php echo $nodeinfo["nodeid"]; ?>" data-toggle="tab" href="#cpuinfo_<?php echo $nodeinfo["nodeid"]; ?>" role="tab" aria-controls="content_cpu_<?php echo $arrkey; ?>" aria-selected="true">CPU</a>
           </li>
@@ -93,12 +93,12 @@
               <a class="nav-link" id="filesystems_tab-<?php echo $nodeinfo["nodeid"]; ?>" data-toggle="tab" href="#filesystems_<?php echo $nodeinfo["nodeid"]; ?>" role="tab" aria-controls="content_filesystems_<?php echo $arrkey; ?>" aria-selected="true">Filesystems</a>
           </li>
         </ul>
-        <div class="tab-content" id="myTabContent1">
+        <div class="tab-content">
           <div class="tab-pane fade show active" id="cpuinfo_<?php echo $nodeinfo["nodeid"]; ?>" role="tabpanel" aria-labelledby="cpuinfo_tab-<?php echo $nodeinfo["nodeid"]; ?>">
             <?php
               $_GET['nodeid'] = $nodeinfo["nodeid"];
-              $_GET['from'] = $from;
-              $_GET['to'] = $to;
+              $_GET['from'] = $from->format("Y-m-d H:i:s");
+              $_GET['to'] = $to->format("Y-m-d H:i:s");;
               include("templates/load_chart_card.php"); 
             ?>  
           </div>

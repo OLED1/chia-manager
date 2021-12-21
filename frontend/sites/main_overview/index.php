@@ -1,6 +1,20 @@
 <?php
+  use ChiaMgmt\Nodes\Nodes_Api;
+  require __DIR__ . '/../../../vendor/autoload.php';
   include("../standard_headers.php");
-  echo "<script nonce={$ini["nonce_key"]}> var siteID = 1; </script>";
+
+  $nodes_api = new Nodes_Api();
+  $services_states = $nodes_api->getCurrentChiaNodesUPAndServiceStatus();
+  if(array_key_exists("data", $services_states)){
+    $services_states = $services_states["data"];
+  }else{
+    $services_states = [];
+  }
+
+  echo "<script nonce={$ini["nonce_key"]}> 
+          var siteID = 1;
+          var services_states = " . json_encode($services_states) . ";
+        </script>";
 ?>
 <!-- Page Heading -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -53,6 +67,7 @@
   <div class="row">
     <div id="card-system" class="col">
       <?php
+        $_GET["services_states"] = $services_states;
         include("templates/card-system.php");
       ?>
     </div>

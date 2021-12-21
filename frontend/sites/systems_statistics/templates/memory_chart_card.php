@@ -18,21 +18,21 @@
   }
 
   $data = [
-      "from" => $_GET["from"]->format("Y-m-d H:i:s"),
-      "to" => $_GET["to"]->format("Y-m-d H:i:s"),
+      "from" => $_GET["from"],
+      "to" => $_GET["to"],
       "node_ids" => [$_GET["nodeid"]]
   ];
 
   $system_statistics_api = new System_Statistics_Api();
   $historyMemoryData = $system_statistics_api->getRAMSwapHistory($data);
-  if(array_key_exists("data", $historyMemoryData)){
-    $historyMemoryData = $historyMemoryData["data"];
+  if(array_key_exists("data", $historyMemoryData) && array_key_exists($_GET["nodeid"], $historyMemoryData["data"])){
+    $historyMemoryData = $historyMemoryData["data"][$_GET["nodeid"]];
   }else{
     $historyMemoryData = [];
   }
 
   echo "<script nonce={$ini["nonce_key"]}>
-            historyMemoryData[" . $_GET["nodeid"] . "] = " . json_encode($historyMemoryData[$_GET["nodeid"]]) . ";
+            historyMemoryData[" . $_GET["nodeid"] . "] = " . json_encode($historyMemoryData) . ";
         </script>";
 ?>
 <div class="card shadow mb-4">
@@ -62,13 +62,6 @@
                         <td id="total_ram_min-<?php echo $_GET["nodeid"]; ?>"></td>
                         <td id="total_ram_max-<?php echo $_GET["nodeid"]; ?>"></td>
                         <td id="total_ram_avg-<?php echo $_GET["nodeid"]; ?>"></td>
-                    </tr>
-                    <tr>
-                        <td>Free</td>
-                        <td id="free_ram_cur-<?php echo $_GET["nodeid"]; ?>"></td>
-                        <td id="free_ram_min-<?php echo $_GET["nodeid"]; ?>"></td>
-                        <td id="free_ram_max-<?php echo $_GET["nodeid"]; ?>"></td>
-                        <td id="free_ram_avg-<?php echo $_GET["nodeid"]; ?>"></td>
                     </tr>
                     <tr>
                         <td>Used</td>
@@ -147,21 +140,21 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td>Total</td>
+                        <td>Buffers</td>
                         <td id="buffers_cur-<?php echo $_GET["nodeid"]; ?>"></td>
                         <td id="buffers_min-<?php echo $_GET["nodeid"]; ?>"></td>
                         <td id="buffers_max-<?php echo $_GET["nodeid"]; ?>"></td>
                         <td id="buffers_avg-<?php echo $_GET["nodeid"]; ?>"></td>
                     </tr>
                     <tr>
-                        <td>Free</td>
+                        <td>Cached</td>
                         <td id="cached_cur-<?php echo $_GET["nodeid"]; ?>"></td>
                         <td id="cached_min-<?php echo $_GET["nodeid"]; ?>"></td>
                         <td id="cached_max-<?php echo $_GET["nodeid"]; ?>"></td>
                         <td id="cached_avg-<?php echo $_GET["nodeid"]; ?>"></td>
                     </tr>
                     <tr>
-                        <td>Used</td>
+                        <td>Shared</td>
                         <td id="shared_cur-<?php echo $_GET["nodeid"]; ?>"></td>
                         <td id="shared_min-<?php echo $_GET["nodeid"]; ?>"></td>
                         <td id="shared_max-<?php echo $_GET["nodeid"]; ?>"></td>

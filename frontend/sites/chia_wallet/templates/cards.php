@@ -1,7 +1,6 @@
 <?php
   use ChiaMgmt\Login\Login_Api;
   use ChiaMgmt\Chia_Wallet\Chia_Wallet_Api;
-  use ChiaMgmt\Nodes\Nodes_Api;
   require __DIR__ . '/../../../../vendor/autoload.php';
 
   $login_api = new Login_Api();
@@ -13,10 +12,17 @@
   }
 
   $chia_wallet_api = new Chia_Wallet_Api();
-  $nodes_api = new Nodes_Api();
-  $nodes_states = $nodes_api->queryNodesServicesStatus()["data"];
-  $walletdata = $chia_wallet_api->getWalletData(["nodeid" => $_GET["nodeid"]]);
-  $transactiondata = $chia_wallet_api->getWalletTransactions(["nodeid" => $_GET["nodeid"]]);
+  $all_wallet_data = $chia_wallet_api->getWalletData(["nodeid" => $_GET["nodeid"]]);
+  $walletdata = [];
+  $transactions = [];
+  if(array_key_exists("data", $all_wallet_data) && array_key_exists($_GET["nodeid"], $all_wallet_data["data"]) && 
+      array_key_exists("walletinfo", $all_wallet_data["data"][$_GET["nodeid"]]) && !is_null($all_wallet_data["data"][$_GET["nodeid"]]["walletinfo"])){
+    $walletdata = $all_wallet_data["data"][$_GET["nodeid"]]["walletinfo"];
+  }
+  if(array_key_exists("data", $all_wallet_data) && array_key_exists($_GET["nodeid"], $all_wallet_data["data"]) && 
+    array_key_exists("transactions", $all_wallet_data["data"][$_GET["nodeid"]]) && !is_null($all_wallet_data["data"][$_GET["nodeid"]]["transactions"])){
+    $transactions = $all_wallet_data["data"][$_GET["nodeid"]]["transactions"];
+  }
 
   if(array_key_exists("defaultCurrency", $_GET) && !is_null($_GET["defaultCurrency"])) $defaultCurrency = $_GET["defaultCurrency"];
   else $defaultCurrency = "usd";
@@ -25,54 +31,41 @@
   if(array_key_exists("chiapriceindefcurr", $_GET) && !is_null($_GET["chiapriceindefcurr"])) $chiapriceindefcurr = $_GET["chiapriceindefcurr"];
   else $chiapriceindefcurr = 0;
 
-  if(array_key_exists("data", $walletdata) && count($walletdata["data"]) > 0){
+  $nodeid = $_GET["nodeid"];
+  $hostinfo = $all_wallet_data["data"][$_GET["nodeid"]]["hostinfo"];
+
+  if(count($walletdata) > 0){
     echo "<script nonce={$ini["nonce_key"]}>
-            chiaWalletData[" . $_GET["nodeid"] . "] = " . json_encode($walletdata["data"][$_GET["nodeid"]]) . ";
-            transactionData[" . $_GET["nodeid"] . "] = " . json_encode($transactiondata["data"][$_GET["nodeid"]]) . ";
+            chiaWalletData[" . $_GET["nodeid"] . "] = " . json_encode($walletdata) . ";
+            transactionData[" . $_GET["nodeid"] . "] = " . json_encode($transactions) . ";
           </script>";
-    foreach($walletdata["data"] AS $nodeid => $nodedata){
-      foreach($nodedata as $walletid => $thiswallet){
-        $wallettype = function(int $wallettype){
-          switch($wallettype){
-            case 0: return "STANDARD_WALLET";
-            case 9: return "POOLING_WALLET";
-            default: return "UNKNOWN_WALLET";
-          }
-        };
+    foreach($walletdata as $walletid => $thiswallet){
+      $wallettype = function($wallettype){
+        switch($wallettype){
+          case 0: return "STANDARD_WALLET";
+          case 9: return "POOLING_WALLET";
+          default: return "UNKNOWN_WALLET";
+        }
+      };
 ?>
 <div class='row'>
   <div class='col'>
     <div class='card shadow mb-4'>
       <div class='card-header py-3 d-flex flex-row align-items-center justify-content-between'>
-        <h6 class='m-0 font-weight-bold text-primary'><?php echo "Host: {$thiswallet['hostname']}, Wallet (ID: {$walletid}), Type: {$wallettype($thiswallet['wallettype'])}"; ?>&nbsp;
+        <h6 class='m-0 font-weight-bold text-primary'><?php echo "Host: {$hostinfo['hostname']}, Wallet (ID: {$walletid}), Type: {$wallettype($thiswallet['wallettype'])}"; ?>&nbsp;
         <?php if(!is_numeric($thiswallet['walletid'])){ ?>
           <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-danger'>No data found</span>
         <?php
             }else{
-              if($nodes_states[$nodeid]["onlinestatus"] == 1){
-                $statustext = "Node not reachable.";
-                $statusicon = "badge-danger";
-              }else if($nodes_states[$nodeid]["onlinestatus"] == 0){
-                if($nodes_states[$nodeid]["walletstatus"] == 1){
-                  $statustext = "Wallet service not running.";
-                  $statusicon = "badge-danger";
-                }else if($nodes_states[$nodeid]["walletstatus"] == 0){
-                  $statustext = "Wallet service running.";
-                  $statusicon = "badge-success";
-                }else{
-                  $statustext = "Querying service status";
-                  $statusicon = "badge-secondary";
-                }
-              }
-          ?>
-          <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge <?php echo $statusicon; ?>'><?php echo $statustext; ?></span>
+        ?>
+          <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-secondary'>Processing...</span>
         <?php } ?>
         </h6>
         <div class='dropdown no-arrow'>
-          <a class='dropdown-toggle' href='#' role='button' id='dropdownMenuLink_<?php echo $thiswallet['nodeid']; ?>' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
+          <a class='dropdown-toggle' href='#' role='button' id='dropdownMenuLink_<?php echo $nodeid; ?>' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
             <i class='fas fa-ellipsis-v fa-sm fa-fw text-gray-400'></i>
           </a>
-          <div class='dropdown-menu dropdown-menu-right shadow animated--fade-in' aria-labelledby='dropdownMenuLink_<?php echo $thiswallet['nodeid']; ?>'>
+          <div class='dropdown-menu dropdown-menu-right shadow animated--fade-in' aria-labelledby='dropdownMenuLink_<?php echo $nodeid; ?>'>
             <div class='dropdown-header'>Actions:</div>
             <button data-node-id='<?php echo $nodeid; ?>' data-wallet-id='<?php echo $thiswallet['walletid']; ?>' class='dropdown-item refreshWalletInfo wsbutton' href='#'>Refresh</button>
             <button data-node-id='<?php echo $nodeid; ?>' data-wallet-id='<?php echo $thiswallet['walletid']; ?>' class='dropdown-item restartWalletService wsbutton' href='#'>Restart wallet service</button>
@@ -93,9 +86,9 @@
           <div class='col-12 col-md-6 mb-4'>
             <div class='card text-white shadow'>
               <div class='card-body'>
-                Current blocks synced
+                <?php $syncpercent = number_format(($thiswallet['walletheight'] / $_GET["chia_overall_data"]["xch_blockheight"] * 100), 2); ?>
+                Current blocks synced <?php echo ($syncpercent <= 40 ? "({$syncpercent}% - {$thiswallet['walletheight']}&nbsp;/&nbsp;{$_GET["chia_overall_data"]["xch_blockheight"]})" : ""); ?>
                 <div class="progress">
-                  <?php $syncpercent = number_format(($thiswallet['walletheight'] / $_GET["chia_overall_data"]["xch_blockheight"] * 100), 2); ?>
                   <div id="<?php echo "sync_progress_{$nodeid}_{$thiswallet['walletid']}"; ?>" class="progress-bar bg-primary" role="progressbar" style="width: <?php echo "{$syncpercent}"; ?>%;" aria-valuenow="<?php echo "{$syncpercent}"; ?>" aria-valuemin="0" aria-valuemax="100"><?php echo "{$syncpercent}% - {$thiswallet['walletheight']}&nbsp;/&nbsp;{$_GET["chia_overall_data"]["xch_blockheight"]}" ?></div>
                 </div>
               </div>
@@ -166,7 +159,7 @@
               <div class='card-body'>
                 <h6>Transactions Chart</h6>
                 <?php
-                  if(array_key_exists($nodeid, $transactiondata["data"]) && array_key_exists($thiswallet['walletid'], $transactiondata["data"][$nodeid]) && count($transactiondata["data"][$nodeid][$thiswallet['walletid']]) > 0){
+                  if(array_key_exists($thiswallet['walletid'], $transactions) && count($transactions[$thiswallet['walletid']]) > 0){
                 ?>
                 <canvas id="<?php echo "transactions_chart_{$nodeid}_{$thiswallet['walletid']}"; ?>" class="transactionchart_<?php echo $nodeid; ?>"></canvas>
                 <?php
@@ -186,7 +179,7 @@
               <div class='card-body'>
                 <h6>Transactions Table</h6>
                 <?php
-                  if(array_key_exists($nodeid, $transactiondata["data"]) && count($transactiondata["data"][$nodeid][$thiswallet['walletid']]) > 0){
+                  if(array_key_exists($thiswallet['walletid'], $transactions) && count($transactions[$thiswallet['walletid']]) > 0){
                 ?>
                 <div class="table-responsive">
                     <table class="table table-bordered dataTable_<?php echo $nodeid; ?>" id="<?php echo "transactions_{$nodeid}_{$thiswallet['walletid']}"; ?>" width="100%" cellspacing="0">
@@ -227,7 +220,7 @@
         </div>
       </div>
       <div class="card-footer">
-        Data queried at: <span id="querydate_<?php echo "{$thiswallet["nodeid"]}"; ?>"><?php echo "{$thiswallet["querydate"]}"; ?></span>
+        Data queried at: <span id="querydate_<?php echo "{$nodeid}"; ?>"><?php echo "{$thiswallet["querydate"]}"; ?></span>
       </div>
     <?php }else{ ?>
       <div class="card-body">
@@ -242,7 +235,6 @@
   </div>
 </div>
 <?php
-        }
       }
     }else{
 ?>

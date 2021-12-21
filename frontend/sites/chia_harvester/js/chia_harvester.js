@@ -2,15 +2,23 @@ initRefreshHarvesterInfos();
 initRestartHarvesterService();
 initAllDatatables();
 
+setTimeout(function(){
+  setServiceBadge();
+}, 700);
+
+$(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+})
+
 $("#queryAllNodes").off("click");
 $("#queryAllNodes").on("click", function(){
-  $.each(chiaHarvesterData, function(nodeid, farmdata) {
+  $.each(chiaNodes, function(nodeid, farmdata) {
       queryHarvesterData(nodeid);
   });
 });
 
 function initAllDatatables(){
-  $.each(chiaHarvesterData, function(nodeid, farmdata) {
+  $.each(chiaHarvesterData, function(nodeid, farmdata){
     initDataTable(nodeid);
   });
 }
@@ -43,10 +51,12 @@ function initRestartHarvesterService(){
 }
 
 function queryHarvesterData(nodeid){
-  var authhash = chiaHarvesterData[nodeid]["nodeauthhash"];
+  var authhash = chiaNodes[nodeid]["nodeauthhash"];
   var dataforclient = {
-    "nodeid" : nodeid,
-    "authhash": authhash
+    "nodeinfo" : {
+      "nodeid" : nodeid,
+      "authhash": authhash
+    }
   }
 
   sendToWSS("backendRequest", "ChiaMgmt\\Chia_Harvester\\Chia_Harvester_Api", "Chia_Harvester_Api", "queryHarvesterData", dataforclient);
@@ -57,20 +67,31 @@ function queryHarvesterStatus(nodeid){
     {"nodeid" : nodeid, "nodeauthhash" : chiaHarvesterData[nodeid]["nodeauthhash"]}
   ];
 
-  sendToWSS("ownRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryHarvesterStatus", data);
+  sendToWSS("ownRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getCurrentChiaNodesUPAndServiceStatus", data);
 }
 
-function setHarvesterBadge(nodeid, status, message){
-  var targetbadge = $("#servicestatus_" + nodeid);
-  targetbadge.removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-danger");
-  if(status == 0){
-    targetbadge.addClass("badge-success");
-  }else if(status == 1){
-    targetbadge.addClass("badge-danger");
-  }else if(status == 2){
-    targetbadge.addClass("badge-secondary");
-  }
-  targetbadge.text(message);
+function setServiceBadge(){
+  $.each(services_states, function(nodeid, nodedata){
+    if(nodedata === "undefined" || nodedata["onlinestatus"]["status"] == 0){
+      statustext = "Node not reachable";
+      statusicon = "badge-danger";
+    }else if(nodedata["onlinestatus"]["status"] == 1){
+      servicestate = nodedata["services"][3]["servicestate"];
+      servicedesc =  nodedata["services"][3]["service_desc"];
+      if(servicestate == 0){
+        statustext = servicedesc + " service not running";
+        statusicon = "badge-danger";
+      }else if(servicestate == 1){
+        statustext = servicedesc + " service running";
+        statusicon = "badge-success";
+      }else{
+        statustext = servicedesc + " service state unknown";
+        statusicon = "badge-warning";
+      }
+    }
+
+    $(".statusbadge[data-node-id='" + nodeid + "'").removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-warning").removeClass("badge-danger").addClass(statusicon).text(statustext);
+  });
 }
 
 function messagesTrigger(data){
@@ -78,24 +99,24 @@ function messagesTrigger(data){
 
   if(data[key]["status"] == 0){
     if(key == "updateHarvesterData"){
-      $('#harvesterinfocards').load(frontend + "/sites/chia_harvester/templates/cards.php");
-
-      initRefreshHarvesterInfos();
-      initRestartHarvesterService();
-      initAllDatatables();
-    }else if(key == "harvesterStatus"){
-      setHarvesterBadge(data[key]["data"]["data"], data[key]["data"]["status"], data[key]["data"]["message"]);
-    }else if(key == "harvesterServiceRestart"){
-      setHarvesterBadge(data[key]["data"]["data"], data[key]["data"]["status"], data[key]["data"]["message"]);
-    }else if(key == "connectedNodesChanged"){
-      sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryNodesServicesStatus", {});
-    }else if(key == "queryNodesServicesStatus"){
-      $.each(data[key]["data"], function(nodeid, condata){
-        if(condata["onlinestatus"] == 1){
-          setFarmerBadge(nodeid, condata["onlinestatus"], "Node not reachable");
-        }
+      var nodeid = data[key]["data"]["nodeid"];  
+      var carddata = { "nodeid" : nodeid};
+      $.get(frontend + "/sites/chia_harvester/templates/cards.php", carddata, function(response) {
+        $('#harvestercontainer_' + nodeid).html(response);
+        initRefreshHarvesterInfos();
+        initRestartHarvesterService();
+        initAllDatatables();
       });
+    }else if(key == "queryNodesServicesStatus" || key == "updateChiaStatus" || key == "setNodeUpDown"){
+      sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getCurrentChiaNodesUPAndServiceStatus", {});
+    }else if(key == "getCurrentChiaNodesUPAndServiceStatus"){
+      if("data" in data[key]){
+        services_states = data[key]["data"];
+      }
     }
+    setTimeout(function(){
+      setServiceBadge();
+    }, 600);
   }else if(data[key]["status"] == "014003001"){
     $(".statusbadge").each(function(){
       var thisnodeid = $(this).attr("data-node-id");
@@ -105,9 +126,3 @@ function messagesTrigger(data){
     });
   }
 }
-
-setTimeout(function(){
-  if($(".statusbadge.badge-secondary").length > 0){
-    sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryNodesServicesStatus", {});
-  }
-}, 9000);
