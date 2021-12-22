@@ -584,10 +584,9 @@
               return $this->logging_api->getErrormessage("002");
             case \ZipArchive::ER_CRC :
               return $this->logging_api->getErrormessage("003");
-            default:
-              return array("status" => 0, "message" => "Zip file valid.");
           }
         }
+        return array("status" => 0, "message" => "Zip file valid.");
       }else{
         return $this->logging_api->getErrormessage("004");
       }
