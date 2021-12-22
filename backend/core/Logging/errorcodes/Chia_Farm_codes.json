@@ -2,11 +2,9 @@
   "functioncodes" : {
     "updateFarmData" : "001",
     "getFarmData" : "002",
-    "farmerStatus" : "003",
-    "farmerServiceRestart" : "004",
-    "updateChallenges" : "005",
-    "getAllChallenges" : "006",
-    "getLatestChallenges" : "007"
+    "farmerServiceRestart" : "003",
+    "updateChallenges" : "004",
+    "getAllChallenges" : "005"
   },
   "errormessages" : {
     "updateFarmData" : {
@@ -14,9 +12,6 @@
       "002" : [2, "An error occured."]
     },
     "getFarmData" : {
-      "001" : [2, "An error occured."]
-    },
-    "farmerStatus" : {
       "001" : [2, "An error occured."]
     },
     "farmerServiceRestart" : {
@@ -27,9 +22,6 @@
       "002" : [2, "An error occured."]
     },
     "getAllChallenges" : {
-      "001" : [2, "An error occured."]
-    },
-    "getLatestChallenges" : {
       "001" : [2, "An error occured."]
     }
   }

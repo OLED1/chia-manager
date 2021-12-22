@@ -2,7 +2,8 @@
   "functioncodes" : {
     "getSystemsLoadHistory" : "001",
     "getRAMSwapHistory" : "002",
-    "getFilesystemsHistory" : "003"
+    "getFilesystemsHistory" : "003",
+    "getNodeUPAndServicesHistory" : "004"
   },
   "errormessages" : {
     "getSystemsLoadHistory" : {
@@ -16,6 +17,11 @@
       "003" : [1, "Not all data stated."]
     },
     "getFilesystemsHistory" : {
+      "001" : [2, "An error occured."],
+      "002" : [1, "'From' must be eather a timestamp younger than 'to' or no timestamp has been submitted."],
+      "003" : [1, "Not all data stated."]
+    },
+    "getNodeUPAndServicesHistory" : {
       "001" : [2, "An error occured."],
       "002" : [1, "'From' must be eather a timestamp younger than 'to' or no timestamp has been submitted."],
       "003" : [1, "Not all data stated."]

@@ -113,7 +113,7 @@
         
         return array("status" => 0, "message" => "Successfully updated farmer information for node $nodeid.", "data" => ["nodeid" => $nodeid]);
       }catch(\Exception $e){
-        return array("status" => 1, "message" => "An error occured. {$e->getMessage()}");
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 
@@ -151,30 +151,6 @@
         }
   
         return array("status" => 0, "message" => "Successfully updated found plots");
-      }catch(\Exception $e){
-        print_r(array("status" => 1, "message" => "Successfully updated found plots. {$e->getMessage()}"));
-        return array("status" => 1, "message" => "Successfully updated found plots. {$e->getMessage()}");
-      }
-    }
-
-    /**
-     * Cleans up all plots from a certain node in case new plots are reported to keep the database table clean.
-     * Function made for: Backend (Private)
-     * @throws Exception $e           Throws an exception on db errors.
-     * @param  int    $nodeid         The reporting node's id.
-     * @param  string $finalplotsdir  The final plot directory where the plots has changed.
-     * @return array                  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
-     */
-    private function removePlots(int $nodeid, string $finalplotsdir){
-      try{
-        $sql = $this->db_api->execute("SELECT id FROM chia_plots_directories WHERE finalplotsdir = ? AND nodeid = ?", array($finalplotsdir, $nodeid));
-        $sqreturn = $sql->fetchAll(\PDO::FETCH_ASSOC);
-
-        if(count($sqreturn) == 1){
-          $sql = $this->db_api->execute("DELETE FROM chia_plots WHERE nodeid = ? AND finalmountid = ?", array($nodeid, $sqreturn[0]["id"]));
-        }else{
-          return array("status" => 1, "message" => "More than one row was returned. Aborting deleting from db for security reasons.");
-        }
       }catch(\Exception $e){
         return $this->logging_api->getErrormessage("001", $e);
       }

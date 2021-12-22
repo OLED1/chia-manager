@@ -5,8 +5,7 @@
     "getLatestTransactionDate" : "003",
     "getWalletData" : "004",
     "getWalletTransactions" : "005",
-    "walletStatus" : "006",
-    "walletServiceRestart" : "007"
+    "walletServiceRestart" : "006"
   },
   "errormessages" : {
     "updateWalletData" : {
@@ -23,9 +22,6 @@
       "001" : [2, "An error occured."]
     },
     "getWalletTransactions" : {
-      "001" : [2, "An error occured."]
-    },
-    "walletStatus" : {
       "001" : [2, "An error occured."]
     },
     "walletServiceRestart" : {

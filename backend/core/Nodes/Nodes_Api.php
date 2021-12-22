@@ -179,7 +179,7 @@
             $activeSubscriptions = $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
           }
 
-          return array("status" => 0, "message" => "IP Change saved for node {$data["nodeid"]}.");
+          return array("status" => 0, "message" => "IP change saved for node {$data["nodeid"]}.");
         }catch(\Exception $e){
           return $this->logging_api->getErrormessage("001", $e);
         }
@@ -538,6 +538,7 @@
     /**
      * Changes the Nodes Upstatus in the database. Informs the frontend about changes.
      * 0 = Node DOWN, 1 = Node UP
+     * Function made for: Backendclient
      * @param array $data   { "nodeid" : [The systems node id], "updown" : [0=Node Down/1=Node UP] }
      * @return array        Returnes the current status information stored in the database.
      */
@@ -558,19 +559,18 @@
           //echo "Updating existing entry for node {$data["nodeid"]}, state: {$founddata[0]["onlinestatus"]}.\n";
           if(count($founddata) == 1) $this->db_api->execute("UPDATE nodes_up_status SET lastreported = current_timestamp() WHERE id = ?", array($founddata[0]["id"]));
         }catch(\Exception $e){
-          //@TODO Implement correct status code
-          return array("status" => 1, "message" => "An error occured. {$e->getMessage()}");
+          return $this->logging_api->getErrormessage("001", $e);
         }
 
         return array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => []);
       }else{
-        //@TODO Implement correct status code
-        return array("status" => 1, "message" => "Not all data stated.");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 
     /**
      * Changes the Nodes Services Upstatus in the database. Informs the frontend about changes.
+     * Function made for: Node Client
      * Data sent in status: 
      * Service Status: 0 = Service DOWN, 1 = Service UP
      * Service ID's: 3 = Farmer, 4 = Harvester, 5 = Wallet
@@ -613,35 +613,29 @@
                 }
               }
             }else{
-              //@TODO Implement correct status code
-              return array("status" => 1, "message" => "This node has no chia services registered.");
+              return $this->logging_api->getErrormessage("001");
             }
   
             return array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => []);
           }else{
-            //@TODO Implement correct status code
-            return array("status" => 1, "message" => "No valid nodeids found.");
+            return $this->logging_api->getErrormessage("002");
           }
         }else{
-          //@TODO Implement correct status code
-          return array("status" => 1, "message" => "Not all data stated.");
+          return $this->logging_api->getErrormessage("003");
         }
       }catch(\Exception $e){
-        //@TODO Implement correct status code
-        print_r($e->getMessage());
-        return array("status" => 1, "message" => "An error occured. {$e->getMessage()}");
+        return $this->logging_api->getErrormessage("004", $e);
       }
     }
 
     /**
-     * Undocumented function
-     *
-     * @param array $data
-     * @param [type] $loginData
-     * @param [type] $server
-     * @return array
+     * Returns the current up down states from the node and its services.
+     * Function made for: Web/App-Client
+     * @throws Exception $e                    Throws an exception on db errors.
+     * @param  array  $data                    { nodeid : [int], nodetypes : [string|array] } 
+     * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function getCurrentChiaNodesUPAndServiceStatus(array $data = [], array $loginData = NULL, $server = NULL): array
+    public function getCurrentChiaNodesUPAndServiceStatus(array $data = []): array
     {
       try{
         $nodeid = NULL;
@@ -688,23 +682,8 @@
 
         return array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => $returndata);
       }catch(\Exception $e){
-        //@TODO Implement correct status code
-        print_r($e->getMessage());
-        return array("status" => 1, "message" => "An error occured. {$e->getMessage()}");
+        return $this->logging_api->getErrormessage("001");
       }
-    }
-
-    /**
-     * Undocumented function
-     *
-     * @param array $data
-     * @param [type] $loginData
-     * @param [type] $server
-     * @return array
-     */
-    public function getCurrentChiaNodesStatusHistory(array $data, array $loginData = NULL, $server = NULL):array
-    {
-      return array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => []);
     }
   }
 ?>

@@ -206,10 +206,10 @@
             return $totpkeyvalid;
           }
         }catch(\Exception $e){
-          return $this->logging_api->getErrormessage("002", $e);
+          return $this->logging_api->getErrormessage("001", $e);
         }
       }else{
-        return $this->logging_api->getErrormessage("003");
+        return $this->logging_api->getErrormessage("002");
       }
     }
 

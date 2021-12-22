@@ -25,9 +25,8 @@
       "003" : [2, "You are not authenticated."]
     },
     "checkTOTPMobilePassed" : {
-      "001" : [1, "Authkey not found or not valid (anymore)."],
-      "002" : [2, "An error occured."],
-      "003" : [2, "You are not authenticated."]
+      "001" : [2, "An error occured."],
+      "002" : [2, "You are not authenticated."]
     },
     "generateAndsendAuthKey" : {
       "001" : [2, "An error occured."],

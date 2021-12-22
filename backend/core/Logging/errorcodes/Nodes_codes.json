@@ -13,8 +13,9 @@
     "nodeUpdateStatus" : "011",
     "checkUpdatesAndChannels" : "012",
     "updateNodeBranch" : "013",
-    "queryNodesServicesStatus" : "014",
-    "setNodeServiceStats" : "015"
+    "setNodeUpDown" : "014",
+    "updateChiaStatus" : "015",
+    "getCurrentChiaNodesUPAndServiceStatus" : "016"
   },
   "errormessages" : {
     "getConfiguredNodes" : {
@@ -66,14 +67,17 @@
       "002" : [1, "Selected branch not available."],
       "003" : [1, "Not all data stated."]
     },
-    "queryNodesServicesStatus" : {
-      "001" : [2, "An error occured."]
-    },
-    "setNodeServiceStats" : {
-      "001" : [1, "Requested state no known."],
+    "setNodeUpDown" : {
+      "001" : [2, "An error occured."],
       "002" : [1, "Not all data stated."]
     },
-    "getNodeStatus" : {
+    "updateChiaStatus" : {
+      "001" : [1, "This node has no chia services registered."],
+      "002" : [1, "No valid nodeids found."],
+      "003" : [1, "Not all data stated."],
+      "004" : [2, "An error occured."]
+    },
+    "getCurrentChiaNodesUPAndServiceStatus" : {
       "001" : [2, "An error occured."]
     }
   }

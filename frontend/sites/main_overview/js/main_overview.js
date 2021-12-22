@@ -125,9 +125,9 @@ function messagesTrigger(data){
         $('#card-overall').html(response);
         reInitRefreshOverallInfo();
       });
-      $.get(frontend + "/sites/main_overview/templates/card-overall-luca.php", {}, function(response) {
+      /*$.get(frontend + "/sites/main_overview/templates/card-overall-luca.php", {}, function(response) {
         $('#card-overall-luca').html(response);
-      });
+      });*/
     }else if(key == "checkUpdatesAndChannels"){
       $.get(frontend + "/sites/main_overview/templates/card-system.php", {}, function(response) {
         $('#card-system').html(response);
