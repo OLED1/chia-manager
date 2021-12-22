@@ -50,7 +50,8 @@
      * @param  array  $data       { "from" : [Timestamp YYYY-MM-DD H:i:s], "to" : [Timestamp YYYY-MM-DD H:i:s]}
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": { [DB stored and found values] } }
      */
-    public function getNetspaceHistory(array $data){
+    public function getNetspaceHistory(array $data): array
+    {
       if(array_key_exists("from", $data) && array_key_exists("to", $data)){
         if(strtotime($data["from"]) &&  strtotime($data["to"]) && new \DateTime($data["from"]) < new \DateTime($data["to"])){
           try{
@@ -78,7 +79,8 @@
      * @param  array  $data       { "from" : [Timestamp YYYY-MM-DD H:i:s], "to" : [Timestamp YYYY-MM-DD H:i:s]}
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": { [DB stored and found values] } }
      */
-    public function getBlockheightHistory(array $data){
+    public function getBlockheightHistory(array $data): array
+    {
       if(array_key_exists("from", $data) && array_key_exists("to", $data)){
         if(strtotime($data["from"]) &&  strtotime($data["to"]) && new \DateTime($data["from"]) < new \DateTime($data["to"])){
           try{
@@ -102,7 +104,8 @@
      * @param  array  $data       { "from" : [Timestamp YYYY-MM-DD H:i:s], "to" : [Timestamp YYYY-MM-DD H:i:s]}
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": { [DB stored and found values] } }
      */
-    public function getXCHValueHistory(array $data){
+    public function getXCHValueHistory(array $data): array
+    {
       if(array_key_exists("from", $data) && array_key_exists("to", $data)){
         if(strtotime($data["from"]) &&  strtotime($data["to"]) && new \DateTime($data["from"]) < new \DateTime($data["to"])){
           try{

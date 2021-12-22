@@ -63,7 +63,7 @@
      * @param  array  $loginData  {"logindata": {"authhash": "[authhash]"}
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {"nodeid": [nodeid], "data": {[newly added farm data]}}
      */
-    public function updateFarmData(array $data, array $loginData = NULL): array
+    public function updateFarmData(array $data, array $loginData): array
     {
       try{
         $formatted_data = new Farmdata($data);
@@ -105,7 +105,7 @@
      * @param  int $nodeid                    The node id to get only node specific data. Can be NULL if all data will be queried. Will be deprecated as soon as the method needs to be called outsite of the web gui.
      * @return array                          Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
      */
-    public function getFarmData(array $data = NULL, array $loginData = NULL, $server = NULL, int $nodeid = NULL): array
+    public function getFarmData(array $data = [], array $loginData = NULL, $server = NULL, int $nodeid = NULL): array
     {
       if(!is_null($data) && array_key_exists("nodeid", $data) && is_numeric($data["nodeid"]) && $data["nodeid"] > 0) $nodeid = $data["nodeid"];
       try{

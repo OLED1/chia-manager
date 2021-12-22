@@ -42,7 +42,8 @@
        * Function made for: Web(App)client, Backendclient.
        * @param array $loginData   {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
        */
-      public function testConnection(){
+      public function testConnection(): array
+      {
         if (is_resource(@fsockopen("localhost", $this->ini["socket_local_port"]))){
           $result = $this->sendToWSS("wssonlinestatus", array("command" => "onlineStatus"));
 
@@ -61,7 +62,8 @@
        * @param  array  $data           The data which should be send to the websocket server.
        * @return array                  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The returned data if stated.] }
        */
-      public function sendToWSS(string $socketaction, array $data){
+      public function sendToWSS(string $socketaction, array $data): array
+      {
         try{
           $returndata = new \Amp\Deferred;
           $data = $this->buildCompleteRequest($socketaction, $data);
@@ -98,7 +100,8 @@
        * @param  array  $data           The data which should be send to the websocket server.
        * @return array                  Returns an array with all needed data stated.
        */
-      private function buildCompleteRequest(string $socketaction, array $data){
+      private function buildCompleteRequest(string $socketaction, array $data): array
+      {
         $all_data["node"]["nodeinfo"]["hostname"] = "localhost";
         $all_data["node"]["socketaction"] = $socketaction;
 

@@ -300,7 +300,8 @@ class ChiaWebSocketServer implements MessageComponentInterface {
    * @param  array  $loginData  The clients logindata to be sure the client is logged in.
    * @return array              The requested subscriptions list.
    */
-  public function getActiveSubscriptions(array $loginData){
+  public function getActiveSubscriptions(array $loginData): array
+  {
     return $this->requestHandler->processGetActiveSubscriptions($loginData, $this->subscription);
   }
 
@@ -360,7 +361,8 @@ class ChiaWebSocketServer implements MessageComponentInterface {
    * Sends a message to a specific web/app-frontend clients which are viewing a specific site.
    * @param  array  $data   The json formatted data array which should be sent to the client.
    */
-  public function messageSpecificNode(array $data){
+  public function messageSpecificNode(array $data): array
+  {
     if(array_key_exists("nodeinfo", $data) && array_key_exists("authhash", $data["nodeinfo"]) && array_key_exists("data", $data)){
       $alreadyinformed = [];
 
@@ -399,7 +401,8 @@ class ChiaWebSocketServer implements MessageComponentInterface {
    * Sends a message to all web/app-frontend, backend and chia clients.
    * @param  array  $data   The json formatted data array which should be sent to the client.
    */
-  public function messageAllNodes(array $data){
+  public function messageAllNodes(array $data): array
+  {
     $alreadyinformed = [];
 
     foreach($this->subscription as $nodetype => $nodedata) {

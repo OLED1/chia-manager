@@ -58,7 +58,8 @@
      * @param  array $loginData   No logindata needed to use this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The state of the gui mode.]} }
      */
-    public function setGuiMode(array $data, array $loginData = NULL){
+    public function setGuiMode(array $data, array $loginData = NULL): array
+    {
       if(array_key_exists("gui_mode", $data) && array_key_exists("userid", $loginData)){
         if($data["gui_mode"] >= 1 && $data["gui_mode"] <= 2){
           try{
@@ -92,7 +93,8 @@
      * @param  array $loginData   No logindata needed to use this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The state of the gui mode.]} }
      */
-    public function getGuiMode(int $userid){
+    public function getGuiMode(int $userid): array
+    {
       if($userid > 0 && array_key_exists("user_id", $_COOKIE) && $_COOKIE["user_id"] == $userid){
         try{
           $sql = $this->db_api->execute("SELECT gui_mode FROM users_settings WHERE userid = ?", array($userid));
@@ -125,7 +127,8 @@
      * @param  int  $userid       The user's id for which the the default currency should be returned for."
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The default user currency information.]} }
      */
-    public function getUserDefaultCurrency(int $userid){
+    public function getUserDefaultCurrency(int $userid): array
+    {
       return $this->exchangerates_api->getUserDefaultCurrency($userid);
     }
 
@@ -136,7 +139,8 @@
      * @param  array    $loginData  { "userid" : [userid] }
      * @return array                { "status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[Newly set default currency]}}
      */
-    public function setUserDefaultCurrency(array $data, array $loginData = NULL){
+    public function setUserDefaultCurrency(array $data, array $loginData = NULL): array
+    {
       return $this->exchangerates_api->setUserDefaultCurrency($data, $loginData);
     }
   }

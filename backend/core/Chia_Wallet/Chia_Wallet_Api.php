@@ -63,7 +63,8 @@
      * @param  array  $loginData  {"authhash": "[Querying Node's authhash]"}
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {"nodeid": [nodeid], "data": {[newly added wallet data]}}
      */
-    public function updateWalletData(array $data, array $loginData = NULL){
+    public function updateWalletData(array $data, array $loginData = NULL): array
+    {
       try{
         $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
         $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
@@ -101,7 +102,8 @@
      * @param  array $loginData  [description]
      * @return array             [description]
      */
-    public function updateWalletTransactions(array $data = NULL, array $loginData = []){
+    public function updateWalletTransactions(array $data = NULL, array $loginData = []): array
+    {
         try{
           $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
           $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
@@ -142,7 +144,8 @@
      * @param  array $loginData [description]
      * @return array            [description]
      */
-    public function getLatestTransactionDate(array $data = NULL, array $loginData = NULL){
+    public function getLatestTransactionDate(array $data = NULL, array $loginData = NULL): array
+    {
       if(array_key_exists("wallet_ids", $data) && is_array($data["wallet_ids"]) && count($data["wallet_ids"]) > 0){
         try{
           $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
@@ -185,7 +188,8 @@
      * @param  int  $nodeid                    The node id to get only node specific data. Can be NULL if all data will be queried. Will be deprecated as soon as the method needs to be called outsite of the web gui.
      * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": [Found wallet data array]}
      */
-    public function getWalletData(array $data = NULL, array $loginData = NULL, $server = NULL, int $nodeid = NULL){
+    public function getWalletData(array $data = NULL, array $loginData = NULL, $server = NULL, int $nodeid = NULL): array
+    {
       $return_transactions = true;
       if(!is_null($data) && array_key_exists("nodeid", $data) && is_numeric($data["nodeid"])) $nodeid = $data["nodeid"];
       if(!is_null($data) && array_key_exists("return_transactions", $data) && is_bool($data["return_transactions"])) $return_transactions = $data["return_transactions"];
@@ -246,7 +250,8 @@
      * @param  int  $nodeid                    The node id to get only node specific data. Can be NULL if all data will be queried. Will be deprecated as soon as the method needs to be called outsite of the web gui.
      * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": [Found wallet transaction data array]}
      */
-    public function getWalletTransactions(array $data = NULL, array $loginData = NULL){
+    public function getWalletTransactions(array $data = NULL, array $loginData = NULL): array
+    {
       $returndata = [];
       try{
         if(is_null($data) || !is_numeric($data["nodeid"])){
@@ -283,7 +288,8 @@
      * @param  ChiaWebSocketServer $server  An instance to the websocket server to be able to send data to the connected clients.
      * @return array                        Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}} from the subfunction calls.
      */
-    public function queryWalletData(array $data = NULL, array $loginData = NULL, $server = NULL){
+    public function queryWalletData(array $data = NULL, array $loginData = NULL, $server = NULL): array
+    {
       $querydata = [];
       $querydata_0["data"]["queryWalletData"] = array(
         "status" => 0,
@@ -322,7 +328,8 @@
      * @param  ChiaWebSocketServer $server    An instance to the websocket server to be able to send data to the connected clients.
      * @return array                          Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}} from the subfunction call.
      */
-    public function restartWalletService(array $data = NULL, array $loginData = NULL, $server = NULL){
+    public function restartWalletService(array $data = NULL, array $loginData = NULL, $server = NULL): array
+    {
       $querydata = [];
       $querydata["data"]["restartWalletService"] = array(
         "status" => 0,
@@ -348,7 +355,8 @@
      * @param  array $loginData { authhash: [Querying Node's Authhash] }
      * @return array            Returns {"status": [0|>0], "message": [Status message], "data": { "status": [0 = Success, 1 = Failed], "message": [Specific message about service restart for the WebGUI], nodeid: [Querying Node's ID] }}
      */
-    public function walletServiceRestart(array $data = NULL, array $loginData = NULL){
+    public function walletServiceRestart(array $data = NULL, array $loginData = NULL): array
+    {
       try{
         $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
         $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];

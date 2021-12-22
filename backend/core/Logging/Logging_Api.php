@@ -88,7 +88,8 @@
      * @param  string $additional   Additional Info which should only logged to the file (if it contains 'false' this message will not be logged)
      * @return array                {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function getErrormessage(string $functioncode, string $additional = "", bool $logtofile = true){
+    public function getErrormessage(string $functioncode, string $additional = "", bool $logtofile = true): array
+    {
       $sitecodefile = @file_get_contents($this->codefilepath);
       $sitecoderarray = json_decode($sitecodefile, true);
 
@@ -130,7 +131,8 @@
      * @param  int    $loglevel  Target loglevel as int.
      * @return string            The converted loglevel as string.
      */
-    private function getHReadableLoglevel(int $loglevel){
+    private function getHReadableLoglevel(int $loglevel): string
+    {
       switch ($loglevel) {
         case 0:
           return "[Info]";
@@ -152,7 +154,8 @@
      * @return array            A status code array with the needed data
      */
      //public function getMessagesFromFile(int $fromline, int $toline){
-    public function getMessagesFromFile(array $data){
+    public function getMessagesFromFile(array $data): array
+    {
       if(array_key_exists("fromline", $data) && array_key_exists("toline", $data) && is_numeric($data["fromline"]) && is_numeric($data["toline"])){
         $logarray = [];
         $fromline = $data["fromline"];
@@ -193,7 +196,8 @@
      * Returns all logs newer than an given timestamp.
      * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[Locally found log-messages]}}
      */
-    public function getNewerLogsFromTimestamp(DateTime $lastData){
+    public function getNewerLogsFromTimestamp(DateTime $lastData): array
+    {
       $logarray = [];
       $loggingfile = new SplFileObject($this->logpath);
 

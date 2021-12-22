@@ -88,7 +88,8 @@
      * @param array $loginData    { NULL } No logindata is needed to use this method.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB stored node information]}
      */
-    public function setSystemSettings(array $data, array $loginData = NULL){
+    public function setSystemSettings(array $data, array $loginData = NULL): array
+    {
       $settingtype = array_key_first($data);
 
       if(!is_Null($settingtype)){
@@ -120,7 +121,8 @@
      * @throws Exception $e       Throws an exception on db errors.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB stored node information]}
      */
-    public function getAllSystemSettings(){
+    public function getAllSystemSettings(): array
+    {
       try{
         $sql = $this->db_api->execute("SELECT settingtype, settingvalue, confirmed FROM system_settings", array());
 
@@ -139,7 +141,8 @@
      * @param  array $loginData   { NULL } No logindata needed to use this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": { "settingtype" : "The settingtype that has been changed" }}
      */
-    public function confirmSetting(array $data, array $loginData = NULL){
+    public function confirmSetting(array $data, array $loginData = NULL): array
+    {
       if(array_key_exists("settingtype", $data)){
         $settingtype = $data["settingtype"];
         try{
@@ -161,7 +164,8 @@
      * @param  string $settingtype  The settingtype as string.
      * @return array                {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB stored node information]}}
      */
-    public function getSpecificSystemSetting(string $settingtype){
+    public function getSpecificSystemSetting(string $settingtype): array
+    {
       try{
         $sql = $this->db_api->execute("SELECT settingtype, settingvalue, confirmed FROM system_settings WHERE settingtype = ?", array($settingtype));
 
@@ -176,7 +180,8 @@
      * Function made for: Web(App)client
      * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function testConnection(){
+    public function testConnection(): array
+    {
       $this->websocket_api = new WebSocket_Api();
       return $this->websocket_api->testConnection();
     }
@@ -188,7 +193,8 @@
      * @param  array $loginData   { NULL } No logindata is needed query this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [Available updateinformation]}
      */
-    public function checkForUpdates(array $data = [], array $loginData = NULL){
+    public function checkForUpdates(array $data = [], array $loginData = NULL): array
+    {
       $updatechannel = $this->getSpecificSystemSetting("updatechannel");
       return $this->system_update_api->checkForUpdates($data, $loginData, $updatechannel);
     }
@@ -200,7 +206,8 @@
      * @param array $loginData   { NULL }
      * @return array             {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function setInstanceUpdating(array $data = [], array $loginData = NULL){
+    public function setInstanceUpdating(array $data = [], array $loginData = NULL): array
+    {
       return $this->system_update_api->setInstanceUpdating($data, $loginData);
     }
 
@@ -212,7 +219,8 @@
      * @param  ChiaWebSocketServer $server    An instance to the Webscoket server to be able to communicate with the node
      * @return array                          {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function processUpdate(array $data, array $loginData = NULL, $server = NULL){
+    public function processUpdate(array $data, array $loginData = NULL, $server = NULL): array
+    {
       if($this->checkForUpdates()["data"]["updateavail"]){
         return $this->system_update_api->processUpdate($data, $loginData, $server);
       }else{
@@ -228,7 +236,8 @@
      * @param  ChiaWebSocketServer $server    An instance to the Webscoket server to be able to communicate with the node
      * @return array                          {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : "[Found system messages]"}
      */
-    public function getSystemMessages(array $data = [], array $loginData = NULL, $server = NULL){
+    public function getSystemMessages(array $data = [], array $loginData = NULL, $server = NULL): array
+    {
       $returndata = [];
       $returndata["found"] = [];
       $returndata["count"] = 0;
@@ -321,7 +330,8 @@
      * @param  ChiaWebSocketServer $server    An instance to the Webscoket server to be able to communicate with the node
      * @return array                          {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : "[Found system messages]"}
      */
-    public function updateProjectVersion(array $data = [], array $loginData = NULL, $server = NULL){
+    public function updateProjectVersion(array $data = [], array $loginData = NULL, $server = NULL): array
+    {
       if(array_key_exists("developer_mode", $this->ini) && $this->ini["developer_mode"] == "on"){
         if(array_key_exists("projectversion", $data)){
           $newversion = $data["projectversion"];
@@ -367,7 +377,8 @@
      * Function made for: Web(App)client
      * @return array  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function getCronjobEnabled(){
+    public function getCronjobEnabled(): array
+    {
       $enabledCronjobs = $this->crontabRepository->findJobByRegex("/ChiaMgmt\ cronjob\ -\ Do\ not\ remove\ this\ comment\ -\ {$this->ini["serversalt"]}/");
       if(count($enabledCronjobs) > 0){
         $sql = $this->db_api->execute("SELECT lastcronrun FROM system_infos", array());
@@ -383,7 +394,8 @@
      * Function made for: Web(App)client
      * @return array  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function enableCronjob(){
+    public function enableCronjob(): array
+    {
       $cronjobEnbled = $this->getCronjobEnabled();
       if($cronjobEnbled["status"] != 0){
         $pathtocronjob = realpath(__DIR__."/../CronBackendService/CronBackendService.php");
@@ -416,7 +428,8 @@
      * Function made for: Web(App)client
      * @return array  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function disableCronjob(){
+    public function disableCronjob(): array
+    {
       $cronjobEnbled = $this->getCronjobEnabled();
       if($cronjobEnbled["status"] == 0){
         $enabledCronjobs = $this->crontabRepository->findJobByRegex("/ChiaMgmt\ cronjob\ -\ Do\ not\ remove\ this\ comment\ -\ {$this->ini["serversalt"]}/");
@@ -441,7 +454,8 @@
      * @throws Exception $e  Throws an exception on db errors.
      * @return array         "status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function setCurrentCronjobRunTimestamp(){
+    public function setCurrentCronjobRunTimestamp(): array
+    {
       try{
         $sql = $this->db_api->execute("UPDATE system_infos SET lastcronrun = NOW()", array());
         return array("status" => 0, "message" => "Successfully set new cronjob last run timestamp.");
@@ -456,7 +470,8 @@
      * @param  array  $settings   An array of all settings
      * @return array              Returns the formatted settings
      */
-    private function formatSetting(array $settings){
+    private function formatSetting(array $settings): array
+    {
       $returndata = [];
       foreach($settings AS $key => $value){
         $returndata[$value["settingtype"]] = json_decode($value["settingvalue"], true);

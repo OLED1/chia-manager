@@ -87,7 +87,8 @@
      * @param  bool $stayloggedin     If the user wants to stays logged in (max. 30 days). True = Stay logged in, False = Sessions ends after 30 minutes.
      * @return array                  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function login(string $username, string $password, bool $stayloggedin){
+    public function login(string $username, string $password, bool $stayloggedin): array
+    {
       $userdata = $this->getCurrentUserInfos($username);
 
       if($userdata["status"] == 0){
@@ -153,7 +154,8 @@
      * @param  string $authkey The stated outkey.
      * @return array           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function checkAuthKey(string $authkey){
+    public function checkAuthKey(string $authkey): array
+    {
       if(array_key_exists('user_id', $_COOKIE) && array_key_exists('PHPSESSID', $_COOKIE)){
         $userid = $_COOKIE['user_id'];
         $sessionid = $_COOKIE['PHPSESSID'];
@@ -190,7 +192,8 @@
      * @param  string $authkey The stated outkey.
      * @return array           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function checkTOTPMobilePassed(string $key){
+    public function checkTOTPMobilePassed(string $key): array
+    {
       if(array_key_exists('user_id', $_COOKIE) && array_key_exists('PHPSESSID', $_COOKIE)){
         $userid = $_COOKIE['user_id'];
         $sessionid = $_COOKIE['PHPSESSID'];
@@ -221,7 +224,8 @@
      * @param  string $sessid   The user's current session id.
      * @return array            {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function generateAndsendAuthKey(int $userid = NULL, string $sessid = NULL){
+    public function generateAndsendAuthKey(int $userid = NULL, string $sessid = NULL): array
+    {
       $loginstatus = $this->checklogin($sessid, $userid)["status"];
 
       if($loginstatus == 0){
@@ -266,7 +270,8 @@
      * Function made for: WebGUI/App
      * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function invalidateLogin(){
+    public function invalidateLogin(): array
+    {
       if(array_key_exists('user_id', $_COOKIE) && array_key_exists('PHPSESSID', $_COOKIE)){
         $userid = $_COOKIE['user_id'];
         $sessionid = $_COOKIE['PHPSESSID'];
@@ -292,7 +297,8 @@
      * @param  string $username The username
      * @return array            {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" => {[Found db stored userdata]}}
      */
-    public function getCurrentUserInfos(string $username){
+    public function getCurrentUserInfos(string $username): array
+    {
       try{
         $sql = $this->db_api->execute("SELECT id,name,lastname,email,password,salt FROM users WHERE username = ? AND enabled = 1",
                                       array($username));
@@ -315,7 +321,8 @@
      * @param int $id The users id which logged in
      * @return array  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : { "userid" : "[userid]", "sessid" : [session ID]}}
      */
-    public function setSession(int $userid){
+    public function setSession(int $userid): array
+    {
       try{
         session_destroy();
         $sessionID = session_create_id();
@@ -355,7 +362,8 @@
      * @param  int $userid The user which should be logged out
      * @return array       {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function logout(int $userid){
+    public function logout(int $userid): array
+    {
       try{
         $sql = $this->db_api->execute("UPDATE users SET loginDate = NULL, sessionString = NULL, ipaddr = NULL WHERE id = ?",
         array($userid));
@@ -374,7 +382,8 @@
      * @param  int $userid        Users's id from which the loginstatus should be checked.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function checklogin(string $sessionid = NULL, int $userid = NULL){
+    public function checklogin(string $sessionid = NULL, int $userid = NULL): array
+    {
       if((isset($_COOKIE['user_id']) || !is_null($userid)) &&
         (isset($_COOKIE['PHPSESSID']) || !is_null($sessionid))
       ){
@@ -431,7 +440,8 @@
      * Function made for: Api/Backend
      * @return array                {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function invalidateAllNotLoggedin(){
+    public function invalidateAllNotLoggedin(): array
+    {
       try{
         $sql = $this->db_api->execute("UPDATE users_sessions SET invalidated =
                                         CASE

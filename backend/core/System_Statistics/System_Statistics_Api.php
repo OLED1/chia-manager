@@ -50,7 +50,7 @@
      * @param array $data   { "from" : [DateTime], "to" : [DateTime], "node_ids" : [array] }
      * @return array        Returns a status code array with the DBs stored values.
      */
-    public function getSystemsLoadHistory(array $data):array
+    public function getSystemsLoadHistory(array $data): array
     {
       if(array_key_exists("from", $data) && array_key_exists("to", $data)){
         if(strtotime($data["from"]) &&  strtotime($data["to"]) && new \DateTime($data["from"]) < new \DateTime($data["to"])){

@@ -52,7 +52,8 @@
      * @param  string $cleatextstring  A cleartext string which should be decrypted.
      * @return string                  The encrypted string.
      */
-    public function encryptString(string $cleatextstring){
+    public function encryptString(string $cleatextstring): string
+    {
       return openssl_encrypt($cleatextstring, $this->ciphering, $this->ini["serversalt"], $this->options, $this->encryption_iv);
     }
 
@@ -61,7 +62,8 @@
      * @param  string $encryptedstring   An encrypted string, which is commonly loaded from the db.
      * @return string                    The decrypted string.
      */
-    public function decryptString(string $encryptedstring){
+    public function decryptString(string $encryptedstring): string
+    {
       return openssl_decrypt($encryptedstring, $this->ciphering, $this->ini["serversalt"], $this->options, $this->encryption_iv);
     }
   }

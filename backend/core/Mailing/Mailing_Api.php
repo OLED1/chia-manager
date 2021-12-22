@@ -58,14 +58,14 @@
    * @param  array  $maildata The mailsettings
    * @return array            Returns a status code array
    */
-    private function mailServerAvailable(array $maildata, array $loginData = NULL){
+    private function mailServerAvailable(array $maildata, array $loginData = NULL): array
+    {
       if(isset($maildata["mailserverdomain"]) && isset($maildata["mailserverport"])){
         $connection = @fsockopen($maildata["mailserverdomain"], $maildata["mailserverport"]);
 
         if (is_resource($connection)){
           return array("status" => 0, "message" => "Mailserver configuration seems valid.");
         }else{
-          //return array("status" => 1, "message" => "Cannot connect to smtp server " . $maildata["mailserverdomain"].":".$maildata["mailserverport"] . " .");
           return $this->logging->getErrormessage("001","Not able to connect to the configured smtp server " . $maildata["mailserverdomain"].":".$maildata["mailserverport"] . " .");
         }
       }
@@ -77,7 +77,8 @@
      * @param  string $recepient The recepients email
      * @return array             Returns a status code array
      */
-    public function sendTestMail(array $data, array $loginData = NULL){
+    public function sendTestMail(array $data, array $loginData = NULL): array
+    {
       if(array_key_exists("receipients", $data) && is_array($data["receipients"])){
         $subject = "Mail Settings Testmail";
         $message = "If you got this message your mail settings are working correctly.<br>Congrats!<br><strong>Note: Please do not reply to this e-mail.</strong>";
@@ -97,7 +98,8 @@
      * @param  string $message    The mail's message as html formatted
      * @return array              Returns a status code array
      */
-    public function sendMail(array $recepients, string $subject , string $message){
+    public function sendMail(array $recepients, string $subject , string $message): array
+    {
       $mailsettings = $this->system_api->getSpecificSystemSetting("mailing");
 
       if($mailsettings["status"] == 0 && Count($mailsettings["data"]) > 0){

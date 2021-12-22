@@ -69,7 +69,8 @@
      * @param  array  $loginData  {"authhash": "[Querying Node's authhash]"}
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {"nodeid": [nodeid], "data": {[newly added harvester data]}}
      */
-    public function updateHarvesterData(array $data, array $loginData = NULL){
+    public function updateHarvesterData(array $data, array $loginData = NULL): array
+    {
       try{
         $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
         $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
@@ -126,7 +127,8 @@
      * @param  int    $nodeid         The id of the node where the sent in data belongs.
      * @return array                  Returns a message array with an errorcode in case of an db error, otherwise nothing.
      */
-    private function updateFoundPlots(array $plotdata, int $nodeid){
+    private function updateFoundPlots(array $plotdata, int $nodeid): array
+    {
       try{
         foreach($plotdata AS $mountpoint => $plotdata){
           $sql = $this->db_api->execute("SELECT id FROM chia_plots_directories WHERE nodeid = ? AND mountpoint = ?", array($nodeid, $mountpoint));
@@ -242,7 +244,8 @@
      * @param  ChiaWebSocketServer $server  An instance to the websocket server to be able to send data to the connected clients.
      * @return array                        Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}} from the subfunction calls.
      */
-    public function queryHarvesterData(array $data = NULL, array $loginData = NULL, $server = NULL){
+    public function queryHarvesterData(array $data = NULL, array $loginData = NULL, $server = NULL): array
+    {
       $querydata = [];
       $querydata["data"]["queryHarvesterData"] = array(
         "status" => 0,
@@ -273,7 +276,8 @@
      * @param  ChiaWebSocketServer $server    An instance to the websocket server to be able to send data to the connected clients.
      * @return array                          Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}} from the subfunction call.
      */
-    public function restartHarvesterService(array $data = NULL, array $loginData = NULL, $server = NULL){
+    public function restartHarvesterService(array $data = NULL, array $loginData = NULL, $server = NULL): array
+    {
       $querydata = [];
       $querydata["data"]["restartHarvesterService"] = array(
         "status" => 0,
@@ -299,7 +303,8 @@
      * @param  array $loginData { authhash: [Querying Node's Authhash] }
      * @return array            Returns {"status": [0|>0], "message": [Status message], "data": { "status": [0 = Success, 1 = Failed], "message": [Specific message about service restart for the WebGUI], nodeid: [Querying Node's ID] }}
      */
-    public function harvesterServiceRestart(array $data = NULL, array $loginData = NULL){
+    public function harvesterServiceRestart(array $data = NULL, array $loginData = NULL): array
+    {
       try{
         $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
         $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];

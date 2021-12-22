@@ -66,7 +66,14 @@
         $this->server = $server;
     }
 
-    public function getTOTPEnabled(array $data){
+    /**
+     * Returns the current totp enabled state for a certain user.
+     *
+     * @param array $data   { "userID" : [int] }
+     * @return array        Returns a status code array.
+     */
+    public function getTOTPEnabled(array $data): array
+    {
         if(array_key_exists("userID", $data) && is_numeric($data["userID"])){
             try{
                 $sql = $this->db_api->execute("SELECT Count(*) AS count FROM users_settings WHERE userid = ? AND totp_proofen = 1 AND totp_enable = 1", array($data["userID"]));
@@ -92,7 +99,8 @@
      * @param array  $data        { userID: [userid] } The user's ID for which the second factor should be enabled.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function enableTOTPmobile(array $data){
+    public function enableTOTPmobile(array $data): array
+    {
         if(array_key_exists("userID", $data) && is_numeric($data["userID"])){
             $userID = $data["userID"];
             try{
@@ -127,7 +135,14 @@
         }
     }
 
-    public function disableTOTPmobile(array $data){
+    /**
+     * Disables totp for a certain user.
+     *
+     * @param array $data   { "userID" : [int] }
+     * @return array        Returns a status code array.
+     */
+    public function disableTOTPmobile(array $data): array
+    {
         if(array_key_exists("userID", $data) && is_numeric($data["userID"])){
             $totp_enabled = $this->getTOTPEnabled($data);
             if($totp_enabled["status"] == 0){
@@ -146,7 +161,14 @@
         }
     }
 
-    public function totpProof(array $data){
+    /**
+     * Checks if a given TOTP Key matches the current searched.
+     *
+     * @param array $data   { "userID" : [int], "totpkey" : [string] }
+     * @return array        Returns a status code array.
+     */
+    public function totpProof(array $data): array
+    {
         if(array_key_exists("userID", $data) && is_numeric($data["userID"]) && array_key_exists("totpkey", $data) && is_numeric($data["totpkey"])){
             $statedkeyValid = $this->checkKeyValid($data);
             if($statedkeyValid["status"] == 0){
@@ -163,7 +185,14 @@
         } 
     }
 
-    public function checkKeyValid(array $data){
+    /**
+     * Veryfies if a given TOTP Key matches the current searched.
+     *
+     * @param array $data   { "userID" : [int], "totpkey" : [string] }
+     * @return array        Returns a status code array.
+     */
+    public function checkKeyValid(array $data): array
+    {
         if(array_key_exists("userID", $data) && is_numeric($data["userID"]) && array_key_exists("totpkey", $data) && is_numeric($data["totpkey"])){
             try{
                 $sql = $this->db_api->execute("SELECT totp_secret FROM users_settings WHERE userid = ? AND totp_enable = 1", array($data["userID"]));

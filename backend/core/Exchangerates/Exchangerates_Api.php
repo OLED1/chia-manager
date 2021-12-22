@@ -56,7 +56,8 @@
      * @param  string $currency_code The currency code in which the exchangerate should be converted. E.g. eur, to get the exchangerates in Euro.
      * @return array                 {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB found exchangerates]}}
      */
-    public function queryExchangeRatesData(string $currency_code){
+    public function queryExchangeRatesData(string $currency_code): array
+    {
       if(array_key_exists("exchangerate_api_codes", $this->ini) && array_key_exists("exchangerate_api_rates", $this->ini)){
         try{
           $sql = $this->db_api->execute("SELECT updatedate FROM exchangerates LIMIT 1", array($currency_code));
@@ -111,7 +112,8 @@
      * @throws Exception $e Throws an exception on db errors.
      * @return array        {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB found currencies]}}
      */
-    public function getAllCurrencies(){
+    public function getAllCurrencies(): array
+    {
       try{
         $sql = $this->db_api->execute("SELECT currency_code, currency_desc FROM exchangerates  ORDER BY currency_code ASC", array());
 
@@ -129,7 +131,8 @@
      * @param  int    $userid     The userid of a certain user for which the values should be returned.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB found default user currency]}}
      */
-    public function getUserDefaultCurrency(int $userid){
+    public function getUserDefaultCurrency(int $userid): array
+    {
       if($userid > 0 && array_key_exists("user_id", $_COOKIE) && $_COOKIE["user_id"] == $userid){
         try{
           $sql = $this->db_api->execute("SELECT currency_code FROM users_settings WHERE userid = ?", array($userid));
@@ -163,7 +166,8 @@
      * @param  array    $loginData  { "userid" : [userid] }
      * @return array                { "status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[Newly set default currency]}}
      */
-    public function setUserDefaultCurrency(array $data, array $loginData = NULL){
+    public function setUserDefaultCurrency(array $data, array $loginData = NULL): array
+    {
       if(array_key_exists("currency_code", $data) && array_key_exists("userid", $loginData)){
         try{
           $sql = $this->db_api->execute("SELECT currency_code FROM users_settings WHERE userid = ?", array($loginData["userid"]));
@@ -191,7 +195,8 @@
      * @param  string $currency_code  Currency 3-4 digits code, e.g. usd
      * @return array                  { "status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[Currency asocciated exchangerate]}}
      */
-    private function getExchangerate(string $currency_code){
+    private function getExchangerate(string $currency_code): array
+    {
       try{
         $sql = $this->db_api->execute("SELECT currency_rate FROM exchangerates WHERE currency_code = ?", array($currency_code));
         $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
@@ -213,7 +218,8 @@
      * @param  array $loginData  { NULL } No logindata is needed to query this function.
      * @return array             { "status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[Currency asocciated exchangerate]}}
      */
-    public function getUserExchangeData(array $data, array $loginData = NULL){
+    public function getUserExchangeData(array $data, array $loginData = NULL): array
+    {
       if(array_key_exists("userid", $data)){
         $defaultCurrency = $this->getUserDefaultCurrency($data["userid"]);
         if($defaultCurrency["status"] == 0) $defaultCurrency = $defaultCurrency["data"]["currency_code"];

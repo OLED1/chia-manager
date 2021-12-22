@@ -50,7 +50,8 @@
      * @param  array $loginData   { NULL } No logindata needed to query this method.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The queried data] }
      */
-    public function getSiteInfos(array $data, array $loginData = NULL){
+    public function getSiteInfos(array $data, array $loginData = NULL): array
+    {
       if(array_key_exists("siteid", $data)){
         $siteid = $data["siteid"];
         $returndata = [];

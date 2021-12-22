@@ -58,7 +58,8 @@
      * @param  DateTime $fromtime           { NULL } On NULL only the last queryied data is returned. If a DateTime is given it will return historical data newer than. (Currently not implemented)
      * @return array                        Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}} from the subfunction calls.
      */
-    public function queryOverallData(array $data = NULL, array $loginData = NULL, $server = NULL, DateTime $fromtime = NULL){
+    public function queryOverallData(array $data = NULL, array $loginData = NULL, $server = NULL, DateTime $fromtime = NULL): array
+    {
       if(array_key_exists("xchscan_api", $this->ini)){
         $sql = $this->db_api->execute("SELECT querydate FROM chia_overall WHERE querydate = (SELECT MAX(querydate) FROM chia_overall)", array());
         $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
@@ -123,7 +124,8 @@
      * @param  DateTime $fromtime  { NULL } On NULL only the last queryied data is returned. If a DateTime is given it will return historical data newer than. (Currently not implemented)
      * @return array               Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}.
      */
-    public function getOverallChiaData(DateTime $fromtime = NULL){
+    public function getOverallChiaData(DateTime $fromtime = NULL): array
+    {
       try{
         if(is_null($fromtime)){
           $sql = $this->db_api->execute("SELECT daychange_percent, netspace, xch_blockheight, netspace_timestamp, price_usd, daymin_24h_usd, daymax_24h_usd, daychange_24h_percent, market_timestamp, querydate FROM chia_overall WHERE querydate = (SELECT MAX(querydate) FROM chia_overall)", array());
@@ -149,7 +151,8 @@
      * @see https://xchscan.com/api/blocks?limit=10&offset=0
      * @return array Returns {"status": [0|>0], "message": [Status message], "data": {[Found queried external data]}}.
      */
-    private function getDataFromExtApi(){
+    private function getDataFromExtApi(): array
+    {
       $overall = true;
 
       $curl = curl_init();

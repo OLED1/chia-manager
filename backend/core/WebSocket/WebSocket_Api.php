@@ -57,7 +57,8 @@
      * @return int $siteID  The siteid which the user is currenty viewing.
      * @return array        {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function updateSiteID(int $siteID){
+    public function updateSiteID(int $siteID): array
+    {
       if($siteID > 0){
         $con_test = $this->testConnection();
         if($con_test["status"] == 0){
@@ -76,7 +77,8 @@
      * @param  array  $data      The data which should be sent to the websocket server.
      * @return array             {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function sendToWSS(string $command, array $data = []){
+    public function sendToWSS(string $command, array $data = []): array
+    {
       $con_test = $this->testConnection();
       if($con_test["status"] == 0){
         return $this->wsclient->sendToWSS($command, $data);
@@ -89,7 +91,8 @@
      * Starts the websocket server if not running.
      * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function startWSS(){
+    public function startWSS(): array
+    {
       $wssstatus = $this->wsclient->testConnection();
       if($wssstatus["status"] == "016001001" || $wssstatus["status"] == "016001002"){
         exec("php " . __DIR__ . "/../WebSocketServer/websocket.php > /dev/null &");
@@ -109,7 +112,8 @@
      * Stops the websocket server if not stopped.
      * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function stopWSS(){
+    public function stopWSS(): array
+    {
       $wssstatus = $this->wsclient->testConnection();
       if($wssstatus["status"] == 0){
         exec("kill -9 {$wssstatus["data"]}");
@@ -130,7 +134,8 @@
      * Restarts the websocket server if running.
      * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function restartWSS(){
+    public function restartWSS(): array
+    {
       $stop = $this->stopWSS();
       if($stop["status"] == 0){
         $start = $this->startWSS();

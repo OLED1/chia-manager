@@ -65,7 +65,8 @@
      * @param  array $loginData   No logindata needed to use this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The changed data]} }
      */
-    public function savePersonalInfo(array $data, array $loginData = NULL){
+    public function savePersonalInfo(array $data, array $loginData = NULL): array
+    {
       if(isset($data["userID"]) && isset($data["name"]) && isset($data["lastname"]) && isset($data["email"]) && isset($data["username"])){
         $checkUserExists = $this->checkUsernameExists($data["username"], $data["userID"]);
         if($checkUserExists["status"] == "0"){
@@ -93,7 +94,8 @@
      * @param  array $loginData   No logindata needed to use this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The newly added data]} }
      */
-    public function addUser(array $data, array $loginData = NULL){
+    public function addUser(array $data, array $loginData = NULL): array
+    {
       if(array_key_exists("name", $data) && array_key_exists("lastname", $data) &&
           array_key_exists("email", $data) && array_key_exists("username", $data) && array_key_exists("password", $data)){
 
@@ -139,7 +141,8 @@
      * @param  array $loginData   No logindata needed to use this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The newly added data]} }
      */
-    public function editUserInfo(array $data, array $loginData = NULL){
+    public function editUserInfo(array $data, array $loginData = NULL): array
+    {
       if(array_key_exists("id", $data) && array_key_exists("name", $data) && array_key_exists("lastname", $data) &&
           array_key_exists("email", $data) && array_key_exists("username", $data)){
 
@@ -180,7 +183,8 @@
      * @param  array $loginData   No logindata needed to use this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The id which was disabled.]} }
      */
-    public function disableUser(array $data, array $loginData = NULL){
+    public function disableUser(array $data, array $loginData = NULL): array
+    {
       if(array_key_exists("userID", $data)){
         if($loginData["userid"] != $data["userID"] && $data["userID"] > 1){
           try{
@@ -207,7 +211,8 @@
      * @param  array $loginData   No logindata needed to use this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The id which was enabled.] } }
      */
-    public function enableUser(array $data, array $loginData = NULL){
+    public function enableUser(array $data, array $loginData = NULL): array
+    {
       if(array_key_exists("userID", $data)){
         try{
           $sql = $this->db_api->execute("UPDATE users SET enabled = 1 WHERE id = ?", array($data["userID"]));
@@ -227,7 +232,8 @@
      * @param  array $loginData   No logindata needed to use this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    private function userInfoNotEmpty(array $data){
+    private function userInfoNotEmpty(array $data): array
+    {
       $notempty = true;
       foreach($data AS $key => $value){
         if(strlen(trim($value)) == 0) $notempty = false;
@@ -245,7 +251,8 @@
      * @param  array $loginData   No logindata needed to use this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The found on the db stored data.]} }
      */
-    public function getUserData(int $userID = NULL){
+    public function getUserData(int $userID = NULL): array
+    {
       try{
         if(is_Null($userID)){
           $sql = $this->db_api->execute("SELECT id, username, name, lastname, email, enabled FROM users", array());
@@ -271,7 +278,8 @@
      * @param  int    $userID     The userid for which the username should be checked for.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function checkUsernameExists(string $username, int $userID = NULL){
+    public function checkUsernameExists(string $username, int $userID = NULL): array
+    {
       try{
         if(is_null($userID)){
           $sql = $this->db_api->execute("SELECT count(*) AS usercount from users where username = ?",
@@ -300,7 +308,8 @@
      * @param  int    $userID   The userid for which the data should be returned for.
      * @return array            {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The found on the db stored data.]} }
      */
-    public function getOwnUserData(int $userID){
+    public function getOwnUserData(int $userID): array
+    {
       return $this->getUserData($userID);
     }
 
@@ -312,7 +321,8 @@
      * @param  array $backendInfo   No backendInfo needed to query this function.
      * @return array                {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The newly created backup key.]} }
      */
-    public function generateNewBackupKey(array $data, array $backendInfo = NULL){
+    public function generateNewBackupKey(array $data, array $backendInfo = NULL): array
+    {
       if(array_key_exists("userID", $data)){
         $backupkey = bin2hex(random_bytes(25));
         $encryptedbackupkey = $this->encryption_api->encryptString($backupkey);
@@ -341,7 +351,8 @@
      * @param  array $backendInfo   No backendInfo needed to query this function.
      * @return array                {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The currently used backup key.]} }
      */
-    public function getBackupKey(int $userID){
+    public function getBackupKey(int $userID): array
+    {
       try{
         $sql = $this->db_api->execute("SELECT backupkey FROM users_backupkeys WHERE userid = ? AND valid = 1", array($userID));
         $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
@@ -365,7 +376,8 @@
      * @param  array $loginData     No logindata needed to query this function.
      * @return array                {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function checkCurrentPassword(array $data, array $loginData = NULL){
+    public function checkCurrentPassword(array $data, array $loginData = NULL): array
+    {
       if(isset($data["userID"]) && isset($data["password"])){
         try{
           $sql = $this->db_api->execute("SELECT password, salt from users where id = ?",
@@ -398,7 +410,8 @@
      * @param  string $password   The password which should be checked.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    private function checkPasswordStrength(string $password){
+    private function checkPasswordStrength(string $password): array
+    {
       $uppercase = preg_match('@[A-Z]@', $password);
       $lowercase = preg_match('@[a-z]@', $password);
       $number    = preg_match('@[0-9]@', $password);
@@ -419,7 +432,8 @@
      * @param  array $loginData     No logindata needed to query this function.
      * @return array                {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function resetUserPassword(array $data, array $loginData = NULL){
+    public function resetUserPassword(array $data, array $loginData = NULL): array
+    {
       if(isset($data["userID"]) && isset($data["password"])){
         $pwcheck = $this->checkPasswordStrength($data["password"]);
         if($pwcheck["status"] == 0){
@@ -463,7 +477,8 @@
      * @param  int    $userID   The userid for which the data should be returned for.
      * @return array            {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The found on the db stored data.]} }
      */
-    public function getLoggedInDevices(int $userID = NULL){
+    public function getLoggedInDevices(int $userID = NULL): array
+    {
       try{
         if(is_null($userID)){
           $sql = $this->db_api->execute("SELECT id, userid, logindate, deviceinfo from users_sessions WHERE invalidated = 0", array());
@@ -492,7 +507,8 @@
      * @param  array $loginData   No logindata needed to query this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": { "deviceid" : [A list of logged out device id's.]} }
      */
-    public function logoutDevice(array $data, array $loginData = NULL){
+    public function logoutDevice(array $data, array $loginData = NULL): array
+    {
       if(array_key_exists("deviceid", $data) && array_key_exists("userid", $data)){
         $deviceID = $data["deviceid"];
 
@@ -517,7 +533,8 @@
      * @param  array $loginData   No logindata needed to query this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function sendInvitationMail(array $data, array $loginData = NULL){
+    public function sendInvitationMail(array $data, array $loginData = NULL): array
+    {
       if(array_key_exists("userID", $data)){
         if($loginData["userid"] != $data["userID"]){
           $this->users = new Users_Api();
@@ -559,7 +576,8 @@
      * @param string $username  The user's username which wants his password be reset
      * @return array             {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function requestUserPasswordReset(string $username){
+    public function requestUserPasswordReset(string $username): array
+    {
       try{
         $sql = $this->db_api->execute("SELECT id, name, lastname, email FROM users WHERE username = ? AND enabled = 1", array($username));
         $userdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
@@ -597,7 +615,8 @@
      * @param string $resetLink   The reset link which should be checked.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function checkResetLinkValid(string $resetLink){
+    public function checkResetLinkValid(string $resetLink): array
+    {
       try{
         $encryptedResetKey = $this->encryption_api->encryptString($resetLink);
         $sql = $this->db_api->execute("SELECT Count(*) as count FROM users_pwresets WHERE linkkey = ? AND expired = 0 AND expiration >= NOW()", array($encryptedResetKey));
@@ -621,7 +640,8 @@
      * @param string $newUserPassword  The new password which should be set
      * @return array                   {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function resetPassword(string $resetKey, string $newUserPassword){
+    public function resetPassword(string $resetKey, string $newUserPassword): array
+    {
       try{
         $encryptedResetKey = $this->encryption_api->encryptString($resetKey);
         $sql = $this->db_api->execute("SELECT userid FROM users_pwresets WHERE linkkey = ? AND expired = 0 AND expiration >= NOW()", array($encryptedResetKey));

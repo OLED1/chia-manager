@@ -84,7 +84,8 @@
      * @param  WebSocketServer $server        An instance to the Webscoket server to be able to communicate with the node
      * @return array                          {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The returnded data] } from subquery.
      */
-    public function processRequest(array $loginData, array $backendInfo, array $data){
+    public function processRequest(array $loginData, array $backendInfo, array $data): array
+    {
       if($this->system_update_api->checkUpdateRoutine()["data"]["maintenance_mode"] == 1 && $backendInfo["method"] != "finishUpdate" && $backendInfo["method"] != "disableMaintenanceMode"){
         return $this->logging->getErrormessage("001");
       }
@@ -115,7 +116,8 @@
      * @param  WebSocketServer $server        An instance to the Webscoket server to be able to communicate with the node
      * @return array                          {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The returnded data] } from subquery.
      */
-    public function processCronRequest(array $loginData, array $backendInfo, array $data, array $nodeInfo, $server = NULL){
+    public function processCronRequest(array $loginData, array $backendInfo, array $data, array $nodeInfo, $server = NULL): array
+    {
       $system_api = new System_Api();
       $system_api->setCurrentCronjobRunTimestamp();
       
@@ -185,7 +187,8 @@
      * @param  array  $subscriptions  A list of subscriptions given from the websocket server.
      * @return array                  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The queried data] }
      */
-    public function processGetActiveSubscriptions(array $loginData, array $subscriptions){
+    public function processGetActiveSubscriptions(array $loginData, array $subscriptions): array
+    {
       if($loginData["authhash"] == $this->ini["web_client_auth_hash"] ||
           $loginData["authhash"] == $this->ini["backend_client_auth_hash"]){
         return array("getActiveSubscriptions" => array("status" => 0, "message" => "Successfully loaded active subscriptions.", "data" => $subscriptions));
@@ -201,7 +204,8 @@
      * @param  array  $requests       A list of all clients which are waiting for authorisation given from the websocket server.
      * @return array                  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The queried data] }
      */
-    public function processGetActiveRequests(array $loginData, array $requests){
+    public function processGetActiveRequests(array $loginData, array $requests): array
+    {
 
       if($loginData["authhash"] == $this->ini["web_client_auth_hash"] ||
           $loginData["authhash"] == $this->ini["backend_client_auth_hash"]){
@@ -221,7 +225,8 @@
      * @param  int    $connid         The connection id of the user who changed the site, given from the websocket server.
      * @return array                  { "status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [Current subscriptions] }
      */
-    public function processUpdateFrontendViewingSite(array $loginData, array $subscriptions, array $data, int $connid){
+    public function processUpdateFrontendViewingSite(array $loginData, array $subscriptions, array $data, int $connid): array
+    {
       if(array_key_exists("userID", $data) && array_key_exists("siteID", $data) &&
         ($loginData["authhash"] == $this->ini["web_client_auth_hash"] ||
         $loginData["authhash"] == $this->ini["backend_client_auth_hash"])){
@@ -248,7 +253,8 @@
      * @param  array  $requests  A list of all clients which are waiting for authorisation given from the websocket server.
      * @return array             {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The queried data] }
      */
-    public function processConnectionRequest(array $requests){
+    public function processConnectionRequest(array $requests): array
+    {
       return array("clientConnectionRequest" => array("status" => 0, "message" => "Successfully handeled connection request.", "data" => $requests));
     }
 
@@ -262,7 +268,8 @@
      * @param  array  $nodeinfo  An array of the client's connection infos.
      * @return array             {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The queried data] }
      */
-    public function requesterLogin(string $nodeip, array $data, array $nodeinfo){
+    public function requesterLogin(string $nodeip, array $data, array $nodeinfo): array
+    {
       if(array_key_exists("authhash", $data)){
         if(!is_Null($data["authhash"])) $encryptedauthhash = $this->encryption_api->encryptString($data["authhash"]);
         else $encryptedauthhash = "";
