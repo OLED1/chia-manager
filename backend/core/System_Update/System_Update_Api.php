@@ -675,19 +675,20 @@
       $db_update_array = json_decode($db_update_json, true);
       $alteredtables = [];
 
-      try{
-        foreach($db_update_array AS $version => $tables){
-          if(version_compare($config_data["application"]["versnummer"], $version, "<")){
-            foreach($tables AS $tablename => $statements){
-              foreach($statements AS $arrkey => $statement){
+      foreach($db_update_array AS $version => $tables){
+        if(version_compare($config_data["application"]["versnummer"], $version, "<")){
+          foreach($tables AS $tablename => $statements){
+            foreach($statements AS $arrkey => $statement){
+              try{
                 $sql = $this->db_api->execute($statement, array());
+              }catch(\Exception $e){
+                $this->logging_api->getErrormessage("001", $e);
+                continue;
               }
             }
-            array_push($alteredtables, $tablename);
           }
+          array_push($alteredtables, $tablename);
         }
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("001", $e);
       }
 
       return array("status" => 0, "message" => "Altered tables " . implode(",", $alteredtables) . " successfully. DB version updated successfully.");
