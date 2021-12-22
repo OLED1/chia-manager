@@ -130,7 +130,6 @@
             "ALTER TABLE `nodes_services_status` CHANGE `id` `id` INT NOT NULL AUTO_INCREMENT;",
             "ALTER TABLE `nodes_services_status` ADD INDEX(`nodeid`);",
             "CREATE TABLE `chia_farm_challanges_proofcount` ( `id` int NOT NULL AUTO_INCREMENT, `nodeid` int NOT NULL, `chia_farm_challanges_id` int NOT NULL, `proofcount` int NOT NULL, PRIMARY KEY (`id`), KEY `chia_farm_challanges_id` (`chia_farm_challanges_id`))",
-            
             "UPDATE `system_infos` SET dbversion = '0.1.1.211119';"
         ]
     },
