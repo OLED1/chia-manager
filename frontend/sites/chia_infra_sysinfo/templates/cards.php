@@ -1,6 +1,5 @@
 <?php
   use ChiaMgmt\Login\Login_Api;
-  use ChiaMgmt\Nodes\Nodes_Api;
   use ChiaMgmt\Chia_Infra_Sysinfo\Chia_Infra_Sysinfo_Api;
   require __DIR__ . '/../../../../vendor/autoload.php';
 
@@ -12,8 +11,6 @@
     header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/login.php");
   }
 
-  $nodes_api = new Nodes_Api();
-  $nodes_states = $nodes_api->queryNodesServicesStatus()["data"];
   $chia_infra_sysinfo_api = new Chia_Infra_Sysinfo_Api();
   $sysinfos = $chia_infra_sysinfo_api->getSystemInfo();
 
@@ -39,7 +36,7 @@
                   $statusicon = "badge-success";
                 }
             ?>
-            <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge <?php echo $statusicon; ?>'><?php echo $statustext; ?></span>
+            <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-secondary'>Processing...</span>
           <?php } ?>
         </h6>
         <div class="dropdown no-arrow">

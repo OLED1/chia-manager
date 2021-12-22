@@ -29,6 +29,7 @@
     var historySystemsLoadData = {};
     var historyMemoryData = {};
     var historyFilesystemData = {};
+    var historyServicesData = {};
   </script>";
 ?>
 <link href="<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/systems_statistics/css/systems_statistics.css"?>" rel="stylesheet">
@@ -92,6 +93,9 @@
           <li class="nav-item">
               <a class="nav-link" id="filesystems_tab-<?php echo $nodeinfo["nodeid"]; ?>" data-toggle="tab" href="#filesystems_<?php echo $nodeinfo["nodeid"]; ?>" role="tab" aria-controls="content_filesystems_<?php echo $arrkey; ?>" aria-selected="true">Filesystems</a>
           </li>
+          <li class="nav-item">
+              <a class="nav-link" id="services_tab-<?php echo $nodeinfo["nodeid"]; ?>" data-toggle="tab" href="#services_<?php echo $nodeinfo["nodeid"]; ?>" role="tab" aria-controls="content_services_<?php echo $arrkey; ?>" aria-selected="true">Services</a>
+          </li>
         </ul>
         <div class="tab-content">
           <div class="tab-pane fade show active" id="cpuinfo_<?php echo $nodeinfo["nodeid"]; ?>" role="tabpanel" aria-labelledby="cpuinfo_tab-<?php echo $nodeinfo["nodeid"]; ?>">
@@ -110,6 +114,11 @@
           <div class="tab-pane fade" id="filesystems_<?php echo $nodeinfo["nodeid"]; ?>" role="tabpanel" aria-labelledby="filesystems_tab-<?php echo $nodeinfo["nodeid"]; ?>">
             <?php 
               include("templates/filesystems_chart_card.php"); 
+            ?>
+          </div>
+          <div class="tab-pane fade" id="services_<?php echo $nodeinfo["nodeid"]; ?>" role="tabpanel" aria-labelledby="services_tab-<?php echo $nodeinfo["nodeid"]; ?>">
+            <?php 
+              include("templates/services_chart_card.php"); 
             ?>
           </div>
         </div>

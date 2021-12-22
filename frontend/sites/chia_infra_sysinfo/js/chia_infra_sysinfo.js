@@ -1,6 +1,10 @@
 var ramswapcharts = {};
 var loadCharts = {};
 
+setTimeout(function(){
+  setServiceBadge();
+}, 700);
+
 reloadTables();
 reinitQueryAllButton();
 initSysinfoRefresh();
@@ -190,18 +194,18 @@ function initAndDrawLoadChart(nodeid){
   });
 }
 
-function setSysinfoBadge(nodeid, status, message){
-  var targetbadge = $("#servicestatus_" + nodeid);
-  targetbadge.removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-danger");
-  if(status == 0){
-    targetbadge.addClass("badge-success");
-  }else if(status == 1){
-    targetbadge.addClass("badge-danger");
-  }else if(status == 2){
-    targetbadge.addClass("badge-secondary");
-  }
+function setServiceBadge(){
+  $.each(services_states, function(nodeid, nodedata){
+    if(nodedata === "undefined" || nodedata["onlinestatus"]["status"] == 0){
+      statustext = "Node not reachable";
+      statusicon = "badge-danger";
+    }else if(nodedata["onlinestatus"]["status"] == 1){
+      statustext = "Node connected";
+      statusicon = "badge-success";
+    }
 
-  targetbadge.text(message);
+    $(".statusbadge[data-node-id='" + nodeid + "'").removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-warning").removeClass("badge-danger").addClass(statusicon).text(statustext);
+  });
 }
 
 function messagesTrigger(data){
@@ -216,13 +220,16 @@ function messagesTrigger(data){
         initSysinfoRefresh();
         initSysinfoNodeActions();
       });
-    }else if(key == "connectedNodesChanged"){
-      sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "queryNodesServicesStatus", {});
-    }else if(key == "queryNodesServicesStatus"){
-      $.each(data[key]["data"], function(nodeid, condata){
-        setSysinfoBadge(nodeid, condata["onlinestatus"], (condata["onlinestatus"] == 0 ? "Node connected." : "Node not reachable."));
-      });
+    }else if(key == "queryNodesServicesStatus" || key == "updateChiaStatus" || key == "setNodeUpDown"){
+      sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getCurrentChiaNodesUPAndServiceStatus", {});
+    }else if(key == "getCurrentChiaNodesUPAndServiceStatus"){
+      if("data" in data[key]){
+        services_states = data[key]["data"];
+      }
     }
+    setTimeout(function(){
+      setServiceBadge();
+    }, 600);
   }else if(data[key]["status"] == "014003001"){
     $(".statusbadge").each(function(){
       var thisnodeid = $(this).attr("data-node-id");
