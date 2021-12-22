@@ -1,9 +1,3 @@
--- MySQL dump 10.13  Distrib 8.0.27, for Linux (x86_64)
---
--- Host: localhost    Database: chiamgmt_edtmair_at
--- ------------------------------------------------------
--- Server version	8.0.27-0ubuntu0.20.04.1
-
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
@@ -93,7 +87,7 @@ CREATE TABLE `chia_farm_challenges` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `challenge_chain_sp` (`challenge_chain_sp`),
   KEY `nodeid` (`nodeid`)
-) ENGINE=InnoDB AUTO_INCREMENT=851214 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2281242 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -123,7 +117,7 @@ CREATE TABLE `chia_infra_sysinfo` (
   PRIMARY KEY (`id`),
   KEY `NodeIDSysinfo` (`nodeid`),
   KEY `timestamp` (`timestamp`)
-) ENGINE=InnoDB AUTO_INCREMENT=19240 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=26507 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -144,7 +138,7 @@ CREATE TABLE `chia_infra_sysinfo_filesystems` (
   PRIMARY KEY (`id`),
   KEY `sysinfo_id` (`sysinfo_id`),
   KEY `mountpoint` (`mountpoint`)
-) ENGINE=InnoDB AUTO_INCREMENT=107723 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=178473 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -167,7 +161,7 @@ CREATE TABLE `chia_overall` (
   `market_timestamp` datetime NOT NULL,
   `querydate` datetime NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=12471 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15193 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -194,7 +188,7 @@ CREATE TABLE `chia_plots` (
   UNIQUE KEY `plot_id` (`plot_id`),
   UNIQUE KEY `plot_seed` (`plot_seed`),
   KEY `NodeIDPlots` (`cpd_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7948 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=20030 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -288,7 +282,7 @@ CREATE TABLE `exchangerates` (
   `updatedate` date NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `currency_code` (`currency_code`)
-) ENGINE=InnoDB AUTO_INCREMENT=3832114 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4460046 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -325,15 +319,16 @@ DROP TABLE IF EXISTS `nodes_services_status`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `nodes_services_status` (
-  `id` int NOT NULL,
+  `id` int NOT NULL AUTO_INCREMENT,
   `nodeid` int NOT NULL,
-  `farmer_service` tinyint NOT NULL,
-  `wallet_service` tinyint NOT NULL,
-  `harvester_service` tinyint NOT NULL,
+  `serviceid` tinyint NOT NULL,
+  `servicestate` tinyint NOT NULL,
   `firstreported` datetime NOT NULL,
   `lastreported` datetime NOT NULL,
-  KEY `lastreported` (`lastreported`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  PRIMARY KEY (`id`),
+  KEY `lastreported` (`lastreported`),
+  KEY `nodeid` (`nodeid`)
+) ENGINE=InnoDB AUTO_INCREMENT=931 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -349,9 +344,8 @@ CREATE TABLE `nodes_up_status` (
   `onlinestatus` int NOT NULL,
   `firstreported` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `lastreported` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `nodeid` (`nodeid`)
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1531 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -579,4 +573,4 @@ CREATE TABLE `users_settings` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2021-12-16 13:07:51
+-- Dump completed on 2021-12-22 13:04:24
