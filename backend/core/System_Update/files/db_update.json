@@ -81,8 +81,7 @@
             "ALTER TABLE `chia_farm` CHANGE `farming_status` `syncstatus` TINYINT(1) NOT NULL;",
             "ALTER TABLE `chia_farm_challenges` CHANGE `hash` `challenge_hash` VARCHAR(66) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL;",
             "ALTER TABLE `chia_farm_challenges` CHANGE `hash_index` `signage_point_index` INT NOT NULL;",
-            "ALTER TABLE `chia_farm_challenges` ADD `proofcount` INT NOT NULL AFTER `proofs`;",
-            "ALTER TABLE `chia_farm_challenges` ADD `challenge_chain_sp` VARCHAR(66) NOT NULL AFTER `proofs`;",
+            "ALTER TABLE `chia_farm_challenges` ADD `challenge_chain_sp` VARCHAR(66) NOT NULL AFTER `date`;",
             "ALTER TABLE `chia_farm_challenges` ADD `difficulty` INT NOT NULL AFTER `challenge_hash`;",
             "ALTER TABLE `chia_farm_challenges` ADD `sub_slot_iters` INT NOT NULL AFTER `signage_point_index`;",
             "ALTER TABLE `chia_farm_challenges` ADD `reward_chain_sp` VARCHAR(66) NOT NULL AFTER `difficulty`;",
@@ -120,7 +119,7 @@
             "ALTER TABLE `chia_plots` CHANGE `file_size` `file_size` BIGINT NOT NULL;",
             "ALTER TABLE `nodes_status` CHANGE `querytime` `firstreported` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;",
             "ALTER TABLE `nodes_status` ADD `lastreported` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `firstreported`;",
-            "RENAME TABLE `chiamgmt_edtmair_at`.`nodes_status` TO `chiamgmt_edtmair_at`.`nodes_up_status`;",
+            "RENAME TABLE `nodes_status` TO `nodes_up_status`;",
             "ALTER TABLE `nodes_up_status` DROP `walletstatus`, DROP `farmerstatus`, DROP `harvesterstatus`;",
             "CREATE TABLE `nodes_services_status` (`id` int NOT NULL, `nodeid` int NOT NULL, `farmer_service` tinyint NOT NULL, `wallet_service` tinyint NOT NULL, `harvester_service` tinyint NOT NULL, `firstreported` datetime NOT NULL, `lastreported` datetime NOT NULL, KEY `lastreported` (`lastreported`))",
             "ALTER TABLE `nodes_up_status` DROP INDEX `nodeid`",
@@ -130,6 +129,8 @@
             "ALTER TABLE `nodes_services_status` ADD PRIMARY KEY(`id`);",
             "ALTER TABLE `nodes_services_status` CHANGE `id` `id` INT NOT NULL AUTO_INCREMENT;",
             "ALTER TABLE `nodes_services_status` ADD INDEX(`nodeid`);",
+            "CREATE TABLE `chia_farm_challanges_proofcount` ( `id` int NOT NULL AUTO_INCREMENT, `nodeid` int NOT NULL, `chia_farm_challanges_id` int NOT NULL, `proofcount` int NOT NULL, PRIMARY KEY (`id`), KEY `chia_farm_challanges_id` (`chia_farm_challanges_id`))",
+            
             "UPDATE `system_infos` SET dbversion = '0.1.1.211119';"
         ]
     },
