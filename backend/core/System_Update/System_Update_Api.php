@@ -520,7 +520,7 @@
      */
     private function backupSystemDatabase(string $timestamp): array
     {
-      $targetdir = "../../..{$this->ini["backup_root"]}/{$timestamp}/db/mysq_backup.sql";
+      $targetdir = "../../..{$this->ini["backup_root"]}/{$timestamp}/db/mysql_backup_{$timestamp}.sql";
       exec("mysqldump --user={$this->ini["db_user"]} --password={$this->ini["db_password"]} --host={$this->ini["db_host"]} {$this->ini["db_name"]} --result-file='{$targetdir}' 2>&1", $output, $exitCode);
 
       if($exitCode == 0) return array("status" => 0, "message" => "Successfully backup up system database.");
@@ -675,23 +675,35 @@
       $db_update_array = json_decode($db_update_json, true);
       $alteredtables = [];
 
-      foreach($db_update_array AS $version => $tables){
+      foreach($db_update_array AS $version => $strucuture_filepath){
         if(version_compare($config_data["application"]["versnummer"], $version, "<")){
-          foreach($tables AS $tablename => $statements){
-            foreach($statements AS $arrkey => $statement){
-              try{
-                $sql = $this->db_api->execute($statement, array());
-              }catch(\Exception $e){
-                $this->logging_api->getErrormessage("001", $e);
+          if(file_exists(__DIR__."/files/{$strucuture_filepath}")){
+            $query = '';
+            $strucuture_file = file(__DIR__."/files/{$strucuture_filepath}");
+            foreach($strucuture_file as $line)	{
+              $startWith = substr(trim($line), 0 ,2);
+              $endWith = substr(trim($line), -1 ,1);
+
+              if(empty($line) || $startWith == '--' || $startWith == '/*' || $startWith == '//') {
                 continue;
+              }
+
+              $query = $query . $line;
+              if($endWith == ';'){
+                try{
+                  $sql = $this->db_api->execute($query, array());
+                  $query= '';
+                }catch(\Exception $e){
+                  $this->logging_api->getErrormessage("001", $e);
+                  continue;
+                }
               }
             }
           }
-          array_push($alteredtables, $tablename);
         }
       }
 
-      return array("status" => 0, "message" => "Altered tables " . implode(",", $alteredtables) . " successfully. DB version updated successfully.");
+      return array("status" => 0, "message" => "Altered database successfully. DB version updated successfully.");
     }
 
     /**
