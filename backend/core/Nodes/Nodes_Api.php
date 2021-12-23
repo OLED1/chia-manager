@@ -303,8 +303,15 @@
 
             if($changeable){
               $this->db_api->execute("DELETE FROM nodes WHERE id = ?", array($data["nodeid"]));
-              $this->db_api->execute("DELETE FROM nodes_status WHERE nodeid = ?", array($data["nodeid"]));
+              $this->db_api->execute("DELETE FROM nodes_up_status WHERE nodeid = ?", array($data["nodeid"]));
               $this->db_api->execute("DELETE FROM nodetype WHERE id = ?", array($data["nodeid"]));
+              $this->db_api->execute("DELETE FROM chia_farm WHERE id = ?", array($data["nodeid"]));
+              $this->db_api->execute("DELETE FROM chia_farm_challenges WHERE id = ?", array($data["nodeid"]));
+              $this->db_api->execute("DELETE FROM chia_infra_sysinfo WHERE id = ?", array($data["nodeid"]));
+              $this->db_api->execute("DELETE FROM chia_plots_directories WHERE id = ?", array($data["nodeid"]));
+              $this->db_api->execute("DELETE FROM chia_wallets WHERE id = ?", array($data["nodeid"]));
+              $this->db_api->execute("DELETE FROM chia_wallets_transactions WHERE id = ?", array($data["nodeid"]));
+              $this->db_api->execute("DELETE FROM nodes_services_status WHERE id = ?", array($data["nodeid"]));
 
               $returnmessage = array("status" => 0, "message" => "Successfully removed node {$data["nodeid"]}.", "data" => $data["nodeid"]);
               $querydata = [];
