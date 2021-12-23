@@ -158,6 +158,25 @@ $(function(){
     console.log("HIER");
   });
 
+  $(".totpinput").on('paste', function(e){
+    e.preventDefault();
+    var text = null;
+    if (window.clipboardData) 
+      text = window.clipboardData.getData("Text");
+    else if (e.originalEvent && e.originalEvent.clipboardData)
+      text = e.originalEvent.clipboardData.getData("Text");
+
+    if(text.length == 6 && $.isNumeric(text)){
+      $.each(text.split(""), function(arrkey, number){
+        $(".totpinput:eq(" + arrkey + ")").val(number);
+      });
+      $(".totpinput").trigger("input");
+      $("#totpkeybutton").trigger("click");
+    }else{
+      showMessage("alert-warning", "Pasted text '" + text + "' seems not be a valid totp key.");
+    }
+  });
+
   function checkTOTPKeyValid(){
     var inputsvalid = true;
     $.each($(".totpinput"), function(){
@@ -211,7 +230,7 @@ $(function(){
     if($("#authkeywindow").is(":hidden")){
       $("#loginwindow").hide(500);
       $("#authkeywindow").show(500);
-      $("#inputAuthkey").val("");
+      $("#inputAuthkey").val("").focus();
       $("#authkeybutton").attr("disabled","disabled");
     }
   }
@@ -222,7 +241,7 @@ $(function(){
       $("#loginwindow").hide(500);
       $("#authkeywindow").hide(500);
       $("#secondFactorTotpWindow").show(500);
-      $(".totpinput").val("");
+      $(".totpinput").val("").first().focus();
       $("#totpkeybutton").attr("disabled","disabled");
     }
   }
@@ -289,6 +308,10 @@ $(function(){
             showAuthKeyWindow();
           }else if(result["status"] == "007009003" || result["status"] == "007001002"){
             showTOTPKeyWindow();
+          }else if(result["status"] == "021005001"){
+            $(".totpinput").val("").first().focus();
+            $("#totpkeybutton").prop("disabled",true);
+            showMessage("alert-danger", result["message"]);
           }else{
             showMessage("alert-danger", result["message"]);
           }
