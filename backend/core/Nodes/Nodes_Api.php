@@ -450,12 +450,14 @@
 
           $returndata["updateinfos"][$nodedata["id"]]["updateavailable"] = 0;
           if(array_key_exists($nodedata["updatechannel"], $version_file_data)){
-            $returndata["updateinfos"][$nodedata["id"]]["updateavailable"] = version_compare($nodedata["scriptversion"], $version_file_data[$nodedata["updatechannel"]][0]["version"]);
+            $returndata["updateinfos"][$nodedata["id"]]["updateavailable"] =  2;
+            if(!is_null($nodedata["scriptversion"])) $returndata["updateinfos"][$nodedata["id"]]["updateavailable"] = version_compare($nodedata["scriptversion"], $version_file_data[$nodedata["updatechannel"]][0]["version"]);
             $returndata["updateinfos"][$nodedata["id"]]["remoteversion"] = $version_file_data[$nodedata["updatechannel"]][0]["version"];
           }
           $returndata["updateinfos"][$nodedata["id"]]["chiaupdateavail"] = 0;
           if(array_key_exists(0, $chia_version_file_data) && array_key_exists("name", $chia_version_file_data[0])){
-            $returndata["updateinfos"][$nodedata["id"]]["chiaupdateavail"] = version_compare($nodedata["chiaversion"], $chia_version_file_data[0]["name"]);
+            $returndata["updateinfos"][$nodedata["id"]]["chiaupdateavail"] =  2;
+            if(!is_null($nodedata["chiaversion"])) $returndata["updateinfos"][$nodedata["id"]]["chiaupdateavail"] = version_compare($nodedata["chiaversion"], $chia_version_file_data[0]["name"]);
           }
         }
 
@@ -556,14 +558,9 @@
           $sql = $this->db_api->execute("SELECT id, nodeid, onlinestatus, lastreported FROM nodes_up_status WHERE nodeid = ? ORDER BY firstreported DESC LIMIT 1", array($data["nodeid"]));
           $founddata = $sql->fetchAll(\PDO::FETCH_ASSOC);
 
-          /*echo json_encode($founddata, JSON_PRETTY_PRINT);
-          echo json_encode($data, JSON_PRETTY_PRINT);*/
-
           if(!array_key_exists(0, $founddata) || $founddata[0]["onlinestatus"] != $data["updown"]){
-            //echo "Onlinestatus for node {$data["nodeid"]} changed from {$founddata[0]["onlinestatus"]} to {$data["updown"]}.\n";
             $this->db_api->execute("INSERT INTO nodes_up_status (id, nodeid, onlinestatus, firstreported, lastreported) VALUES(NULL, ?, ?, current_timestamp(), current_timestamp())", array($data["nodeid"], $data["updown"]));
           }
-          //echo "Updating existing entry for node {$data["nodeid"]}, state: {$founddata[0]["onlinestatus"]}.\n";
           if(count($founddata) == 1) $this->db_api->execute("UPDATE nodes_up_status SET lastreported = current_timestamp() WHERE id = ?", array($founddata[0]["id"]));
         }catch(\Exception $e){
           return $this->logging_api->getErrormessage("001", $e);
@@ -609,7 +606,6 @@
 
             $founddata = $sql->fetchAll(\PDO::FETCH_ASSOC);
             if(count($founddata) > 0){
-              //print_r(json_encode($founddata, JSON_PRETTY_PRINT));
               foreach($founddata AS $arrkey => $savedstates){
                 $reported_service_state = intval(!boolval($data[$savedstates["description"]]["status"]));
                 if((is_numeric($savedstates["servicestate"]) || is_null($savedstates["servicestate"])) && array_key_exists($savedstates["description"], $data) && (($reported_service_state != $savedstates["servicestate"]) || is_null($savedstates["servicestate"]))){

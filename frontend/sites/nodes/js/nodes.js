@@ -347,6 +347,8 @@ function initShowNodeInfo(){
       $("#"+key).text(value);
     });
 
+    $("#node-info-navtabs .nav-link").removeClass("active").first().addClass("active");
+
     if($.isNumeric(nodeinfo["cpu_count"]) && $.isNumeric(nodeinfo["cpu_cores"]))
       $("#cpu_cores_threads").text(nodeinfo["cpu_cores"] + " Core(s) / " + nodeinfo["cpu_count"] + " Thread(s)");
 
@@ -356,12 +358,14 @@ function initShowNodeInfo(){
     $("#updatechannelsMenu").text(getFullNameFromBranch(updateinfo["updatechannel"]));
     $("#current_version").text(updateinfo["scriptversion"]);
     $("#remote_version").text(updateinfo["remoteversion"]);
-    $("#update_available").html(getUpdateAvailableBadge(updateinfo["updateavailable"], 0));
-
     $("#updatenode").hide();
-    if(updateinfo["updateavailable"] < 0){
-      $("#updatenode").show();
-    }
+    if(updateinfo["scriptversion"] !== null && updateinfo["scriptversion"] !== undefined){
+      $("#update_available").html(getUpdateAvailableBadge(updateinfo["updateavailable"], 0));
+  
+      if(updateinfo["updateavailable"] < 0){
+        $("#updatenode").show();
+      }
+    } 
     $("#nodeactionmodal .tab-pane.active").removeClass("active").removeClass("show");
     $("#nodeactionmodal .nav-item.active").removeClass("active");
 
@@ -395,7 +399,7 @@ function getUpdateAvailableBadge(updateavailable, type){
   if(type == 0){ nodetext = "Node script"; }
   else if(type == 1){ nodetext = "Chia blockchain"; }
 
-  if(updateavailable == 0){
+  if(updateavailable == 0 || updateavailable == 1){
     return "<span class='badge badge-success'>"+ nodetext + " up to date.</span>";
   }else if(updateavailable < 0){
     return "<span class='badge badge-warning'>"+ nodetext + " update available.</span>";
@@ -435,7 +439,7 @@ function messagesTrigger(data){
   var reinit = true;
 
   if(data[key]["status"] == 0){
-    if(key == "connectedNodesChanged"){
+    if(key == "queryNodesServicesStatus" || key == "updateChiaStatus" || key == "setNodeUpDown"){
       sendToWSS("ownRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getConfiguredNodes", {});
       sendToWSS("getActiveSubscriptions", "", "", "", {});
       sendToWSS("getActiveRequests", "", "", "", {});
@@ -469,12 +473,14 @@ function messagesTrigger(data){
       var nodeupdatedata = data[key]["data"]["updateinfos"];
       $.each(nodeupdatedata, function(nodeid, updatedata){
         if($("#nodeactionmodal[data-nodeid='" + nodeid + "']").length > 0){
-          $("#update_available").html(getUpdateAvailableBadge(updatedata["updateavailable"], 0));
           $("#updatenode").hide();
           $("#remote_version").text(updatedata["remoteversion"]);
           $("#current_version").text(updatedata["scriptversion"]);
-          if(updatedata["updateavailable"] < 0){
-            $("#updatenode").show();
+          if(updatedata["scriptversion"] !== null && updatedata["scriptversion"] !== undefined){
+            $("#update_available").html(getUpdateAvailableBadge(updatedata["updateavailable"], 0));
+            if(updatedata["updateavailable"] < 0){
+              $("#updatenode").show();
+            }
           }
         }
         scriptupdatesavail["updateinfos"][nodeid] = updatedata;

@@ -57,49 +57,26 @@
               <ul class="list-group">
                 <li class="list-group-item">
                     <strong>Navigate to a directory where you want to install the node client.</strong><br>
-                    mkdir /your/desired/path
+                    mkdir /your/desired/path<br>
+                    e.g. mkdir -p /usr/local/bin/chia_node_client
                 </li>
                 <li class="list-group-item">
                     <strong>Download and install the client:</strong><br>
                     cd /path/to/your/installation<br>
                     wget https://files.chiamgmt.edtmair.at/client/&#60;your-desired-branch&#62;<br>
-                    unzip chia_python_client_install.zip
+                    unzip chia_python_client_install.zip<br>
                 </li>
                 <li class="list-group-item">
-                    <strong>Execute the python node</strong><br>
+                    <strong>Execute the chia client node installer</strong><br>
                     cd /path/to/your/installation<br>
-                    pyhton chia_mgmt_node.py<br>
-                    The client will abort the first startup because the default files are not created yet.<br>
-                    The client will create these files which you have to setup.
+                    chmod +x install.sh<br>
+                    Please follow the instructions.
                 </li>
                 <li class="list-group-item">
-                    <strong>Setup your client config</strong><br>
-                    Locate the config file, normally under /path/to/your/installatin/config/chia-client.ini<br>
-                    Examle:<br>
-                    [ScriptInfo]<br>
-                    version = 0.1.1-alpha #Will be generated autmatically<br>
-                    <br>
-                    [Connection]<br>
-                    server = chiamgmt.example.com #Setup your servers domain here<br>
-                    port = 443 #Setup your servers secure port here<br>
-                    socketdir = /chiamgmt #Default is /chiamgmt. Needed for the websocket connection<br>
-                    type = wss #Default is wss. Please do not communication unsecured to your server<br>
-                    <br>
-                    [NodeInfo]<br>
-                    authhash = [somehash] #Will be generated.<br>
-                    <br>
-                    [Chia]<br>
-                    chiaactivatepath = /path/to/chia-blockchain/installation #Exclude 'activate' in string
-                </li>
-                <li class="list-group-item">
-                    <strong>Execute the python node again</strong><br>
-                    cd /path/to/your/installation<br>
-                    pyhton chia_mgmt_node.py
-                </li>
-                <li class="list-group-item">
-                    <strong>Follow the on screen instructions.</strong><br>
-                    cd /path/to/your/installation<br>
-                    pyhton chia_mgmt_node.py
+                    <strong>Run the client</strong><br>
+                    python3 run_node_client.py<br>
+                    or<br>
+                    sudo systemctl start chia-node-client.service
                 </li>
                 <li class="list-group-item">
                     <strong>You are done.</strong>
@@ -119,99 +96,6 @@
         </div>
       </div>
     </div>
-    <!--
-    <div class="card shadow mb-4">
-      <div class="accordion" id="nodeInstallInstructions">
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="linuxInstructionHeading">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#linuxInstructionCollapse" aria-expanded="false" aria-controls="linuxInstructionCollapse">
-              <i class="fab fa-linux"></i>&nbsp;Install python node client on Linux
-            </button>
-          </h2>
-          <div id="linuxInstructionCollapse" class="accordion-collapse collapse" aria-labelledby="linuxInstructionHeading" data-bs-parent="#nodeInstallInstructions">
-            <div class="accordion-body">
-              <p>To be able to gather live data from your nodes you need to install the python node client on your system(s).</p>
-              <ol class="list-group list-group-numbered">
-                <li class="list-group-item d-flex justify-content-between align-items-start">
-                  <div class="ms-2 me-auto">
-                    <div class="fw-bold">Navigate to a directory where you want to install the node client.</div>
-                    mkdir /your/desired/path
-                  </div>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-start">
-                  <div class="ms-2 me-auto">
-                    <div class="fw-bold">Download and install the client:</div>
-                    cd /path/to/your/installation<br>
-                    wget <?php //echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["packages_url"]."/packages/chia_python_client_install.zip"?><br>
-                    unzip chia_python_client_install.zip
-                  </div>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-start">
-                  <div class="ms-2 me-auto">
-                    <div class="fw-bold">Execute the python node</div>
-                    cd /path/to/your/installation<br>
-                    pyhton chia_mgmt_node.py<br>
-                    The client will abort the first startup because the default files are not created yet.<br>
-                    The client will create these files which you have to setup.
-                  </div>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-start">
-                  <div class="ms-2 me-auto">
-                    <div class="fw-bold">Setup your client config</div>
-                    Locate the config file, normally under /path/to/your/installatin/config/chia-client.ini<br>
-                    Examle:<br>
-                    [ScriptInfo]<br>
-                    version = 0.1.1-alpha #Will be generated autmatically<br>
-                    <br>
-                    [Connection]<br>
-                    server = chiamgmt.example.com #Setup your servers domain here<br>
-                    port = 443 #Setup your servers secure port here<br>
-                    socketdir = /chat #Default is /chiamgmt. Needed for the websocket connection<br>
-                    type = wss #Default is wss. Please do not communication unsecured to your server<br>
-                    <br>
-                    [NodeInfo]<br>
-                    authhash = [somehash] #Will be generated.<br>
-                  </div>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-start">
-                  <div class="ms-2 me-auto">
-                    <div class="fw-bold">Execute the python node again</div>
-                    cd /path/to/your/installation<br>
-                    pyhton chia_mgmt_node.py
-                  </div>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-start">
-                  <div class="ms-2 me-auto">
-                    <div class="fw-bold">Follow the on screen instructions.</div>
-                    cd /path/to/your/installation<br>
-                    pyhton chia_mgmt_node.py
-                  </div>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-start">
-                  <div class="ms-2 me-auto">
-                    <div class="fw-bold">You are done.</div>
-                  </div>
-                </li>
-              </ol>
-            </div>
-          </div>
-        </div>
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="windowsInstructionHeading">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#windowsInstructionCollapse" aria-expanded="false" aria-controls="windowsInstructionCollapse">
-              <i class="fab fa-windows"></i>&nbsp;Install python node client on Windows
-            </button>
-          </h2>
-          <div id="windowsInstructionCollapse" class="accordion-collapse collapse" aria-labelledby="windowsInstructionHeading" data-bs-parent="#nodeInstallInstructions">
-            <div class="accordion-body">
-              The installer is currently not working on Windows because the main target for this project is Linux. So the installer was firstly made for Linux.<br>
-              If you want to help me to develop a Windows client, you are welcome! But no worries, it is in planning.
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  -->
   </div>
 </div>
 <div class="row">
@@ -395,12 +279,14 @@
         </button>
       </div>
       <div class="modal-body">
-        <nav>
-          <div class="nav nav-tabs" id="nav-tab" role="tablist">
-            <a class="nav-item nav-link active" id="node-infos-tab" data-toggle="tab" href="#node-infos" role="tab" aria-controls="node-infos" aria-selected="true">Node Info</a>
-            <a class="nav-item nav-link" id="node-commands-tab" data-toggle="tab" href="#node-commands" role="tab" aria-controls="node-commands" aria-selected="false">Update Node</a>
-          </div>
-        </nav>
+        <ul class="nav nav-tabs" id="node-info-navtabs" role="tablist">
+          <li class="nav-item">
+            <a class="nav-link active" id="node-infos-tab" data-toggle="tab" href="#node-infos" role="tab" aria-controls="node-infos" aria-selected="true">Node Info</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" id="node-commands-tab" data-toggle="tab" href="#node-commands" role="tab" aria-controls="node-commands" aria-selected="">Update Node</a>
+          </li>
+        </ul>
         <div class="tab-content" id="nav-tabContent" style="min-height: 30em; margin-top: 1em;">
           <!--Node infos-->
           <div class="tab-pane fade show active" id="node-infos" role="tabpanel" aria-labelledby="node-infos-tab">
