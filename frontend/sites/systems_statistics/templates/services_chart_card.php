@@ -15,7 +15,7 @@
 
     $alldatastated = true;
     if(!array_key_exists("nodeid", $_GET) || !array_key_exists("from", $_GET) || !array_key_exists("to", $_GET)){
-    $alldatastated = false;
+        $alldatastated = false;
     }
 
     $data = [
@@ -27,14 +27,10 @@
     $system_statistics_api = new System_Statistics_Api();
     $historyServicesData = $system_statistics_api->getNodeUPAndServicesHistory($data);
     if(array_key_exists("data", $historyServicesData) && array_key_exists($_GET["nodeid"], $historyServicesData["data"])){
-    $historyServicesData = $historyServicesData["data"][$_GET["nodeid"]];
+        $historyServicesData = $historyServicesData["data"][$_GET["nodeid"]];
     }else{
-    $historyServicesData = [];
+        $historyServicesData = [];
     }
-
-    /*echo "<pre style='color: white;'>";
-    print_r($historyServicesData);
-    echo "</pre>";*/
 
     echo "<script nonce={$ini["nonce_key"]}>
             historyServicesData[" . $_GET["nodeid"] . "] = " . json_encode($historyServicesData) . ";

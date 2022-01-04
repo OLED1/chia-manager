@@ -51,7 +51,7 @@
       <div class="col">
           <div class="card bg-success text-white shadow">
               <div class="card-body">
-                  No messages where found. Everythings looking fine.
+                  No messages found. Everything is looking fine.
               </div>
           </div>
       </div>

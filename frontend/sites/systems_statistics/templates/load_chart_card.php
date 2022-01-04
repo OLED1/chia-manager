@@ -31,11 +31,6 @@
     $historySystemsLoadData = [];
   }
 
-  /*echo "<pre>";
-  echo "ID: " . $_GET["nodeid"] . "<br>";
-  print_r($historySystemsLoadData[$_GET["nodeid"]]);
-  echo "</pre>";*/
-
   echo "<script nonce={$ini["nonce_key"]}>
             historySystemsLoadData[" . $_GET["nodeid"] . "] = " . json_encode($historySystemsLoadData) . ";
         </script>";

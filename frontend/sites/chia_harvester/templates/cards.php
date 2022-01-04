@@ -133,7 +133,7 @@
       </div>
       <?php } ?>
       <div class="card-footer">
-        Data updadated on: <span id="querydate_<?php echo "{$_GET["nodeid"]}"; ?>"><?php echo (!array_key_exists(array_key_first($harvesterdata["plotdirs"]), $harvesterdata["plotdirs"]) || is_null($harvesterdata["plotdirs"][array_key_first($harvesterdata["plotdirs"])]["mount_lastupdated"]) ? "Never" : $harvesterdata["plotdirs"][array_key_first($harvesterdata["plotdirs"])]["mount_lastupdated"]); ?></span>
+        Data updated on: <span id="querydate_<?php echo "{$_GET["nodeid"]}"; ?>"><?php echo (!array_key_exists(array_key_first($harvesterdata["plotdirs"]), $harvesterdata["plotdirs"]) || is_null($harvesterdata["plotdirs"][array_key_first($harvesterdata["plotdirs"])]["mount_lastupdated"]) ? "Never" : $harvesterdata["plotdirs"][array_key_first($harvesterdata["plotdirs"])]["mount_lastupdated"]); ?></span>
       </div>
     </div>
   </div>

@@ -89,7 +89,6 @@
         $this->updateChallenges($data["signage_points"], $loginData);
         return array("status" => 0, "message" => "Successfully updated farm information for node $nodeid.", "data" => ["nodeid" => $nodeid]);
       }catch(\Exception $e){
-        print_r(array("status" => 1, "message" => "An error occured: {$e->getMessage()}"));
         return $this->logging_api->getErrormessage("002", $e);
       }
     }
