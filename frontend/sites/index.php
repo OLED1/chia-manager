@@ -246,7 +246,8 @@
                   </h6>
                   <div id="alerts" style="max-height: 20em; overflow: auto;">
                   </div>
-                  <a class="dropdown-item text-center small text-gray-500" data-siteid=11 data-nav-target="nav-system-logging" href="/sites/logging">Show All Alerts</a>
+                  <a class="dropdown-item text-center small text-gray-500" data-siteid=11 data-nav-target="nav-system-logging" href="/sites/logging">Show all alerts</a>
+                  <a id="clear-all-alerts" class="dropdown-item text-center small text-gray-500" href="#" style="display: none;">Clear all alerts</a>
                 </div>
               </li>
               <li class="nav-item dropdown no-arrow">
