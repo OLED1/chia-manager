@@ -13,7 +13,7 @@
       "001" : [2, "An error occured."]
     },
     "messageSpecificNode" : {
-      "001" : [1, "No nodes online to inform."],
+      "001" : [1, "Specified node not online to inform."],
       "002" : [1, "Not all data stated."]
     },
     "messageAllNodes" : {
