@@ -173,6 +173,15 @@
       );
       $server->messageAllNodes($querydata);
 
+      //Query scriptversion, chiablockchainversion and blockchainpath
+      $querydata["data"] = [];
+      $querydata["data"]["get_script_version"] = array(
+        "status" => 0,
+        "message" => "Query chia node overall data.",
+        "data"=> []
+      );
+      $server->messageAllNodes($querydata);
+
       //Query current farmer/harvester/wallet status or all at once
       $this->processRequest($loginData, ["namespace" => "ChiaMgmt\Nodes\Nodes_Api", "method" => "queryNodesServicesStatus"], []);
 
