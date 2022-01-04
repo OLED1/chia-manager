@@ -42,7 +42,7 @@ $("#filter-apply").on("click", function(){
         sendToWSS("ownRequest", "ChiaMgmt\\System_Statistics\\System_Statistics_Api", "System_Statistics_Api", "getSystemsLoadHistory", { "from" : from, "to" : to });
         sendToWSS("ownRequest", "ChiaMgmt\\System_Statistics\\System_Statistics_Api", "System_Statistics_Api", "getFilesystemsHistory", { "from" : from, "to" : to });
         sendToWSS("ownRequest", "ChiaMgmt\\System_Statistics\\System_Statistics_Api", "System_Statistics_Api", "getRAMSwapHistory", { "from" : from, "to" : to });
-
+        sendToWSS("ownRequest", "ChiaMgmt\\System_Statistics\\System_Statistics_Api", "System_Statistics_Api", "getNodeUPAndServicesHistory", { "from" : from, "to" : to });
     }else{
         showMessage(1, "The from-date must be in the past to to-date.");
     }
@@ -708,17 +708,30 @@ function messagesTrigger(data){
         if(key == "getSystemsLoadHistory"){
             destroyLoadCharts();
             historySystemsLoadData = data[key]["data"];
-            initAndCreateLoadCharts();
+            setTimeout(function(){
+                initAndCreateLoadCharts();
+            }, 500);    
         }else if(key == "getFilesystemsHistory"){
             destroyFilesystemsCharts();
             historyFilesystemData = data[key]["data"];
-            initAndCreateFilesystemsChart();
+            setTimeout(function(){
+                initAndCreateFilesystemsChart();
+            }, 700); 
         }else if(key == "getRAMSwapHistory"){
             destroyRAMSwapCharts();
             historyMemoryData = data[key]["data"];
-            initAndCreateRAMCharts();
-            initAndCreateSWAPCharts();
-            initAndCreateBuffersCharts();
+            setTimeout(function(){
+                initAndCreateRAMCharts();
+                initAndCreateSWAPCharts();
+                initAndCreateBuffersCharts();
+            }, 500); 
+        }else if(key == "getNodeUPAndServicesHistory"){
+            $.each(data[key]["data"], function(nodeid, service_data){
+                var card_data = { "from" : from, "to" : to, "nodeid" : nodeid };
+                $.get(frontend + "/sites/systems_statistics/templates/services_chart_card.php", card_data, function(response) {
+                  $('#services_' + nodeid).html(response);
+                });
+            });
         }
     }else{
         showMessage(1, data[key]["message"]);
