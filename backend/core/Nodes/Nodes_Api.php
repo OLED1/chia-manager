@@ -4,6 +4,7 @@
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\WebSocket\WebSocket_Api;
   use ChiaMgmt\Encryption\Encryption_Api;
+  use ChiaMgmt\Chia_Overall\Chia_Overall_Api;
 
   /**
    * The Nodes_Api class contains every needed methods to manage all available nodes.
@@ -39,6 +40,11 @@
     private $encryption_api;
     /**
      * Holds an instance to the Webocket Server Class.
+     * @var Chia_Overall_Api
+     */
+    private $chia_overall_api;
+    /**
+     * Holds an instance to the Webocket Server Class.
      * @var WebSocketServer
      */
     private $server;
@@ -50,6 +56,7 @@
       $this->db_api = new DB_Api();
       $this->logging_api = new Logging_Api($this, $server);
       $this->encryption_api = new Encryption_Api();
+      $this->chia_overall_api = new Chia_Overall_Api();
       $this->server = $server;
     }
 
@@ -302,12 +309,12 @@
             $changeable = $sqldata[0]["changeable"];
 
             if($changeable){
-              $this->db_api->execute("DELETE FROM nodes WHERE id = ?", array($data["nodeid"]));
-              $this->db_api->execute("DELETE FROM nodes_up_status WHERE nodeid = ?", array($data["nodeid"]));
-              $this->db_api->execute("DELETE FROM nodetype WHERE id = ?", array($data["nodeid"]));
               $this->db_api->execute("DELETE FROM chia_farm WHERE id = ?", array($data["nodeid"]));
               $this->db_api->execute("DELETE FROM chia_farm_challenges WHERE id = ?", array($data["nodeid"]));
               $this->db_api->execute("DELETE FROM chia_infra_sysinfo WHERE id = ?", array($data["nodeid"]));
+              $this->db_api->execute("DELETE FROM nodes WHERE id = ?", array($data["nodeid"]));
+              $this->db_api->execute("DELETE FROM nodes_up_status WHERE nodeid = ?", array($data["nodeid"]));
+              $this->db_api->execute("DELETE FROM nodetype WHERE id = ?", array($data["nodeid"]));
               $this->db_api->execute("DELETE FROM chia_plots_directories WHERE id = ?", array($data["nodeid"]));
               $this->db_api->execute("DELETE FROM chia_wallets WHERE id = ?", array($data["nodeid"]));
               $this->db_api->execute("DELETE FROM chia_wallets_transactions WHERE id = ?", array($data["nodeid"]));
@@ -426,17 +433,7 @@
       $returndata = [];
       $returndata["available_channels"] = array_keys($version_file_data);
       $returndata["updateinfos"] = [];
-
-      //We need to use curl, because Amazon AWS wants a user Agent set to be able to download the chia release file
-      $chiaversionspath = "https://api.github.com/repos/Chia-Network/chia-blockchain/releases";
-      $ch = curl_init();
-      curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-      curl_setopt($ch, CURLOPT_URL, $chiaversionspath);
-      curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 6.2; WOW64; rv:17.0) Gecko/20100101 Firefox/17.0');
-      $chia_version_file_json = curl_exec($ch);
-      curl_close($ch);
-      $chia_version_file_data = json_decode($chia_version_file_json, true);
+      $overall_chia_data = $this->chia_overall_api->getOverallChiaData();
 
       try{
         if(array_key_exists("nodeid", $data) && is_numeric($data["nodeid"])){
@@ -448,16 +445,15 @@
         foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $nodedata){
           $returndata["updateinfos"][$nodedata["id"]] = $nodedata;
 
-          $returndata["updateinfos"][$nodedata["id"]]["updateavailable"] = 0;
+          $returndata["updateinfos"][$nodedata["id"]]["updateavailable"] =  2;
           if(array_key_exists($nodedata["updatechannel"], $version_file_data)){
-            $returndata["updateinfos"][$nodedata["id"]]["updateavailable"] =  2;
-            if(!is_null($nodedata["scriptversion"])) $returndata["updateinfos"][$nodedata["id"]]["updateavailable"] = version_compare($nodedata["scriptversion"], $version_file_data[$nodedata["updatechannel"]][0]["version"]);
+            if(!is_null($nodedata["scriptversion"])) $returndata["updateinfos"][$nodedata["id"]]["updateavailable"] = (int)version_compare($nodedata["scriptversion"], $version_file_data[$nodedata["updatechannel"]][0]["version"]);
             $returndata["updateinfos"][$nodedata["id"]]["remoteversion"] = $version_file_data[$nodedata["updatechannel"]][0]["version"];
           }
-          $returndata["updateinfos"][$nodedata["id"]]["chiaupdateavail"] = 0;
-          if(array_key_exists(0, $chia_version_file_data) && array_key_exists("name", $chia_version_file_data[0])){
-            $returndata["updateinfos"][$nodedata["id"]]["chiaupdateavail"] =  2;
-            if(!is_null($nodedata["chiaversion"])) $returndata["updateinfos"][$nodedata["id"]]["chiaupdateavail"] = version_compare($nodedata["chiaversion"], $chia_version_file_data[0]["name"]);
+
+          $returndata["updateinfos"][$nodedata["id"]]["chiaupdateavail"] =  2;
+          if(array_key_exists("data", $overall_chia_data) && array_key_exists("blockchain_version", $overall_chia_data["data"])){
+            if(!is_null($nodedata["chiaversion"])) $returndata["updateinfos"][$nodedata["id"]]["chiaupdateavail"] = (int)version_compare(trim($nodedata["chiaversion"]), trim($overall_chia_data["data"]["blockchain_version"]));
           }
         }
 

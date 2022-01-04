@@ -18,7 +18,8 @@
       "001" : [2, "External api returned an error."],
       "002" : [2, "External api returned an error."],
       "003" : [2, "External api returned no data."],
-      "004" : [2, "Could not query data from external api please check the log for more information."]
+      "004" : [2, "External api returned no data."],
+      "005" : [2, "Could not query data from external api please check the log for more information."]
     }
   }
 }

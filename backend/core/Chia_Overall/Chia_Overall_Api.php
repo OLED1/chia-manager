@@ -72,10 +72,11 @@
           if(count($sqdata) == 0 || $lastquerytime <= $now){
             $extapidata = $this->getDataFromExtApi();
 
-            if(!is_null($extapidata) && array_key_exists("data", $extapidata) && array_key_exists("netspace", $extapidata["data"]) && array_key_exists("chia_price", $extapidata["data"]) && array_key_exists("xch_blockheight", $extapidata["data"])){
+            if(!is_null($extapidata) && array_key_exists("data", $extapidata) && array_key_exists("netspace", $extapidata["data"]) && array_key_exists("chia_price", $extapidata["data"]) && array_key_exists("xch_blockheight", $extapidata["data"]) && array_key_exists("blockchain_version", $extapidata["data"])){
               $netspacedata = $extapidata["data"]["netspace"];
               $chia_price_usd = $extapidata["data"]["chia_price"]["usd"];
               $blockheightdata = $extapidata["data"]["xch_blockheight"];
+              $blockchainversion = $extapidata["data"]["blockchain_version"];
 
               if($extapidata["status"] == 0){
                 $sql = $this->db_api->execute("SELECT netspace FROM chia_overall WHERE querydate > DATE_SUB(NOW(), INTERVAL 24 HOUR) ORDER BY querydate ASC LIMIT 1", array());
@@ -96,8 +97,8 @@
                   $daychange_24h_percent = 0;
                 }
 
-                $sql = $this->db_api->execute("INSERT INTO chia_overall (id, daychange_percent, netspace, xch_blockheight, netspace_timestamp, price_usd, daymin_24h_usd, daymax_24h_usd, daychange_24h_percent, market_timestamp, querydate) VALUES(NULL, ?, ?, ?, NOW(), ?, ?, ?, ?, NOW(), NOW())",
-                                                array($daychange_percent, $netspacedata, $blockheightdata,
+                $sql = $this->db_api->execute("INSERT INTO chia_overall (id, blockchain_version, daychange_percent, netspace, xch_blockheight, netspace_timestamp, price_usd, daymin_24h_usd, daymax_24h_usd, daychange_24h_percent, market_timestamp, querydate) VALUES(NULL, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, NOW(), NOW())",
+                                                array($blockchainversion, number_format($daychange_percent,4), $netspacedata, $blockheightdata,
                                                 $chia_price_usd, $daymin_24h_usd, $daymax_24h_usd, $daychange_24h_percent)
                                               );
               }else{
@@ -128,7 +129,7 @@
     {
       try{
         if(is_null($fromtime)){
-          $sql = $this->db_api->execute("SELECT daychange_percent, netspace, xch_blockheight, netspace_timestamp, price_usd, daymin_24h_usd, daymax_24h_usd, daychange_24h_percent, market_timestamp, querydate FROM chia_overall WHERE querydate = (SELECT MAX(querydate) FROM chia_overall)", array());
+          $sql = $this->db_api->execute("SELECT blockchain_version, daychange_percent, netspace, xch_blockheight, netspace_timestamp, price_usd, daymin_24h_usd, daymax_24h_usd, daychange_24h_percent, market_timestamp, querydate FROM chia_overall WHERE querydate = (SELECT MAX(querydate) FROM chia_overall)", array());
           $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
 
           if(array_key_exists("0", $sqdata)){
@@ -155,40 +156,59 @@
     {
       $overall = true;
 
+      //XCHSCAN API Netspace
       $curl = curl_init();
       curl_setopt($curl, CURLOPT_POST, 1);
-
-      //XCHSCAN API Netspace
       curl_setopt($curl, CURLOPT_URL, "{$this->ini["xchscan_api"]}/netspace");
       curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
       curl_setopt($curl, CURLOPT_TIMEOUT_MS, 2000);
       $xch_netspace_result = json_decode(curl_exec($curl), true);
+      curl_close($curl);
       //XCHSCAN API Chia Price
+      $curl = curl_init();
+      curl_setopt($curl, CURLOPT_POST, 1);
       curl_setopt($curl, CURLOPT_URL, "{$this->ini["xchscan_api"]}/chia-price");
       curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
       curl_setopt($curl, CURLOPT_TIMEOUT_MS, 2000);
       $xch_chiaprice_result = json_decode(curl_exec($curl), true);
+      curl_close($curl);
       //XCHSCAN API Blockheight
+      $curl = curl_init();
+      curl_setopt($curl, CURLOPT_POST, 1);
       curl_setopt($curl, CURLOPT_URL, "{$this->ini["xchscan_api"]}/blocks?limit=10&offset=0");
       curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
       curl_setopt($curl, CURLOPT_TIMEOUT_MS, 2000);
       $xch_height_result = json_decode(curl_exec($curl), true);
-
+      curl_close($curl);
+      //Chia Github Versionfile      $curl = curl_init();
+      $curl = curl_init();
+      $chiaversionspath = "https://api.github.com/repos/Chia-Network/chia-blockchain/releases";
+      curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+      curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+      curl_setopt($curl, CURLOPT_URL, $chiaversionspath);
+      //We need to use curl, because Amazon AWS wants a user Agent set to be able to download the chia release file
+      curl_setopt($curl, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 6.2; WOW64; rv:17.0) Gecko/20100101 Firefox/17.0');
+      $chia_version_result = json_decode(curl_exec($curl), true);
       curl_close($curl);
 
       if(is_null($xch_netspace_result) || !array_key_exists("netspace", $xch_netspace_result)){
         $overall = false;
-        $this->logging_api->getErrormessage("001", "The external api {$this->ini["xchscan_api"]} returned an error on netspace query.");
+        $this->logging_api->getErrormessage("001", "The external api {$this->ini["xchscan_api"]} returned an error on netspace query. Message: " . json_encode($xch_netspace_result));
       }
 
       if(is_null($xch_chiaprice_result) || !array_key_exists("usd", $xch_chiaprice_result)){
         $overall = false;
-        $this->logging_api->getErrormessage("002", "The external api {$this->ini["xchscan_api"]} returned an error on price query.");
+        $this->logging_api->getErrormessage("002", "The external api {$this->ini["xchscan_api"]} returned an error on price query. Message: " . json_encode($xch_chiaprice_result));
       }
 
-      if(is_null($xch_height_result) || !array_key_exists("blocks", $xch_height_result) && !array_key_exists(0, $xch_height_result["blocks"])){
+      if(is_null($xch_height_result) || !array_key_exists("blocks", $xch_height_result) && is_null($xch_height_result[0]) || !array_key_exists(0, $xch_height_result["blocks"])){
         $overall = false;
-        $this->logging_api->getErrormessage("003", "The external api {$this->ini["xchscan_api"]} returned an empty output on block query.");
+        $this->logging_api->getErrormessage("003", "The external api {$this->ini["xchscan_api"]} returned an empty output on block query. Message: " . json_encode($xch_height_result));
+      }
+
+      if(is_null($chia_version_result) || !array_key_exists(0, $chia_version_result) || !array_key_exists("name", $chia_version_result[0])){
+        $overall = false;
+        $this->logging_api->getErrormessage("004", "The chia github version file ({$chiaversionspath}) could not be loaded. Message: " . json_encode($chia_version_result));
       }
 
       if($overall){
@@ -196,11 +216,12 @@
         $suffix = array("", " kiB", " MiB", " GiB", " TiB", " PiB", " EiB")[floor($base)];
         $xch_netspace_result["netspace"] = number_format(pow(1024, $base - floor($base)),2) . $suffix;
         $xch_height_result = $xch_height_result["blocks"][0]["height"];
+        $chia_blockchain_version = $chia_version_result[0]["name"];
         $nowdate = new \DateTime("now");
 
-        return array("status" => 0, "message" => "Data from external api queried successfully.", "data" => array("netspace" => $xch_netspace_result["netspace"], "chia_price" => $xch_chiaprice_result, "xch_blockheight" => $xch_height_result, "timestamp" => $nowdate->format("Y-m-d H:i:s")));
+        return array("status" => 0, "message" => "Data from external api queried successfully.", "data" => array("netspace" => $xch_netspace_result["netspace"], "chia_price" => $xch_chiaprice_result, "xch_blockheight" => $xch_height_result, "blockchain_version" => $chia_blockchain_version, "timestamp" => $nowdate->format("Y-m-d H:i:s")));
       }else{
-        return $this->logging_api->getErrormessage("004");
+        return $this->logging_api->getErrormessage("005");
       }
     }
   }

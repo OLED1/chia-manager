@@ -115,8 +115,10 @@ function recreateConfiguredClients(){
 function formatScriptInfoWithUpdate(nodeid, type){
   if(nodeid in scriptupdatesavail["updateinfos"]){
     var nodeupdate = scriptupdatesavail["updateinfos"][nodeid];
-    if(type == 0) return nodeupdate["scriptversion"] + "<br><span id='table_script_updateavail_" + nodeid + "'>" + getUpdateAvailableBadge(nodeupdate["updateavailable"], type) + "</span>";
-    else if(type == 1) return nodeupdate["chiaversion"] + "<br><span table_chia_updateavail_>" + getUpdateAvailableBadge(nodeupdate["chiaupdateavail"], type) + "</span>";
+    var scriptversion = (nodeupdate["scriptversion"] === undefined || nodeupdate["scriptversion"] === null ? "Not reported." : nodeupdate["scriptversion"]);
+    var chiaversion = (nodeupdate["chiaversion"] === undefined || nodeupdate["chiaversion"] === null ? "Not reported." : nodeupdate["chiaversion"]);
+    if(type == 0) return scriptversion + "<br><span id='table_script_updateavail_" + nodeid + "'>" + getUpdateAvailableBadge(nodeupdate["updateavailable"], type) + "</span>";
+    else if(type == 1) return chiaversion + "<br><span table_chia_updateavail_>" + getUpdateAvailableBadge(nodeupdate["chiaupdateavail"], type) + "</span>";
   }else{
     return "-";
   }
@@ -469,6 +471,8 @@ function messagesTrigger(data){
         sendToWSS("ownRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getSystemInfo", { "nodeid": data[key]["data"]["nodeid"] });
       }
       reinit = false;
+    }else if(key == "updateScriptVersion"){
+      sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "checkUpdatesAndChannels", {});
     }else if(key == "checkUpdatesAndChannels"){
       var nodeupdatedata = data[key]["data"]["updateinfos"];
       $.each(nodeupdatedata, function(nodeid, updatedata){
