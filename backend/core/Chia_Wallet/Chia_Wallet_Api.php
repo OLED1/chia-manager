@@ -235,7 +235,7 @@
 
         return array("status" =>0, "message" => "Successfully loaded chia wallet information.", "data" => $returndata);
       }catch(\Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
 
@@ -259,8 +259,7 @@
         }else if(!is_null($data) && array_key_exists("nodeid", $data)){
           $sql = $this->db_api->execute("SELECT id, nodeid, wallet_id, parent_coin_info, amount, amount, confirmed, confirmed_at_height, created_at_time, fee_amount, name, removals, sent, sent_to, spend_bundle, to_address, to_puzzle_hash, trade_id, type FROM chia_wallets_transactions WHERE nodeid = ? ORDER BY created_at_time ASC", array($data["nodeid"]));
         }else{
-          //TODO Implement correct status codes
-          return array("status" => 1, "message" => "No data found.");
+          return $this->logging_api->getErrormessage("001");
         }
 
         foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $transactiondata){
@@ -274,7 +273,7 @@
 
         return array("status" =>0, "message" => "Successfully loaded chia wallet information.", "data" => $returndata);
       }catch(\Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("002", $e);
       }
     }
 
@@ -330,19 +329,23 @@
      */
     public function restartWalletService(array $data = NULL, array $loginData = NULL, $server = NULL): array
     {
-      $querydata = [];
-      $querydata["data"]["restartWalletService"] = array(
-        "status" => 0,
-        "message" => "Restart wallet service.",
-        "data"=> array()
-      );
-      $querydata["nodeinfo"]["authhash"] = $data["authhash"];
-
-      if(!is_null($server)){
-        return $server->messageSpecificNode($querydata);
+      if(array_key_exists("authhash", $data)){
+        $querydata = [];
+        $querydata["data"]["restartWalletService"] = array(
+          "status" => 0,
+          "message" => "Restart wallet service.",
+          "data"=> array()
+        );
+        $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+  
+        if(!is_null($server)){
+          return $server->messageSpecificNode($querydata);
+        }else{
+          $this->websocket_api = new WebSocket_Api();
+          return $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
+        }
       }else{
-        $this->websocket_api = new WebSocket_Api();
-        return $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
+        return $this->logging_api->getErrormessage("001");
       }
     }
 
@@ -364,7 +367,7 @@
         $data["data"] = $nodeid;
         return array("status" =>0, "message" => "Successfully queried wallet service restart for node $nodeid.", "data" => $data);
       }catch(\Exception $e){
-        return $this->logging->getErrormessage("001", $e);
+        return $this->logging_api->getErrormessage("001", $e);
       }
     }
   }

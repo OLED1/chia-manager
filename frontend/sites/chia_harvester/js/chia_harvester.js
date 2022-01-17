@@ -40,7 +40,7 @@ function initRestartHarvesterService(){
   $(".restartHarvesterService").on("click", function(e){
     e.preventDefault();
     var nodeid = $(this).attr("data-node-id");
-    var authhash = chiaHarvesterData[nodeid]["nodeauthhash"];
+    var authhash = chiaNodes[nodeid]["nodeauthhash"];
     var dataforclient = {
       "nodeid" : nodeid,
       "authhash": authhash
@@ -76,8 +76,8 @@ function setServiceBadge(){
       statustext = "Node not reachable";
       statusicon = "badge-danger";
     }else if(nodedata["onlinestatus"]["status"] == 1){
-      servicestate = nodedata["services"][3]["servicestate"];
-      servicedesc =  nodedata["services"][3]["service_desc"];
+      servicestate = nodedata["services"][4]["servicestate"];
+      servicedesc =  nodedata["services"][4]["service_desc"];
       if(servicestate == 0){
         statustext = servicedesc + " service not running";
         statusicon = "badge-danger";

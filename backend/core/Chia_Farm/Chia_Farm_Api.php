@@ -180,19 +180,23 @@
      */
     public function restartFarmerService(array $data = NULL, array $loginData = NULL, $server = NULL): array
     {
-      $querydata = [];
-      $querydata["data"]["restartFarmerService"] = array(
-        "status" => 0,
-        "message" => "Restart farmer service.",
-        "data"=> array()
-      );
-      $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+      if(array_key_exists("authhash", $data)){
+        $querydata = [];
+        $querydata["data"]["restartFarmerService"] = array(
+          "status" => 0,
+          "message" => "Restart farmer service.",
+          "data"=> array()
+        );
+        $querydata["nodeinfo"]["authhash"] = $data["authhash"];
 
-      if(!is_null($server)){
-        return $server->messageSpecificNode($querydata);
+        if(!is_null($server)){
+          return $server->messageSpecificNode($querydata);
+        }else{
+          $this->websocket_api = new WebSocket_Api();
+          return $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
+        }
       }else{
-        $this->websocket_api = new WebSocket_Api();
-        return $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
+        return $this->logging_api->getErrormessage("001");
       }
     }
 

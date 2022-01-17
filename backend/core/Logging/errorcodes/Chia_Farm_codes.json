@@ -2,9 +2,10 @@
   "functioncodes" : {
     "updateFarmData" : "001",
     "getFarmData" : "002",
-    "farmerServiceRestart" : "003",
-    "updateChallenges" : "004",
-    "getAllChallenges" : "005"
+    "restartFarmerService" : "003",
+    "farmerServiceRestart" : "004",
+    "updateChallenges" : "005",
+    "getAllChallenges" : "006"
   },
   "errormessages" : {
     "updateFarmData" : {
@@ -13,6 +14,9 @@
     },
     "getFarmData" : {
       "001" : [2, "An error occured."]
+    },
+    "restartFarmerService" : {
+      "001" : [2, "Not all data stated. Missing authhash."]
     },
     "farmerServiceRestart" : {
       "001" : [2, "An error occured."]

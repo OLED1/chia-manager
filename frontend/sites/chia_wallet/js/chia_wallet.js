@@ -199,8 +199,7 @@ function initRestartWalletService(){
   $(".restartWalletService").on("click", function(e){
     e.preventDefault();
     var nodeid = $(this).attr("data-node-id");
-    var walletid = $(this).attr("data-wallet-id");
-    var authhash = chiaWalletData[nodeid][walletid]["nodeauthhash"];
+    var authhash = chiaNodes[nodeid]["nodeauthhash"];
 
     var dataforclient = {
       "nodeid" : nodeid,

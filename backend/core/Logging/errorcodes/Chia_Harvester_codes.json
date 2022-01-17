@@ -4,8 +4,9 @@
     "updateFoundPlots" : "002",
     "getFoundPlots" : "003",
     "getHarvesterData" : "004",
-    "harvesterStatus" : "005",
-    "harvesterServiceRestart" : "006"
+    "restartHarvesterService" : "005",
+    "harvesterStatus" : "006",
+    "harvesterServiceRestart" : "007"
   },
   "errormessages" : {
     "updateHarvesterData" : {
@@ -19,6 +20,9 @@
     },
     "getHarvesterData" : {
       "001" : [2, "An error occured."]
+    },
+    "restartHarvesterService" : {
+      "001" : [1, "Not all data stated. Missing authhash."]
     },
     "harvesterStatus" : {
       "001" : [2, "An error occured."]
