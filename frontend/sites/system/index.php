@@ -124,6 +124,7 @@
                   <div class="dropdown-menu" aria-labelledby="updateDropdownMenu">
                     <button class="dropdown-item updatechannel wsbutton" data-branch="main" href="#">Stable</button>
                     <button class="dropdown-item updatechannel wsbutton" data-branch="staging" href="#">Staging</button>
+                    <button class="dropdown-item updatechannel wsbutton" data-branch="alpha" href="#">Alpha</button>
                     <button class="dropdown-item updatechannel wsbutton" data-branch="dev" href="#">Development</button>
                   </div>
                 </div>
@@ -318,7 +319,7 @@
               <div class="col mb-4">
                 <p>Change newest project version, update dbversion and set default values for the db_update.json.</p>
                 <label for="new-project-version">New project version (e.g. x.y.z.[YYMMDD] or x.y.z)</label>
-                <input id="new-project-version" class="form-control" type="text" placeholder="0.1.1.211027">
+                <input id="new-project-version" class="form-control" type="text" placeholder="0.1.alpha.1">
               </div>
             </div>
             <div class="row">

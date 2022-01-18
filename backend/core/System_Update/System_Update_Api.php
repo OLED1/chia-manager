@@ -86,37 +86,37 @@
      * @param  array $loginData   { NULL } No logindata is needed query this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [Available updateinformation]}
      */
-    public function checkForUpdates(array $data = [], array $loginData = NULL, array $updatechannel = NULL): array
+    public function checkForUpdates(array $data = [], array $loginData = NULL): array
     {
-      if(is_Null($updatechannel)){
+      if(!array_key_exists("updatechannel", $data)){
         $system_api = new System_Api();
         $updatechannel = $system_api->getSpecificSystemSetting("updatechannel");
-      }
 
-      if(array_key_exists("updatechannel", $updatechannel["data"])){
-        $updatechannel = $updatechannel["data"]["updatechannel"]["branch"]["value"];
-      }else{ $updatechannel = "main"; }
+        if(array_key_exists("updatechannel", $updatechannel["data"])){
+          $updatechannel = $updatechannel["data"]["updatechannel"]["branch"]["value"];
+        }else{ $updatechannel = "main"; }
+      }
 
       $url = "https://files.chiamgmt.edtmair.at/server/versions.json";
       $json = file_get_contents($url);
       $json_data = json_decode($json, true);
 
-      if(array_key_exists($updatechannel, $json_data)){
-        if(array_key_exists("0", $json_data[$updatechannel])){
+      if(!is_null($updatechannel) && !is_null($json_data) && array_key_exists($updatechannel, $json_data)){
+        if(array_key_exists("0", array_keys($json_data[$updatechannel]))){
+          $remoteversion = array_keys($json_data[$updatechannel])[0];
           $myversion = $this->ini["versnummer"];
-          $remoteversion = $json_data[$updatechannel][0]["version"];
 
-          if(version_compare($myversion, $remoteversion) < 0) $updateavailable = true;
+          if(version_compare($myversion, trim($remoteversion)) < 0) $updateavailable = true;
           else $updateavailable = false;
 
           return array("status" => 0, "message" => "Successfully loaded updatedata and versions.", "data" => array("localversion" => $myversion, "remoteversion" => $remoteversion, "updateavail" => $updateavailable, "updatechannel" => $updatechannel));
         }else{
-          $returndata = $this->logging_api->getErrormessage("001");
+          $returndata = $this->logging_api->getErrormessage("002");
           $returndata["data"] = array("localversion" => $this->ini["versnummer"], "updatechannel" => $updatechannel);
-          return $returndata;
         }
+        return $returndata;
       }else{
-        return $this->logging_api->getErrormessage("002", "Updatechannel {$updatechannel} not found.");
+        return $this->logging_api->getErrormessage("003", "Updatechannel {$updatechannel} not found.");
       }
     }
 

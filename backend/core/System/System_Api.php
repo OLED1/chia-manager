@@ -195,8 +195,7 @@
      */
     public function checkForUpdates(array $data = [], array $loginData = NULL): array
     {
-      $updatechannel = $this->getSpecificSystemSetting("updatechannel");
-      return $this->system_update_api->checkForUpdates($data, $loginData, $updatechannel);
+      return $this->system_update_api->checkForUpdates($data, $loginData);
     }
 
     /**

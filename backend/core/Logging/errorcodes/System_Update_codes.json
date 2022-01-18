@@ -16,7 +16,7 @@
       "002" : [2, "No all data stated."]
     },
     "checkForUpdates" : {
-      "001" : [2, "No versions available."],
+      "001" : [1, "No versions available."],
       "002" : [2, "Configured updatechannel not found."]
     },
     "checkUpdateRoutine" : {
