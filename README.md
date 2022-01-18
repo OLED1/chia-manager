@@ -27,12 +27,12 @@ Currently you are able to view the following read-only information partially rec
 - Node system information (Filesystems, RAM and SWAP information and System Load)
 - Wallet Information (Syncstatus, Owning XCH, etc.)
 - Farm Information (Farminstatus and every corresponding information)
-- Harvester Information (Configures Plot directories and used space, Plots you are currently owning)
+- Harvester Information (Configured Plot directories and used space, Plots you are currently owning)
 - Many more features will be offered in future releases.
 
 ## How does this project work? - From where does the webgui get the data?
 This project consists of two main parts. The so-called **node-client** and the **Web-GUI**.
-The **node-client** gets his data with the help of **Chia Blockchain CLI** and formats them for the Web-GUI.
+The **node-client** gets his data by using the locally running socalled RPC Api, which requires the services locally available.
 **No electron GUI needed!**
 To be able to query current data from your infrastructure you need to install the python based node-client on every node in your infrastructure. This node-client will connect to the API which is offered through a **bidirectional and encrypted web-socket** connection.
 
@@ -44,12 +44,12 @@ The Web-GUI should always show up-to-date and live queried data, if available.
 We are working hard to make a real live web based application.
 
 ## WTF?! Why only Linux?
-We developers have only Linux desktops and we decided to make the really first version of the node-client only for Linux.
+We developers are having only Linux desktops currently running and we decided to make the really first version of the node-client only for Linux.
 Otherwise we were not able to release the first version of this project just in time.
 
-But it is planning, promised!
+But it is in planning, promised!
 
-The web-gui should run on a Linux server anyway.
+The web-gui should run on a Linux server anyway as any other web based application.
 
 ## Current (key)features
 - Almost read only management via web-gui
@@ -62,7 +62,7 @@ The web-gui should run on a Linux server anyway.
     - Harvester overview like Node/service stats and a list of not mounted directories
     - Your assets are converted into your preferred currency
   - Nodes Page
-    - Manage your Chia Nodes. Accept and deny node requests. Update the node client script fully automatically.
+    - Manage your Chia Nodes. Accept and deny node requests.
   - Infra Sysinfo
     - Get the latest available system information from you host systems. **Filesystem spaces**, **RAM and SWAP** and **Load information**.
   - Wallet
@@ -77,9 +77,8 @@ The web-gui should run on a Linux server anyway.
 - Full management via webgui
   - Update and restart the host system
   - Update your chia version fully automatically
-  - Send and receive money via the Web-GUI secured through a second factor
   - Detect and check your plots periodically
-  - Manage Windows systems too
+  - Manage MS Windows systems too
 - Complete monitoring
   - Get an email if a service or server is not running or recently died
   - Be able to detect immediately if you might lose money
