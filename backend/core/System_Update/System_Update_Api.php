@@ -45,6 +45,7 @@
      */
     public function __construct(object $server = NULL){
       $config_file = __DIR__.'/../../config/config.ini.php';
+      $this->ini = NULL;
       if(file_exists($config_file)){
         $this->ini = parse_ini_file($config_file);
         if(array_key_exists("db_name", $this->ini)){
@@ -130,7 +131,7 @@
     public function checkUpdateRoutine(): array
     {
       try{
-        if(is_null($this->ini) && !array_key_exists("db_name", $this->ini)) return array("status" => 0, "message" => "Successfully queried system update state.", "data" => array("db_install_needed" => true));
+        if(is_null($this->ini)) return array("status" => 0, "message" => "Successfully queried system update state.", "data" => array("db_install_needed" => true));
 
         $sql = $this->db_api->execute("SHOW TABLES LIKE 'system_infos'", array());
         $tablefound = $sql->fetchAll(\PDO::FETCH_ASSOC);
