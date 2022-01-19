@@ -149,7 +149,8 @@
             <h6 class="m-0 font-weight-bold text-primary">E-Mail Server Settings</h6>
           </div>
           <div class="card-body">
-            <p>If you want to be able to send e-mails via this instance like password resets or (alert) messages, you can set it up here.</p>
+            <p>If you want to be able to send e-mails via this instance like password resets or (alert) messages, you can set it up here.<br>
+            Please note: Sendmail is currenty not working.</p>
             <form id="mailsetupform">
               <div class="row">
                 <div class="col col col-sm-3 col-md-2 col-lg-2 col-xl-6">
@@ -157,8 +158,8 @@
                     <div class="input-group-prepend">
                       <span class="input-group-text">Send Method</span>
                       <select class="form-control" name="sendmethod" id="sendmethod">
-                        <option id="smtp" value="smtp" <?php if($mailsettings["sendmethod"]["value"] == "smtp" || $mailsettings["sendmethod"]["value"] == NULL) echo "selected"; ?>>SMTP</option>
-                        <option id="sendmail" value="sendmail" <?php if($mailsettings["sendmethod"]["value"] == "sendmail") echo "selected"; ?>>Sendmail</option>
+                        <option id="smtp" value="smtp" <?php if(array_key_exists("sendmethod", $mailsettings) && ($mailsettings["sendmethod"]["value"] == "smtp" || $mailsettings["sendmethod"]["value"] == NULL)) echo "selected"; ?>>SMTP</option>
+                        <option id="sendmail" value="sendmail" <?php if(array_key_exists("sendmethod", $mailsettings) && $mailsettings["sendmethod"]["value"] == "sendmail") echo "selected"; ?>>Sendmail</option>
                       </select>
                     </div>
                   </div>
@@ -170,14 +171,14 @@
                     <div class="input-group-prepend">
                       <span class="input-group-text">Security</span>
                       <select class="form-control" name="security" id="security">
-                        <option value="" <?php if($mailsettings["security"]["value"] == NULL) echo "selected"; ?>>None</option>
-                        <option value="ssl_tls" <?php if($mailsettings["security"]["value"] == "ssl_tls") echo "selected"; ?>>SSL/TLS</option>
-                        <option value="starttls" <?php if($mailsettings["security"]["value"] == "starttls") echo "selected"; ?>>STARTTLS</option>
+                        <option value="" <?php if(array_key_exists("security", $mailsettings) && $mailsettings["security"]["value"] == NULL) echo "selected"; ?>>None</option>
+                        <option value="ssl_tls" <?php if(array_key_exists("security", $mailsettings) && $mailsettings["security"]["value"] == "ssl_tls") echo "selected"; ?>>SSL/TLS</option>
+                        <option value="starttls" <?php if(array_key_exists("security", $mailsettings) && $mailsettings["security"]["value"] == "starttls") echo "selected"; ?>>STARTTLS</option>
                       </select>
                     </div>
                   </div>
                 </div>
-                <div class="col col-sm col-md col-lg col-xl sendmail" <?php if($mailsettings["sendmethod"]["value"] != "sendmail") echo "style='display: none;'"; ?>>
+                <div class="col col-sm col-md col-lg col-xl sendmail" <?php if(!array_key_exists("sendmethod", $mailsettings) || (array_key_exists("sendmethod", $mailsettings) && $mailsettings["sendmethod"]["value"] != "sendmail") ) echo "style='display: none;'"; ?>>
                   <div class="input-group mb-3">
                     <div class="input-group-prepend">
                       <span class="input-group-text">Sendmail mode</span>
@@ -195,9 +196,9 @@
                   <div class="input-group mb-3">
                     <div class="input-group-prepend">
                       <span class="input-group-text">From address</span>
-                      <input id="fromuser" name="fromuser" type="text" class="form-control" aria-label="user" placeholder="user" value="<?php echo $mailsettings["fromuser"]["value"]; ?>">
+                      <input id="fromuser" name="fromuser" type="text" class="form-control" aria-label="user" placeholder="user" value="<?php if(array_key_exists("fromuser", $mailsettings)) echo $mailsettings["fromuser"]["value"]; ?>">
                       <span class="input-group-text">@</span>
-                      <input id="domain" name="domain" type="text" class="form-control" aria-label="example.com" placeholder="example.com" value="<?php echo $mailsettings["domain"]["value"]; ?>">
+                      <input id="domain" name="domain" type="text" class="form-control" aria-label="example.com" placeholder="example.com" value="<?php if(array_key_exists("domain", $mailsettings)) echo $mailsettings["domain"]["value"]; ?>">
                     </div>
                   </div>
                 </div>
@@ -208,9 +209,9 @@
                     <div class="input-group-prepend">
                       <span class="input-group-text">Auth Method</span>
                       <select class="form-control" name="authmethod" id="authmethod">
-                        <option value="" <?php if($mailsettings["authmethod"]["value"] == NULL) echo "selected"; ?>>None</option>
-                        <option value="login" <?php if($mailsettings["authmethod"]["value"] == "login") echo "selected"; ?>>Login</option>
-                        <option value="plain" <?php if($mailsettings["authmethod"]["value"] == "plain") echo "selected"; ?>>Plain</option>
+                        <option value="" <?php if(!array_key_exists("authmethod", $mailsettings) || $mailsettings["authmethod"]["value"] == NULL) echo "selected"; ?>>None</option>
+                        <option value="login" <?php if(array_key_exists("authmethod", $mailsettings) && $mailsettings["authmethod"]["value"] == "login") echo "selected"; ?>>Login</option>
+                        <option value="plain" <?php if(array_key_exists("authmethod", $mailsettings) && $mailsettings["authmethod"]["value"] == "plain") echo "selected"; ?>>Plain</option>
                       </select>
                     </div>
                   </div>
@@ -221,9 +222,9 @@
                   <div class="input-group mb-3">
                     <div class="input-group-prepend">
                       <span class="input-group-text">Server address</span>
-                      <input id="mailserverdomain" name="mailserverdomain" type="text" class="form-control" aria-label="mail.example.com" placeholder="mail.example.com" value="<?php echo $mailsettings["mailserverdomain"]["value"]; ?>">
+                      <input id="mailserverdomain" name="mailserverdomain" type="text" class="form-control" aria-label="mail.example.com" placeholder="mail.example.com" value="<?php if(array_key_exists("mailserverdomain", $mailsettings)) echo $mailsettings["mailserverdomain"]["value"]; ?>">
                       <span class="input-group-text">:</span>
-                      <input id="mailserverport" name="mailserverport" type="number" class="form-control" aria-label="465"  placeholder="465" value="<?php echo $mailsettings["mailserverport"]["value"]; ?>">
+                      <input id="mailserverport" name="mailserverport" type="number" class="form-control" aria-label="465"  placeholder="465" value="<?php if(array_key_exists("mailserverport", $mailsettings)) echo $mailsettings["mailserverport"]["value"]; ?>">
                     </div>
                   </div>
                 </div>
@@ -233,7 +234,7 @@
                   <div class="input-group mb-3">
                     <div class="input-group-prepend">
                       <span class="input-group-text">Credentials</span>
-                      <input id="loginname" name="loginname" type="text" class="form-control" aria-label="user" placeholder="username" value="<?php echo $mailsettings["loginname"]["value"]; ?>">
+                      <input id="loginname" name="loginname" type="text" class="form-control" aria-label="user" placeholder="username" value="<?php if(array_key_exists("loginname", $mailsettings)) echo $mailsettings["loginname"]["value"]; ?>">
                       <span class="input-group-text">//</span>
                       <input id="loginpassword" name="loginpassword" type="password" class="form-control" aria-label="example.com" placeholder="password" value="*******">
                     </div>
@@ -262,7 +263,7 @@
             <div class="row">
               <div class="col smtp">
                 <button type="button" class="btn btn-primary wsbutton" id="save-mail-settings">Save settings<i class="fas fa-spinner fa-spin" style="display: none;"></i></button>
-                <button type="button" class="btn btn-success wsbutton" id="send-testmail" <?php if($mailsettings["sendmethod"]["value"] == NULL) echo "disabled"; ?>>Send Testmail</button>
+                <button type="button" class="btn btn-success wsbutton" id="send-testmail" <?php if(array_key_exists("sendmethod", $mailsettings) && $mailsettings["sendmethod"]["value"] == NULL) echo "disabled"; ?>>Send Testmail</button>
               </div>
             </div>
           </div>

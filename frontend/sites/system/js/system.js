@@ -8,7 +8,7 @@ $(function(){
 
   $("#sendmail").on("click",function(){
     $(".smtp").hide();
-    $(".sendmail").text("You must fill out this form completely.").show();
+    showErrorMessage("mailsetuperror","This option is currently not implemented.");
   });
 
   $("#smtp").on("click",function(){

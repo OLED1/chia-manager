@@ -64,6 +64,8 @@
         $sql = $this->db_api->execute("SELECT querydate FROM chia_overall WHERE querydate = (SELECT MAX(querydate) FROM chia_overall)", array());
         $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
 
+        if(count($sqdata) == 0) return $this->getOverallChiaData();
+
         $now = new \DateTime("now");
         $lastquerytime = new \DateTime($sqdata[0]["querydate"]);
         $lastquerytime->modify("+2 minutes");

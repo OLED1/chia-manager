@@ -1,0 +1,30 @@
+Header set X-Content-Type-Options nosniff
+Header set Content-Security-Policy "script-src 'self';"
+Header set Content-Security-Policy "script-src 'nonce-[nonce]';"
+
+Header set X-Content-Security-Policy "script-src 'self';"
+Header set X-WebKit-CSP "script-src 'self';"
+
+Header append X-FRAME-OPTIONS "SAMEORIGIN"
+Header always set X-XSS-Protection "1;  mode=block"
+
+Header always edit Set-Cookie (.*) "$1; HttpOnly; Secure"
+
+
+ErrorDocument 401 /frontend/error.php?code=401
+ErrorDocument 403 /frontend/error.php?code=403
+ErrorDocument 404 /frontend/error.php?code=404
+ErrorDocument 500 /frontend/error.php?code=500
+
+Options All -Indexes
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{QUERY_STRING} ^.*(;|<|>|'|"|\)|%0A|%0D|%22|%27|%3C|%3E|%00).*(/\*|union|select|insert|cast|set|declare|drop|update|md5|benchmark).* [NC]
+  RewriteRule .* - [F]
+
+  RedirectMatch 403 ^/backup/.*$
+  RedirectMatch 403 ^/logs/.*$
+  RedirectMatch 403 ^/vendor/.*$
+  RedirectMatch 403 \.(json|lock|md)$
+</IfModule>

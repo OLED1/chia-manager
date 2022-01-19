@@ -248,54 +248,42 @@
       $version_file_json = file_get_contents("{$updatepackagepath}/versions.json");
       $version_file_data = json_decode($version_file_json, true);
 
-      $version = $version_file_data[$branch][0]["version"];
+      $version = array_keys($version_file_data[$branch])[0];
       if(is_null($version)){
         $returnarray["data"]["config_file"] = array("status" => 1, "message" => "Error during version number query.");
         array_push($returnarray["data"]["config_file"]["data"], array("status" => 1, "message" => "Could not load latest version number from {$updatepackagepath}/versions.json."));
         return $returnarray;
       }
       //1b. Create config
-      $config =
-        ";<?php\n" .
-        ";die(); // For further security\n" .
-        ";/*\n" .
-        "[database]\n" .
-        "db_name     = '{$db_config["databasename"]}'\n" .
-        "db_user     = '{$db_config["mysqluser"]}'\n" .
-        "db_password = '{$db_config["mysqlpassword"]}'\n" .
-        "db_host = '{$db_config["mysqlhost"]}'\n" .
-        "\n" .
-        "[application]\n" .
-        "app_protocol = 'https'\n" .
-        "app_domain = '{$_SERVER["HTTP_HOST"]}'\n" .
-        "system_root = '/'\n" .
-        "backend_url = '/backend'\n" .
-        "frontend_url = '/frontend'\n" .
-        "backup_root = '/backup'\n" .
-        "serversalt = '{$serversalt}'\n" .
-        "nonce_key = '{$noncekey}'\n" .
-        "versnummer = '{$version}'\n" .
-        "\n" .
-        "[websocket]\n" .
-        "web_client_auth_hash = '{$web_client_auth_hash}'\n" .
-        "backend_client_auth_hash = '{$backend_client_auth_hash}'\n" .
-        "socket_protocol = 'wss'\n" .
-        "socket_domain = '{$_SERVER["HTTP_HOST"]}'\n" .
-        "socket_listener = '{$websocket_config["socket_protocol"]}'\n" .
-        "socket_local_port = '{$websocket_config["socket_local_port"]}'\n" .
-        "\n" .
-        "[extapis]\n" .
-        "exchangerate_api_codes = 'https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies.json'\n" .
-        "exchangerate_api_rates = 'https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/usd.json'\n" .
-        "xchscan_api = 'https://xchscan.com/api'\n" .
-        ";*/";
+      $config = file_get_contents(__DIR__."/installer_templates/config.txt");
+      $config = str_replace("[databasename]", $db_config["databasename"], $config);
+      $config = str_replace("[mysqluser]", $db_config["mysqluser"], $config);
+      $config = str_replace("[mysqlpassword]", $db_config["mysqlpassword"], $config);
+      $config = str_replace("[mysqlhost]", $db_config["mysqlhost"], $config);
+      $config = str_replace("[app_domain]", $_SERVER["HTTP_HOST"], $config);
+      $config = str_replace("[serversalt]", $serversalt, $config);
+      $config = str_replace("[noncekey]", $noncekey, $config);
+      $config = str_replace("[version]", $version, $config);
+      $config = str_replace("[web_client_auth_hash]", $web_client_auth_hash, $config);
+      $config = str_replace("[backend_client_auth_hash]", $backend_client_auth_hash, $config);
+      $config = str_replace("[socket_listener]", $websocket_config["socket_protocol"], $config);
+      $config = str_replace("[socket_local_port]", $websocket_config["socket_local_port"], $config);
 
-      //1c. Writing config
+      //1c. Create htaccess
+      $htaccess = file_get_contents(__DIR__."/installer_templates/htaccess.txt");
+      $htaccess = str_replace("[nonce]", $noncekey, $htaccess);
+
+      //1d. Writing config
       $configfile = fopen("{$configdir}/config.ini.php", "w");
       fwrite($configfile, $config);
       fclose($configfile);
 
-      //1d. Verifying config
+      //1e. Writing new htaccess
+      $htaccessfile = fopen("{$_SERVER["DOCUMENT_ROOT"]}/.htaccess", "w");
+      fwrite($htaccessfile, $htaccess);
+      fclose($htaccessfile);
+
+      //1f. Verifying config
       $configfile = parse_ini_file("{$configdir}/config.ini.php");
       if(!is_array($configfile)){
         $returnarray["data"]["config_file"] = array("status" => 1, "message" => "Error during config file creation.");
@@ -348,6 +336,9 @@
         //Default user (admin) as configured in installer
         $userpassword = hash('sha256',$webgui_user_config["gui-password"].$dbsalt.$serversalt);
         $query .= "INSERT INTO `users` VALUES (1,'{$webgui_user_config["gui-username"]}','{$webgui_user_config["gui-forename"]}','{$webgui_user_config["gui-lastname"]}','{$userpassword}','{$dbsalt}','{$webgui_user_config["gui-email"]}',NOW(),1);";
+
+        //Default admin user settings
+        $query .= "INSERT INTO `users_settings` (`id`, `userid`, `currency_code`, `gui_mode`, `totp_enable`, `totp_secret`, `totp_proofen`) VALUES (NULL, '1', 'usd', '1', '0', NULL, '0');";
 
         $this->db_api->execute($query,[]);
 

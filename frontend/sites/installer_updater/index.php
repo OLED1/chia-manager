@@ -325,10 +325,6 @@
                           <h3>Congratulations!</h3>
                           <p>Your instance is now ready to go.<br>
                           Just press the "Finish" button to login to your instance.<br>
-                          Have fun! Don't forget the last part:</p>
-                          <div class="alert alert-warning" role="alert">
-                            1. Copy the noncekey from the config.ini.php file (nonce_key) into the .htaccess file.
-                          </div>
                         </div>
                         <hr>
                         <button id="complete-setup-install" type="submit" class="btn btn-primary btn-user btn-block" style="width: 25%;">Install</button>
