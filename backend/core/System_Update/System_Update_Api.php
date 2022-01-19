@@ -340,6 +340,16 @@
         //Default admin user settings
         $query .= "INSERT INTO `users_settings` (`id`, `userid`, `currency_code`, `gui_mode`, `totp_enable`, `totp_secret`, `totp_proofen`) VALUES (NULL, '1', 'usd', '1', '0', NULL, '0');";
 
+        //Project registerred sites
+        $query .= "INSERT INTO `sites` VALUES (1,'ChiaMgmt\\MainOverview\\MainOverview_Api'),(2,'ChiaMgmt\\Nodes\\Nodes_Api'),(3,'ChiaMgmt\\System\\System_Api'),(4,'ChiaMgmt\\Users\\Users_Api'),(5,'ChiaMgmt\\Chia_Wallet\\Chia_Wallet_Api'),(6,'ChiaMgmt\\Chia_Farm\\Chia_Farm_Api'),(7,'ChiaMgmt\\Chia_Harvester\\Chia_Harvester_Api'),(8,'ChiaMgmt\\Chia_Infra_Sysinfo\\Chia_Infra_Sysinfo_Api'),(9,'ChiaMgmt\\Chia_Overall\\Chia_Overall_Api'),(10,'ChiaMgmt\\System_Update\\System_Update_Api'),(11,'ChiaMgmt\\Logging\\Logging_Api'),(12,'ChiaMgmt\\Chia_Statistics\\Chia_Statistics_Api'),(13,'ChiaMgmt\\System_Statistics\\System_Statistics_Api');";
+        $query .= "INSERT INTO `sites_pagestoinform` VALUES (1,1,1),(2,2,2),(3,2,1),(4,3,3),(5,4,4),(6,5,5),(7,5,1),(8,6,6),(9,6,1),(10,7,7),(11,7,1),(12,2,5),(13,2,6),(14,2,7),(15,8,8),(16,8,1),(17,2,8),(18,9,1),(19,10,1),(20,11,11),(21,9,12),(22,12,12),(2
+        3,13,13),(24,8,13),(25,9,5);";
+
+        //Default nodetypes
+        $query .= "INSERT INTO `nodetypes_avail` VALUES (1,'webClient',1,1,1,'app'),(2,'backendClient',2,0,3,'backend'),(3,'Farmer',3,1,2,'chianode'),(4,'Harvester',4,1,2,'chianode'),(5,'Wallet',5,1,2,'chianode'),(6,'Unknown',99,0,2,'');";
+        $query .= "INSERT INTO `nodetype` VALUES (1,1,1),(2,2,2);";
+        //
+
         $this->db_api->execute($query,[]);
 
         //Importing changes from version newer than 0.1.1
