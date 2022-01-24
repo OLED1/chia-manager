@@ -4,7 +4,11 @@
 
   $system_update_api = new System_Update_Api();
   $system_update_state = $system_update_api->checkUpdateRoutine();
-  $ini = parse_ini_file(__DIR__.'/../../../backend/config/config.ini.php');
+  
+  $ini = NULL;
+  if(!array_key_exists("db_install_needed", $system_update_state["data"])){
+    $ini = parse_ini_file(__DIR__.'/../../../backend/config/config.ini.php');
+  }
 
   $default_nonce = "3LMJm+1llrExr4spfB+DrjbN5ys7gYhj1w=";
   $db_install = false;
@@ -175,13 +179,6 @@
                                 The main goal of this project is to make monitoring and using of Chia and the needed nodes much easier.</p>
                                 <p>But enough of big words - convince yourself!</p>
                                 <hr>
-                                <p>Which branch would you like to use?<p>
-                                <select id="branch" name="branch">
-                                  <!--<option value="main" selected>Stable</option>-->
-                                  <!--<option value="staging">Testing</option>-->
-                                  <option value="dev">Development</option>
-                                </select>
-                                <hr>
                                 <button data-target="server-dependencies" data-myid="welcome-page" class="btn btn-success btn-user btn-block install-step" style="width: 25%;">Start installer</button>
                             </div>
                           </div>
@@ -190,7 +187,7 @@
                     </div>
                     <div id="server-dependencies" style="display: none;">
                       <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                          <h1 class="h3 mb-0 text-gray-800">Server dependencies</h1>
+                          <h1 class="h3 mb-0 text-gray-800">Server checks</h1>
                       </div>
                       <div class="row">
                         <div class="col">
@@ -200,13 +197,15 @@
                                 $server_dependencies = $system_update_api->checkServerDependencies();
                                 $php_version = $server_dependencies["data"]["php-version"];
                                 $php_modules = $server_dependencies["data"]["php-modules"];
+                                $files_writeable = $server_dependencies["data"]["files-writeable"];;
                               ?>
+                              <div id="check-files-writeable" class='alert <?php echo ($files_writeable["status"] == 0 ? "alert-success" : "alert-danger"); ?>' role='alert'><?php echo $files_writeable["message"]; ?></div>
                               <div id="dep-php-version" class='alert <?php echo ($php_version["status"] == 0 ? "alert-success" : "alert-danger"); ?>' role='alert'><?php echo $php_version["message"]; ?></div>
                               <div id="dep-php-modules" class='alert <?php echo ($php_modules["status"] == 0 ? "alert-success" : "alert-danger"); ?>' role='alert'><?php echo $php_modules["message"]; ?></div>
 
-                              <button id="server-dependencies-button" data-target="mysql-configuration" data-myid="server-dependencies" class="btn btn-success btn-user btn-block install-step" style="width: 25%; <?php echo ($php_version["status"] > 0 || $php_modules["status"] > 0 ? "display: none;" : ""); ?>">Next Step</button>
-                              <?php if($php_version["status"] > 0 || $php_modules["status"] > 0){ ?>
-                                <button id="recheck-dependencies" class="btn btn-success btn-user btn-block" style="float: right; width: 35%; margin: 0 auto;">Reload Page</button>
+                              <button id="server-dependencies-button" data-target="mysql-configuration" data-myid="server-dependencies" class="btn btn-success btn-user btn-block install-step" style="width: 25%; <?php echo ($php_version["status"] > 0 || $php_modules["status"] > 0 || $files_writeable["status"] > 0 ? "display: none;" : ""); ?>">Next Step</button>
+                              <?php if($php_version["status"] > 0 || $php_modules["status"] > 0 || $files_writeable["status"] > 0){ ?>
+                                <button id="recheck-dependencies" class="btn btn-success btn-user btn-block" style="float: right; width: 35%; margin: 0 auto;">Recheck</button>
                               <?php } ?>
                           </div>
                         </div>
@@ -263,7 +262,8 @@
                             <input id="socket_local_port" type="number" name="socket_local_port" class="form-control form-control-user" placeholder="8443" value="8443">
                           </div>
                           <hr>
-                          <button id="websocket-configuration-button" data-target="webgui-user-configuration" data-myid="websocket-configuration" class="btn btn-success btn-user btn-block install-step" style="width: 25%;">Next Step</button>
+                          <button id="websocket-configuration-button" data-target="webgui-user-configuration" data-myid="websocket-configuration" class="btn btn-success btn-user btn-block install-step" style="width: 25%; display: none;">Next Step</button>
+                          <button id="check-websocket-config" class="btn btn-primary btn-user btn-block" style="width: 25%;">Check</button>
                       </div>
                     </div>
                   </div>
@@ -279,27 +279,27 @@
                       <div class="card-body">
                         <div class="form-group" style="margin-left: auto; margin-right: auto; width: 50%;">
                           <label for="gui-username" style="margin: 0;">GUI Username</label>
-                          <input type="text" name="gui-username" class="form-control form-control-user" placeholder="admin" value="<?php echo (array_key_exists("gui-username", $_POST) ? $_POST["gui-username"] : "admin"); ?>" <?php echo ($config_setnextpage ? "disabled" : ""); ?>>
+                          <input type="text" name="gui-username" class="form-control form-control-user" placeholder="admin" value="<?php echo (array_key_exists("gui-username", $_POST) ? $_POST["gui-username"] : "admin"); ?>">
                         </div>
                         <div class="form-group" style="margin-left: auto; margin-right: auto; width: 50%;">
                           <label for="gui-username" style="margin: 0;">Your forename</label>
-                          <input type="text" name="gui-forename" class="form-control form-control-user" placeholder="Max" value="<?php echo (array_key_exists("gui-forename", $_POST) ? $_POST["gui-forename"] : ""); ?>" <?php echo ($config_setnextpage ? "disabled" : ""); ?>>
+                          <input type="text" name="gui-forename" class="form-control form-control-user" placeholder="Max" value="<?php echo (array_key_exists("gui-forename", $_POST) ? $_POST["gui-forename"] : ""); ?>">
                         </div>
                         <div class="form-group" style="margin-left: auto; margin-right: auto; width: 50%;">
                           <label for="gui-username" style="margin: 0;">Your lastname</label>
-                          <input type="text" name="gui-lastname" class="form-control form-control-user" placeholder="mustermann" value="<?php echo (array_key_exists("gui-lastname", $_POST) ? $_POST["gui-lastname"] : ""); ?>" <?php echo ($config_setnextpage ? "disabled" : ""); ?>>
+                          <input type="text" name="gui-lastname" class="form-control form-control-user" placeholder="mustermann" value="<?php echo (array_key_exists("gui-lastname", $_POST) ? $_POST["gui-lastname"] : ""); ?>">
                         </div>
                         <div class="form-group" style="margin-left: auto; margin-right: auto; width: 50%;">
                           <label for="gui-username" style="margin: 0;">Your email</label>
-                          <input type="email" name="gui-email" class="form-control form-control-user" placeholder="max@mustermann.com" value="<?php echo (array_key_exists("gui-email", $_POST) ? $_POST["gui-email"] : ""); ?>" <?php echo ($config_setnextpage ? "disabled" : ""); ?>>
+                          <input type="email" name="gui-email" class="form-control form-control-user" placeholder="max@mustermann.com" value="<?php echo (array_key_exists("gui-email", $_POST) ? $_POST["gui-email"] : ""); ?>">
                         </div>
                         <div class="form-group" style="margin-left: auto; margin-right: auto; width: 50%;">
                           <label for="gui-password" style="margin: 0;">Password</label>
-                          <input id="gui-password" type="password" name="gui-password" class="form-control form-control-user" placeholder="Password" value="<?php echo (array_key_exists("gui-password", $_POST) ? $_POST["gui-password"] : ""); ?>" <?php echo ($config_setnextpage ? "disabled" : ""); ?>>
+                          <input id="gui-password" type="password" name="gui-password" class="form-control form-control-user" placeholder="Password" value="<?php echo (array_key_exists("gui-password", $_POST) ? $_POST["gui-password"] : ""); ?>">
                         </div>
                         <div class="form-group" style="margin-left: auto; margin-right: auto; width: 50%;">
                           <label for="repeat-gui-password" style="margin: 0;">Repeat Password</label>
-                          <input id="repeat-gui-password" type="password" name="repeat-gui-password" class="form-control form-control-user" placeholder="Password" value="<?php echo (array_key_exists("repeat-gui-password", $_POST) ? $_POST["repeat-gui-password"] : ""); ?>" <?php echo ($config_setnextpage ? "disabled" : ""); ?>>
+                          <input id="repeat-gui-password" type="password" name="repeat-gui-password" class="form-control form-control-user" placeholder="Password" value="<?php echo (array_key_exists("repeat-gui-password", $_POST) ? $_POST["repeat-gui-password"] : ""); ?>">
                         </div>
                         <hr>
                         <button id="webgui-user-button" data-target="complete-setup" data-myid="webgui-user-configuration" type="submit" class="btn btn-success btn-user btn-block install-step" style="width: 25%; display: none;">Finish setup</button>
@@ -310,26 +310,39 @@
                 </div>
               </div>
               <div id="complete-setup" style="display: none;">
+              <!--<div id="complete-setup">-->
                 <div class="d-sm-flex align-items-center justify-content-between mb-4">
                   <h1 class="h3 mb-0 text-gray-800">Complete setup</h1>
                 </div>
                 <div class="row">
                   <div class="col">
-                    <div class="card shadow mb-4">
+                    <div class="card shadow">
                       <div class="card-body">
-                        <div class="card">
-                          <div id="setuplog" class="card-body" style="background-color: lightgrey; height: 10em; overflow: auto;">
+                        <div class="row">
+                          <div class="col">
+                            <h5 id="preperation-checks"><i class="fas fa-check" style="color: green;"></i>&nbsp;Preparation checks (Pre-checked)</h5>
+                            <h5 id="create-config-file"><i class="fas fa-hourglass-start"></i>&nbsp;Generating and writing configuration file</h5>
+                            <p id="create-config-file-log" class="update-log"></p>
+                            <h5 id="create-htaccess-file"><i class="fas fa-hourglass-start"></i>&nbsp;Generating and writing htaccess file</h5>
+                            <p id="create-htaccess-file-log" class="update-log"></p>
+                            <h5 id="database-setup"><i class="fas fa-hourglass-start"></i>&nbsp;Importing db structure, default values and settings</h5>
+                            <p id="database-setup-log" class="update-log"></p>
+                            <h5 id="first-start-websocket"><i class="fas fa-hourglass-start"></i>&nbsp;Starting websocket server</h5>
+                            <p id="first-start-websocket-log" class="update-log"></p>
+                            <h5 id="install-success"><i class="fas fa-hourglass-start"></i>&nbsp;Installation procedure finished successfully</h5>
+                            <hr>
+                            <button id="complete-setup-finish" data-target="updater-finish-page" data-myid="process-update-page" class="btn btn-success btn-user btn-block install-step" style="width: 25%; display: none;" disabled>Finish</button>
+                            <button id="complete-setup-install" type="submit" class="btn btn-primary btn-user btn-block" style="width: 25%;">Install</button>
+                        </div>
+                        <div id="finish-text" style="display: none;" class="row">
+                          <div class="col">
+                            <h3>Congratulations!</h3>
+                            <p>Your instance is now ready to go.<br>
+                            Just press the "Finish" button to login to your instance.<br>
+                            <hr>
+                            <a id="complete-setup-to-login" href="/" class="btn btn-success btn-user btn-block" style="width: 25%;">Go to login</a>
                           </div>
                         </div>
-                        <div id="finish-text" style="display: none;">
-                          <h3>Congratulations!</h3>
-                          <p>Your instance is now ready to go.<br>
-                          Just press the "Finish" button to login to your instance.<br>
-                        </div>
-                        <hr>
-                        <button id="complete-setup-install" type="submit" class="btn btn-primary btn-user btn-block" style="width: 25%;">Install</button>
-                        <button id="complete-setup-finish" type="submit" class="btn btn-success btn-user btn-block" style="width: 25%; display: none;">Finish</button>
-                        <a id="complete-setup-to-login" href="/" class="btn btn-success btn-user btn-block" style="width: 25%; display: none;">Go to login</a>
                       </div>
                     </div>
                   </div>

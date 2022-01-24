@@ -46,12 +46,13 @@
     public function __construct(object $server = NULL){
       $config_file = __DIR__.'/../../config/config.ini.php';
       $this->ini = NULL;
+      $this->logging_api = NULL;
       if(file_exists($config_file)){
         $this->ini = parse_ini_file($config_file);
         if(array_key_exists("db_name", $this->ini)){
           $this->db_api = new DB_Api();
-          $this->websocket_api = new WebSocket_Api();
           $this->logging_api = new Logging_Api($this, $server);
+          $this->websocket_api = new WebSocket_Api();
         }
       }
     }
@@ -177,6 +178,8 @@
         $returndata["php-version"]["message"] = "Installed PHP Version {$phpversion} meets requirement {$php_required}.";
       }
 
+      $returndata["files-writeable"] = $this->checkFilesWritable();
+
       if(count($diff) > 0){
         foreach($diff AS $arrkey => $modulename){
           $modules_missing .= $modulename . " ";
@@ -214,6 +217,24 @@
     }
 
     /**
+     * Checks if the configured WSS Port is not used on the system and is a high port.
+     *
+     * @param integer $port           The port which the user wants to use.
+     * @return array                  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     */
+    public function checkWSSPortAvailable(int $port): array{
+      if($port > 1024){
+        if(@fsockopen("localhost", $port)){
+          return array("status" => 1, "message" => "Port {$port} already in use.");
+        }else{
+          return array("status" => 0, "message" => "This port is not in use.");
+        }
+      }else{
+        return array("status" => 1, "message" => "Port must be higher than 1024.");
+      }
+    }
+
+    /**
      * Installs the chiamgmt instance.
      * This method is used during the installation process.
      * This method do not return formatted error messages, because they are not present at this time.
@@ -228,11 +249,13 @@
     public function installChiamgmt(string $branch, array $db_config, array $websocket_config, array $webgui_user_config): array
     {
       //Default the returnvalues to error
-      $returnarray["status"] = 1;
-      $returnarray["message"] = "An error occured during installation process.";
+      $this->returnarray = [];
+      $this->returnarray["status"] = 1;
+      $this->returnarray["message"] = "An error occured during installation process.";
+      $this->returnarray["data"] = [];
+      $this->returnarray["data"]["config_file"] = ["data" => []];
 
       $updatepackagepath = "https://files.chiamgmt.edtmair.at/server/";
-
       $returnarray = [];
       $noncekey = $this->generateRandomString();
       $dbsalt = $this->generateRandomString();
@@ -243,16 +266,14 @@
       $tmpdir = "/tmp";
 
       //1. Create Config File
-      $returnarray["data"]["config_file"] = array("status" => 0, "message" => "Config file created. Default values are: ");
-      $returnarray["data"]["config_file"]["data"] = [];
       //1a. Downloading latest version info from used branch
       $version_file_json = file_get_contents("{$updatepackagepath}/versions.json");
       $version_file_data = json_decode($version_file_json, true);
 
       $version = array_keys($version_file_data[$branch])[0];
       if(is_null($version)){
-        $returnarray["data"]["config_file"] = array("status" => 1, "message" => "Error during version number query.");
-        array_push($returnarray["data"]["config_file"]["data"], array("status" => 1, "message" => "Could not load latest version number from {$updatepackagepath}/versions.json."));
+        array_push($this->returnarray["data"]["config_file"]["data"], array("status" => 1, "message" => "Error during version number query."));
+        array_push($this->returnarray["data"]["config_file"]["data"], array("status" => 1, "message" => "Could not load latest version number from {$updatepackagepath}/versions.json."));
         return $returnarray;
       }
       //1b. Create config
@@ -285,17 +306,32 @@
       fclose($htaccessfile);
 
       //1f. Verifying config
-      $configfile = parse_ini_file("{$configdir}/config.ini.php");
-      if(!is_array($configfile)){
-        $returnarray["data"]["config_file"] = array("status" => 1, "message" => "Error during config file creation.");
-        array_push($returnarray["data"]["config_file"]["data"], array("status" => 0, "message" => "The config file were not created successfully."));
-        return $returnarray;
+      $configfile = NULL;
+      if(file_exists("{$configdir}/config.ini.php")){
+        $configfile = parse_ini_file("{$configdir}/config.ini.php");
       }
-      array_push($returnarray["data"]["config_file"]["data"], array("status" => 0, "message" => "Successfully created config file. Nonce_key for secure js loading:&nbsp;{$noncekey}."));
+      if(is_array($configfile)){
+        $this->returnarray["data"]["config_file"] = array("status" => 0, "message" => "Config file successfully created.", "data" => []);
+        array_push($this->returnarray["data"]["config_file"]["data"], array("status" => 0, "message" => "The config file were created successfully."));
+      }else{
+        $this->returnarray["data"]["config_file"] = array("status" => 1, "message" => "Error during config file creation.", "data" => []);
+        array_push($this->returnarray["data"]["config_file"]["data"], array("status" => 0, "message" => "The config file were not created successfully."));
+        return $this->returnarray;
+      }
+      
+      //1g. Verfifying htaccess
+      $this->returnarray["data"]["htaccess_file"] = ["data" => []];
+      if(strpos(file_get_contents("{$_SERVER["DOCUMENT_ROOT"]}/.htaccess"),$noncekey) !== false){
+        $this->returnarray["data"]["htaccess_file"] = array("status" => 0, "message" => "htaccess file adapted successfully.", "data" => []);
+        array_push($this->returnarray["data"]["htaccess_file"]["data"], array("status" => 0, "message" => "The htaccess file were successfully adapted."));
+      }else{
+        $this->returnarray["data"]["htaccess_file"] = array("status" => 1, "message" => "Error during htaccess file writing.", "data" => []);
+        array_push($this->returnarray["data"]["htaccess_file"]["data"], array("status" => 1, "message" => "The htaccess file does not contain the new nonce key. Please make sure apache/nginx has rwx file access. You can change it later."));
+        return $this->returnarray;
+      }
 
       //2. Creating Database
-      $returnarray["data"]["db_config"] = array("status" => 0, "message" => "Database imported and installed default values.");
-      $returnarray["data"]["db_config"]["data"] = [];
+      $this->returnarray["data"]["db_config"] = array("status" => 0, "message" => "Database imported and installed default values.", "data" => []);
       try{
         //2a. Instance db connection
         $this->db_api = new DB_Api();
@@ -317,10 +353,8 @@
             $query= '';
           }
         }
-        array_push($returnarray["data"]["db_config"]["data"], array("status" => 0, "message" => "Table structure created successfully."));
+        array_push($this->returnarray["data"]["db_config"]["data"], array("status" => 0, "message" => "Table structure created successfully."));
         //2c. Insert default values
-        $db_update_raw = file_get_contents("files/db_update.json");
-        $db_update_json = json_decode($db_update_raw, true);
         $this->encryption_api = new Encryption_Api();
         //Default Nodes
         $query = '';
@@ -342,38 +376,72 @@
         $query .= "INSERT INTO `users_settings` (`id`, `userid`, `currency_code`, `gui_mode`, `totp_enable`, `totp_secret`, `totp_proofen`) VALUES (NULL, '1', 'usd', '1', '0', NULL, '0');";
 
         //Project registerred sites
-        $query .= "INSERT INTO `sites` VALUES (1,'ChiaMgmt\\MainOverview\\MainOverview_Api'),(2,'ChiaMgmt\\Nodes\\Nodes_Api'),(3,'ChiaMgmt\\System\\System_Api'),(4,'ChiaMgmt\\Users\\Users_Api'),(5,'ChiaMgmt\\Chia_Wallet\\Chia_Wallet_Api'),(6,'ChiaMgmt\\Chia_Farm\\Chia_Farm_Api'),(7,'ChiaMgmt\\Chia_Harvester\\Chia_Harvester_Api'),(8,'ChiaMgmt\\Chia_Infra_Sysinfo\\Chia_Infra_Sysinfo_Api'),(9,'ChiaMgmt\\Chia_Overall\\Chia_Overall_Api'),(10,'ChiaMgmt\\System_Update\\System_Update_Api'),(11,'ChiaMgmt\\Logging\\Logging_Api'),(12,'ChiaMgmt\\Chia_Statistics\\Chia_Statistics_Api'),(13,'ChiaMgmt\\System_Statistics\\System_Statistics_Api');";
-        $query .= "INSERT INTO `sites_pagestoinform` VALUES (1,1,1),(2,2,2),(3,2,1),(4,3,3),(5,4,4),(6,5,5),(7,5,1),(8,6,6),(9,6,1),(10,7,7),(11,7,1),(12,2,5),(13,2,6),(14,2,7),(15,8,8),(16,8,1),(17,2,8),(18,9,1),(19,10,1),(20,11,11),(21,9,12),(22,12,12),(2
-        3,13,13),(24,8,13),(25,9,5);";
+        $query .= "INSERT INTO `sites` VALUES (1,'ChiaMgmt\\\\MainOverview\\\\MainOverview_Api'),(2,'ChiaMgmt\\\\Nodes\\\\Nodes_Api'),(3,'ChiaMgmt\\\\System\\\\System_Api'),(4,'ChiaMgmt\\\\Users\\\\Users_Api'),(5,'ChiaMgmt\\\\Chia_Wallet\\\\Chia_Wallet_Api'),(6,'ChiaMgmt\\\\Chia_Farm\\\\Chia_Farm_Api'),(7,'ChiaMgmt\\\\Chia_Harvester\\\\Chia_Harvester_Api'),(8,'ChiaMgmt\\\\Chia_Infra_Sysinfo\\\\Chia_Infra_Sysinfo_Api'),(9,'ChiaMgmt\\\\Chia_Overall\\\\Chia_Overall_Api'),(10,'ChiaMgmt\\\\System_Update\\\\System_Update_Api'),(11,'ChiaMgmt\\\\Logging\\\\Logging_Api'),(12,'ChiaMgmt\\\\Chia_Statistics\\\\Chia_Statistics_Api'),(13,'ChiaMgmt\\\\System_Statistics\\\\System_Statistics_Api');";
+        $query .= "INSERT INTO `sites_pagestoinform` VALUES (1,1,1),(2,2,2),(3,2,1),(4,3,3),(5,4,4),(6,5,5),(7,5,1),(8,6,6),(9,6,1),(10,7,7),(11,7,1),(12,2,5),(13,2,6),(14,2,7),(15,8,8),(16,8,1),(17,2,8),(18,9,1),(19,10,1),(20,11,11),(21,9,12),(22,12,12),(23,13,13),(24,8,13),(25,9,5);";
 
         //Default nodetypes
         $query .= "INSERT INTO `nodetypes_avail` VALUES (1,'webClient',1,1,1,'app'),(2,'backendClient',2,0,3,'backend'),(3,'Farmer',3,1,2,'chianode'),(4,'Harvester',4,1,2,'chianode'),(5,'Wallet',5,1,2,'chianode'),(6,'Unknown',99,0,2,'');";
         $query .= "INSERT INTO `nodetype` VALUES (1,1,1),(2,2,2);";
-        //
 
         $this->db_api->execute($query,[]);
 
-        //Importing changes from version newer than 0.1.1
-        foreach($db_update_json AS $versnummer => $statements){
-          foreach($statements["statements"] AS $arrkey => $query){
-            if(!str_contains($query,"ALTER")){
-              $this->db_api->execute($query,[]);
-            }
+        array_push($this->returnarray["data"]["db_config"]["data"], array("status" => 0, "message" => "Default entries inserted successfully."));
+
+        //2d. Checking if all entries were inserted
+        array_push($this->returnarray["data"]["db_config"]["data"], array("status" => 0, "message" => "Checking count of inserted entries."));
+        $check_array = [
+          [ "statement" => "SELECT COUNT(*) AS count FROM nodes;", "count" => 2 , "table" => "nodes" ],
+          [ "statement" => "SELECT COUNT(*) AS count FROM system_settings;", "count" => 3 , "table" => "system_settings" ],
+          [ "statement" => "SELECT COUNT(*) AS count FROM system_infos;", "count" => 1 , "table" => "system_infos" ],
+          [ "statement" => "SELECT COUNT(*) AS count FROM users;", "count" => 1 , "table" => "users" ],
+          [ "statement" => "SELECT COUNT(*) AS count FROM users_settings;", "count" => 1 , "table" => "users_settings" ],
+          [ "statement" => "SELECT COUNT(*) AS count FROM sites;", "count" => 13 , "table" => "sites" ],
+          [ "statement" => "SELECT COUNT(*) AS count FROM sites_pagestoinform;", "count" => 25 , "table" => "sites_pagestoinform" ],
+          [ "statement" => "SELECT COUNT(*) AS count FROM nodetypes_avail;", "count" => 6 , "table" => "nodetypes_avail" ],
+          [ "statement" => "SELECT COUNT(*) AS count FROM nodetype;", "count" => 2 , "table" => "nodetype" ]
+        ];
+
+        foreach($check_array AS $arrkey => $db_check){
+          $sql = $this->db_api->execute($db_check["statement"],[]);
+          $count = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["count"];
+          if($count ==  $db_check["count"]){
+            array_push($this->returnarray["data"]["db_config"]["data"], array("status" => 0, "message" => "Table {$db_check["table"]} seems to be correct."));
+          }else{
+            $this->returnarray["data"]["db_config"]["status"] = 1;
+            array_push($this->returnarray["data"]["db_config"]["data"], array("status" => 1, "message" => "Error during database import check."));
+            array_push($this->returnarray["data"]["db_config"]["data"], array("status" => 1, "message" => "Table {$db_check["table"]} seems not to be correct. MySQL returned {$count} rows but it should be {$db_check["count"]}."));
+            return $this->returnarray;
           }
         }
-
-
-        array_push($returnarray["data"]["db_config"]["data"], array("status" => 0, "message" => "Default entries inserted successfully."));
       }catch(\Exception $e){
-        $returnarray["data"]["db_config"]["status"] = 1;
-        $returnarray["data"]["db_config"]["message"] = "Error during database configuration.";
-        array_push($returnarray["data"]["db_config"]["data"], array("status" => 0, "message" => $e->getMessage()));
-        return $returnarray;
+        $this->returnarray["data"]["db_config"]["status"] = 1;
+        $this->returnarray["data"]["db_config"]["message"] = "Error during database configuration or check.";
+        array_push($this->returnarray["data"]["db_config"]["data"], array("status" => 0, "message" => $e->getMessage()));
+        return $this->returnarray;
       }
 
-      $returnarray["status"] = 0;
-      $returnarray["message"] = "Finished installation.";
-      return $returnarray;
+      //3. Starting websocket server
+      $this->websocket_api = new WebSocket_Api();
+      $this->returnarray["data"]["first_start_websocket"] = ["data" => []];
+      $websocket_status = $this->startWebsocketServer();
+
+      $this->returnarray["data"]["first_start_websocket"] = $websocket_status;
+
+      //Debugging Only
+      $websocket_status["status"] = 0;
+
+      if($websocket_status["status"] > 0){
+        $this->returnarray["data"]["first_start_websocket"] = array("status" => 1, "message" => "Error during websocket server start. The project seems not to be installed correctly.", "data" => []);
+        array_push($this->returnarray["data"]["first_start_websocket"]["data"], array("status" => 0, "message" => "Sucessfully started websocket server."));
+        return $this->returnarray;
+      }else{
+        $this->returnarray["data"]["first_start_websocket"] = array("status" => 0, "message" => "Started websocket server.", "data" => []);
+        array_push($this->returnarray["data"]["first_start_websocket"]["data"], array("status" => 0, "message" => "Sucessfully started websocket server."));
+      }
+
+      $this->returnarray["status"] = 0;
+      $this->returnarray["message"] = "Finished installation.";
+      return $this->returnarray;
     }
 
     /**
@@ -404,7 +472,8 @@
       }
 
       if(count($not_accessable) > 0){
-        return $this->logging_api->getErrormessage("001");
+        if(!is_null($this->logging_api)) return $this->logging_api->getErrormessage("001");
+        else return array("status" => 1, "message" => "Some files are not fully accessable. Please adjust the file owner and group to the apache user and set 750 as file rights.");
       }else{
         return array("status" => 0, "message" => "All neded files are fully accessable.");
       }

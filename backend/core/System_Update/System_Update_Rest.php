@@ -5,7 +5,6 @@
 
   $system_update_api = new System_Update_Api();
   $system_update_state = $system_update_api->checkUpdateRoutine();
-  $ini = parse_ini_file(__DIR__.'/../../../backend/config/config.ini.php');
 
   if(!array_key_exists("db_install_needed", $system_update_state["data"]) && !(array_key_exists("process_update", $system_update_state["data"]) && $system_update_state["data"]["process_update"])){
     echo json_encode(array("status" => 1, "message" => "No update process started."));
@@ -17,9 +16,13 @@
   if(isset($_POST["action"]) && $_POST["action"] == "checkServerDependencies"){
     echo json_encode($system_update_api->checkServerDependencies());
   }else if(isset($_POST["action"]) && $_POST["action"] == "checkMySQLConfig" && isset($_POST["data"]) &&
-          isset($_POST["data"]["db_name"]) && isset($_POST["data"]["db_host"]) && isset($_POST["data"]["db_user"]) && isset($_POST["data"]["db_password"])){
+            isset($_POST["data"]["db_name"]) && isset($_POST["data"]["db_host"]) && isset($_POST["data"]["db_user"]) && isset($_POST["data"]["db_password"])){
 
     echo json_encode($system_update_api->checkMySQLConfig($_POST["data"]["db_name"], $_POST["data"]["db_user"], $_POST["data"]["db_password"], $_POST["data"]["db_host"]));
+  }else if(isset($_POST["action"]) && $_POST["action"] == "checkWSSPortAvailable" && isset($_POST["data"]) &&
+                  isset($_POST["data"]["wss-port"])){
+
+    echo json_encode($system_update_api->checkWSSPortAvailable($_POST["data"]["wss-port"]));
   }else if(isset($_POST["action"]) && $_POST["action"] == "installChiamgmt" &&
           isset($_POST["data"]) && isset($_POST["data"]["db_config"]) && isset($_POST["data"]["websocket_config"]) && isset($_POST["data"]["webgui_user_config"])){
 
