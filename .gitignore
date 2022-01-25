@@ -6,3 +6,5 @@ logs/
 frontend/frameworks/bootstrap-samples
 .ftpignore
 .vscode
+.htaccess
+backup/

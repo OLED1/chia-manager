@@ -437,8 +437,8 @@
 
           $returndata["updateinfos"][$nodedata["id"]]["updateavailable"] =  2;
           if(array_key_exists($nodedata["updatechannel"], $version_file_data)){
-            if(!is_null($nodedata["scriptversion"])) $returndata["updateinfos"][$nodedata["id"]]["updateavailable"] = (int)version_compare($nodedata["scriptversion"], $version_file_data[$nodedata["updatechannel"]][0]["version"]);
-            $returndata["updateinfos"][$nodedata["id"]]["remoteversion"] = $version_file_data[$nodedata["updatechannel"]][0]["version"];
+            if(!is_null($nodedata["scriptversion"])) $returndata["updateinfos"][$nodedata["id"]]["updateavailable"] = (int)version_compare($nodedata["scriptversion"], $version_file_data[$nodedata["updatechannel"]][array_key_first($version_file_data[$nodedata["updatechannel"]])]);
+            $returndata["updateinfos"][$nodedata["id"]]["remoteversion"] = $version_file_data[$nodedata["updatechannel"]][array_key_first($version_file_data[$nodedata["updatechannel"]])];
           }
 
           $returndata["updateinfos"][$nodedata["id"]]["chiaupdateavail"] =  2;
