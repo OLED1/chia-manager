@@ -227,7 +227,6 @@
             foreach(explode(",", $data["nodetypes"]) AS $arrkey => $nodetype){
               $sql = $this->db_api->execute("INSERT INTO nodetype (id, nodeid, code) VALUES(NULL, ?, ?)", array($nodeid, $nodetype));
             }
-            $sql = $this->db_api->execute("REPLACE INTO nodes_status (id, nodeid, onlinestatus, walletstatus, farmerstatus, harvesterstatus) VALUES(NULL, ?, ?, ?, ?, ?)", array($nodeid, 2, 2, 2, 2));
 
             $returnmessage = array("status" => 0, "message" => "Successfully allowed connection for node with ID {$data["nodeid"]}.");
             $querydata = [];

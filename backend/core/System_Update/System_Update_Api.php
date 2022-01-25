@@ -453,7 +453,7 @@
     public function checkFilesWritable(): array
     {
       $not_accessable = [];
-      $whitelist = [".htaccess", "config.ini.php.example"];
+      $whitelist = [".htaccess", "config.ini.php.example", ".git", ".gitignore"]; //Root folders or files, Subpaths are not possible currently
 
       foreach(
        $iterator = new \RecursiveIteratorIterator(
@@ -463,7 +463,8 @@
         if(str_contains($iterator->getSubPathname(), "backup" )){
           continue;
         }else{
-          if(in_array($item->getFilename(), $whitelist)) continue;
+          $root_folder = explode("/", $iterator->getSubPathname())[0];
+          if(in_array($item->getFilename(), $whitelist) || in_array($root_folder, $whitelist)) continue;
 
           if(!(is_readable($item) && is_writeable($item))){
             array_push($not_accessable, "/{$iterator->getSubPathname()}");
@@ -472,8 +473,13 @@
       }
 
       if(count($not_accessable) > 0){
-        if(!is_null($this->logging_api)) return $this->logging_api->getErrormessage("001");
-        else return array("status" => 1, "message" => "Some files are not fully accessable. Please adjust the file owner and group to the apache user and set 750 as file rights.");
+        if(!is_null($this->logging_api)){
+          $returnmessage = $this->logging_api->getErrormessage("001");
+          $returnmessage["data"] = $not_accessable;
+          return $returnmessage;
+        }else{
+          return array("status" => 1, "message" => "Some files are not fully accessable. Please adjust the file owner and group to the apache user and set 750 as file rights.", "data" => $not_accessable);
+        } 
       }else{
         return array("status" => 0, "message" => "All neded files are fully accessable.");
       }
@@ -868,10 +874,10 @@
           continue;
         }else{
           if($item->isDir()){
-            @mkdir($dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
+            //@mkdir($dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
           }else{
             if(in_array($item->getFilename(), $blacklist)) continue;
-            @copy($item, $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
+            //@copy($item, $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
           }
         }
       }

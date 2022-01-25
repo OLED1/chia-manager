@@ -252,7 +252,11 @@ function sendData(action, data){
           sendData("setMaintenanceMode", { "userID" : userID, "maintenance_mode" : 1 });
         }else{
           $("#updater-writable i").removeClass("fa-spinner").removeClass("fa-spin").addClass("fa-times").css("color","red");
-          $("#updater-writable-log").text(result["message"]);
+          var directories = "";
+          $.each(result["data"], function(arrkey, directory){
+            directories += "<br>" + directory;
+          });
+          $("#updater-writable-log").html(result["message"] + directories);
   
           showretry = true;
         }

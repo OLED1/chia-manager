@@ -71,6 +71,7 @@ $("#acceptNodeRequest").on("click", function(){
     }
 
     sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "acceptNodeRequest", data);
+    sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "checkUpdatesAndChannels", {});
   }else{
     showMessage(1, "No nodes are selected.");
   }

@@ -211,6 +211,8 @@ function setServiceBadge(){
 function messagesTrigger(data){
   var key = Object.keys(data);
 
+  console.log(data);
+
   if(data[key]["status"] == 0){
     if(key == "updateSystemInfo"){
       $.get(frontend + "/sites/chia_infra_sysinfo/templates/cards.php", {}, function(response) {

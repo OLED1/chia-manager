@@ -120,6 +120,7 @@
         sleep(1);
 
         $wssstatus = $this->wsclient->testConnection();
+        
         if($wssstatus["status"] == "016001001" || $wssstatus["status"] == "016001002"){
           return array("status" => 0, "message" => "Websocket server stopped.");
         }else{

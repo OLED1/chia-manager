@@ -369,7 +369,9 @@ class ChiaWebSocketServer implements MessageComponentInterface {
       foreach($this->requests AS $authhash => $requesterinfo){
         if(!in_array($authhash, $alreadyinformed) && $data["nodeinfo"]["authhash"] == $authhash){
           echo "[{$this->getDate()}] INFO: Informing {$requesterinfo['resid']} about changes.\n";
-          $this->users[$requesterinfo["resid"]]->send(json_encode($data["data"]));
+          if(array_key_exists($requesterinfo["resid"], $this->users)){
+            $this->users[$requesterinfo["resid"]]->send(json_encode($data["data"]));
+          }
           array_push($alreadyinformed, $authhash);
         }
       }
@@ -418,7 +420,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
     }
 
     foreach($this->requests AS $authhash => $requesterinfo){
-      if(!in_array($authhash, $alreadyinformed) && $data["nodeinfo"]["authhash"] == $authhash){
+      if(!in_array($authhash, $alreadyinformed) && array_key_exists("nodeinfo", $data) && $data["nodeinfo"]["authhash"] == $authhash){
         echo "[{$this->getDate()}] INFO: Informing {$requesterinfo['resid']} about changes.\n";
         $this->users[$requesterinfo["resid"]]->send(json_encode($data["data"]));
         array_push($alreadyinformed, $authhash);
