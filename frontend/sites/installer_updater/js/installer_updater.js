@@ -98,6 +98,7 @@ $("#complete-setup-finish").on("click", function(){
 });
 
 $("#process-update").on("click", function(){
+  $("#nav-updater-processing-page").addClass("active");
   processUpdateSteps();
 });
 
@@ -374,11 +375,13 @@ function sendData(action, data){
   
           $("#retry-update").hide();
           $("#update-finish-btn").prop("disabled", false).show();
+          $("#nav-updater-finishing-page").addClass("active");
         }else{
-          $("#updater-set-version-log").text(result["message"]);
-          $("#updater-set-version i").removeClass("fa-spinner").removeClass("fa-spin").addClass("fa-times").css("color","red");
+          $("#updater-websocket-on-log").text(result["message"]);
+          $("#updater-websocket-on i").removeClass("fa-spinner").removeClass("fa-spin").addClass("fa-times").css("color","red");
   
           $("#updater-maintenance-off i").removeClass("fa-hourglass-start").removeClass("fa-times").addClass("fa-spinner fa-spin").css("color","");
+          showretry = true;
         }
       }
       if(showretry) $("#retry-update").show();

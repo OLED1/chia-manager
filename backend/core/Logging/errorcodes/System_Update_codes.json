@@ -39,7 +39,9 @@
       "004" : [2, "An error occured. Zip not found."]
     },
     "checkAndAdjustDatabase" : {
-      "001" : [2, "An error occured."]
+      "001" : [2, "An error occured."],
+      "002" : [2, "Expected db structure update file not found. Please revert back your instance and contact us."],
+      "003" : [2, "An error occured. Could not set new dbversion."]
     },
     "updateConfigFile" : {
       "001" : [2, "Config file not writable."],

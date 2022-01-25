@@ -682,7 +682,8 @@
       $updatepackagepath = "https://files.chiamgmt.edtmair.at/server/";
 
       if(!is_null($version_file_data) && array_key_exists($updatechannel, $version_file_data)){
-        $updateurl = $version_file_data[$updatechannel][0]["link"];
+        $target_version = array_key_first($version_file_data[$updatechannel]);
+        $updateurl = $version_file_data[$updatechannel][$target_version];
         $tmpdir = "/tmp";
         if(is_dir($tmpdir)){
           $packagepath = "{$updatepackagepath}{$updateurl}";
@@ -764,7 +765,7 @@
               if(empty($line) || $startWith == '--' || $startWith == '/*' || $startWith == '//') {
                 continue;
               }
-
+              
               $query = $query . $line;
               if($endWith == ';'){
                 try{
@@ -776,7 +777,14 @@
                 }
               }
             }
+          }else{
+            return $this->logging_api->getErrormessage("002");
           }
+        }
+        try{
+          $this->db_api->execute("UPDATE system_infos SET dbversion = ?;", array($version));
+        }catch(Exception $e){
+          return $this->logging_api->getErrormessage("003", $e);
         }
       }
 
@@ -808,7 +816,7 @@
         $version_file_data = $this->getVersionFileData();
         $updatechannel = $version_file_data["updatechannel"];
         $version_file_data = $version_file_data["versionfiledata"];
-        $newversion = $version_file_data[$updatechannel][0]["version"];
+        $newversion = array_key_first($version_file_data[$updatechannel]);
       }
 
       $key = "application";
@@ -828,8 +836,8 @@
       $new_content = ";<?php\n;die(); // For further security;\n;/*\n{$new_content};*/";
       file_put_contents($config_file, $new_content);
 
-      $tempini = parse_ini_file($config_file);
-      if(array_key_exists("versnummer", $tempini) && $tempini["versnummer"] == $newversion){
+      $tempini = parse_ini_file($config_file, true);
+      if(array_key_exists("application", $tempini) && array_key_exists("versnummer", $tempini["application"]) && $tempini["application"]["versnummer"] == $newversion){
         return array("status" => 0, "message" => "Successfully set new version to {$newversion}.");
       }else {
         return $this->logging_api->getErrormessage("002");
@@ -874,10 +882,10 @@
           continue;
         }else{
           if($item->isDir()){
-            //@mkdir($dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
+            @mkdir($dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
           }else{
             if(in_array($item->getFilename(), $blacklist)) continue;
-            //@copy($item, $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
+            @copy($item, $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathname());
           }
         }
       }
