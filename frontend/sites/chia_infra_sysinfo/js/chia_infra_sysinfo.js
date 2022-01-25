@@ -211,8 +211,6 @@ function setServiceBadge(){
 function messagesTrigger(data){
   var key = Object.keys(data);
 
-  console.log(data);
-
   if(data[key]["status"] == 0){
     if(key == "updateSystemInfo"){
       $.get(frontend + "/sites/chia_infra_sysinfo/templates/cards.php", {}, function(response) {
@@ -221,6 +219,7 @@ function messagesTrigger(data){
         reinitQueryAllButton();
         initSysinfoRefresh();
         initSysinfoNodeActions();
+        sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getCurrentChiaNodesUPAndServiceStatus", {});
       });
     }else if(key == "queryNodesServicesStatus" || key == "updateChiaStatus" || key == "setNodeUpDown"){
       sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getCurrentChiaNodesUPAndServiceStatus", {});
