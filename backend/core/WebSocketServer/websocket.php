@@ -6,6 +6,11 @@
 
   require __DIR__ . '/../../../vendor/autoload.php';
 
+  if(exec('whoami') == "root"){
+    echo "Running this script as root is not allowed.\n";
+    exit();
+  }
+
   $ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
 
   $wsServer = new WsServer(new ChiaWebSocketServer());
