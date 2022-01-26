@@ -25,7 +25,13 @@
   $users_api = new Users_Api();
   $user_settings_api = new UserSettings_Api();
 
-  $gui_mode = $user_settings_api->getGuiMode($_COOKIE["user_id"])["data"]["gui_mode"];
+  $setup_gui_mod = $user_settings_api->getGuiMode($_COOKIE["user_id"]);
+  if(array_key_exists("data", $setup_gui_mod) || array_key_exists("gui_mode", $setup_gui_mod["data"])){
+    $gui_mode = $setup_gui_mod["data"]["gui_mode"];
+  }else{
+    $user_settings_api->setGuiMode(["gui_mode" => 1]);
+    $gui_mode = 1;
+  }
   $gui_mode_string = ($gui_mode == 1 ? "gui-mode-light" : "gui-mode-dark");
 
   $userData = array();
@@ -69,9 +75,11 @@
       <link href="<?php echo $frontendurl; ?>/frameworks/jquery-datetimepicker/build/jquery.datetimepicker.min.css" rel="stylesheet">
       <!-- Custom styles for this template-->
       <link href="<?php echo $frontendurl; ?>/css/custom.css" rel="stylesheet">
-      <link href="<?php echo $frontendurl; ?>/css/gui-modes/dark/mode.css" rel="stylesheet">
+      <?php if ($gui_mode == 2 ){ ?>
+        <link href="<?php echo $frontendurl; ?>/css/gui-modes/dark/mode.css" rel="stylesheet">
+      <?php } ?>
+        
   </head>
-
   <body id="page-top" class="gui-mode-elem <?php echo $gui_mode_string; ?>" style="overflow: auto;">
     <div id="wrapper">
       <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion gui-mode-elem <?php echo $gui_mode_string; ?>" id="accordionSidebar">
