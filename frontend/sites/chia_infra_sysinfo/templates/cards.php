@@ -26,15 +26,8 @@
         <h6 class="m-0 font-weight-bold text-primary">Systeminformation Node <bold><?php echo "{$sysinfo["hostname"]}"; ?></bold>
           <?php if(!is_numeric($sysinfo["load_1min"])){ ?>
             <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-danger'>No data found</span>
-          <?php
+            <?php
               }else{
-                if($nodes_states[$nodeid]["onlinestatus"] == 1){
-                  $statustext = "Node not reachable.";
-                  $statusicon = "badge-danger";
-                }else if($nodes_states[$nodeid]["onlinestatus"] == 0){
-                  $statustext = "Node connected.";
-                  $statusicon = "badge-success";
-                }
             ?>
             <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-secondary'>Processing...</span>
           <?php } ?>
