@@ -34,7 +34,7 @@ CREATE TABLE `users` (
   `enabled` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -60,7 +60,7 @@ CREATE TABLE `nodes` (
   `lastseen` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `id` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -77,7 +77,7 @@ CREATE TABLE `authkeys` (
   PRIMARY KEY (`id`),
   KEY `UserID` (`usrID`),
   CONSTRAINT `authkeys_ibfk_1` FOREIGN KEY (`usrID`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -103,7 +103,7 @@ CREATE TABLE `chia_farm` (
   PRIMARY KEY (`id`),
   KEY `NodeIDFarm` (`nodeid`),
   CONSTRAINT `fk_nodes_chia_farm` FOREIGN KEY (`nodeid`) REFERENCES `nodes` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -146,7 +146,7 @@ CREATE TABLE `chia_farm_challenges` (
   UNIQUE KEY `challenge_chain_sp` (`challenge_chain_sp`),
   KEY `nodeid` (`nodeid`),
   CONSTRAINT `fk_nodes_chia_farm_challenges` FOREIGN KEY (`nodeid`) REFERENCES `nodes` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2776380 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -177,7 +177,7 @@ CREATE TABLE `chia_infra_sysinfo` (
   KEY `NodeIDSysinfo` (`nodeid`),
   KEY `timestamp` (`timestamp`),
   CONSTRAINT `fk_nodes_chia_infra_sysinfo` FOREIGN KEY (`nodeid`) REFERENCES `nodes` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=34578 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -199,7 +199,7 @@ CREATE TABLE `chia_infra_sysinfo_filesystems` (
   KEY `sysinfo_id` (`sysinfo_id`),
   KEY `mountpoint` (`mountpoint`),
   CONSTRAINT `fk_chia_infra_sysinfo_chia_infra_sysinfo_filesystems` FOREIGN KEY (`sysinfo_id`) REFERENCES `chia_infra_sysinfo` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=319795 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -223,7 +223,7 @@ CREATE TABLE `chia_overall` (
   `market_timestamp` datetime NOT NULL,
   `querydate` datetime NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=28162 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -245,7 +245,7 @@ CREATE TABLE `chia_plots_directories` (
   KEY `nodeid` (`nodeid`),
   KEY `mountpoint` (`mountpoint`),
   CONSTRAINT `fk_nodes_chia_plots_directories` FOREIGN KEY (`nodeid`) REFERENCES `nodes` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -273,7 +273,7 @@ CREATE TABLE `chia_plots` (
   UNIQUE KEY `plot_seed` (`plot_seed`),
   KEY `NodeIDPlots` (`cpd_id`),
   CONSTRAINT `fk_chia_plots_directories_chia_plots` FOREIGN KEY (`cpd_id`) REFERENCES `chia_plots_directories` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=24790 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -298,7 +298,7 @@ CREATE TABLE `chia_wallets` (
   PRIMARY KEY (`id`),
   KEY `NodeIDWallet` (`nodeid`),
   CONSTRAINT `fk_nodes_chia_wallets` FOREIGN KEY (`nodeid`) REFERENCES `nodes` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -330,7 +330,7 @@ CREATE TABLE `chia_wallets_transactions` (
   PRIMARY KEY (`id`),
   KEY `NodeIDWalletTrans` (`nodeid`),
   CONSTRAINT `fk_nodes_chia_wallets_transactions` FOREIGN KEY (`nodeid`) REFERENCES `nodes` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -348,7 +348,7 @@ CREATE TABLE `exchangerates` (
   `updatedate` date NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `currency_code` (`currency_code`)
-) ENGINE=InnoDB AUTO_INCREMENT=5581361 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -369,7 +369,7 @@ CREATE TABLE `nodes_services_status` (
   KEY `lastreported` (`lastreported`),
   KEY `nodeid` (`nodeid`),
   CONSTRAINT `fk_nodes_nodes_services_status` FOREIGN KEY (`nodeid`) REFERENCES `nodes` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=1048 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -388,7 +388,7 @@ CREATE TABLE `nodes_up_status` (
   PRIMARY KEY (`id`),
   KEY `fk_nodes_nodes_up_status` (`nodeid`),
   CONSTRAINT `fk_nodes_nodes_up_status` FOREIGN KEY (`nodeid`) REFERENCES `nodes` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=1990 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -407,7 +407,7 @@ CREATE TABLE `nodetypes_avail` (
   `nodetype` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `code` (`code`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -426,7 +426,7 @@ CREATE TABLE `nodetype` (
   KEY `NotetypesAvail` (`code`),
   CONSTRAINT `fk_nodes_nodetype` FOREIGN KEY (`nodeid`) REFERENCES `nodes` (`id`) ON DELETE CASCADE,
   CONSTRAINT `nodetype_ibfk_1` FOREIGN KEY (`code`) REFERENCES `nodetypes_avail` (`code`)
-) ENGINE=InnoDB AUTO_INCREMENT=195 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -440,7 +440,7 @@ CREATE TABLE `sites` (
   `id` int NOT NULL AUTO_INCREMENT,
   `namespace` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -457,7 +457,7 @@ CREATE TABLE `sites_pagestoinform` (
   PRIMARY KEY (`id`),
   KEY `siteid` (`siteid`),
   CONSTRAINT `sites_pagestoinform_ibfk_1` FOREIGN KEY (`siteid`) REFERENCES `sites` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -476,7 +476,7 @@ CREATE TABLE `system_infos` (
   `maintenance_mode` int NOT NULL,
   `lastcronrun` timestamp NOT NULL DEFAULT '1970-01-01 22:00:00',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -493,7 +493,7 @@ CREATE TABLE `system_settings` (
   `confirmed` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `settingtype` (`settingtype`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -512,7 +512,7 @@ CREATE TABLE `users_authkeys` (
   PRIMARY KEY (`id`),
   KEY `UserIDAuthkeys` (`userid`),
   CONSTRAINT `users_authkeys_ibfk_1` FOREIGN KEY (`userid`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=382 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -530,7 +530,7 @@ CREATE TABLE `users_backupkeys` (
   PRIMARY KEY (`id`),
   KEY `UserIDBkpKeys` (`userid`),
   CONSTRAINT `users_backupkeys_ibfk_1` FOREIGN KEY (`userid`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -549,7 +549,7 @@ CREATE TABLE `users_pwresets` (
   PRIMARY KEY (`id`),
   KEY `userid` (`userid`),
   CONSTRAINT `users_pwresets_ibfk_1` FOREIGN KEY (`userid`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -572,7 +572,7 @@ CREATE TABLE `users_sessions` (
   PRIMARY KEY (`id`),
   KEY `UserIDSessions` (`userid`),
   CONSTRAINT `users_sessions_ibfk_1` FOREIGN KEY (`userid`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=456 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -593,7 +593,7 @@ CREATE TABLE `users_settings` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `userid` (`userid`),
   CONSTRAINT `users_settings_ibfk_1` FOREIGN KEY (`userid`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
