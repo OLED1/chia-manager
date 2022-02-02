@@ -3,13 +3,13 @@
 This is the dev branch of the **Chia® Manager Web-GUI**. This branch is primary made for **developers**.
 So if you want to decide to install this branch be always afraid of **untested content** and **bugs**.
 
-This project is made for **Chia® Farmer** . Please visit https://www.chia.net/ get more information about Chia®.
+This project is made for **Chia® Farmer** . Please visit https://www.chia.net/ to get more information about Chia®.
 The main goal is to make monitoring and managing the Chia® Infrastructure and the needed nodes more **efficient and easy**.
 
 ### Why should i use it?
 This project should make it more easy to use, manage and monitor your Chia® Nodes and to be sure every node makes his work and you are good to go.
 
-Some of the upcoming feature like autoplotting via Madmax plotter will excite you.
+Some of the upcoming feature like autoplotting via [Madmax](https://github.com/madMAx43v3r/chia-plotter) plotter will excite you.
 
 Furthermore this project (will) offer(s) nearly everything like the Chia® electron gui.
 Read more in the following sections.
@@ -71,6 +71,7 @@ The web-gui should run on a Linux server anyway as any other web based applicati
     - Get all available information about your farm like **Farmingstatus**, **XCH Block Rewards** and so on.
   - Harvester
     - A brief overview of your configured plotting directories and used capacity. A list of all found plots.
+  - And many many more!
 
   See full feature list here: [Chia® Manager Documentation](https://docs.chia-manager.com/features/features).
 
@@ -87,15 +88,11 @@ The web-gui should run on a Linux server anyway as any other web based applicati
   - Setup and manage different alerting levels to be fully informed just in moment something unexpected is happening
 - Full autoplotting with madmax plotter integration
   - Select an empty or not fully plotted directory and let Chia® Manager **autoplot** all your directories
-- And much more!
+- And many more!
+
+Check out our roadmap to get more information: [Chia® Manager Documentation](https://docs.chia-manager.com/features/roadmap).
 
 Do you have any further ideas of features you want to see? Just make a feature request or mail us!
-
-### Roadmap
-Please see our documentation at [Chia® Manager Documentation](https://docs.chia-manager.com/features/roadmap)
-
-If the feature list stays as long as currently, version 1.0 might be reached much faster.
-Version 1.0 will be released if every planned main features are implemented.
 
 ## We need your help!
 Currently we are two contributors. **Lucaaust**, an occupational python programmer and **OLED1**, an occupational Linux Sysadmin and hobby programmer.
