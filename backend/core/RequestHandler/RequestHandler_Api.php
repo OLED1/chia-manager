@@ -318,7 +318,7 @@
                 }
               }else if($sqldata["authtype"] == 0){ //Authtype is currently not known, because this node is not authenticated to the api
                 $returndata = $this->logging->getErrormessage("012");
-                $returndata["data"]["newauthhash"] = $data["authhash"];
+                $returndata["data"]["authhash"] = $data["authhash"];
                 return $returndata;
               }else if($sqldata["authtype"] == 2){ //Authtype = 2 means that this node needs an accepted IP address and authhash
                 $authenticated = array("status" => 0, "message" => "This node is allowed to connect to the api.");
@@ -367,7 +367,7 @@
 
               $returndata = $this->logging->getErrormessage("006");
               $returndata["data"]["nodeid"] = $sqdata[0]["id"];
-              $returndata["data"]["newauthhash"] = $newnodeauthhash;
+              $returndata["data"]["authhash"] = $newnodeauthhash;
               return $returndata;
             }else if(count($sqdata) == 1){
 
@@ -376,13 +376,13 @@
                 else $data = $this->logging->getErrormessage("007");
 
                 $data["data"]["nodeid"] = $sqdata[0]["id"];
-                $data["data"]["newauthhash"] = $this->encryption_api->decryptString($sqdata[0]["nodeauthhash"]);
+                $data["data"]["authhash"] = $this->encryption_api->decryptString($sqdata[0]["nodeauthhash"]);
 
                 return $data;
               }else{
                 $sql = $this->db_api->execute("UPDATE nodes SET changedIP = ? WHERE hostname = ?", array($nodeip, $nodeinfo["hostname"]));
                 $data = $this->logging->getErrormessage("011");
-                $data["data"]["newauthhash"] = $this->encryption_api->decryptString($sqdata[0]["nodeauthhash"]);
+                $data["data"]["authhash"] = $this->encryption_api->decryptString($sqdata[0]["nodeauthhash"]);
                 return $data;
               }
             }else{
