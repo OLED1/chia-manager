@@ -20,7 +20,7 @@
     <h5>Explanation</h5>
     <div class="card shadow mb-4">
       <div class="card-body">
-        Create, edit and disable users which have access to the management paltform.
+        Create, edit and disable users which have access to the management platform.
       </div>
     </div>
   </div>

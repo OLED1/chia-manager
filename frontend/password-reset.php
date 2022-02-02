@@ -35,7 +35,7 @@
   <meta name="description" content="">
   <meta name="author" content="">
 
-  <title>Chia Manager - Reset Password</title>
+  <title>Chia® Manager - Reset Password</title>
 
   <link rel="shortcut icon" type="image/x-icon" href="<?php echo $ini["frontend_url"]."/img/favicon.ico"?>">
   <link rel="icon" type="image/png" href="<?php echo $ini["frontend_url"]."/img/favicon.png"?>" sizes="32x32">

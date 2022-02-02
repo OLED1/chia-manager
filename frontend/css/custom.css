@@ -20,6 +20,15 @@
   }
 }
 
+/** Chia Copyright adaptions **/
+.chia-copyright{
+  font-size: 0.8rem;
+}
+
+.chia-copyright-h4{
+  font-size: 1.2rem;
+}
+
 .sidebar-brand-icon {
   background-repeat: no-repeat;
 }

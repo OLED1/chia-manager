@@ -14,7 +14,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Chia Mgmt - Page not found</title>
+    <title>Chia® Manager - Page not found</title>
 
     <link rel="shortcut icon" type="image/x-icon" href="/frontend/img/favicon.ico">
     <link rel="icon" type="image/png" href="/frontendimg/favicon.png" sizes="32x32">

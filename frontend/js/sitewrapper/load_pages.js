@@ -101,8 +101,8 @@ $(function(){
                 $(".nav-item").first().addClass("active");
               }
 
-              $('head title', window.parent.document).text("Chia Manager - " + sitename);
-              if (history.pushState) window.history.pushState("", "Chia Manager - " + sitename, frontend + "/index.php" + href);
+              $('head title', window.parent.document).text("Chia® Manager - " + sitename);
+              if (history.pushState) window.history.pushState("", "Chia® Manager - " + sitename, frontend + "/index.php" + href);
             }
 
             var data = {

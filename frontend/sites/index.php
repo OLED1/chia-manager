@@ -58,7 +58,7 @@
       <meta name="description" content="">
       <meta name="author" content="">
 
-      <title>Chia Manager - Dashboard</title>
+      <title>Chia® Manager - Dashboard</title>
 
       <link rel="shortcut icon" type="image/x-icon" href="<?php echo $ini["frontend_url"]."/img/favicon.ico"?>">
       <link rel="icon" type="image/png" href="<?php echo $ini["frontend_url"]."/img/favicon.png"?>" sizes="32x32">
@@ -90,7 +90,7 @@
             <i clas="projectlogo"></i>
             <i class="fas fa-project-diagram"></i>
           </div>-->
-          <div class="sidebar-brand-text mx-1">Chia Manager</div>
+          <div class="sidebar-brand-text mx-1"><span class="chia-copyright">Chia®</span> Manager</div>
         </a>
 
         <hr class="sidebar-divider my-0">
@@ -102,7 +102,7 @@
         </li>
         <hr class="sidebar-divider">
         <div class="sidebar-heading">
-            My Chia Infra
+            My Infrastructure
         </div>
         <li id="nav-nodes" class="nav-item">
           <a class="nav-link" data-siteid=2 data-nav-target="nav-nodes" href="/sites/nodes">
@@ -142,7 +142,7 @@
         <li id="nav-chia-statistics" class="nav-item">
           <a class="nav-link" data-siteid=12 data-nav-target="nav-chia-statistics" href="/sites/chia_statistics">
             <i class="fas fa-chart-bar"></i>
-            <span>Chia</span>
+            <span style="font-size: .80rem">Chia®</span>
           </a>
         </li>
         <li id="nav-systems-statistics" class="nav-item">
@@ -269,7 +269,7 @@
                     </a>
                     <a class="dropdown-item" href="#" data-toggle="modal" data-target="#versionNotesModal">
                       <i class="fas fa-sticky-note fa-sm fa-fw mr-2 text-gray-400"></i>
-                      Version Notes
+                      Project Notes
                     </a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
@@ -289,7 +289,9 @@
           <footer class="sticky-footer bg-white gui-mode-elem <?php echo $gui_mode_string; ?>">
               <div class="container my-auto">
                   <div class="copyright text-center my-auto">
-                      <span>Copyright &copy; ChiaMgmt Version <?php echo $ini["versnummer"]; ?>. All rights reserved.</span>
+                      <span>Copyright &copy; Oliver Edtmair and Luca Austelat<br>
+                      <span style="font-size: .7rem">Chia®</span> Manager Version <?php echo $ini["versnummer"]; ?>. All rights reserved.
+                      </span>
                   </div>
               </div>
           </footer>
@@ -321,21 +323,22 @@
       <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 40em;">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="versionNotesModalLabel">Version Notes</h5>
+            <h5 class="modal-title" id="versionNotesModalLabel">Project Notes</h5>
             <button class="close" type="button" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">×</span>
             </button>
           </div>
           <div class="modal-body">
-            <h4 style="text-align: center;">Chia infrastructur management and monitoring tool</h4>
+            <h4 style="text-align: center;"><span class="chia-copyright-h4">Chia®</span> infrastructur management and monitoring tool</h4>
             <img src="../img/chia_coin_logo.png" alt="Chia Logo" class="chialogo">
             <h5 style="text-align: center;">Current project version: <?php echo $ini["versnummer"]; ?></h5>
             <p style="text-align: center;">Idea and programming by <strong>OLED1.</strong><br>
             Thanks for contribution to <strong>LucaAust.</strong></p>
             <br>
             <p>
-              Find source code for the webgui on github:&nbsp;<a class="externallink"  target="_blank" href="https://github.com/OLED1/chia-web-gui">Here</a><br>
-              Find source code for the node client on github:&nbsp;<a class="externallink"  target="_blank" href="https://github.com/OLED1/chia-node-client">Here</a>
+              Find source code for the webgui on github:&nbsp;<a class="externallink"  target="_blank" href="https://github.com/OLED1/chia-web-gui">here</a><br>
+              Find source code for the node client on github:&nbsp;<a class="externallink"  target="_blank" href="https://github.com/OLED1/chia-node-client">here</a><br>
+              Find our documentation&nbsp;<a class="externallink"  target="_blank" href="https://docs.chia-manager.com/">here</a><br>
             </p>
             <p>
               Backend programmed in PHP (Version 7.4.3) with MySQL (Version 8.0.26).<br>
@@ -349,26 +352,31 @@
             <p>This project is licensed under the <a class="externallink" target="_blank" href="https://www.gnu.org/licenses/gpl-3.0.en.html">GNU General Public License v3.0.</a></p>
             <p>
               <strong>Change Notes for this version:</strong><br>
-              This is the first release of the ChiaMgmt tool.<br> At the moment it is readonly for security reasons.<br>
-              - First implementation of everything you can see
+              This is the first release of the <span style="font-size:0.8em;">Chia®</span> Manager tool.<br> At the moment it is readonly for security reasons.<br>
+              - First implementation of everything you can see<br>
+              - <a class="externallink" target="_blank" href="https://docs.chia-manager.com/features/features">Full releasenotes</a>
             </p>
             <p>
-              <strong>Upcomming changes for v0.02:</strong><br>
-              - Pooldata in Version v0.02 by using plotnft command<br>
-              - Some more graphs in v0.02<br>
-              - A third factor per authenticator in v0.02<br><br>
-              - Did you find any bugs? Tell me!<br>
-              - Do you wish more features in v0.02? Tell me!<br>
-              - Do you have some ideas or enhancements? Tell me!<br><br>
-              - After a professional security check, real management will be implemented<br>
+              <strong>Upcomming changes for 0.2.alpha:</strong><br>
+              - Redis Cache for caching of log messages and historical data for faster processing and loading<br>
+              - Pooldata by using plotnft command<br>
+              - The wallet, harvester and farmer page gets a new design<br>
+              - And many many more!<br>
+              - <a class="externallink" target="_blank" href="https://docs.chia-manager.com/features/roadmap">See our complete roadmap</a><br>
             </p>
-            <p>This project is open source and free and it will be forever.<br>
+            <p>
+              <strong>Bugreports or feature requests</strong><br>
+              Please click <a class="externallink" target="_blank" href="https://docs.chia-manager.com/contact-us">here</a> to visit our contacts page.<br>
+            </p>
+            <p><strong>About this project</strong><br>
+            This project is open source and free.<br>
             But if you want to support us and this project you can contribute some Mojos to this address: (Coming soon).</p>
             <p><strong>External data</strong><br>
               External data like the current chia netspace or dollar price is provided by&nbsp;<a class="externallink"  target="_blank" href="https://xchscan.com/">xchscan.com</a>.
             </p>
             <p><strong>Disclaimer</strong><br>
-              CHIA NETWORK INC, CHIA™, the CHIA BLOCKCHAIN™, the CHIA PROTOCOL™, CHIALISP™ and the “leaf Logo” (including the leaf logo alone when it refers to or indicates Chia), are trademarks or registered trademarks of Chia Network, Inc., a Delaware corporation. There is no affiliation between this Chia Mgmt project and the main Chia Network project.
+              Chia® and the Chia Leaf Logo™ are registered trademarks or trademarks of Chia Network, Inc. in the United States and worldwide.<br>
+              CHIA NETWORK INC, CHIA®, the CHIA BLOCKCHAIN™, the CHIA PROTOCOL™, CHIALISP™ and the “leaf Logo” (including the leaf logo alone when it refers to or indicates Chia), are trademarks or registered trademarks of Chia Network, Inc., a Delaware corporation. There is no affiliation between this project and the main Chia Network project.
             </p>
           </div>
           <div class="modal-footer">

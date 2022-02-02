@@ -25,7 +25,7 @@
       <meta name="description" content="">
       <meta name="author" content="">
 
-      <title>Chia Manager - Maintenance</title>
+      <title>Chia® Manager - Maintenance</title>
 
       <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico">
       <link rel="icon" type="image/png" href="img/favicon.png" sizes="32x32">

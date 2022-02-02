@@ -10,7 +10,7 @@
     <h5>Explanation</h5>
     <div class="card shadow mb-4">
       <div class="card-body">
-        On this page you see what's happening in the backend of the Chia Mgmt tool and it's backend services.<br>
+        On this page you see what's happening in the backend of the <span style="font-size: .9rem">Chia®</span> Manager tool and it's backend services.<br>
         It includes all logs regarding the websocket service, the api services and the automated task (aka cronjob) service.
       </div>
     </div>

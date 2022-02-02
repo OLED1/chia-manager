@@ -103,10 +103,10 @@
       <div class="col">
         <div class="card shadow mb-4">
           <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-            <h6 class="m-0 font-weight-bold text-primary">Version</h6>
+            <h6 class="m-0 font-weight-bold text-primary">Instance maintenance
           </div>
           <div class="card-body">
-            <h4>Chia Mgmt <?php echo $updates["data"]["localversion"]; ?></h4>
+            <h4><span style="font-size: 1.3rem">Chia®</span> Manager <?php echo $updates["data"]["localversion"]; ?></h4>
             <?php if(array_key_exists("updateavail", $updates["data"]) && $updates["data"]["updateavail"]) { ?>
             <h5><span id="updateversionbadge" class="badge badge-warning">Your version is out of date. Version <?php echo $updates["data"]["remoteversion"]; ?> is available. Please update soon.</span></h5>
           <?php }else if(array_key_exists("updateavail", $updates["data"])){ ?>

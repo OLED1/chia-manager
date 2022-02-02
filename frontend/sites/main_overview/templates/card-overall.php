@@ -22,7 +22,7 @@
 ?>
 <div class="card mb-4">
   <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-      <h6 class="m-0 font-weight-bold text-primary">Chia overall information</h6>
+      <h6 class="m-0 font-weight-bold text-primary"><span style="font-size: 0.9rem">Chia®</span> overall information</h6>
       <div class='dropdown no-arrow'>
         <a class='dropdown-toggle' href='#' role='button' id='overallMenu' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
           <i class='fas fa-ellipsis-v fa-sm fa-fw text-gray-400'></i>

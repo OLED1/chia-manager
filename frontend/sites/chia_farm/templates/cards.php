@@ -67,7 +67,7 @@
           <div class="col">
             <div class="card shadow mb-4">
               <div class="card-body">
-                <h5>XCH Total Chia Farmed</h5>
+                <h5>XCH Total <span style="font-size: 1.1rem">Chia®</span> Farmed</h5>
                 <h4><?php echo $calc_xch($farmdata["total_chia_farmed"]); ?></h4>
                 <h7>&nbsp;</h7>
               </div>
