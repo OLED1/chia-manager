@@ -34,7 +34,7 @@
     <h5>Explanation</h5>
     <div class="card shadow mb-4">
       <div class="card-body">
-        On this page you are able to allow and deny access to the websocket backend of the Chia Manager.<br>
+        On this page you are able to allow and deny access to the websocket backend of the <span style="font-size: 0.9rem;">Chia®</span> Manager.<br>
         Please be aware of some settings: If the IP of a node changes, so the change must be accepted otherwise all connections will be declined. You can allow the connection by pressing the yellow button under "IP Address" which appears in such case.<br>
         In case of a new connection it can be accepted or denied using the buttons located under "Actions".
       </div>
@@ -43,45 +43,29 @@
 </div>
 <div class="row">
   <div class="col">
-    <h5>Install instructions</h5>
+    <h5>Node install instructions</h5>
     <div style="margin-bottom: 1em;">
       <p>
-        <button class="btn btn-primary" data-toggle="collapse" href="#linuxInstructionCollapse" role="button" aria-expanded="false" aria-controls="linuxInstructionCollapse"><i class="fab fa-linux"></i>&nbsp;Install python node client on Linux</button>
-        <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#windowsInstructionCollapse" aria-expanded="false" aria-controls="windowsInstructionCollapse"><i class="fab fa-windows"></i>&nbsp;Install python node client on Windows</button>
+        <button class="btn btn-primary" data-toggle="collapse" href="#linuxInstructionCollapse" role="button" aria-expanded="false" aria-controls="linuxInstructionCollapse"><i class="fab fa-linux"></i>&nbsp;Linux</button>
+        <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#windowsInstructionCollapse" aria-expanded="false" aria-controls="windowsInstructionCollapse"><i class="fab fa-windows"></i>&nbsp;Windows</button>
       </p>
       <div class="row">
         <div class="col">
           <div class="collapse multi-collapse" id="linuxInstructionCollapse">
             <div class="card card-body">
               <p>To be able to gather live data from your nodes you need to install the python node client on your system(s).</p>
-              <ul class="list-group">
-                <li class="list-group-item">
-                    <strong>Navigate to a directory where you want to install the node client.</strong><br>
-                    mkdir /your/desired/path<br>
-                    e.g. mkdir -p /usr/local/bin/chia_node_client
+              <ol >
+                <li >Navigate to the parent directory where you want to install the node client. e.g. cd /usr/local/bin/</li>
+                <li>git clone https://github.com/OLED1/chia-node-client.git</li>
+                <li>cd chia-node-client</li>
+                <li>chmod +x install.sh</li>
+                <li>. install.sh</li>
+                <li>
+                  If you not installed the service run: python3 run_node_client.py<br>
+                  otherwise run: sudo systemctl start chia-node-client.service
                 </li>
-                <li class="list-group-item">
-                    <strong>Download and install the client:</strong><br>
-                    cd /path/to/your/installation<br>
-                    wget https://files.chiamgmt.edtmair.at/client/&#60;your-desired-branch&#62;<br>
-                    unzip chia_python_client_install.zip<br>
-                </li>
-                <li class="list-group-item">
-                    <strong>Execute the chia client node installer</strong><br>
-                    cd /path/to/your/installation<br>
-                    chmod +x install.sh<br>
-                    Please follow the instructions.
-                </li>
-                <li class="list-group-item">
-                    <strong>Run the client</strong><br>
-                    python3 run_node_client.py<br>
-                    or<br>
-                    sudo systemctl start chia-node-client.service
-                </li>
-                <li class="list-group-item">
-                    <strong>You are done.</strong>
-                </li>
-              </ul>
+                <li>Now you need to allow the new client in the table below</li>
+              </ol>
             </div>
           </div>
         </div>
