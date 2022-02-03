@@ -1,17 +1,20 @@
 # chia-web-gui
+## Important notice
+This tool is not officially published by CHIA NETWORK INC nor officially supported! It is an unofficial hobby project. _Chia®_ and the Chia Leaf Logo™ are registered trademarks or trademarks of Chia Network, Inc. in the United States and worldwide. **All in italic written words are copyright protected**.
+
 ## Branch: Dev, Introduction
-This is the dev branch of the **Chia® Manager Web-GUI**. This branch is primary made for **developers**.
+This is the dev branch of the **_Chia®_ Manager Web-GUI**. This branch is primary made for **developers**.
 So if you want to decide to install this branch be always afraid of **untested content** and **bugs**.
 
-This project is made for **Chia® Farmer** . Please visit https://www.chia.net/ to get more information about Chia®.
-The main goal is to make monitoring and managing the Chia® Infrastructure and the needed nodes more **efficient and easy**.
+This project is made for **_Chia®_ Farmer** . Please visit https://www.chia.net/ to get more information about _Chia®_.
+The main goal is to make monitoring and managing the  _Chia®_ Infrastructure and the needed nodes more **efficient and easy**.
 
 ### Why should i use it?
-This project should make it more easy to use, manage and monitor your Chia® Nodes and to be sure every node makes his work and you are good to go.
+This project should make it more easy to use, manage and monitor your  _Chia®_ Nodes and to be sure every node makes his work and you are good to go.
 
 Some of the upcoming feature like autoplotting via [Madmax](https://github.com/madMAx43v3r/chia-plotter) plotter will excite you.
 
-Furthermore this project (will) offer(s) nearly everything like the Chia® electron gui.
+Furthermore this project (will) offer(s) nearly everything like the _Chia®_ electron gui.
 Read more in the following sections.
 
 ### What can i do with it?
@@ -23,7 +26,7 @@ Every node will be checked if it is up running and if the (farmer/harvester/wall
 At the moment you are able to restart a certain service if it is not running correctly right from the webgui.
 
 ### Overview
-Currently you are able to view the following read-only information partially reclined on the Chia® electron gui:
+Currently you are able to view the following read-only information partially reclined on the  _Chia®_ electron gui:
 - Node system information (Filesystems, RAM and SWAP information and System Load)
 - Wallet Information (Syncstatus, Owning XCH, etc.)
 - Farm Information (Farminstatus and every corresponding information)
@@ -56,13 +59,13 @@ The web-gui should run on a Linux server anyway as any other web based applicati
   - Only a certain service restart is possible at the moment
   - Dashboard
     - System and Security
-    - Current Chia® Netspace and XCH Price (queried from an up-to-date external api)
+    - Current _Chia®_ Netspace and XCH Price (queried from an up-to-date external api)
     - Wallet(s) overall information like Node/Service stats, Sync status, etc.
     - Farm overview like Node/Service stats, Farming Status, Plot count, and total size
     - Harvester overview like Node/service stats and a list of not mounted directories
     - Your assets are converted into your preferred currency
   - Nodes Page
-    - Manage your Chia® Nodes. Accept and deny node requests.
+    - Manage your _Chia®_ Nodes. Accept and deny node requests.
   - Infra Sysinfo
     - Get the latest available system information from you host systems. **Filesystem spaces**, **RAM and SWAP** and **Load information**.
   - Wallet
@@ -73,13 +76,13 @@ The web-gui should run on a Linux server anyway as any other web based applicati
     - A brief overview of your configured plotting directories and used capacity. A list of all found plots.
   - And many many more!
 
-  See full feature list here: [Chia® Manager Documentation](https://docs.chia-manager.com/features/features).
+  See full feature list here: [_Chia®_ Manager Documentation](https://docs.chia-manager.com/features/features).
 
 
 ## Upcoming features
 - Full management via webgui
   - Update and restart the host system
-  - Update your Chia® version fully automatically
+  - Update your _Chia®_ version fully automatically
   - Detect and check your plots periodically
   - Manage MS Windows systems too
 - Complete monitoring
@@ -87,10 +90,10 @@ The web-gui should run on a Linux server anyway as any other web based applicati
   - Be able to detect immediately if you might lose money
   - Setup and manage different alerting levels to be fully informed just in moment something unexpected is happening
 - Full autoplotting with madmax plotter integration
-  - Select an empty or not fully plotted directory and let Chia® Manager **autoplot** all your directories
+  - Select an empty or not fully plotted directory and let _Chia®_ Manager **autoplot** all your directories
 - And many more!
 
-Check out our roadmap to get more information: [Chia® Manager Documentation](https://docs.chia-manager.com/features/roadmap).
+Check out our roadmap to get more information: [_Chia®_ Manager Documentation](https://docs.chia-manager.com/features/roadmap).
 
 Do you have any further ideas of features you want to see? Just make a feature request or mail us!
 
@@ -98,11 +101,11 @@ Do you have any further ideas of features you want to see? Just make a feature r
 Currently we are two contributors. **Lucaaust**, an occupational python programmer and **OLED1**, an occupational Linux Sysadmin and hobby programmer.
 
 You can help us out with testing and if you want with code contribution.
-We want to offer a free, open source and stable Chia® Farm Management Software.
+We want to offer a free, open source and stable _Chia®_ Farm Management Software.
 
 ## Installation and Usage
 ### Installation
-Please see our documentation at [Chia® Manager Documentation](https://docs.chia-manager.com/administrator-documentation)
+Please see our documentation at [_Chia®_ Manager Documentation](https://docs.chia-manager.com/administrator-documentation)
 
 #### Node client Installation
 Just follow the instructions in the Web-GUI under the point "Nodes".
