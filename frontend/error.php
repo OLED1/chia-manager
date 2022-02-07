@@ -13,12 +13,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="">
     <meta name="author" content="">
+    <meta name="robots" content="noindex">
 
     <title>Chia® Manager - Page not found</title>
 
     <link rel="shortcut icon" type="image/x-icon" href="/frontend/img/favicon.ico">
     <link rel="icon" type="image/png" href="/frontendimg/favicon.png" sizes="32x32">
     <link rel="icon" type="image/png" href="/frontendimg/favicon.png">
+    
 
     <!-- Custom fonts for this template-->
     <link href="/frontend/frameworks/bootstrap/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
