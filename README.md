@@ -1,4 +1,4 @@
-# chia-web-gui
+# chia-manager
 ## Important notice
 This tool is not officially published by CHIA NETWORK INC nor officially supported! It is an unofficial hobby project. _Chia®_ and the Chia Leaf Logo™ are registered trademarks or trademarks of Chia Network, Inc. in the United States and worldwide. **All in italic written words are copyright protected**.
 
@@ -76,7 +76,7 @@ The web-gui should run on a Linux server anyway as any other web based applicati
     - A brief overview of your configured plotting directories and used capacity. A list of all found plots.
   - And many many more!
 
-  See full feature list here: [_Chia®_ Manager Documentation](https://docs.chia-manager.com/features/features).
+  See full feature list here: [_Chia®_ Manager Documentation](https://docs.chia-manager.org/features/features).
 
 
 ## Upcoming features
@@ -93,7 +93,7 @@ The web-gui should run on a Linux server anyway as any other web based applicati
   - Select an empty or not fully plotted directory and let _Chia®_ Manager **autoplot** all your directories
 - And many more!
 
-Check out our roadmap to get more information: [_Chia®_ Manager Documentation](https://docs.chia-manager.com/features/roadmap).
+Check out our roadmap to get more information: [_Chia®_ Manager Documentation](https://docs.chia-manager.org/features/roadmap).
 
 Do you have any further ideas of features you want to see? Just make a feature request or mail us!
 
@@ -105,7 +105,7 @@ We want to offer a free, open source and stable _Chia®_ Farm Management Softwar
 
 ## Installation and Usage
 ### Installation
-Please see our documentation at [_Chia®_ Manager Documentation](https://docs.chia-manager.com/administrator-documentation)
+Please see our documentation at [_Chia®_ Manager Documentation](https://docs.chia-manager.org/administrator-documentation)
 
 #### Node client Installation
 Just follow the instructions in the Web-GUI under the point "Nodes".
