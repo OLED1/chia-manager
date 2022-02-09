@@ -61,11 +61,14 @@
                 <li>chmod +x install.sh</li>
                 <li>. install.sh</li>
                 <li>
-                  If you not installed the service run: python3 run_node_client.py<br>
+                  If you did not decide to install the node client as service, please run "python3 run_node_client.py" to start it manually,<br>
                   otherwise run: sudo systemctl start chia-node-client.service
                 </li>
                 <li>Now you need to allow the new client in the table below</li>
               </ol>
+              <div class="alert alert-success" role="alert">
+                Find further information in our <a target="_blank" href="https://docs.chia-manager.org/user-documentation/node-client-installation">documentation</a>.
+              </div>
             </div>
           </div>
         </div>
@@ -75,7 +78,7 @@
           <div class="collapse multi-collapse" id="windowsInstructionCollapse">
             <div class="card card-body">
               The installer is currently not working on Windows because the main target for this project is Linux. So the installer was firstly made for Linux.<br>
-              If you want to help me to develop a Windows client, you are welcome! But no worries, it is in planning.            </div>
+              If you want to help me to develop a Windows client, you are welcome! But no worries, it is in planning.</div>
           </div>
         </div>
       </div>
