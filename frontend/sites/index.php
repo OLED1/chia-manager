@@ -336,8 +336,8 @@
             Thanks for contribution to <strong>LucaAust.</strong></p>
             <br>
             <p>
-              Find source code for the webgui on github:&nbsp;<a class="externallink"  target="_blank" href="https://github.com/OLED1/chia-web-gui">here</a><br>
-              Find source code for the node client on github:&nbsp;<a class="externallink"  target="_blank" href="https://github.com/OLED1/chia-node-client">here</a><br>
+              Find source code for the webgui on github:&nbsp;<a class="externallink"  target="_blank" href="https://github.com/OLED1/chia-manager">here</a><br>
+              Find source code for the node client on github:&nbsp;<a class="externallink"  target="_blank" href="https://github.com/OLED1/chia-manager-client">here</a><br>
               Find our documentation&nbsp;<a class="externallink"  target="_blank" href="https://docs.chia-manager.com/">here</a><br>
             </p>
             <p>
