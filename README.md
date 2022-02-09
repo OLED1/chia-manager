@@ -2,12 +2,12 @@
 ## Important notice
 This tool is not officially published by CHIA NETWORK INC nor officially supported! It is an unofficial hobby project. _Chia®_ and the Chia Leaf Logo™ are registered trademarks or trademarks of Chia Network, Inc. in the United States and worldwide. **All in italic written words are copyright protected**.
 
-## Branch: Dev, Introduction
-This is the dev branch of the **_Chia®_ Manager Web-GUI**. This branch is primary made for **developers**.
-So if you want to decide to install this branch be always afraid of **untested content** and **bugs**.
+## About _Chia®_ Manager
 
 This project is made for **_Chia®_ Farmer** . Please visit https://www.chia.net/ to get more information about _Chia®_.
 The main goal is to make monitoring and managing the  _Chia®_ Infrastructure and the needed nodes more **efficient and easy**.
+
+You are able to find further information about our project in detail in our [documentation](https://docs.chia-manager.org). Check it out!
 
 ### Why should i use it?
 This project should make it more easy to use, manage and monitor your  _Chia®_ Nodes and to be sure every node makes his work and you are good to go.
