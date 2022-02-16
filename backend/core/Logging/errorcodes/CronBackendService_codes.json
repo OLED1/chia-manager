@@ -8,7 +8,8 @@
       "001" : [0, "Starting cron processing."],
       "002" : [0, "Starting websocket server."],
       "003" : [0, "Sending Cron Query Request to WSS."],
-      "004" : [0, "Cron query processed successfully."]
+      "004" : [0, "Cron query processed successfully."],
+      "005" : [0, "This instance is currently in maintenance mode. Skip processing."]
     },
     "getSystemInfo" : {
       "001" : [2, "An error occured."],
