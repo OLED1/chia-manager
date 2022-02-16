@@ -90,35 +90,79 @@
      */
     public function checkForUpdates(array $data = [], array $loginData = NULL): array
     {
-      if(!array_key_exists("updatechannel", $data)){
-        $system_api = new System_Api();
-        $updatechannel = $system_api->getSpecificSystemSetting("updatechannel");
-
-        if(array_key_exists("updatechannel", $updatechannel["data"])){
-          $updatechannel = $updatechannel["data"]["updatechannel"]["branch"]["value"];
-        }else{ $updatechannel = "main"; }
-      }
-
-      $url = "https://files.chiamgmt.edtmair.at/server/versions.json";
-      $json = file_get_contents($url);
-      $json_data = json_decode($json, true);
-
-      if(!is_null($updatechannel) && !is_null($json_data) && array_key_exists($updatechannel, $json_data)){
-        if(array_key_exists("0", array_keys($json_data[$updatechannel]))){
-          $remoteversion = array_keys($json_data[$updatechannel])[0];
-          $myversion = $this->ini["versnummer"];
-
-          if(version_compare($myversion, trim($remoteversion)) < 0) $updateavailable = true;
-          else $updateavailable = false;
-
-          return array("status" => 0, "message" => "Successfully loaded updatedata and versions.", "data" => array("localversion" => $myversion, "remoteversion" => $remoteversion, "updateavail" => $updateavailable, "updatechannel" => $updatechannel));
-        }else{
-          $returndata = $this->logging_api->getErrormessage("002");
-          $returndata["data"] = array("localversion" => $this->ini["versnummer"], "updatechannel" => $updatechannel);
+      try{
+        if(!array_key_exists("updatechannel", $data)){
+          $system_api = new System_Api();
+          $updatechannel = $system_api->getSpecificSystemSetting("updatechannel");
+          
+          if(array_key_exists("updatechannel", $updatechannel["data"])){
+            $updatechannel = $updatechannel["data"]["updatechannel"]["branch"]["value"];
+          }else{ $updatechannel = "main"; }
         }
-        return $returndata;
-      }else{
-        return $this->logging_api->getErrormessage("003", "Updatechannel {$updatechannel} not found.");
+
+        $sql = $this->db_api->execute("SELECT id, channel, remoteversion, releasenotes, last_querytime as last_querytime FROM system_updates WHERE channel = ? AND last_querytime = (SELECT max(last_querytime) FROM system_updates) LIMIT 1", array($updatechannel));
+        $found_data = $sql->fetchAll(\PDO::FETCH_ASSOC);
+        $query_every_minutes = 1;
+        $now = new \DateTime("now");
+        $last_query = $now;
+
+        if(array_key_exists(0, $found_data) && array_key_exists("last_querytime", $found_data[0])){
+          $found_data = $found_data[0];
+          $last_query = new \DateTime($found_data["last_querytime"]);
+          $last_query->modify("+" . $query_every_minutes . " minutes");
+        }
+        
+        $updatedata_changed = false;
+        if($now >= $last_query){
+          //Chia-Manager Github Versionfile
+          $curl = curl_init();
+          $chia_manager_versionspath = "https://api.github.com/repos/OLED1/chia-manager/releases";
+          curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+          curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+          curl_setopt($curl, CURLOPT_URL, $chia_manager_versionspath);
+          //We need to use curl, because Amazon AWS wants a user Agent set to be able to download the chia release file
+          curl_setopt($curl, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 6.2; WOW64; rv:17.0) Gecko/20100101 Firefox/17.0');
+          $chia_manager_version_result = json_decode(curl_exec($curl), true);
+          curl_close($curl);
+
+          if(is_null($chia_manager_version_result) || !array_key_exists(0, $chia_manager_version_result) || !array_key_exists("name", $chia_manager_version_result[0])){
+            $overall = false;
+            $this->logging_api->getErrormessage("001", "The Chia-Manager github version file ({$chia_manager_versionspath}) could not be loaded. Message: " . json_encode($chia_manager_version_result));
+          }
+
+          $updatefile_arraykey = array_search($updatechannel, array_column($chia_manager_version_result, 'target_commitish'));
+          if(!is_null($updatechannel) && array_key_exists("0", $chia_manager_version_result) && is_numeric($updatefile_arraykey) && $updatefile_arraykey >= 0){
+            if(array_key_exists("name", $chia_manager_version_result[$updatefile_arraykey])){
+              $remoteversion = $chia_manager_version_result[$updatefile_arraykey]["name"];
+              $myversion = $this->ini["versnummer"];
+              $releasenotes = $chia_manager_version_result[$updatefile_arraykey]["body"];
+              $querytime = new \DateTime("now");
+
+              if((array_key_exists("remoteversion", $found_data) && version_compare($found_data["remoteversion"], $remoteversion) > 0) || !array_key_exists("remoteversion", $found_data)){
+                $this->db_api->execute("INSERT INTO system_updates (id, channel, remoteversion, releasenotes, available_since, last_querytime) VALUES (NULL, ?, ?, ?, NOW(), NOW())", array($updatechannel, trim($remoteversion), $releasenotes));
+              }else{
+                $this->db_api->execute("UPDATE system_updates SET last_querytime = NOW(), releasenotes = ? WHERE id = ?", array($releasenotes, $found_data["id"]));
+              }
+              $updatedata_changed = true;
+            }
+          }else{
+            $returndata = $this->logging_api->getErrormessage("003", "There are no releases with your selected updatechannel {$updatechannel} found.");
+          }
+        }
+
+        if($updatedata_changed){
+          $sql = $this->db_api->execute("SELECT id, channel, remoteversion, releasenotes, last_querytime as last_querytime FROM system_updates WHERE channel = ? AND last_querytime = (SELECT max(last_querytime) FROM system_updates) LIMIT 1", array($updatechannel));
+          $found_data = $sql->fetchAll(\PDO::FETCH_ASSOC)[0];
+        }
+
+        $found_data["localversion"] = $this->ini["versnummer"];
+        if(version_compare($found_data["localversion"], trim($found_data["remoteversion"])) < 0) $found_data["updateavail"] = true;
+        else $found_data["updateavail"] = false;
+
+
+        return array("status" => 0, "message" => "Successfully queried last update data.", "data" => $found_data);
+      }catch(\Exception $e){
+        return $this->logging_api->getErrormessage("003", $e);
       }
     }
 

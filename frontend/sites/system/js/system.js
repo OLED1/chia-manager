@@ -133,6 +133,20 @@ $(function(){
     window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "setInstanceUpdating", { "userid" : userID, "updatestate" : 1 });
   });
 
+  $("#open-release-notes").on("click", function(e){
+    $("#updater_release_notes").modal("show");
+    $("#release-version").text(updatedata["remoteversion"]);
+    $("#updatechannel").text(updatedata["channel"]);
+    $("#updatefrom").text(updatedata["localversion"]);
+    $("#updateto").text(updatedata["remoteversion"]);
+    $("#releasenotes").html(updatedata["releasenotes"].replace(/(?:\r\n|\r|\n)/g, "<br>"));
+    if(updatedata["updateavail"]){
+      $("#start-update").show();
+    }else{
+      $("#start-update").hide();
+    }
+  });
+
   $("#confirm-update-process").on("click", function(e){
     e.preventDefault();
     $(".update-close-button").hide();
@@ -290,11 +304,10 @@ function messagesTrigger(data){
       $("#updateversionbadge").removeClass("badge-success").removeClass("badge-warning");
       if(data[key]["data"]["updateavail"]){
         $("#updateversionbadge").addClass("badge-warning").text("Your version is out of date. Version " + data[key]["data"]["remoteversion"] + " is available. Please update soon.");
-        $("#start-update").show();
       }else{
         $("#updateversionbadge").addClass("badge-success").text("Your version is up to date.");
-        $("#start-update").hide();
       }
+      updatedata = data[key]["data"];
     }else if(key == "processUpdate"){
       $("#confirm-update-process").hide();
       $("#proceed-update-routine").show();

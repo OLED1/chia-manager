@@ -11,9 +11,9 @@
 
   $updates = $system_api->checkForUpdates();
 
-  if($updates["data"]["updatechannel"] == "dev"){
+  if($updates["data"]["channel"] == "dev"){
     $updatechannelname = "Development";
-  }else if($updates["data"]["updatechannel"] == "staging"){
+  }else if($updates["data"]["channel"] == "staging"){
     $updatechannelname = "Staging";
   }else{
     $updatechannelname = "Stable";
@@ -22,6 +22,7 @@
   echo "<script nonce={$ini["nonce_key"]}>
           var siteID = 3;
           var frontend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}';
+          var updatedata =  " . json_encode($updates["data"]) . ";
         </script>";
 ?>
 <!-- Page Heading -->
@@ -124,8 +125,9 @@
                   <div class="dropdown-menu" aria-labelledby="updateDropdownMenu">
                     <button class="dropdown-item updatechannel wsbutton" data-branch="main" href="#">Stable</button>
                     <button class="dropdown-item updatechannel wsbutton" data-branch="staging" href="#">Staging</button>
-                    <button class="dropdown-item updatechannel wsbutton" data-branch="alpha" href="#">Alpha</button>
-                    <button class="dropdown-item updatechannel wsbutton" data-branch="dev" href="#">Development</button>
+                    <?php if(array_key_exists("developer_mode", $ini) && $ini["developer_mode"]){ ?>
+                      <button class="dropdown-item updatechannel wsbutton" data-branch="dev" href="#">Development</button>
+                    <?php } ?>
                   </div>
                 </div>
               </div>
@@ -133,7 +135,7 @@
             <div class="row">
               <div class="col">
                 <button type="button" class="btn btn-secondary wsbutton" id="check-for-updates">Check for updates<i class="fas fa-spinner fa-spin" style="display: none;"></i></button>
-                <button type="button" class="btn btn-warning wsbutton" id="start-update" style="<?php echo ($updates["data"]["updateavail"] ? "" : "display: none;") ?>">Open updater</button>
+                <button type="button" class="btn btn-success wsbutton" id="open-release-notes">Show release notes and trigger update</button>
               </div>
             </div>
           </div>
@@ -308,7 +310,7 @@
         </div>
       </div>
     </div>
-    <?php if(array_key_exists("developer_mode", $ini) && $ini["developer_mode"] == "on"){ ?>
+    <?php if(array_key_exists("developer_mode", $ini) && $ini["developer_mode"]){ ?>
     <div class="row">
       <div class="col">
         <div class="card shadow mb-4">
@@ -335,7 +337,27 @@
     <?php } ?>
   </div>
 </div>
-
+<div id="updater_release_notes" data-verified="false" class="modal" tabindex="-1" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><span class="fas fa-paper-plane"></span>&nbsp;Release Notes (Version:&nbsp;<span id="release-version"></span>)</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="taskslog">
+        <p><strong>Updatechannel:</strong>&nbsp<span id="updatechannel"></span><br>
+        <strong>Update</strong> from <span id="updatefrom"></span> to <span id="updateto"></span><br>
+        <strong>Releasenotes:</strong><br><span id="releasenotes"></span></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success" id="start-update">Start update</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 <div id="send_testmail_dialog" data-verified="false" class="modal" tabindex="-1" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static">
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">

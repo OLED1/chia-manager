@@ -16,8 +16,9 @@
       "002" : [2, "No all data stated."]
     },
     "checkForUpdates" : {
-      "001" : [1, "No versions available."],
-      "002" : [2, "Configured updatechannel not found."]
+      "001" : [2, "External api returned no data."],
+      "002" : [0, "There are no updates for this channel available. Please switch to another branch, preferred 'Stable'."],
+      "003" : [2, "An error occured."]
     },
     "checkUpdateRoutine" : {
       "001" : [2, "An error occured."]
