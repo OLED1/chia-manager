@@ -242,7 +242,7 @@
       $returndata["count"] = 0;
 
       //Checking if updates are available
-      $systemupdate = $this->checkForUpdates()["data"];
+      $systemupdate = $this->checkForUpdates(["update_data_db" => true])["data"];
       if($systemupdate["updateavail"]){
         $returndata["found"]["updateavail"] = "There is an system update to version {$systemupdate["remoteversion"]} available.";
         $returndata["count"] = $returndata["count"] + 1;

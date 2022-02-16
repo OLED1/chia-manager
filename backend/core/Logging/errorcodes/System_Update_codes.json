@@ -8,7 +8,9 @@
     "backupSystemDatabase" : "006",
     "checkZipValid" : "007",
     "checkAndAdjustDatabase" : "008",
-    "updateConfigFile" : "009"
+    "updateConfigFile" : "009",
+    "cancelUpdate" : "010",
+    "getVersionFileData" : "011"
   },
   "errormessages" : {
     "setInstanceUpdating" : {
@@ -47,6 +49,12 @@
     "updateConfigFile" : {
       "001" : [2, "Config file not writable."],
       "002" : [2, "Could not set version in config.ini.php file."]
+    },
+    "cancelUpdate" : {
+      "001" : [2, "An error occured."]
+    },
+    "getVersionFileData" : {
+      "001" : [2, "Could not load current update data. Aborting!"]
     }
   }
 }

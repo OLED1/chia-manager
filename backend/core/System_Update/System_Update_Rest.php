@@ -27,6 +27,8 @@
           isset($_POST["data"]) && isset($_POST["data"]["db_config"]) && isset($_POST["data"]["websocket_config"]) && isset($_POST["data"]["webgui_user_config"])){
 
     echo json_encode($system_update_api->installChiamgmt($_POST["data"]["branch"], $_POST["data"]["db_config"], $_POST["data"]["websocket_config"], $_POST["data"]["webgui_user_config"]));
+  }else if(isset($_POST["action"]) && $_POST["action"] == "cancelUpdate"){
+    echo json_encode($system_update_api->cancelUpdate());
   }else if(isset($_POST["action"]) && $_POST["action"] == "checkFilesWritable"){
     echo json_encode($system_update_api->checkFilesWritable());
   }else if(isset($_POST["action"]) && $_POST["action"] == "setMaintenanceMode" && isset($_POST["data"]["userID"]) && isset($_POST["data"]["maintenance_mode"])){

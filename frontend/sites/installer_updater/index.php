@@ -363,10 +363,11 @@
                         <h5>Instance and update information</h5>
                         <p>Current version: <b id="instance_version"><?php echo "{$update_infos["localversion"]}"; ?></b><br>
                           Update to version: <b id="update_version"><?php echo "{$update_infos["remoteversion"]}"; ?></b><br>
-                          Branch: <b id="instance_branch"><?php echo "{$update_infos["updatechannel"]}"; ?></b></p>
+                          Branch: <b id="instance_branch"><?php echo "{$update_infos["channel"]}"; ?></b></p>
                         <hr>
                         <button id="process-update" data-target="process-update-page" data-myid="updater-welcome-page" class="btn btn-success btn-user btn-block install-step" style="width: 25%;">Process Update</button>
-                    </div>
+                        <button id="cancel-update" data-myid="updater-welcome-page" class="btn btn-danger btn-user btn-block" style="width: 25%;">Cancel Update and return</button>
+                      </div>
                   </div>
                 </div>
               </div>

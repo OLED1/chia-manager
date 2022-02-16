@@ -125,7 +125,7 @@ $(function(){
 
   $("#check-for-updates").on("click", function(e){
     e.preventDefault();
-    window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "checkForUpdates", {});
+    window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "checkForUpdates", {"update_data_db" : true });
   });
 
   $("#start-update").on("click", function(e){

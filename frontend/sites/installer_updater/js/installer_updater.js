@@ -97,6 +97,10 @@ $("#complete-setup-finish").on("click", function(){
   $("#finish-text").show();
 });
 
+$("#cancel-update").on("click", function(){
+  sendData("cancelUpdate", {});
+});
+
 $("#process-update").on("click", function(){
   $("#nav-updater-processing-page").addClass("active");
   processUpdateSteps();
@@ -244,6 +248,8 @@ function sendData(action, data){
           $("#complete-setup-install").show().prop("disabled", false);
           $("#install-success i").addClass("fa-times").css("color","red");
         }
+      }else if(action == "cancelUpdate"){
+        location.reload();
       }else if(action == "checkFilesWritable"){
         if(result["status"] == 0){
           $("#updater-writable i").removeClass("fa-spinner").removeClass("fa-spin").removeClass("fa-times").addClass("fa-check").css("color","green");
@@ -365,7 +371,7 @@ function sendData(action, data){
           showretry = true;
         }
       }else if(action == "startWebsocketServer"){
-        if(result["status"] == 0){
+        if(result["status"] == 0 || result["status"] == "015003002"){
           $("#updater-websocket-on-log").text(result["message"]);
           $("#updater-websocket-on i").removeClass("fa-spinner").removeClass("fa-spin").removeClass("fa-times").addClass("fa-check").css("color","green");
 

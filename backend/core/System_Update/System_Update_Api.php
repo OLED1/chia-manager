@@ -84,7 +84,7 @@
      * Checks for system updates. Returns update specific data.
      * This method is used during the update process.
      * Function made for: Web(App)client
-     * @param  array  $data       { "updatechannel" : "[main|staging|dev|NULL]" }
+     * @param  array  $data       { "update_data_db" : [When set, data will be updated on db. Any value is valid.] }
      * @param  array $loginData   { NULL } No logindata is needed query this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [Available updateinformation]}
      */
@@ -100,7 +100,7 @@
           }else{ $updatechannel = "main"; }
         }
 
-        $sql = $this->db_api->execute("SELECT id, channel, remoteversion, releasenotes, last_querytime as last_querytime FROM system_updates WHERE channel = ? AND last_querytime = (SELECT max(last_querytime) FROM system_updates) LIMIT 1", array($updatechannel));
+        $sql = $this->db_api->execute("SELECT id, channel, remoteversion, releasenotes, last_querytime as last_querytime, zipball FROM system_updates WHERE channel = ? AND last_querytime = (SELECT max(last_querytime) FROM system_updates) LIMIT 1", array($updatechannel));
         $found_data = $sql->fetchAll(\PDO::FETCH_ASSOC);
         $query_every_minutes = 1;
         $now = new \DateTime("now");
@@ -131,27 +131,28 @@
           }
 
           $updatefile_arraykey = array_search($updatechannel, array_column($chia_manager_version_result, 'target_commitish'));
-          if(!is_null($updatechannel) && array_key_exists("0", $chia_manager_version_result) && is_numeric($updatefile_arraykey) && $updatefile_arraykey >= 0){
-            if(array_key_exists("name", $chia_manager_version_result[$updatefile_arraykey])){
+          if(!is_null($updatechannel) && array_key_exists("0", $chia_manager_version_result) && is_numeric($updatefile_arraykey) && $updatefile_arraykey >= 0 && !array_key_exists("update_data", $data)){
+            if(array_key_exists("name", $chia_manager_version_result[$updatefile_arraykey]) && array_key_exists("update_data_db", $data)){
               $remoteversion = $chia_manager_version_result[$updatefile_arraykey]["name"];
               $myversion = $this->ini["versnummer"];
               $releasenotes = $chia_manager_version_result[$updatefile_arraykey]["body"];
+              $zipball = $chia_manager_version_result[$updatefile_arraykey]["zipball_url"];
               $querytime = new \DateTime("now");
 
-              if((array_key_exists("remoteversion", $found_data) && version_compare($found_data["remoteversion"], $remoteversion) > 0) || !array_key_exists("remoteversion", $found_data)){
-                $this->db_api->execute("INSERT INTO system_updates (id, channel, remoteversion, releasenotes, available_since, last_querytime) VALUES (NULL, ?, ?, ?, NOW(), NOW())", array($updatechannel, trim($remoteversion), $releasenotes));
+              if((array_key_exists("remoteversion", $found_data) && version_compare($found_data["remoteversion"], $remoteversion) > 0)){
+                $this->db_api->execute("INSERT INTO system_updates (id, channel, remoteversion, releasenotes, zipball, available_since, last_querytime) VALUES (NULL, ?, ?, ?, ?, NOW(), NOW())", array($updatechannel, trim($remoteversion), $releasenotes, $zipball));
               }else{
-                $this->db_api->execute("UPDATE system_updates SET last_querytime = NOW(), releasenotes = ? WHERE id = ?", array($releasenotes, $found_data["id"]));
+                $this->db_api->execute("UPDATE system_updates SET last_querytime = NOW(), releasenotes = ?, zipball = ? WHERE id = ?", array($releasenotes, $zipball, $found_data["id"]));
               }
-              $updatedata_changed = true;
             }
+            $updatedata_changed = true;
           }else{
             $returndata = $this->logging_api->getErrormessage("003", "There are no releases with your selected updatechannel {$updatechannel} found.");
           }
         }
 
         if($updatedata_changed){
-          $sql = $this->db_api->execute("SELECT id, channel, remoteversion, releasenotes, last_querytime as last_querytime FROM system_updates WHERE channel = ? AND last_querytime = (SELECT max(last_querytime) FROM system_updates) LIMIT 1", array($updatechannel));
+          $sql = $this->db_api->execute("SELECT id, channel, remoteversion, releasenotes, last_querytime as last_querytime, zipball FROM system_updates WHERE channel = ? AND last_querytime = (SELECT max(last_querytime) FROM system_updates) LIMIT 1", array($updatechannel));
           $found_data = $sql->fetchAll(\PDO::FETCH_ASSOC)[0];
         }
 
@@ -720,34 +721,44 @@
      */
     public function downloadUpdateFiles(): array
     {
-      $version_file_data = $this->getVersionFileData();
-      $updatechannel = $version_file_data["updatechannel"];
-      $version_file_data = $version_file_data["versionfiledata"];
-      $updatepackagepath = "https://files.chiamgmt.edtmair.at/server/";
-
-      if(!is_null($version_file_data) && array_key_exists($updatechannel, $version_file_data)){
-        $target_version = array_key_first($version_file_data[$updatechannel]);
-        $updateurl = $version_file_data[$updatechannel][$target_version];
+      $update_data = $this->checkForUpdates();
+      if(!is_null($update_data) && array_key_exists("data", $update_data) && array_key_exists("remoteversion", $update_data["data"]) && array_key_exists("zipball", $update_data["data"])){
+        $target_version = $update_data["data"]["remoteversion"];
+        $updateurl = $update_data["data"]["zipball"];
         $tmpdir = "/tmp";
+
         if(is_dir($tmpdir)){
-          $packagepath = "{$updatepackagepath}{$updateurl}";
           $tmpfiledir = "{$tmpdir}/chiamgmt_update.zip";
 
-          file_put_contents($tmpfiledir,file_get_contents($packagepath));
+          $curl = curl_init();
+          curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+          curl_setopt($curl, CURLOPT_BINARYTRANSFER, 1);
+          curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
+          curl_setopt($curl, CURLOPT_URL, $updateurl);
+          curl_setopt($curl, CURLOPT_USERAGENT, 'Chrome/64.0.3282.186 Safari/537.36');
+          $content = curl_exec($curl);
+          $err = curl_error($curl);
+          curl_close($curl);
 
+          if ($err) {
+            return array("status" => 0, "message" => "Could not download zip update file from github.");
+          }
+
+          $fp = fopen($tmpfiledir,"wb");
+          fwrite($fp,$content);
+          fclose($fp);
+          
           $zipcheck = $this->checkZipValid($tmpfiledir);
           if($zipcheck["status"] == 0){
-            return array("status" => 0, "message" => "Successfully downloaded update {$packagepath} to {$tmpfiledir}.");
+            return array("status" => 0, "message" => "Successfully downloaded update {$updateurl} to {$tmpfiledir}.");
           }else{
             return $zipcheck;
           }
         }else{
           return array("status" => 1, "message" => "Temporary directory {$tmpdir} for update downloading not found or not accessable.");
         }
-      }else if(is_null($version_file_data)){
-        return array("status" => 1, "message" => "Versionfile could not be downloaded from {$versionfilepath}.");
-      }else if(!array_key_exists($updatechannel, $version_file_data)){
-        return array("status" => 1, "message" => "Configured updatechannel {$updatechannel} was not found in version file.");
+      }else{
+        return array("status" => 1, "message" => "Important update data is not stated.");
       }
     }
 
@@ -763,17 +774,18 @@
       $zipcheck = $this->checkZipValid($tmpfiledir);
 
       if($zipcheck["status"] == 0){
-        $version_file_data = $this->getVersionFileData();
-        $updatechannel = $version_file_data["updatechannel"];
-        $version_file_data = $version_file_data["versionfiledata"];
+        $update_data = $this->checkForUpdates();
+        $target_version = $update_data["data"]["remoteversion"];
+        $updateurl = $update_data["data"]["zipball"];
 
         $zip = new \ZipArchive;
         $res = $zip->open($tmpfiledir);
         if ($res === TRUE) {
+          $subfoldername = trim($zip->getNameIndex(0), '/');
           $zip->extractTo($tmpdir);
           $zip->close();
 
-          $this->full_copy("{$tmpdir}/chia-web-gui-{$updatechannel}/", "../../..{$this->ini["system_root"]}/");
+          $this->full_copy("{$tmpdir}/$subfoldername/", "{$_SERVER["DOCUMENT_ROOT"]}{$this->ini["system_root"]}");
           return array("status" => 0, "message" => "Successfully moved new files in place.");
         }else{
           return array("status" => 1, "message" => "Could not open {$tmpfiledir}.");
@@ -857,10 +869,8 @@
       if(!is_writable($config_file)) return $this->logging_api->getErrormessage("001");
 
       if(is_null($newversion)){
-        $version_file_data = $this->getVersionFileData();
-        $updatechannel = $version_file_data["updatechannel"];
-        $version_file_data = $version_file_data["versionfiledata"];
-        $newversion = array_key_first($version_file_data[$updatechannel]);
+        $update_data = $this->checkForUpdates();
+        $newversion = $update_data["data"]["remoteversion"];
       }
 
       $key = "application";
@@ -889,23 +899,19 @@
     }
 
     /**
-     * Returns version and update specific values.
+     * Aborts the current update by setting the databases column "process_update" to false (0)
+     *
      * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    private function getVersionFileData(): array
+    public function cancelUpdate(): array
     {
-      $updatepackagepath = "https://files.chiamgmt.edtmair.at/server/";
-      $versionfilepath = "{$updatepackagepath}/versions.json";
-      $version_file_json = file_get_contents($versionfilepath);
-      $version_file_data = json_decode($version_file_json, true);
+      try{
+        $this->db_api->execute("UPDATE system_infos SET userid_updating = ?, process_update = ?, maintenance_mode = ?", array(0,0,0));
 
-      $system_api = new System_Api();
-      $updatechannel = $system_api->getSpecificSystemSetting("updatechannel");
-      if(array_key_exists("updatechannel", $updatechannel["data"])){
-        $updatechannel = $updatechannel["data"]["updatechannel"]["branch"]["value"];
-      }else{ $updatechannel = "main"; }
-
-      return array("versionfiledata" => $version_file_data, "updatechannel" => $updatechannel);
+        return array("status" => 0, "message" => "Successfully disabled updatemod.");
+      }catch(\Exception $e){
+        return $this->logging_api->getErrormessage("001", $e);
+      }
     }
 
     /**
