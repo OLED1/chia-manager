@@ -180,7 +180,7 @@
       curl_setopt($curl, CURLOPT_TIMEOUT_MS, 2000);
       $xch_height_result = json_decode(curl_exec($curl), true);
       curl_close($curl);
-      //Chia Github Versionfile      $curl = curl_init();
+      //Chia Github Versionfile
       $curl = curl_init();
       $chiaversionspath = "https://api.github.com/repos/Chia-Network/chia-blockchain/releases";
       curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
