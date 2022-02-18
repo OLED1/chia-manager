@@ -9,7 +9,7 @@
   if(array_key_exists("TOTP", $security) && array_key_exists("value", $security["TOTP"])) $security = filter_var($security["TOTP"]["value"], FILTER_VALIDATE_BOOLEAN);
   else $security = false;
 
-  $updates = $system_api->checkForUpdates();
+  $updates = $system_api->checkForUpdates(["update_data_db" => true]);
 
   if($updates["data"]["channel"] == "dev"){
     $updatechannelname = "Development";
@@ -348,7 +348,7 @@
       </div>
       <div class="modal-body" id="taskslog">
         <p><strong>Updatechannel:</strong>&nbsp<span id="updatechannel"></span><br>
-        <strong>Update</strong> from <span id="updatefrom"></span> to <span id="updateto"></span><br>
+        <strong>Versionnote:</strong>&nbsp;<span id="updatefromto"></span>
         <strong>Releasenotes:</strong><br><span id="releasenotes"></span></p>
       </div>
       <div class="modal-footer">

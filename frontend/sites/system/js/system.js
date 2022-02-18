@@ -137,12 +137,12 @@ $(function(){
     $("#updater_release_notes").modal("show");
     $("#release-version").text(updatedata["remoteversion"]);
     $("#updatechannel").text(updatedata["channel"]);
-    $("#updatefrom").text(updatedata["localversion"]);
-    $("#updateto").text(updatedata["remoteversion"]);
     $("#releasenotes").html(updatedata["releasenotes"].replace(/(?:\r\n|\r|\n)/g, "<br>"));
     if(updatedata["updateavail"]){
+      $("#updatefromto").html("Update from version <strong>" + updatedata["localversion"] + "</strong> to <strong>" + updatedata["remoteversion"] + "</strong><br>");
       $("#start-update").show();
     }else{
+      $("#updatefromto").html("You are using the latest version <strong>" + updatedata["localversion"] + "</strong><br>");
       $("#start-update").hide();
     }
   });

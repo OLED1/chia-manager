@@ -111,9 +111,11 @@
           $last_query = new \DateTime($found_data["last_querytime"]);
           $last_query->modify("+" . $query_every_minutes . " minutes");
         }
-        
+
+       
         $updatedata_changed = false;
         if($now >= $last_query){
+          echo "HIER";
           //Chia-Manager Github Versionfile
           $curl = curl_init();
           $chia_manager_versionspath = "https://api.github.com/repos/OLED1/chia-manager/releases";
@@ -139,7 +141,7 @@
               $zipball = $chia_manager_version_result[$updatefile_arraykey]["zipball_url"];
               $querytime = new \DateTime("now");
 
-              if((array_key_exists("remoteversion", $found_data) && version_compare($found_data["remoteversion"], $remoteversion) > 0)){
+              if((array_key_exists("remoteversion", $found_data) && version_compare($found_data["remoteversion"], $remoteversion) > 0) || !array_key_exists(0, $found_data)){
                 $this->db_api->execute("INSERT INTO system_updates (id, channel, remoteversion, releasenotes, zipball, available_since, last_querytime) VALUES (NULL, ?, ?, ?, ?, NOW(), NOW())", array($updatechannel, trim($remoteversion), $releasenotes, $zipball));
               }else{
                 $this->db_api->execute("UPDATE system_updates SET last_querytime = NOW(), releasenotes = ?, zipball = ? WHERE id = ?", array($releasenotes, $zipball, $found_data["id"]));
