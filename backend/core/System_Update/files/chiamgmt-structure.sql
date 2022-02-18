@@ -497,6 +497,26 @@ CREATE TABLE `system_settings` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `system_updates`
+--
+
+DROP TABLE IF EXISTS `system_updates`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `system_updates` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `channel` varchar(10) COLLATE utf8mb4_general_ci NOT NULL,
+  `remoteversion` varchar(15) COLLATE utf8mb4_general_ci NOT NULL,
+  `releasenotes` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `zipball` varchar(200) COLLATE utf8mb4_general_ci NOT NULL,
+  `available_since` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `last_querytime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `last_querytime` (`last_querytime`)
+) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `users_authkeys`
 --
 
