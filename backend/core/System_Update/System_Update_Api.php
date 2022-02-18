@@ -115,7 +115,6 @@
        
         $updatedata_changed = false;
         if($now >= $last_query){
-          echo "HIER";
           //Chia-Manager Github Versionfile
           $curl = curl_init();
           $chia_manager_versionspath = "https://api.github.com/repos/OLED1/chia-manager/releases";
