@@ -1,4 +1,5 @@
 {
     "0.1.alpha.1": "structure_updates/0.1.alpha.1.sql",
-    "0.1.1.alpha" : "structure_updates/0.1.1.alpha.sql"
+    "0.1.1.alpha" : "structure_updates/0.1.1.alpha.sql",
+    "0.1.2.alpha" : "structure_updates/0.1.2.alpha.sql"
 }
