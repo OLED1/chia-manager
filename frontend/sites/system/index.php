@@ -124,7 +124,8 @@
                   </a>
                   <div class="dropdown-menu" aria-labelledby="updateDropdownMenu">
                     <button class="dropdown-item updatechannel wsbutton" data-branch="main" href="#">Stable</button>
-                    <button class="dropdown-item updatechannel wsbutton" data-branch="staging" href="#">Staging</button>
+                    <!--Staging will be enabled as soon as our first version 1.0.alpha will be release, because it will not show any valid versions availabel. The github repo for that isn't existing anyway...-->
+                    <!--<button class="dropdown-item updatechannel wsbutton" data-branch="staging" href="#">Staging</button>-->
                     <?php if(array_key_exists("developer_mode", $ini) && $ini["developer_mode"]){ ?>
                       <button class="dropdown-item updatechannel wsbutton" data-branch="dev" href="#">Development</button>
                     <?php } ?>
