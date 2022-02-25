@@ -17,7 +17,8 @@
   $system_update_api = new System_Update_Api();
   $system_update_state = $system_update_api->checkUpdateRoutine();
 
-  if($system_update_state["data"]["db_update_needed"] > 0 || $system_update_state["data"]["maintenance_mode"] == 1){
+  if((array_key_exists("db_update_needed", $system_update_state["data"]) && $system_update_state["data"]["db_update_needed"] > 0) || 
+      (array_key_exists("maintenance_mode", $system_update_state["data"]) && $system_update_state["data"]["maintenance_mode"] == 1)){
     header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/maintenance.php");
   }
 
