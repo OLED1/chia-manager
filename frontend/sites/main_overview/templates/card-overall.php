@@ -9,20 +9,16 @@
   $loggedin = $login_api->checklogin();
 
   if($loggedin["status"] > 0){
-    header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/");
+    header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/login.php");
   }
 
   $chia_overall_api = new Chia_Overall_Api();
   $overallData = $chia_overall_api->getOverallChiaData();
-  if($overallData["status"] == 0){
-    $overallData = $overallData["data"];
-  }else{ 
-    $overallData = [];
-  }
+  if($overallData["status"] == 0 ) $overallData = $overallData["data"];
+  else $overallData = [];
 
   $exchangerates_api = new Exchangerates_Api();
-  $exchangeData = [];
-  if(array_key_exists("user_id", $_COOKIE) && !is_null($_COOKIE["user_id"])) $exchangeData = $exchangerates_api->getUserExchangeData(["userid" => $_COOKIE["user_id"]]);
+  $exchangeData = $exchangerates_api->getUserExchangeData(["userid" => $_COOKIE["user_id"]]);
 ?>
 <div class="card mb-4">
   <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
