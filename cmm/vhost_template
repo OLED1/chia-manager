@@ -1,0 +1,62 @@
+# modern configuration, tweak to your needs
+SSLProtocol             all -SSLv3 -TLSv1 -TLSv1.1
+SSLCipherSuite  ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256
+SSLHonorCipherOrder     on
+SSLCompression          off
+SSLSessionTickets       off
+SSLOpenSSLConfCmd DHParameters "/etc/ssl/certs/dhparam.pem"
+SSLOpenSSLConfCmd Curves secp384r1:secp521r1
+
+# OCSP Stapling, only in httpd 2.3.3 and later
+SSLUseStapling          on
+SSLStaplingResponderTimeout 5
+SSLStaplingReturnResponderErrors off
+SSLStaplingCache        shmcb:/var/run/ocsp(128000)
+
+<VirtualHost *:80>
+    ServerAdmin [vhost_mail]
+    ServerName [vhost_domain]
+    DocumentRoot [project_root]
+    ErrorLog [vhost_log_root]/[vhost_domain]/[vhost_domain]-error.log
+    CustomLog [vhost_log_root]/[vhost_domain]/[vhost_domain]-access.log combined
+    UseCanonicalName Off
+       
+    RewriteEngine on
+    Redirect permanent / https://[vhost_domain]/
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerAdmin [vhost_mail]
+    ServerName [vhost_domain]
+    DocumentRoot [project_root]
+    ErrorLog [vhost_log_root]/[vhost_domain]/[vhost_domain]_ssl_error.log
+    CustomLog [vhost_log_root]/[vhost_domain]/[vhost_domain]_ssl_access.log combined
+    UseCanonicalName Off
+
+    SSLEngine on
+   
+    <Directory [project_root]>
+        Options +FollowSymlinks
+        AllowOverride All
+
+        Order allow,deny
+        Allow from all
+        Require all granted
+
+        SetEnv HOME [project_root]
+        SetEnv HTTP_HOME [project_root]
+   </Directory>
+
+    ProxyPreserveHost On
+    ProxyErrorOverride Off
+
+    ProxyPass [vhost_wss_dir] ws://127.0.0.1:[vhost_wss_port]/ retry=0 keepalive=On 
+    ProxyPassReverse [vhost_wss_dir] ws://127.0.0.1:[vhost_wss_port]/ retry=0 
+
+   <IfModule mod_headers.c>
+      Header always set Strict-Transport-Security "max-age=15768000; includeSubDomains; preload"
+      Header set Referrer-Policy "no-refferer-when-downgrade"
+   </IfModule>
+   SSLCertificateFile /etc/ssl/certs/ssl-cert-snakeoil.pem
+   SSLCertificateKeyFile /etc/ssl/private/ssl-cert-snakeoil.key
+</VirtualHost>
