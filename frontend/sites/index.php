@@ -18,7 +18,7 @@
   $login_api = new Login_Api();
   $loggedin = $login_api->checklogin();
 
-  if($loggedin["status"] > 0 || !array_key_exists("user_id", $_COOKIE) || is_null($_COOKIE["user_id"])){
+  if($loggedin["status"] > 0){
     header("Location: {$frontendurl}/login.php");
   }
 
@@ -75,7 +75,9 @@
       <link href="<?php echo $frontendurl; ?>/frameworks/jquery-datetimepicker/build/jquery.datetimepicker.min.css" rel="stylesheet">
       <!-- Custom styles for this template-->
       <link href="<?php echo $frontendurl; ?>/css/custom.css" rel="stylesheet">
-      <link href="<?php echo $frontendurl; ?>/css/gui-modes/dark/mode.css" rel="stylesheet">
+      <?php if ($gui_mode == 2 ){ ?>
+        <link href="<?php echo $frontendurl; ?>/css/gui-modes/dark/mode.css" rel="stylesheet">
+      <?php } ?>
         
   </head>
   <body id="page-top" class="gui-mode-elem <?php echo $gui_mode_string; ?>" style="overflow: auto;">
@@ -281,7 +283,7 @@
           <main>
             <div id="messagecontainer">
             </div>
-            <div class="container-fluid gui-mode-elem <?php echo $gui_mode_string; ?>" id="sitecontent" style="overflow: auto;">
+            <div class="container-fluid" id="sitecontent" style="overflow: auto;">
             </div>
           </main>
           <footer class="sticky-footer bg-white gui-mode-elem <?php echo $gui_mode_string; ?>">
