@@ -118,8 +118,6 @@ $(function(){
               disableWSButtons();
             }
           });
-        }else if(result["status"] == "007009007"){
-          $(location).attr('href',frontend + '/login.php');
         }
       },
       error: function(xhr, status, error){
