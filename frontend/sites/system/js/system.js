@@ -137,7 +137,7 @@ $(function(){
     $("#updater_release_notes").modal("show");
     $("#release-version").text(updatedata["remoteversion"]);
     $("#updatechannel").text(updatedata["channel"]);
-    $("#releasenotes").html(updatedata["releasenotes"].replace(/(?:\r\n|\r|\n)/g, "<br>"));
+    $("#releasenotes").html(marked.parse(updatedata["releasenotes"]));
     if(updatedata["updateavail"]){
       $("#updatefromto").html("Update from version <strong>" + updatedata["localversion"] + "</strong> to <strong>" + updatedata["remoteversion"] + "</strong><br>");
       $("#start-update").show();
@@ -196,6 +196,7 @@ $(function(){
       },
       success: function (result, status, xhr) {
         if(result["status"] == 0){
+          showMessage("bg-info", result["message"]);
           if(action == "stopWebsocket"){
             setWSSStopped();
           }else if(action == "startWebsocket"){
@@ -204,14 +205,14 @@ $(function(){
             setWSSRunning(result["data"]);
           }
         }else{
-          showMessage("alert-danger", result["message"]);
+          showMessage("bg-danger", result["message"]);
           if(action == "restartWebsocket"){
             setWSSStopped();
           }
         }
       },
       error:function(xhr, status, error){
-        showMessage("alert-danger", error);
+        showMessage("bg-danger", error);
       }
     });
   }
@@ -270,6 +271,30 @@ function reloadCronJobExecTimer(){
   }
 }
 
+function setWebsocketRunningStatus(status, pid){
+  if(status == 0){
+    $("#wssstatus").html("<div class='card bg-success text-white shadow'>" +
+                            "<div class='card-body'>" +
+                              "Status: Running (PID: " + pid + ")" +
+                              "<div class='text-white-50 small'>All websocket services are good</div>" +
+                            "</div>" +
+                          "</div>");
+    $("#startWSS").prop("disabled", "disabled");
+    $("#stopWSS").removeAttr("disabled");
+    $("#restartWSS").removeAttr("disabled");
+  }else{
+    $("#wssstatus").html("<div class='card bg-danger text-white shadow'>" +
+                          "<div class='card-body'>" +
+                            "Status: Not Running" +
+                            "<div class='text-white-50 small'>Live data transmition not possible</div>" +
+                          "</div>" +
+                        "</div>");
+    $("#startWSS").removeAttr("disabled");
+    $("#stopWSS").prop("disabled", "disabled");
+    $("#restartWSS").prop("disabled", "disabled");
+  }
+}
+
 function messagesTrigger(data){
   var key = Object.keys(data);
 
@@ -320,10 +345,16 @@ function messagesTrigger(data){
     }else if(key == "disableCronjob"){
       $("#cronjobbadge").removeClass("badge-success").removeClass("badge-danger").addClass("badge-danger").text("Cronjob not enabled.");
     }else if(key == "cronJobExecution"){
-      var now = new Date();
-      var lastexecdate = new Date(data[key]["data"]);
       $("#cronjobbadge").removeClass("badge-success").removeClass("badge-danger").addClass("badge-success").html("Last Cronjob run <span id='lastcronrun'>0</span> seconds ago.</span>");
       reloadCronJobExecTimer();
+    }else if(key == "socketConnected"){
+      if(data[key]["data"]){
+        window.sendToWSS("wssonlinestatus", "", "", "", {});
+      }else{
+        setWebsocketRunningStatus(1);
+      }
+    }else if(key == "wssonlinestatus"){
+      setWebsocketRunningStatus(data[key]["status"], data[key]["data"]);
     }
   }else{
     showMessage(2, data["message"]);
