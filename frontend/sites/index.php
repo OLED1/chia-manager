@@ -428,6 +428,7 @@
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/node_modules/chart.js/dist/chart.min.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/momentjs/moment-with-locales.min.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/jquery-datetimepicker/build/jquery.datetimepicker.full.min.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/node_modules/marked/marked.min.js"></script>
 
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/js/sitewrapper/load_pages.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/js/sitewrapper/transfer.js"></script>
