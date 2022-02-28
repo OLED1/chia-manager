@@ -120,8 +120,7 @@ function showMessage(messagetype, message){
     var type = messagetype;
   }
 
-
-  if(messagetype > 0){
+  if(typeof type !== undefined && typeof icon !== undefined){
     var tempmsgid = "tmp_" + Math.random().toString(36).substring(4);
     setTimeout(function () {
       $("#messagecontainer").append(
