@@ -8,9 +8,9 @@
 
   /**
    * The Users_Api class handles the user creation and editing specific functions.
-   * @version 0.1.1
+   * @version 0.2
    * @author OLED1 - Oliver Edtmair
-   * @since 0.1.0
+   * @since 0.1
    * @copyright Copyright (c) 2021, Oliver Edtmair (OLED1), Luca Austelat (lucaust)
    */
   class Users_Api{
@@ -200,6 +200,43 @@
         }
       }else{
         return $this->logging_api->getErrormessage("003");
+      }
+    }
+
+    /**
+     * Remove a disabled user from database
+     * Function made for: Web(App)client
+     * Available since: 0.2.alpha
+     * @throws Exception $e       Throws an exception on db errors.
+     * @param array $data         { "userID" : "The user's db id" }
+     * @param array $loginData    No logindata needed to use this function.
+     * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The id which was disabled.]} }
+     */
+    public function removeDisabledUser(array $data, array $loginData = NULL): array
+    {
+      if(array_key_exists("userID", $data)){
+        if($loginData["userid"] != $data["userID"] && $data["userID"] > 1){
+          try{
+            $sql = $this->db_api->execute("SELECT count(*) AS count FROM users WHERE id = ? AND enabled = ?", array($data["userID"], 0));
+            $count = $sql->fetchAll(\PDO::FETCH_ASSOC);
+
+            if(array_key_exists("0", $count) && array_key_exists("count", $count[0])){
+              $sql = $this->db_api->execute("DELETE FROM users WHERE id = ? AND enabled = ? AND id > 1", array($data["userID"], 0));
+              
+              return array("status" => 0, "message" => "Successfully removed user with id {$data["userID"]}.", "data" => ["id" => $data["userID"]]);
+            }else{
+              return $this->logging_api->getErrormessage("001");
+            }
+          }catch(\Exception $e){
+            return $this->logging_api->getErrormessage("002", $e);
+          }
+
+        }else{
+          if($loginData["userid"] != $data["userID"]) return $this->logging_api->getErrormessage("003");
+          if($$data["userID"] == 1) return $this->logging_api->getErrormessage("004");
+        }
+      }else{
+        return $this->logging_api->getErrormessage("005");
       }
     }
 

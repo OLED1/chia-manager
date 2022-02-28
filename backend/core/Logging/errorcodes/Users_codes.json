@@ -17,7 +17,8 @@
     "sendInvitationMail" : "015",
     "requestUserPasswordReset" : "016",
     "checkResetLinkValid" : "017",
-    "resetPassword" : "018"
+    "resetPassword" : "018",
+    "removeDisabledUser" : "019"
   },
   "errormessages" : {
     "savePersonalInfo" : {
@@ -93,6 +94,13 @@
     "resetPassword" : {
       "001" : [1, "Could not reset user password, maybe the key is not valid anymore. Please try again."],
       "002" : [2, "An error occured."]
+    },
+    "removeDisabledUser" : {
+      "001" : [1, "This user seems not to be disabled. Please disable first."],
+      "002" : [2, "An error occured."],
+      "003" : [1, "You cannot remove yourself."],
+      "004" : [1, "You cannot remove the admin user."],
+      "005" : [1, "Not all data stated."]
     }
   }
 }
