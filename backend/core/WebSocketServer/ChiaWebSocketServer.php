@@ -169,7 +169,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
 
         switch($nodeInfo["socketaction"]){
           case "wssonlinestatus":
-            $this->users[$from->resourceId]->send(json_encode(array("status" => 0, "message" => "Websocket server ready to rumble.", "data" => getmypid())));
+            $this->users[$from->resourceId]->send(json_encode(array($nodeInfo["socketaction"] => array("status" => 0, "message" => "Websocket server ready to rumble.", "data" => getmypid()))));
             break;
           case "backendRequest": //Returns the requested value to all frontend Clients which are viewing a specific site
             if(is_array($loginData) && is_array($backendInfo) && is_array($reqData)){

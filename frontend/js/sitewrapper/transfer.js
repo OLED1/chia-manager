@@ -25,6 +25,8 @@ function initWsclient(){
             siteID : siteID
           }
           sendToWSS("updateFrontendViewingSite", "", "", "", data);
+        }else{
+          showMessage(data[key]["loglevel"], data[key]["message"]);
         }
       }else if($.isFunction(window.messagesTrigger)){
         window.messagesTrigger(data);
@@ -41,11 +43,13 @@ function initWsclient(){
     socket.onopen = function(evt) {
       $("#wsstatus").text("Socket: Connected.").removeClass("badge-danger").addClass("badge-success").attr("data-connected",1);
       sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "loginStatus", {});
+      if($.isFunction(window.messagesTrigger) && siteID !== undefined) window.messagesTrigger({"socketConnected" : { "status" : 0, "data" : true}});
       enableWSButtons();
     };
 
     socket.onclose = function(msg){
       $("#wsstatus").text("Socket: Not connected. Trying to reconnect.").removeClass("badge-success").addClass("badge-danger").attr("data-connected",2);
+      if($.isFunction(window.messagesTrigger) && siteID !== undefined) window.messagesTrigger({"socketConnected" : { "status" : 0, "data" : false}});
       socket.close();
       if(!alreadyreconnecting){
         alreadyreconnecting = true;
