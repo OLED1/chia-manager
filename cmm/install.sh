@@ -107,7 +107,7 @@ configure_new_install(){
     done
 
     OPTIONS_ANS["db_host"]="$( read_text "localhost" "Please select the host name or ip address of your mysql installation." )"
-    if [ "${OPTIONS_ANS["db_host"]}" != "localhost" ] || [ "${OPTIONS_ANS["db_host"]}" != "127.0.0.1" ];then
+    if [ "${OPTIONS_ANS["db_host"]}" != "localhost" ] && [ "${OPTIONS_ANS["db_host"]}" != "127.0.0.1" ];then
         echo "${INFTXT}It seems you are using a remote database. So creating a user which is allowed to connect from ${OPTIONS_ANS["db_host"]} makes no sense."
         OPTIONS_ANS["db_user_remote_permission"]="$( read_text "" "Please state the IP address of the host you will run Chia(R)-Manager at." )"  
     else
@@ -518,6 +518,30 @@ setup_vhost(){
     return 0
 }
 
+generate_dhparam(){
+    local dhdir="/etc/ssl/certs/"
+    local dhfile="dhparam.pem"
+    echo "============================================================================================"
+    echo "${TASK}Generating dh-parameter for better connection encryption if not already existing."
+    echo "============================================================================================"
+    if [ ! -f "$dhdir$dhfile" ];then
+        echo "${INFTXT}DH Cert not existing, generating. Please wait..."
+        sudo mkdir -p $dhdir
+        sudo openssl dhparam -out "$dhdir$dhfile" 2048
+        dhparam_generated=$?
+        if [ $dhparam_generated == 0 ];then
+            echo "${SUCTXT}Successfully generated dhparam."
+        else
+            echo "${ERRTXT}Error during dhparam generation. Please try manually: sudo openssl dhparam -out $dhdir$dhfile 2048"
+        fi
+        return dhparam_generated
+    else
+        echo "${INFTXT}DH Cert already existing. Hanging on."
+    fi
+
+    return 0
+}
+
 generate_certs(){
     local certdir="/etc/apache2/ssls/chia-manager"
     echo "============================================================================================"
@@ -557,7 +581,7 @@ generate_certs(){
             sudo certbot -d ${OPTIONS_ANS["dns_name"]}
             certbot_success=$?
             if [ $certbot_success == 0 ];then
-               echo "${WARTXT}Successfully generated new certificate."
+                echo "${WARTXT}Successfully generated new certificate."
             else
                 echo "${WARTXT}Certificate generation for ${OPTIONS_ANS["dns_name"]} failed, but no worries you can try again later by using the 'certbot' command." 
             fi
@@ -565,16 +589,6 @@ generate_certs(){
             echo "${WARTXT}The certbot installation failed. No worries you can try to reinstall certbot later."
             echo "${INFTXT}Just type in the following: apt-get install certbot python3-certbot-apache."
         fi
-    fi
-
-    local dhdir="/etc/ssl/certs/"
-    local dhfile="dhparam.pem"
-    if [ ! -f "$dhdir$dhfile" ];then
-        echo "--------------------------------------------------------------------------------------------"
-        echo "${TASK}Generating dh-parameter for better connection encryption."
-        echo "--------------------------------------------------------------------------------------------"
-        sudo mkdir -p $dhdir
-        sudo openssl dhparam -out "$dhdir$dhfile" 2048
     fi
 
     return 0
@@ -691,7 +705,7 @@ show_installation_summary(){
     echo "${SUCTXT}Congratulations! The first steps to use Chia(R)-Manager are now done!"
     echo "${INFTXT}Please open your browser now and type in https://${OPTIONS_ANS["dns_name"]}."
     echo "${INFTXT}This should now open the Chia(R)-Manager installer."
-    echo "${INFTXT}The installer should be really straight forward to use. But here are the information you need to setup Chia(R)-Manager again:"
+    echo "${INFTXT}The installer should be really straight forward to use. But here are again the information you need to setup Chia(R)-Manager:"
     echo "${INFTXT}DB NAME: ${OPTIONS_ANS["db_name"]}."
     echo "${INFTXT}DB USER: ${OPTIONS_ANS["db_username"]}."
     echo "${INFTXT}DB Password: ${OPTIONS_ANS["db_password"]}."
@@ -754,6 +768,12 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         exit 1
     fi
 
+    generate_dhparam
+    dhpararm_generated=$?
+    if [ $dhpararm_generated == 1 ];then
+        exit 1
+    fi
+
     setup_vhost
     vhost_setup_status=$?
     if [ $vhost_setup_status == 1 ];then
@@ -766,15 +786,15 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         exit 1
     fi
 
-    setup_mysql_database
-    mysql_setup_status=$?
-    if [ $mysql_setup_status == 1 ];then
-        exit 1
-    fi
-
     generate_certs
     certs_generated=$?
     if [ $certs_generated == 1 ];then
+        exit 1
+    fi
+
+    setup_mysql_database
+    mysql_setup_status=$?
+    if [ $mysql_setup_status == 1 ];then
         exit 1
     fi
 
