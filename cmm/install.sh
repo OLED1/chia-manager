@@ -339,7 +339,8 @@ install_system_modules(){
     fi
     echo "${INFTXT}${YELLOW}Please state 'root' passwords when asked.$NOCOLOR"
 
-    sudo apt-get update && apt-get upgrade -y > /dev/null 2>&1
+    sudo apt-get update -y > /dev/null 2>&1 
+    apt-get upgrade -y > /dev/null 2>&1
     sudo apt-get install apache2 mysql-server libapache2-mod-fcgid php7.4 php7.4-common php7.4-json php7.4-mbstring php7.4-igbinary php7.4-tokenizer php7.4-apcu php7.4-readline php7.4-sockets php7.4-intl php7.4-posix php7.4-sysvmsg php7.4-cli php7.4-fpm php7.4-mysql php7.4-zip -y  > /dev/null 2>&1    
     service_installation=$?
     
@@ -559,7 +560,7 @@ generate_certs(){
         echo "${INFTXT}nano /etc/apache2/sites-available/${OPTIONS_ANS["dns_name"]}.conf"
         echo "${INFTXT}Replace SSLCertificateFile /etc/ssl/certs/ssl-cert-snakeoil.pem with SSLCertificateFile $certdir/<your-cert>.crt"
         echo "${INFTXT}Replace SSLCertificateKeyFile /etc/ssl/private/ssl-cert-snakeoil.key with SSLCertificateFile $certdir/<your-cert>.key"
-        echo "${INFTXT}No press Ctrl+O, Y, Ctrl+X to save and close the file."
+        echo "${INFTXT}Now press Ctrl+O, Y, Ctrl+X to save and close the file."
         read_answer "" "We will now wait until this steps are done if you want to do this now. If you want to do it later, press y or Y now."
     else
         echo "${INFTXT}Generating certfificates using certbot."
@@ -649,7 +650,7 @@ setup_mysql_database(){
         return 1
     fi
 
-    grant_privs="$( mysql --user=${user} --password=${password} --host=${host} --execute="GRANT ALL PRIVILEGES ON ${OPTIONS_ANS["db_name"]} . * TO '${OPTIONS_ANS["db_username"]}'@'${OPTIONS_ANS["db_user_remote_permission"]}';" )"
+    grant_privs="$( mysql --user=${user} --password=${password} --host=${host} --execute="GRANT ALL PRIVILEGES ON ${OPTIONS_ANS["db_name"]} . * TO ${OPTIONS_ANS["db_username"]}@${OPTIONS_ANS["db_user_remote_permission"]};" )"
     grant_privs_success=$?
     if [ $grant_privs_success == 1 ];then
         echo "${ERRTXT}Error during user grant setting."
