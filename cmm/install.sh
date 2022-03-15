@@ -642,7 +642,7 @@ setup_mysql_database(){
         return 1
     fi
 
-    create_user="$( mysql --user=${user} --password=${password} --host=${host} --execute="CREATE USER '${OPTIONS_ANS["db_username"]}'@'${OPTIONS_ANS["db_user_remote_permission"]}' IDENTIFIED WITH mysql_native_password BY ${OPTIONS_ANS["db_password"]};" )"
+    create_user="$( mysql --user=${user} --password=${password} --host=${host} --execute="CREATE USER '${OPTIONS_ANS["db_username"]}'@'${OPTIONS_ANS["db_user_remote_permission"]}' IDENTIFIED WITH mysql_native_password BY '${OPTIONS_ANS["db_password"]}';" )"
     create_user_success=$?
     if [ $create_user_success == 1 ];then
         echo "${ERRTXT}Error during user creation."
