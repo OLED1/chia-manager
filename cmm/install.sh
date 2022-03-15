@@ -88,7 +88,7 @@ configure_new_install(){
     echo "--------------------------------------------------------------------------------------------"
     echo "${TASK}Database setup"
     echo "--------------------------------------------------------------------------------------------"
-    read_answer "" "Do you already have an existing mysql database installation?"
+    read_answer "" "Do you already have an existing mysql installation?"
     OPTIONS_ANS["db_exists"]=$?
 
     while true;do
