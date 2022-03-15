@@ -330,7 +330,8 @@ install_system_modules(){
     echo "============================================================================================"
     echo "${YELLOW}Please state 'root' passwords when asked.$NOCOLOR"
     echo "${INFTXT}The following command will be executed:"
-    echo "${INFTXT}sudo apt-get install apache2 mysql-server libapache2-mod-fcgid php7.4 php7.4-common php7.4-json php7.4-mbstring php7.4-igbinary php7.4-tokenizer php7.4-apcu php7.4-readline php7.4-sockets php7.4-intl php7.4-posix php7.4-sysvmsg php7.4-cli php7.4-fpm php7.4-mysql php7.4-zip -y"
+    #echo "${INFTXT}sudo apt-get install apache2 mysql-server libapache2-mod-fcgid php7.4 php7.4-common php7.4-json php7.4-mbstring php7.4-igbinary php7.4-tokenizer php7.4-apcu php7.4-readline php7.4-sockets php7.4-intl php7.4-posix php7.4-sysvmsg php7.4-cli php7.4-fpm php7.4-mysql php7.4-zip -y"
+    echo "${INFTXT}sudo apt-get install apache2 mysql-server libapache2-mod-fcgid php php-common php-json php-mbstring php-igbinary php-tokenizer php-apcu php-readline php-sockets php-intl php-posix php-sysvmsg php-cli php-fpm php-mysql php-zip -y"
     read_answer "y" "Proceed?"
     proceed=$?
     if [ $proceed == 1 ];then
@@ -338,7 +339,9 @@ install_system_modules(){
     fi
     echo "${INFTXT}${YELLOW}Please state 'root' passwords when asked.$NOCOLOR"
 
-    sudo apt-get install apache2 mysql-server libapache2-mod-fcgid php7.4 php7.4-common php7.4-json php7.4-mbstring php7.4-igbinary php7.4-tokenizer php7.4-apcu php7.4-readline php7.4-sockets php7.4-intl php7.4-posix php7.4-sysvmsg php7.4-cli php7.4-fpm php7.4-mysql php7.4-zip -y  > /dev/null 2>&1
+    #sudo apt-get install apache2 mysql-server libapache2-mod-fcgid php7.4 php7.4-common php7.4-json php7.4-mbstring php7.4-igbinary php7.4-tokenizer php7.4-apcu php7.4-readline php7.4-sockets php7.4-intl php7.4-posix php7.4-sysvmsg php7.4-cli php7.4-fpm php7.4-mysql php7.4-zip -y  > /dev/null 2>&1
+    sudo apt-get install apache2 mysql-server libapache2-mod-fcgid php php-common php-json php-mbstring php-igbinary php-tokenizer php-apcu php-readline php-sockets php-intl php-posix php-sysvmsg php-cli php-fpm php-mysql php-zip -y
+    
     service_installation=$?
     
     if [ $service_installation == 0 ];then
