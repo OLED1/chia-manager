@@ -1,5 +1,6 @@
 var ramswapcharts = {};
 var loadCharts = {};
+var cpuUsageCharts = {};
 
 setTimeout(function(){
   setServiceBadge();
@@ -25,6 +26,7 @@ function reloadTables(){
     initAndDrawRAMorSWAPChart(nodeid, "ram");
     initAndDrawRAMorSWAPChart(nodeid, "swap");
     initAndDrawLoadChart(nodeid);
+    initAndDrawCPUUsageChart(nodeid);
   });
 }
 
@@ -122,6 +124,7 @@ function initAndDrawRAMorSWAPChart(nodeid, type){
 
 function initAndDrawLoadChart(nodeid){
   var infodata = sysinfodata[nodeid];
+  if(infodata["os_type"] != "Linux") return;
   var thischartctx = document.getElementById("cpu_load_chart_" + nodeid).getContext("2d");
   if(!(nodeid in loadCharts)) loadCharts[nodeid] = {};
   else if((nodeid in loadCharts)) loadCharts[nodeid]["load"].destroy();
@@ -151,6 +154,81 @@ function initAndDrawLoadChart(nodeid){
         borderColor: ['rgba(111, 180, 255, 1)','rgba(51, 150, 255, 1)','rgba(0, 123, 255, 1)'],
         backgroundColor: ['rgba(111, 180, 255, 0.5)','rgba(51, 150, 255, 0.5)','rgba(0, 123, 255, 0.5)'],
         data: [infodata["load_1min"],infodata["load_5min"],infodata["load_15min"]],
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
+      maintainAspectRatio: false,
+      cutoutPercentage: 0,
+      scales: {
+        y: {
+          beginAtZero: true,
+            ticks : {
+              color: chartcolor
+          }
+        },
+        x: {
+            ticks : {
+                color: chartcolor
+            },
+            gridLines: {
+              display: false,
+              drawBorder: false
+            }
+        }
+      },
+      legend: {
+        display: false
+      },
+      plugins: {
+        legend: {
+            display: true,
+            labels: {
+                color: chartcolor
+            }
+        }
+    },
+    }
+  });
+}
+
+function initAndDrawCPUUsageChart(nodeid){
+  var infodata = sysinfodata[nodeid];
+  var thischartctx = document.getElementById("cpu_usage_chart_" + nodeid).getContext("2d");
+  if(!(nodeid in cpuUsageCharts)) cpuUsageCharts[nodeid] = {};
+  else if((nodeid in cpuUsageCharts)) cpuUsageCharts[nodeid].destroy();
+
+  var labels = [];
+  var data = [];
+  var max_count = [];
+  $.each(infodata["cpu_usages"], function(corenumber, usage){
+    labels.push("CPU " + corenumber);
+    data.push(usage);
+    max_count.push(100);
+  });
+    
+  cpuUsageCharts[nodeid] = new Chart(thischartctx, {
+    data: {
+      labels: labels,
+      datasets: [{
+        type: 'line',
+        label: "Max",
+        borderColor: 'rgba(245, 39, 39, 1)',
+        borderDash: [5, 5],
+        borderwidth: 1,
+        data: max_count,
+        fill: true
+      },{
+        type: 'bar',
+        label: "CPU usages",
+        borderColor: 'rgba(111, 180, 255, 1)',
+        backgroundColor: 'rgba(111, 180, 255, 0.5)',
+        data: data,
         fill: true
       }]
     },

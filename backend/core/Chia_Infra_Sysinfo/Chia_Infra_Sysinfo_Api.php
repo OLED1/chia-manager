@@ -9,7 +9,7 @@
    * It stores and manages values regarding system load, ram, swap and filesystems.
    * This class is used by the client to send in data and from the webclient to get data.
    * The client can also be managed via this class.
-   * @version 0.1.1
+   * @version 0.2
    * @author OLED1 - Oliver Edtmair
    * @since 0.1.0
    * @copyright Copyright (c) 2021, Oliver Edtmair (OLED1), Luca Austelat (lucaust)
@@ -62,24 +62,62 @@
           $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
           $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
 
-          $sql = $this->db_api->execute("INSERT INTO chia_infra_sysinfo (id, nodeid, load_1min, load_5min, load_15min, memory_total, memory_free, memory_buffers, memory_cached, memory_shared, swap_total, swap_free, cpu_count, cpu_cores, cpu_model) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-          array($nodeid, $data["system"]["load"]["1min"], $data["system"]["load"]["5min"], $data["system"]["load"]["15min"],
+          if(array_key_exists("load", $data["system"])){
+            //Client version < 0.3, TODO Cleanup in some versions 
+            $load_1_min = $data["system"]["load"]["1min"];
+            $load_5_min = $data["system"]["load"]["5min"];
+            $load_15_min = $data["system"]["load"]["15min"];
+          }else if(array_key_exists("cpu", $data["system"]) && array_key_exists("load", $data["system"]["cpu"]) && array_key_exists("1min", $data["system"]["cpu"]["load"])){
+            //Client version >=0.3
+            $load_1_min = $data["system"]["cpu"]["load"]["1min"];
+            $load_5_min = $data["system"]["cpu"]["load"]["5min"];
+            $load_15_min = $data["system"]["cpu"]["load"]["15min"];
+          }else{
+            $load_1_min = 0;
+            $load_5_min = 0;
+            $load_15_min = 0;
+          }
+
+          //Windows does not return these values
+          if(is_null($data["system"]["memory"]["buffers"])) $data["system"]["memory"]["buffers"] = 0;
+          if(is_null($data["system"]["memory"]["cached"])) $data["system"]["memory"]["cached"] = 0;
+          if(is_null($data["system"]["memory"]["shared"])) $data["system"]["memory"]["shared"] = 0; 
+          
+          $sql = $this->db_api->execute("INSERT INTO chia_infra_sysinfo (id, nodeid, load_1min, load_5min, load_15min, memory_total, memory_free, memory_buffers, memory_cached, memory_shared, swap_total, swap_free, cpu_count, cpu_cores, cpu_model, os_type, os_name) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          array($nodeid, $load_1_min, $load_5_min, $load_15_min,
                 $data["system"]["memory"]["total"], $data["system"]["memory"]["free"], $data["system"]["memory"]["buffers"], $data["system"]["memory"]["cached"], $data["system"]["memory"]["shared"],
                 $data["system"]["swap"]["total"], $data["system"]["swap"]["free"],
-                $data["system"]["cpu"]["count"], $data["system"]["cpu"]["cores"], $data["system"]["cpu"]["model"]
-          ));
+                $data["system"]["cpu"]["physical_cores"],($data["system"]["cpu"]["logical_cores"] / $data["system"]["cpu"]["physical_cores"]), $data["system"]["cpu"]["model"],
+                $data["system"]["os"]["type"], $data["system"]["os"]["name"]
+              ));
 
           $statement_string = "";
           $statement_data = [];
           $last_insert_id = $this->db_api->lastInsertId();
           foreach($data["system"]["filesystem"] AS $arrkey => $thisfsdata){
-            array_push($statement_data, $thisfsdata[0], $thisfsdata[1], $thisfsdata[2], $thisfsdata[3], $thisfsdata[5]);
+            if(array_key_exists("device", $thisfsdata)) array_push($statement_data, $thisfsdata["device"], $thisfsdata["total"], $thisfsdata["used"], $thisfsdata["free"], $thisfsdata["mountpoint"]); //Client version >=0.3
+            else array_push($statement_data, $thisfsdata[0], $thisfsdata[1], $thisfsdata[2], $thisfsdata[3], $thisfsdata[5]);  //Client version < 0.3, TODO Cleanup in some versions
             $statement_string .= "(NULL, {$last_insert_id}, ?, ?, ?, ?, ?)";
             if(array_key_exists($arrkey+1, $data["system"]["filesystem"])) $statement_string .= ",";
           }
 
           if(count($statement_data) > 0){
             $sql = $this->db_api->execute("INSERT INTO chia_infra_sysinfo_filesystems (id, sysinfo_id, device, size, used, avail, mountpoint) VALUES {$statement_string}", $statement_data);
+          }
+
+          ///Client version >= 0.3, TODO Cleanup in some versions 
+          if(array_key_exists("cpu", $data["system"]) && array_key_exists("usage", $data["system"]["cpu"])){
+            $statement_string = "";
+            $statement_data = [];
+            foreach($data["system"]["cpu"]["usage"] AS $arrkey => $thisusage){
+              array_push($statement_data, $arrkey, $thisusage);
+              $statement_string .= "(NULL, {$last_insert_id}, ?, ?)";
+              if(array_key_exists($arrkey+1, $data["system"]["cpu"]["usage"])) $statement_string .= ",";
+            }
+  
+            if(count($statement_data) > 0){
+              $sql = $this->db_api->execute("INSERT INTO chia_infra_cpu_usage (id, sysinfo_id, cpu_number, cpu_usage) VALUES {$statement_string}", $statement_data);
+            }
           }
 
           return array("status" => 0, "message" => "Successfully updated system information for node $nodeid.", "data" => ["nodeid" => $nodeid]);
@@ -106,22 +144,20 @@
 
       try{
         if(is_null($nodeid)){
-          $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, cis.id AS sysinfoid, cis.timestamp,cis.load_1min,cis.load_5min,cis.load_15min,cis.memory_total,cis.memory_free,
-                                                cis.memory_buffers,cis.memory_shared,cis.memory_cached,cis.swap_total,cis.swap_free,cis.cpu_count,cis.cpu_cores,cis.cpu_model,
-                                                cisf.device, cisf.size, cisf.used, cisf.avail, cisf.mountpoint
+          $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, cis.id AS sysinfoid, cis.timestamp,cis.load_1min,cis.load_5min,cis.load_15min,cis.memory_total,cis.memory_free, cis.memory_buffers,cis.memory_shared,cis.memory_cached,cis.swap_total,cis.swap_free,cis.cpu_count,cis.cpu_cores,cis.cpu_model, cicu.cpu_number, cicu.cpu_usage, cis.os_type, cis.os_name, cisf.device, cisf.size, cisf.used, cisf.avail, cisf.mountpoint
                                           FROM nodes n
-                                          INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id AND cis.timestamp = (SELECT max(cis1.timestamp) FROM chia_infra_sysinfo cis1 WHERE cis1.nodeid = n.id)
-                                          INNER JOIN chia_infra_sysinfo_filesystems cisf ON cisf.sysinfo_id = cis.id
+                                          LEFT JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id AND cis.timestamp = (SELECT max(cis1.timestamp) FROM chia_infra_sysinfo cis1 WHERE cis1.nodeid = n.id)
+                                          LEFT JOIN chia_infra_sysinfo_filesystems cisf ON cisf.sysinfo_id = cis.id
+                                          LEFT JOIN chia_infra_cpu_usage cicu ON cicu.sysinfo_id = cis.id
                                           WHERE n.id = (
-                                              SELECT nt.nodeid FROM nodetype nt WHERE nt.code >= 3 AND nt.code <= 5 AND nt.nodeid = n.id LIMIT 1
+                                            SELECT nt.nodeid FROM nodetype nt WHERE nt.code >= 3 AND nt.code <= 5 AND nt.nodeid = n.id LIMIT 1
                                           )", array());
         }else{
-          $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, cis.id AS sysinfoid, cis.timestamp,cis.load_1min,cis.load_5min,cis.load_15min,cis.memory_total,cis.memory_free,
-                                                cis.memory_buffers,cis.memory_shared,cis.memory_cached,cis.swap_total,cis.swap_free,cis.cpu_count,cis.cpu_cores,cis.cpu_model,
-                                                cisf.device, cisf.size, cisf.used, cisf.avail, cisf.mountpoint
+          $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, cis.id AS sysinfoid, cis.timestamp,cis.load_1min,cis.load_5min,cis.load_15min,cis.memory_total,cis.memory_free, cis.memory_buffers,cis.memory_shared,cis.memory_cached,cis.swap_total,cis.swap_free,cis.cpu_count,cis.cpu_cores,cis.cpu_model, cicu.cpu_number, cicu.cpu_usage, cis.os_type, cis.os_name, cisf.device, cisf.size, cisf.used, cisf.avail, cisf.mountpoint
                                           FROM nodes n
-                                          INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id AND cis.timestamp = (SELECT max(cis1.timestamp) FROM chia_infra_sysinfo cis1 WHERE cis1.nodeid = n.id)
-                                          INNER JOIN chia_infra_sysinfo_filesystems cisf ON cisf.sysinfo_id = cis.id
+                                          LEFT JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id AND cis.timestamp = (SELECT max(cis1.timestamp) FROM chia_infra_sysinfo cis1 WHERE cis1.nodeid = n.id)
+                                          LEFT JOIN chia_infra_sysinfo_filesystems cisf ON cisf.sysinfo_id = cis.id
+                                          LEFT JOIN chia_infra_cpu_usage cicu ON cicu.sysinfo_id = cis.id
                                           WHERE n.id = ?", array($data["nodeid"]));
         }
         
@@ -130,7 +166,8 @@
           if(!array_key_exists($sysinfodata["id"], $returnarray)){
             $returnarray[$sysinfodata["id"]] = $sysinfodata;
             $returnarray[$sysinfodata["id"]]["nodeauthhash"] = $this->encryption_api->decryptString($sysinfodata["nodeauthhash"]);
-            $returnarray[$sysinfodata["id"]]["filesystems"] = [[$sysinfodata["device"], $sysinfodata["size"], $sysinfodata["used"], $sysinfodata["avail"], $sysinfodata["mountpoint"]]];
+            $returnarray[$sysinfodata["id"]]["filesystems"][$sysinfodata["mountpoint"]] = [$sysinfodata["device"], $sysinfodata["size"], $sysinfodata["used"], $sysinfodata["avail"], $sysinfodata["mountpoint"]];
+            $returnarray[$sysinfodata["id"]]["cpu_usages"][$sysinfodata["cpu_number"]] = $sysinfodata["cpu_usage"];
             unset(
               $returnarray[$sysinfodata["id"]]["device"],
               $returnarray[$sysinfodata["id"]]["size"],
@@ -139,7 +176,9 @@
               $returnarray[$sysinfodata["id"]]["mountpoint"]
             ); 
           }else{
-            array_push($returnarray[$sysinfodata["id"]]["filesystems"], [$sysinfodata["device"], $sysinfodata["size"], $sysinfodata["used"], $sysinfodata["avail"], $sysinfodata["mountpoint"]]);
+            //array_push($returnarray[$sysinfodata["id"]]["filesystems"], [$sysinfodata["device"], $sysinfodata["size"], $sysinfodata["used"], $sysinfodata["avail"], $sysinfodata["mountpoint"]]);
+            $returnarray[$sysinfodata["id"]]["filesystems"][$sysinfodata["mountpoint"]] = [$sysinfodata["device"], $sysinfodata["size"], $sysinfodata["used"], $sysinfodata["avail"], $sysinfodata["mountpoint"]];
+            $returnarray[$sysinfodata["id"]]["cpu_usages"][$sysinfodata["cpu_number"]] = $sysinfodata["cpu_usage"];
           }
         }
 
