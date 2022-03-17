@@ -31,14 +31,6 @@ class Farmdata{
         if(!array_key_exists("plot_count", $reportedfarmdata) || !is_int($reportedfarmdata["plot_count"])){
             throw new \InvalidArgumentException("The reported data for the key 'plot_count' are not fully set. Expected: 'plot_count': <int>");
         }
-        if(
-            is_null($reportedfarmdata["farming_status"]) ||
-            (is_null($reportedfarmdata["farming_status"]["sync_mode"]) || !is_bool($reportedfarmdata["farming_status"]["sync_mode"])) ||
-            (is_null($reportedfarmdata["farming_status"]["synced"]) || !is_bool($reportedfarmdata["farming_status"]["synced"]))
-        ){
-            throw new \InvalidArgumentException("The reported data for the key 'farming_status' are not fully set. Expected: 'farming_status': { 'sync_mode': <bool>, 'synced' : <bool> }, but got {" . json_encode($reportedfarmdata["farming_status"]) . "}");
-        }
-
         if(!array_key_exists("estimated_network_space", $reportedfarmdata) || (!is_double($reportedfarmdata["estimated_network_space"]) && !is_int($reportedfarmdata["estimated_network_space"]))){
             throw new \InvalidArgumentException("The reported data for the key 'estimated_network_space' are not fully set. Expected: 'estimated_network_space': <double>, but got {" . json_encode($reportedfarmdata["estimated_network_space"]) . "}");
         }
@@ -59,7 +51,8 @@ class Farmdata{
             $this->last_height_farmed = 0;
           }
 
-        if($reportedfarmdata["farming_status"]["sync_mode"]) $this->farming_status = 0; //Syncing  
+        if(is_null($reportedfarmdata["farming_status"])) $this->farming_status = 1; //Not synced or not connected to peers
+        else if($reportedfarmdata["farming_status"]["sync_mode"]) $this->farming_status = 0; //Syncing  
         else if(!$reportedfarmdata["farming_status"]["synced"]) $this->farming_status = 1; //Not synced or not connected to peers
         else $this->farming_status = 2; //Farming
 
