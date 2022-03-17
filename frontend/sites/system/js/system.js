@@ -176,6 +176,28 @@ $(function(){
     }
   });
 
+  $("#enableAlertingMail").on("click", function(e){
+    setAlerting();
+  });
+
+  $("#enableAlertingGotify").on("click", function(e){
+    setAlerting();
+  });
+
+  function setAlerting(){
+    datatosend = {
+      "alerting" : {
+        "mail" : $("#enableAlertingMail").prop("checked"),
+        "gotify" : $("#enableAlertingGotify").prop("checked")
+      }
+    };
+
+    window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "setSystemSettings", datatosend);
+    setTimeout(function() {
+      window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "confirmSetting", {"settingtype" : "alerting"});
+    }, 500);
+  }
+
   function showErrorMessage(messageid,message){
     $("#"+messageid).text(message).show();
     setInterval(function() {
@@ -300,7 +322,8 @@ function messagesTrigger(data){
 
   if(data[key]["status"] == 0){
     if (key == "setSystemSettings"){
-      if(data[key]["data"] == "mailing"){
+      var settingtype = Object.keys(data[key]["data"]);
+      if(settingtype == "mailing"){
         $("#save-mail-settings i").hide();
         $("#settingtype_mailing").html(
           "<div class='card bg-warning text-white shadow'>" +
@@ -356,6 +379,8 @@ function messagesTrigger(data){
     }else if(key == "wssonlinestatus"){
       setWebsocketRunningStatus(data[key]["status"], data[key]["data"]);
     }
+
+    showMessage(0, data[key]["message"]);
   }else{
     showMessage(2, data["message"]);
     if (key == "setSystemSettings"){
