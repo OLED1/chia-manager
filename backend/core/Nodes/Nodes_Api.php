@@ -443,7 +443,7 @@
 
           $returndata["updateinfos"][$nodedata["id"]]["chiaupdateavail"] =  2;
           if(array_key_exists("data", $overall_chia_data) && array_key_exists("blockchain_version", $overall_chia_data["data"])){
-            if(!is_null($nodedata["chiaversion"])) $returndata["updateinfos"][$nodedata["id"]]["chiaupdateavail"] = (int)version_compare(trim($nodedata["chiaversion"]), trim($overall_chia_data["data"]["blockchain_version"]));
+            if(!is_null($nodedata["chiaversion"]) && !empty($nodedata["chiaversion"])) $returndata["updateinfos"][$nodedata["id"]]["chiaupdateavail"] = (int)version_compare(trim($nodedata["chiaversion"]), trim($overall_chia_data["data"]["blockchain_version"]));
           }
         }
 
@@ -562,7 +562,7 @@
      * Changes the Nodes Services Upstatus in the database. Informs the frontend about changes.
      * Function made for: Node Client
      * Data sent in status: 
-     * Service Status: 0 = Service DOWN, 1 = Service UP
+     * Service Status: 0 = Service DOWN, 1 = Service UP, false = Service DOWN, true = Service UP
      * Service ID's: 3 = Farmer, 4 = Harvester, 5 = Wallet
      * @param array $data         { "nodeid" : [The systems node id], "wallet" : { "status" => [0=Service Down/1=Service UP] }, "farmer" : { "status" => [0=Service Down/1=Service UP] }, "harvester" : { "status" => [0=Service Down/1=Service UP] }}
      * @param array $loginData   { "authhash" => [The node's authhash] } *Must be set when no nodeid is set in $data  
@@ -593,7 +593,14 @@
             $founddata = $sql->fetchAll(\PDO::FETCH_ASSOC);
             if(count($founddata) > 0){
               foreach($founddata AS $arrkey => $savedstates){
-                $reported_service_state = intval(!boolval($data[$savedstates["description"]]["status"]));
+                if(is_numeric($data[$savedstates["description"]])){
+                  $reported_service_state = intval(!boolval($data[$savedstates["description"]]));
+                }else if(is_bool($data[$savedstates["description"]])){
+                  $reported_service_state = intval(boolval($data[$savedstates["description"]]));
+                }else if(is_array($data[$savedstates["description"]])){
+                  $reported_service_state = intval(!boolval($data[$savedstates["description"]]["status"]));
+                }
+
                 if((is_numeric($savedstates["servicestate"]) || is_null($savedstates["servicestate"])) && array_key_exists($savedstates["description"], $data) && (($reported_service_state != $savedstates["servicestate"]) || is_null($savedstates["servicestate"]))){
                   $this->db_api->execute("INSERT INTO nodes_services_status (id, nodeid, serviceid, servicestate, firstreported, lastreported) VALUES(NULL, ?, ?, ?, current_timestamp(), current_timestamp())", array($nodeid, $savedstates["serviceid"], $reported_service_state));
                 }
