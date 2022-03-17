@@ -92,6 +92,7 @@
                 </div>
               </div>
             </div>
+            <?php if($sysinfo["os_type"] == "Linux"){ ?>
             <div class="row">
               <div class="col">
                 <div id="cpu_load_container_<?php echo "{$sysinfo["id"]}"; ?>">
@@ -103,6 +104,24 @@
                       <h7 class="m-0 font-weight-bold text-primary">CPU Load</h7>
                       <div class="chart-bar" style="min-height: 30vh;">
                         <canvas id="cpu_load_chart_<?php echo "{$sysinfo["id"]}"; ?>"></canvas>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <?php } ?>
+            <div class="row">
+              <div class="col">
+                <div id="cpu_usage_container_<?php echo "{$sysinfo["id"]}"; ?>">
+                  <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                      <h7 class="m-0 font-weight-bold text-primary"><?php echo "CPU {$sysinfo["cpu_model"]} - {$sysinfo["cpu_cores"]} Cores, {$sysinfo["cpu_count"]} Threads"; ?></h7>
+                    </div>
+                    <div class="card-body">
+                      <h7 class="m-0 font-weight-bold text-primary">CPU Usage</h7>
+                      <div class="chart-bar" style="min-height: 30vh;">
+                        <canvas id="cpu_usage_chart_<?php echo "{$sysinfo["id"]}"; ?>"></canvas>
                       </div>
                     </div>
                   </div>
@@ -134,9 +153,11 @@
 <?php 
 function formatkBytes(int $size, int $precision = 2)
 {
-    if($size == 0) return "0KB";
+    echo "$size ";
+  
+    if($size == 0) return "0B";
     $base = log($size, 1024);
-    $suffixes = array('KB', 'MB', 'GB', 'TB');   
+    $suffixes = array('B','KB', 'MB', 'GB', 'TB');   
 
     return round(pow(1024, $base - floor($base)), $precision) . $suffixes[floor($base)];
 }
