@@ -104,7 +104,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
   public function onMessage(ConnectionInterface $from, $msg) {
     $data = json_decode($msg, true);
     
-    if(array_key_exists("node" , $data) && array_key_exists("request" , $data)
+    if(is_array($data) && array_key_exists("node" , $data) && array_key_exists("request" , $data)
         && array_key_exists("data" , $data["request"]) && array_key_exists("backendInfo" , $data["request"])){
 
       //Setting variables for processing
@@ -261,7 +261,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
               if(!$changed) {
                 //Set Node to DOWN
                 $set_node_up_down = $this->requestHandler->processRequest([], ['namespace' => 'ChiaMgmt\Nodes\Nodes_Api', 'method' => 'setNodeUpDown'], ["nodeid" => $this->subscription[$type][$conid]["nodeid"], "updown" => 0]); 
-                $this->messageFrontendClients([], $set_node_up_down, $from->resourceId, ['namespace' => 'ChiaMgmt\Nodes\Nodes_Api']); 
+                $this->messageFrontendClients([], $set_node_up_down, $conn->resourceId, ['namespace' => 'ChiaMgmt\Nodes\Nodes_Api']); 
               }          
               unset($this->subscription[$type][$conid]);
               array_push($types, $type);
