@@ -43,7 +43,7 @@
   <link rel="icon" type="image/png" href="<?php echo $ini["frontend_url"]."/img/favicon.png"?>" sizes="96x96">
 
   <!-- Custom fonts for this template-->
-  <link href="frameworks/bootstrap/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+  <link href="frameworks/node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
   <link href="css/google_fonts/nunito/nunito-font.css" rel="stylesheet">
   <!-- Custom styles for this template-->
   <link href="frameworks/bootstrap/css/sb-admin-2.min.css" rel="stylesheet">
@@ -87,9 +87,9 @@
       </div>
     </div>
 
-    <script nonce=<?php echo $ini["nonce_key"]; ?> src="frameworks/bootstrap/vendor/jquery/jquery.min.js"></script>
-    <script nonce=<?php echo $ini["nonce_key"]; ?> src="frameworks/bootstrap/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script nonce=<?php echo $ini["nonce_key"]; ?> src="frameworks/bootstrap/vendor/jquery-easing/jquery.easing.min.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="frameworks/node_modules/jquery/dist/jquery.min.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="frameworks/bootstrap/vendor/bootstrap/__old/js/bootstrap.bundle.min.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="frameworks/node_modules/jquery.easing/jquery.easing.min.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="frameworks/bootstrap/js/sb-admin-2.min.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="js/pwreset/pwreset.js"></script>
 </body>

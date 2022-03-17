@@ -33,7 +33,7 @@
       <link rel="icon" type="image/png" href="img/favicon.png" sizes="96x96">
 
       <!-- Custom fonts for this template-->
-      <link href="frameworks/bootstrap/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+      <link href="frameworks/node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
       <link href="css/google_fonts/nunito/nunito-font.css" rel="stylesheet">
       <!-- Custom styles for this template-->
       <link href="frameworks/bootstrap/css/sb-admin-2.min.css" rel="stylesheet">
@@ -62,7 +62,7 @@
       </div>
     </div>
   </body>
-  <script nonce=<?php echo $ini["nonce_key"]; ?> src="frameworks/bootstrap/vendor/jquery/jquery.min.js"></script>
+  <script nonce=<?php echo $ini["nonce_key"]; ?> src="frameworks/node_modules/jquery/dist/jquery.min.js"></script>
   <script nonce=<?php echo $ini["nonce_key"]; ?>>
     $(function(){
       if($("#maintenance_mode_modal").length > 0 && $("#update_routines").length == 0){
