@@ -3,11 +3,21 @@
   use ChiaMgmt\Users\Users_Api;
   use ChiaMgmt\UserSettings\UserSettings_Api;
   use ChiaMgmt\System_Update\System_Update_Api;
+  use ChiaMgmt\System\System_Api;
 
   require __DIR__ . '/../../vendor/autoload.php';
 
   $system_update_api = new System_Update_Api();
   $system_update_state = $system_update_api->checkUpdateRoutine();
+
+  $system_api = new System_Api();
+  $all_settings = $system_api->getAllSystemSettings()["data"];
+  if(array_key_exists("alerting", $all_settings)){
+    $alerting = $all_settings["alerting"];
+  }else{
+    $alerting = array("mail" => false, "gotify" => false);
+    $system_api->setSystemSettings(array("alerting" => $alerting));
+  }
 
   if((array_key_exists("process_update", $system_update_state["data"]) && $system_update_state["data"]["process_update"]) || array_key_exists("db_install_needed", $system_update_state["data"])){
     header("Location: http://{$_SERVER['SERVER_NAME']}/frontend/sites/installer_updater/");
@@ -37,17 +47,19 @@
   $userData = array();
   if(array_key_exists("user_id", $_COOKIE)) $userData = $users_api->getOwnUserData($_COOKIE["user_id"]);
 
-  echo "<script nonce={$ini["nonce_key"]}>
-  var backend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["backend_url"]}';
-  var frontend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}';
-  var websocket = '{$ini["socket_protocol"]}://{$ini["socket_domain"]}{$ini["socket_listener"]}';
-  var authhash = '{$ini["web_client_auth_hash"]}';
-  var userdata = " . json_encode($userData["data"]) . ";
-  var userID = {$_COOKIE["user_id"]};
-  var sessid = '{$_COOKIE["PHPSESSID"]}';
-  var darkmode = {$gui_mode};
-  var chartcolor = '" . ($gui_mode == 1 ? "#858796" : "#fff") . "';
-  var intervals = {};
+  echo "
+  <script nonce={$ini["nonce_key"]}>
+    var backend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["backend_url"]}';
+    var frontend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}';
+    var websocket = '{$ini["socket_protocol"]}://{$ini["socket_domain"]}{$ini["socket_listener"]}';
+    var authhash = '{$ini["web_client_auth_hash"]}';
+    var userdata = " . json_encode($userData["data"]) . ";
+    var userID = {$_COOKIE["user_id"]};
+    var sessid = '{$_COOKIE["PHPSESSID"]}';
+    var darkmode = {$gui_mode};
+    var chartcolor = '" . ($gui_mode == 1 ? "#858796" : "#fff") . "';
+    var alerting = " . json_encode($alerting) . ";
+    var intervals = {};
   </script>";
 ?>
 <html lang="en">
@@ -65,13 +77,13 @@
       <link rel="icon" type="image/png" href="<?php echo $ini["frontend_url"]."/img/favicon.png"?>" sizes="96x96">
 
       <!-- Custom fonts for this template-->
-      <link href="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+      <link href="<?php echo $frontendurl; ?>/frameworks/node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
       <link href="<?php echo $ini["frontend_url"]; ?>/css/google_fonts/nunito/nunito-font.css" rel="stylesheet">
       <!-- Styles for vendor products -->
       <link href="<?php echo $frontendurl; ?>/frameworks/bootstrap/css/sb-admin-2.min.css" rel="stylesheet">
       <link href="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
       <link href="<?php echo $frontendurl; ?>/frameworks/davidstutz-multiselect/css/bootstrap-multiselect.min.css" rel="stylesheet">
-      <link href="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
+      <link href="<?php echo $frontendurl; ?>/frameworks/node_modules/datatables.net-bs4/css/dataTables.bootstrap4.min.css" rel="stylesheet">
       <link href="<?php echo $frontendurl; ?>/frameworks/jquery-datetimepicker/build/jquery.datetimepicker.min.css" rel="stylesheet">
       <!-- Custom styles for this template-->
       <link href="<?php echo $frontendurl; ?>/css/custom.css" rel="stylesheet">
@@ -154,6 +166,12 @@
         <div class="sidebar-heading">
           System
         </div>
+        <li id="nav-alerting" class="nav-item">
+          <a class="nav-link" data-siteid=14 data-nav-target="nav-alerting" href="/sites/alerting">
+          <i class="fa-solid fa-bell"></i>
+            <span>Alerting</span>
+          </a>
+        </li>
         <li id="nav-users" class="nav-item">
           <a class="nav-link" data-siteid=4 data-nav-target="nav-users" href="/sites/users">
             <i class="fas fa-users-cog"></i>
@@ -172,9 +190,8 @@
             <span>Logging</span>
           </a>
         </li>
-
         <hr class="sidebar-divider">
-
+        
         <div class="sidebar-heading">
             Personal
         </div>
@@ -412,21 +429,21 @@
     </div>
 
     <!-- Bootstrap core JavaScript-->
-    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/jquery/jquery.min.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/node_modules/jquery/dist/jquery.min.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/bootstrap/__old/js/bootstrap.bundle.min.js"></script>
 
     <!-- Core plugin JavaScript-->
-    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/jquery-easing/jquery.easing.min.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/node_modules/jquery.easing/jquery.easing.min.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/davidstutz-multiselect/js/bootstrap-multiselect.min.js"></script>
 
     <!-- Custom scripts for all pages-->
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/bootstrap/js/sb-admin-2.min.js"></script>
 
     <!-- Page level plugins -->
-    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/datatables/jquery.dataTables.min.js"></script>
-    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/datatables/dataTables.bootstrap4.min.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/node_modules/datatables.net/js/jquery.dataTables.min.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/node_modules/datatables.net-bs4/js/dataTables.bootstrap4.min.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/node_modules/chart.js/dist/chart.min.js"></script>
-    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/momentjs/moment-with-locales.min.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/node_modules/moment/moment.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/jquery-datetimepicker/build/jquery.datetimepicker.full.min.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/node_modules/marked/marked.min.js"></script>
 
