@@ -1,0 +1,29 @@
+.edit-rules-input, .add-rules-input{
+    min-width: 5em;
+    max-width: 7em;
+}
+
+.warn_level{
+    min-width: 7em;
+}
+
+.crit_level{
+    min-width: 6.2em;
+}
+
+.warn_perc_min{
+    min-width: 6em; 
+}
+
+.crit_perc_min{
+    min-width: 6.2em; 
+}
+
+.service-description{
+    width: 15em;
+}
+
+.alerting-rule .warn_level,
+.alerting-rule .crit_level{
+    width: 11em;
+}
