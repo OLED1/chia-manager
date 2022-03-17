@@ -3,6 +3,10 @@
   use ChiaMgmt\System_Update\System_Update_Api;
   require __DIR__ . '/../../vendor/autoload.php';
 
+  header('Cache-Control: no-cache, no-store, must-revalidate');
+  header('Pragma: no-cache');
+  header('Expires: 0');
+
   $login_api = new Login_Api();
   $ini = parse_ini_file(__DIR__.'/../../backend/config/config.ini.php');
   $loggedin = $login_api->checklogin();
