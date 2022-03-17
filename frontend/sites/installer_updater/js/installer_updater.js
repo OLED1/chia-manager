@@ -103,6 +103,7 @@ $("#cancel-update").on("click", function(){
 
 $("#process-update").on("click", function(){
   $("#nav-updater-processing-page").addClass("active");
+  sendData("setInstanceUpdating", { "userid" : userID, "updatestate" : 1 })
   processUpdateSteps();
 });
 

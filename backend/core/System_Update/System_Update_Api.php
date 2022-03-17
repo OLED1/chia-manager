@@ -67,7 +67,7 @@
      */
     public function setInstanceUpdating(array $data = [], array $loginData = NULL): array
     {
-      if(array_key_exists("userid", $data) && array_key_exists("updatestate", $data)){
+      if(array_key_exists("userid", $data) && array_key_exists("updatestate", $data) && is_numeric($data["userid"]) && $data["userid"] > 0){
         try{
           $this->db_api->execute("UPDATE system_infos SET userid_updating = ?, process_update = ?", array($data["userid"],$data["updatestate"]));
 
