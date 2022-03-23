@@ -309,13 +309,17 @@
       $where_statement = "";
       $statement_array = [];
       if(array_key_exists("rule_id", $data)){
-        /*if(empty($where_statement)) $where_statement .= "WHERE ";
+        if(empty($where_statement)) $where_statement .= "WHERE ";
         else $where_statement .= "AND ";
-        $where_statement .= " ar.rule_type = ?";*/
+        $where_statement .= " ap.rule_id = ?";
+        array_push($statement_array, $data["rule_id"]);
       }
 
       if(array_key_exists("node_id", $data)){
-        
+        if(empty($where_statement)) $where_statement .= "WHERE ";
+        else $where_statement .= "AND ";
+        $where_statement .= " ap.rule_node_target = ?";
+        array_push($statement_array, $data["node_id"]);
       }
 
       if(array_key_exists("alerting_service", $data)){
@@ -327,17 +331,59 @@
       }
 
       try{
-        $sql = $this->db_api->execute("SELECT ap.id, ap.rule_id, ap.rule_node_target, ap.alerting_service, ar.system_target, ap.warn_alert_after, ap.crit_alert_after 
+        $sql = $this->db_api->execute("SELECT ap.id, ap.rule_id, ac.user_id AS alerting_user_id, ap.rule_node_target, ap.alerting_service, ar.system_target, ap.warn_alert_after, ap.crit_alert_after
                                         FROM `alerting_procedure` ap
                                         JOIN `alerting_rules` ar ON ar.id = ap.rule_id
+                                        LEFT JOIN `alerting_contact`ac ON ac.alerting_procedure_id = ap.id
                                         $where_statement", $statement_array);
 
         $found_alerting_rules = $sql->fetchAll(\PDO::FETCH_ASSOC);
+
         $returnarray = [];
         foreach($found_alerting_rules AS $arrkey => $this_alerting_rule){
-          $returnarray["by_rule_id"][$this_alerting_rule["rule_id"]][$this_alerting_rule["alerting_service"]] = $this_alerting_rule;
-          $returnarray["by_alerting_service"][$this_alerting_rule["alerting_service"]][$this_alerting_rule["rule_id"]] = $this_alerting_rule;
-          $returnarray["by_rule_node_target"][$this_alerting_rule["rule_node_target"]][$this_alerting_rule["rule_id"]][$this_alerting_rule["alerting_service"]] = $this_alerting_rule;
+          if(!array_key_exists("by_rule_id", $returnarray)) $returnarray["by_rule_id"] = [];
+          if(!array_key_exists($this_alerting_rule["rule_id"], $returnarray["by_rule_id"])) $returnarray["by_rule_id"][$this_alerting_rule["rule_id"]] = [];
+          if(!array_key_exists($this_alerting_rule["rule_node_target"], $returnarray["by_rule_id"][$this_alerting_rule["rule_id"]])) $returnarray["by_rule_id"][$this_alerting_rule["rule_id"]][$this_alerting_rule["rule_node_target"]] = [];
+          if(!array_key_exists($this_alerting_rule["alerting_service"], $returnarray["by_rule_id"][$this_alerting_rule["rule_id"]][$this_alerting_rule["rule_node_target"]])){
+            $returnarray["by_rule_id"][$this_alerting_rule["rule_id"]][$this_alerting_rule["rule_node_target"]][$this_alerting_rule["alerting_service"]] = $this_alerting_rule;
+            if($this_alerting_rule["alerting_user_id"] != NULL){
+              $returnarray["by_rule_id"][$this_alerting_rule["rule_id"]][$this_alerting_rule["rule_node_target"]][$this_alerting_rule["alerting_service"]]["alerting_user_ids"][0] = $this_alerting_rule["alerting_user_id"];
+            }else{
+              $returnarray["by_rule_id"][$this_alerting_rule["rule_id"]][$this_alerting_rule["rule_node_target"]][$this_alerting_rule["alerting_service"]]["alerting_user_ids"] = [];
+            }
+          }else{
+            array_push($returnarray["by_rule_id"][$this_alerting_rule["rule_id"]][$this_alerting_rule["rule_node_target"]][$this_alerting_rule["alerting_service"]]["alerting_user_ids"], $this_alerting_rule["alerting_user_id"]);
+          }
+          
+          if(!array_key_exists("by_alerting_service", $returnarray)) $returnarray["by_alerting_service"] = [];
+          if(!array_key_exists($this_alerting_rule["alerting_service"], $returnarray["by_alerting_service"])) $returnarray["by_alerting_service"][$this_alerting_rule["alerting_service"]] = [];
+          if(!array_key_exists($this_alerting_rule["rule_id"], $returnarray["by_alerting_service"][$this_alerting_rule["alerting_service"]])){
+            $returnarray["by_alerting_service"][$this_alerting_rule["alerting_service"]][$this_alerting_rule["rule_id"]] = $this_alerting_rule;
+            $returnarray["by_alerting_service"][$this_alerting_rule["alerting_service"]][$this_alerting_rule["rule_id"]]["alerting_user_ids"][0] = $this_alerting_rule["alerting_user_id"];
+            if($this_alerting_rule["alerting_user_id"] != NULL){
+              $returnarray["by_alerting_service"][$this_alerting_rule["alerting_service"]][$this_alerting_rule["rule_id"]]["alerting_user_ids"][0] = $this_alerting_rule["alerting_user_id"];
+            }else{
+              $returnarray["by_alerting_service"][$this_alerting_rule["alerting_service"]][$this_alerting_rule["rule_id"]]["alerting_user_ids"] = [];
+            }
+          }else{
+            array_push($returnarray["by_alerting_service"][$this_alerting_rule["alerting_service"]][$this_alerting_rule["rule_id"]]["alerting_user_ids"], $this_alerting_rule["alerting_user_id"]);
+          }
+
+          if(!array_key_exists("by_rule_node_target", $returnarray)) $returnarray["by_rule_node_target"] = [];
+          if(!array_key_exists($this_alerting_rule["rule_node_target"], $returnarray["by_rule_node_target"])) $returnarray["by_rule_node_target"][$this_alerting_rule["rule_node_target"]] = [];
+          if(!array_key_exists($this_alerting_rule["rule_id"], $returnarray["by_rule_node_target"][$this_alerting_rule["rule_node_target"]])) $returnarray["by_rule_node_target"][$this_alerting_rule["rule_node_target"]][$this_alerting_rule["rule_id"]] = [];
+          if(!array_key_exists($this_alerting_rule["alerting_service"], $returnarray["by_rule_node_target"][$this_alerting_rule["rule_node_target"]][$this_alerting_rule["rule_id"]])){
+            $returnarray["by_rule_node_target"][$this_alerting_rule["rule_node_target"]][$this_alerting_rule["rule_id"]][$this_alerting_rule["alerting_service"]] = $this_alerting_rule;
+            $returnarray["by_rule_node_target"][$this_alerting_rule["rule_node_target"]][$this_alerting_rule["rule_id"]][$this_alerting_rule["alerting_service"]]["alerting_user_ids"][0] = $this_alerting_rule["alerting_user_id"];
+            if($this_alerting_rule["alerting_user_id"] != NULL){
+              $returnarray["by_rule_node_target"][$this_alerting_rule["rule_node_target"]][$this_alerting_rule["rule_id"]][$this_alerting_rule["alerting_service"]]["alerting_user_ids"][0] = $this_alerting_rule["alerting_user_id"];
+            }else{
+              $returnarray["by_rule_node_target"][$this_alerting_rule["rule_node_target"]][$this_alerting_rule["rule_id"]][$this_alerting_rule["alerting_service"]]["alerting_user_ids"] = [];
+            }
+          }else{
+            array_push($returnarray["by_rule_node_target"][$this_alerting_rule["rule_node_target"]][$this_alerting_rule["rule_id"]][$this_alerting_rule["alerting_service"]]["alerting_user_ids"], $this_alerting_rule["alerting_user_id"]);
+          }
+
         }
 
         return array("status" => 0, "message" => "Successfully loaded all available alerting rules.", "data" => $returnarray);
@@ -358,7 +404,8 @@
     {
       if(array_key_exists("node_id", $data) && is_numeric($data["node_id"]) && $data["node_id"] > 2 &&
         array_key_exists("rule_id", $data) && is_numeric($data["rule_id"]) && $data["rule_id"] > 0 &&
-        array_key_exists("alerting", $data) && is_array($data["alerting"])
+        array_key_exists("alerting", $data) && is_array($data["alerting"]) &&
+        array_key_exists("users", $data) && is_array($data["users"])
       ){
         try{
           $rule_id = $data["rule_id"];
@@ -371,21 +418,38 @@
             if(is_numeric($alerting_service_id)){
               //-1 = "do not alert", 0 = "immediately alert", >0 = "alert after x minutes"
               if(array_key_exists("warn_exceeds", $service_config) || array_key_exists("crit_exceeds", $service_config)){
-                $warn_exceeds = (array_key_exists("warn_exceeds", $service_config) && $service_config["warn_exceeds"] >= 0 ?  $service_config["warn_exceeds"] : -1 );
-                $crit_exceeds = (array_key_exists("crit_exceeds", $service_config) && $service_config["crit_exceeds"] >= 0 ?  $service_config["crit_exceeds"] : -1 );
+                $warn_exceeds = (array_key_exists("warn_exceeds", $service_config) && is_numeric($service_config["warn_exceeds"]) && $service_config["warn_exceeds"] >= 0 ? $service_config["warn_exceeds"] : -1 );
+                $crit_exceeds = (array_key_exists("crit_exceeds", $service_config) && is_numeric($service_config["crit_exceeds"]) && $service_config["crit_exceeds"] >= 0 ? $service_config["crit_exceeds"] : -1 );
                 
-                $sql = $this->db_api->execute("INSERT INTO alerting_procedure (id, rule_id, rule_node_target, alerting_service, warn_alert_after, crit_alert_after) VALUES (NULL, ?, ?, ?, ?, ?)", 
-                                                array($rule_id, $node_id, $alerting_service_id, $warn_exceeds, $crit_exceeds));
+                if($warn_exceeds >= 0 || $crit_exceeds >= 0){
+                  $sql = $this->db_api->execute("INSERT INTO alerting_procedure (id, rule_id, rule_node_target, alerting_service, warn_alert_after, crit_alert_after) VALUES (NULL, ?, ?, ?, ?, ?)", 
+                                                  array($rule_id, $node_id, $alerting_service_id, $warn_exceeds, $crit_exceeds));
+
+                  $new_procedure_id = $this->db_api->lastInsertId();
+                  if(array_key_exists($alerting_service_id, $data["users"])){
+                    foreach($data["users"][$alerting_service_id] AS $arrkey => $alerting_user_id){
+                      $sql = $this->db_api->execute("INSERT INTO alerting_contact (id, user_id, alerting_procedure_id) VALUES (NULL, ?, ?)", 
+                                                      array($alerting_user_id, $new_procedure_id));
+                    }
+                  }
+                }
               }
             }
           }
+
+          $new_alerting_rule = $this->getConfiguredAlertingRules(["rule_id" => $rule_id, "node_id" => $node_id]);
+          if(array_key_exists("data", $new_alerting_rule)){
+            return array("status" => 0, "message" => "Successfully processed service alerting for ID {$data["rule_id"]}.", "data" => array("rule_id" => $data["rule_id"], "node_id" => $node_id, "new_data" => $new_alerting_rule["data"]));
+          }else{
+            return $new_alerting_rule;
+          }
+        
         }catch(\Exception $e){
           //TODO Implement correct status codes
           print_r($e);
           return array("status" => 1, "message" => "An error occured.");
         }
 
-        return array("status" => 0, "message" => "Successfully processed service alerting for ID {$data["rule_id"]}.", "data" => []);
       }else{
         //TODO Implement correct status code
         return array("status" => 1, "message" => "Not all data stated. Nothing to save.");   

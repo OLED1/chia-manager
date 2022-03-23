@@ -87,24 +87,28 @@
                   <?php if($rule_default == 0){ ?><span class='input-group-text target-service'><?php echo $rule["rule_target"]; ?></span><?php } ?>
                   <span class="input-group-text bg-warning warn_level"><?php echo ($rule["perc_or_min"] == 0 ? "Warn at {$rule["warn_at_after"]} % usage" : "Warn after {$rule["warn_at_after"]} minutes"); ?></span>
                   <span class="input-group-text bg-danger crit_level"><?php echo ($rule["perc_or_min"] == 0 ? "CRIT at {$rule["crit_at_after"]} % usage" : "CRIT after {$rule["crit_at_after"]} minutes"); ?></span>
-                  <span class="input-group-text alerting-service-check">Alerting enabled:</span>
+                  <span class="input-group-text">Alerting enabled:</span>
                 </div>
-                <?php foreach($alerting_services AS $service_id => $alerting_service){
-                        $bg_color = "bg-secondary"; 
-                        if(array_key_exists($chia_node["nodeid"], $configured_alertings["by_rule_node_target"]) &&
-                            array_key_exists($rule["id"], $configured_alertings["by_rule_node_target"][$chia_node["nodeid"]]) &&
-                            array_key_exists($alerting_service["id"], $configured_alertings["by_rule_node_target"][$chia_node["nodeid"]][$rule["id"]])
-                        ){
-                          $bg_color = "bg-success"; 
-                        }  
+                <?php 
+                  foreach($alerting_services AS $service_id => $alerting_service){
+                    $bg_color = "bg-secondary";
+                    if(array_key_exists($chia_node["nodeid"], $configured_alertings["by_rule_node_target"]) &&
+                        array_key_exists($rule["id"], $configured_alertings["by_rule_node_target"][$chia_node["nodeid"]]) &&
+                        array_key_exists($alerting_service["id"], $configured_alertings["by_rule_node_target"][$chia_node["nodeid"]][$rule["id"]]) &&
+                        ($configured_alertings["by_rule_node_target"][$chia_node["nodeid"]][$rule["id"]][$alerting_service["id"]]["warn_alert_after"] >= 0 ||
+                        $configured_alertings["by_rule_node_target"][$chia_node["nodeid"]][$rule["id"]][$alerting_service["id"]]["crit_alert_after"] >= 0)
+                    ){
+                      if(count($configured_alertings["by_rule_node_target"][$chia_node["nodeid"]][$rule["id"]][$alerting_service["id"]]["alerting_user_ids"]) > 0) $bg_color = "bg-success";
+                      else $bg_color = "bg-warning";
+                    }  
                 ?>
                 <div class="input-group-append">
-                  <span class="input-group-text alerting-service-check <?php echo $bg_color; ?>"><?php echo $alerting_service["service_name"]; ?></span>
+                  <span class="input-group-text alerting-service-check <?php echo $bg_color; ?>" data-alerting-service-id=<?php echo $alerting_service["id"]; ?>><?php echo $alerting_service["service_name"]; ?></span>
                 </div>
                 <?php } ?>
                 <div class="input-group-append">
-                  <button id="edit-alerting-all-<?php echo $rule["id"]; ?>" data-rule-id=<?php echo $rule["id"]; ?> data-node-id=<?php echo $chia_node["nodeid"]; ?> class='btn btn-outline-warning edit-alerting-rule wsbutton' type='button'><i class='fa-solid fa-pencil'></i></button>
-                  <button id="help-alerting-<?php echo $rule["id"]; ?>" data-rule-id=<?php echo $rule["id"]; ?> data-node-id=<?php echo $chia_node["nodeid"]; ?> class="btn btn-outline-info help-alerting-rule fa-solid fa-circle-question" type="button"></button>
+                  <button id="edit-alerting-all-<?php echo $rule["id"]; ?>" data-rule-id=<?php echo $rule["id"]; ?> data-node-id=<?php echo $chia_node["nodeid"]; ?> class='btn btn-warning edit-alerting-rule wsbutton' type='button'><i class='fa-solid fa-pencil'></i></button>
+                  <button id="help-alerting-<?php echo $rule["id"]; ?>" data-rule-id=<?php echo $rule["id"]; ?> data-node-id=<?php echo $chia_node["nodeid"]; ?> class="btn btn-info help-alerting-rule fa-solid fa-circle-question" type="button"></button>
                 </div>
               </div>
             <?php
@@ -202,6 +206,53 @@
       <div class="modal-footer">
         <button type="button" id="save-rule-alerting" class="btn btn-success wsbutton">Save changes and close</button>
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close and discard changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="configured_rule_alerting_help_modal" data-verified="false" class="modal" tabindex="-1" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><span class="fa-solid fa-circle-info"></span>&nbsp;Rule alerting details (Rule ID:&nbsp;<span id="configured_rule_alerting_rule_id"></span>)</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="taskslog">
+        <h5>Rule overall information</h5>
+        <p>
+          <strong>Rule system type:</strong>&nbsp<span id="configured_rule_alerting_system_type" class="badge badge-primary"></span><br>
+          <strong>Rule target:</strong>&nbsp<span id="configured_rule_alerting_target" class="badge badge-primary"></span><br>
+          <strong>Service type:</strong>&nbsp<span id="configured_rule_alerting_service_type" class="badge badge-primary"></span><br>
+          <strong>Service target:</strong>&nbsp<span id="configured_rule_alerting_service_target" class="badge badge-primary"></span><br>
+          <strong>Rule warning level:</strong>&nbsp<span id="configured_rule_alerting_warn_level" class="badge badge-warning"></span><br>
+          <strong>Rule critical level:</strong>&nbsp<span id="configured_rule_alerting_crit_level" class="badge badge-danger"></span><br>
+        </p>
+        <h5>Rule alerting information</h5>
+        <div id="alerting-services-info-container" style="max-height: 20em; overflow: auto;">
+        <?php foreach($alerting_services AS $service_id => $alerting_service){ ?>
+          <div data-alerting-service-id=<?php echo $alerting_service["id"]; ?> class="alerting-service-information alert alert-dark" role="alert">
+            <h5 class="fg-primary">Alerting for service <?php echo $alerting_service["service_name"]; ?></h5>
+            <p>
+              <ul class="list-unstyled">
+                <li><strong>Alerts warn after:</strong>&nbsp<span class="alerting-info-alerts-warn badge badge-success">Immediately</span></li>
+                <li><strong>Alerts crit after:</strong>&nbsp<span class="alerting-info-alerts-crit badge badge-danger">Never</span></li>
+                <li><strong>Alerts to: <span class="alerting-info-alerts-name badge badge-danger"></span></strong>
+                  <ul class="alerting-info-alerts-to-recepients">
+                  </ul>
+                </li>
+              </ul>
+            </p>
+          </div>
+        <?php } ?>
+        </div>
+        <div id="alerting-services-info-none-configured" class="alert alert-warning" style="display: none;">
+          This service is currently not configured for alerting.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
       </div>
     </div>
   </div>

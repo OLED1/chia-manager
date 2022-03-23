@@ -67,8 +67,8 @@
           <span class="input-group-text bg-danger crit_perc_min"><?php echo ($rule["perc_or_min"] == 0 ? "% usage" : "minute(s)"); ?></span>
         </div>
         <div class="input-group-append">
-          <button id="help-<?php echo $rule["id"]; ?>" class="btn btn-outline-info help-rule fa-solid fa-circle-question" type="button"></button>
-          <button id="restore-<?php echo $rule["id"]; ?>" class="btn btn-outline-warning restore-rule wsbutton" type="button" style="display: none;"><i class="fa-solid fa-rotate-left"></i></button>
+          <button id="help-<?php echo $rule["id"]; ?>" class="btn btn-info help-rule fa-solid fa-circle-question" type="button"></button>
+          <button id="restore-<?php echo $rule["id"]; ?>" class="btn btn-warning restore-rule wsbutton" type="button" style="display: none;"><i class="fa-solid fa-rotate-left"></i></button>
           <button id="save-<?php echo $rule["id"]; ?>" class="btn btn-success fa-solid fa-floppy-disk save-rule wsbutton" type="button" style="display: none;"></button>
         </div>
       </div>
@@ -171,9 +171,9 @@
                   <span class="input-group-text bg-danger crit_perc_min"><?php echo ($rule["perc_or_min"] == 0 ? "% usage" : "minute(s)"); ?></span>
                 </div>
                 <div class="input-group-append">
-                  <button id="help-<?php echo $rule["id"]; ?>" class="btn btn-outline-info help-rule fa-solid fa-circle-question" type="button"></button>
-                  <button id="remove-<?php echo $rule["id"]; ?>" class='btn btn-outline-danger remove-rule wsbutton' type='button'><i class='fa-solid fa-minus'></i></button>
-                  <button id="restore-<?php echo $rule["id"]; ?>" class="btn btn-outline-warning restore-rule wsbutton" type="button" style="display: none;"><i class="fa-solid fa-rotate-left"></i></button>
+                  <button id="help-<?php echo $rule["id"]; ?>" class="btn btn-info help-rule fa-solid fa-circle-question" type="button"></button>
+                  <button id="remove-<?php echo $rule["id"]; ?>" class='btn btn-danger remove-rule wsbutton' type='button'><i class='fa-solid fa-minus'></i></button>
+                  <button id="restore-<?php echo $rule["id"]; ?>" class="btn btn-warning restore-rule wsbutton" type="button" style="display: none;"><i class="fa-solid fa-rotate-left"></i></button>
                   <button id="save-<?php echo $rule["id"]; ?>" class="btn btn-success fa-solid fa-floppy-disk save-rule wsbutton" type="button" style="display: none;"></button>
                 </div>
               </div>

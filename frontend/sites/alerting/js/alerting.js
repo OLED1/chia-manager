@@ -11,6 +11,8 @@ initRemoveRule();
 initAlertingTypesDropdown();
 initHelpRule();
 initEditAlertingRule();
+resetSetupAlertingNodeTabs();
+initHelpAlertingRule();
 
 $("#setup-alerting-tabs .nav-link").first().addClass("active");
 $("#setup-node-alerting-pane .tab-pane").first().addClass("show active");
@@ -21,8 +23,19 @@ $("#custom-alerting-pane .tab-pane").first().addClass("show active");
 $("#configure-alerting-services-tabs .nav-link").first().addClass("active");
 $("#configure-alerting-services-pane .tab-pane").first().addClass("show active");
 
-$("#setup-alerting-node-tabs .nav-link").first().addClass("active");
-$("#setup-alerting-node-pane .tab-pane").first().addClass("show active");
+function resetSetupAlertingNodeTabs(){
+    $("#setup-alerting-node-tabs .nav-link").removeClass("active").first().addClass("active");
+    $("#setup-alerting-node-pane .tab-pane").removeClass("show active").first().addClass("show active");
+
+    $("#setup-alerting-tab").on("click", function(){
+        adaptServiceTypeWidth();
+    });
+    
+    $(".setup-alerting-node-tab").on("click", function(){
+        adaptServiceTypeWidth();
+    });
+}
+
 
 $("#enable_mailing").on("click", function(){
     data = {
@@ -34,14 +47,6 @@ $("#enable_mailing").on("click", function(){
 });
 
 $(".custom-rules-node-tab").on("click", function(){
-    adaptServiceTypeWidth();
-});
-
-$("#setup-alerting-tab").on("click", function(){
-    adaptServiceTypeWidth();
-});
-
-$(".setup-alerting-node-tab").on("click", function(){
     adaptServiceTypeWidth();
 });
 
@@ -64,6 +69,78 @@ function initHelpRule(){
         $("#help_modal_text_service_target").text(target_rule_data["rule_default"] == 1 ? "This is a default rule and does not target a per-system specific service" : "This is a custom rule which overwrites the default rule for this system. It covers the node specific service '" + target_rule_data["rule_target"] + "'");
 
         $("#rule_help_modal").modal("show");
+    });
+}
+
+function initHelpAlertingRule(){
+    $(".help-alerting-rule").off("click");
+    $(".help-alerting-rule").on("click", function(){
+        var node_id = $(this).attr("data-node-id");
+        var rule_id = $(this).attr("data-rule-id");
+        var target_rule = alerting_rules["by_rule_id"][rule_id];
+
+        $("#alerting-services-info-container").animate({ scrollTop: 0 }, "fast");
+        $("#configured_rule_alerting_rule_id").text(rule_id);
+        $("#configured_rule_alerting_system_type").text((target_rule["rule_default"] == 1 ? "Default" : "Custom (Overwrites default rule for this node)"));
+        $("#configured_rule_alerting_target").text((target_rule["system_target"] == 1 ? "All nodes (default rule)" : target_rule["hostname"]));
+        $("#configured_rule_alerting_service_type").text(target_rule["service_desc"]);
+        $("#configured_rule_alerting_service_target").text((target_rule["rule_target"] === null ? "None" : target_rule["rule_target"]));
+        $("#configured_rule_alerting_warn_level").text(target_rule["perc_or_min_value"] == 0 ? "When " + target_rule["warn_at_after"] + "% usage reached." : "After a total downtime of " + target_rule["warn_at_after"] + " minutes.");
+        $("#configured_rule_alerting_crit_level").text(target_rule["perc_or_min_value"] == 0 ? "When " + target_rule["crit_at_after"] + "% usage reached." : "After a total downtime of " + target_rule["crit_at_after"] + " minutes.");
+        
+        if(rule_id in available_setup_alertings["by_rule_id"] && node_id in available_setup_alertings["by_rule_id"][rule_id]){    
+            $.each(alerting_services, function(alerting_service_id, alerting_service_data){
+                var target_service = $(".alerting-service-information[data-alerting-service-id=" + alerting_service_id + "]"); 
+
+                var warn_alert_after_text = "Never";
+                var warn_alert_after_bg_color = "bg-danger";
+                var crit_alert_after_text = "Never";
+                var crit_alert_after_bg_color = "bg-danger";
+
+                target_service.find(".alerting-info-alerts-to-recepients li").remove();
+                target_service.find(".alerting-info-alerts-name").text("");
+
+                if(alerting_service_id in available_setup_alertings["by_rule_id"][rule_id][node_id]){
+                    var this_alerting_service_data = available_setup_alertings["by_rule_id"][rule_id][node_id][alerting_service_id];
+
+                    if(this_alerting_service_data["warn_alert_after"] == 0){
+                        warn_alert_after_text = "Immediately after WARN detected"
+                        warn_alert_after_bg_color = "bg-success";
+                    }else if(this_alerting_service_data["warn_alert_after"] > 0){
+                        warn_alert_after_text = this_alerting_service_data["warn_alert_after"] + " minute(s) after WARN detected"
+                        warn_alert_after_bg_color = "bg-success";
+                    }
+
+                    if(this_alerting_service_data["crit_alert_after"] == 0){
+                        crit_alert_after_text = "Immediately after CRIT detected"
+                        crit_alert_after_bg_color = "bg-success";
+                    }else if(this_alerting_service_data["crit_alert_after"] > 0){
+                        crit_alert_after_text = this_alerting_service_data["crit_alert_after"] + " minute(s) after CRIT detected"
+                        crit_alert_after_bg_color = "bg-success";
+                    }
+
+                    if(this_alerting_service_data["alerting_user_ids"].length > 0){
+                        $.each(this_alerting_service_data["alerting_user_ids"], function(arrkey, userID){
+                            target_service.find(".alerting-info-alerts-to-recepients").append("<li>" + users[userID]["username"] + " - " + users[userID]["name"]  + " " + users[userID]["lastname"] + "</li>");
+                        });
+                    }else{
+                        target_service.find(".alerting-info-alerts-name").text("Nobody");
+                    }
+                }else{
+                    target_service.find(".alerting-info-alerts-name").text("Nobody");
+                }
+
+                target_service.find(".alerting-info-alerts-warn").text(warn_alert_after_text).removeClass("bg-danger").removeClass("bg-success").addClass(warn_alert_after_bg_color);
+                target_service.find(".alerting-info-alerts-crit").text(crit_alert_after_text).removeClass("bg-danger").removeClass("bg-success").addClass(crit_alert_after_bg_color);    
+            });
+            $("#alerting-services-info-container").show();
+            $("#alerting-services-info-none-configured").hide();
+        }else{
+            $("#alerting-services-info-container").hide();
+            $("#alerting-services-info-none-configured").show();   
+        }
+
+        $("#configured_rule_alerting_help_modal").modal("show");
     });
 }
 
@@ -272,9 +349,9 @@ function addCustomRule(ruledata){
                 "<span class='input-group-text bg-danger crit_perc_min'>" + (ruledata["perc_or_min_value"] == 0 ? "% usage" : "minutes" ) + "</span>" +
             "</div>" +
             "<div class='input-group-append'>" +
-                "<button id='help-" + ruledata["id"] + "' class='btn btn-outline-info help-rule fa-solid fa-circle-question' type='button'></button>" +
-                "<button id='remove-" + ruledata["id"] + "' class='btn btn-outline-danger remove-rule wsbutton' type='button'><i class='fa-solid fa-minus'></i></button>" +
-                "<button id='restore-" + ruledata["id"] + "' class='btn btn-outline-warning restore-rule wsbutton' type='button' style='display: none;'><i class='fa-solid fa-rotate-left'></i></button>" +
+                "<button id='help-" + ruledata["id"] + "' class='btn btn-info help-rule fa-solid fa-circle-question' type='button'></button>" +
+                "<button id='remove-" + ruledata["id"] + "' class='btn btn-danger remove-rule wsbutton' type='button'><i class='fa-solid fa-minus'></i></button>" +
+                "<button id='restore-" + ruledata["id"] + "' class='btn btn-warning restore-rule wsbutton' type='button' style='display: none;'><i class='fa-solid fa-rotate-left'></i></button>" +
                 "<button id='save-" + ruledata["id"] + "' class='btn btn-success fa-solid fa-floppy-disk save-rule wsbutton' type='button' style='display: none;'></button>" +
             "</div>" +
         "</div>"
@@ -330,12 +407,23 @@ function initEditAlertingRule(){
         var rule_id = $(this).attr("data-rule-id");
         var node_id = $(this).attr("data-node-id");
         var target_rule = alerting_rules["by_rule_id"][rule_id];
+
         alerting_rule_tosave = {
             "node_id" : node_id,
             "rule_id" : rule_id,
             "alerting" : {},
             "users" : {}
         };
+        
+        if("by_rule_id" in available_setup_alertings && rule_id in available_setup_alertings["by_rule_id"]){
+            $.each(available_setup_alertings["by_rule_id"][rule_id][node_id], function(alerting_service_id, alerting_service_data){
+                if(!(alerting_service_id in alerting_rule_tosave["alerting"])) alerting_rule_tosave["alerting"][alerting_service_id] = {};
+                if(!(alerting_service_id in alerting_rule_tosave["users"])) alerting_rule_tosave["users"][alerting_service_id] = {};
+                alerting_rule_tosave["alerting"][alerting_service_id]["warn_exceeds"] = alerting_service_data["warn_alert_after"];
+                alerting_rule_tosave["alerting"][alerting_service_id]["crit_exceeds"] = alerting_service_data["crit_alert_after"];
+                alerting_rule_tosave["users"][alerting_service_id] = alerting_service_data["alerting_user_ids"];
+            });
+        }
 
         $("#configure_rule_alerting_rule_id").text(rule_id);
         $("#configure_rule_alerting_system_type").text((target_rule["rule_default"] == 1 ? "Default" : "Custom (Overwrites default rule for this node)"));
@@ -357,16 +445,16 @@ function initEditAlertingRule(){
         $("#edit-rule-alerting-services-pane .tab-pane").removeClass("active").first().addClass("active");
 
         if(target_rule["perc_or_min"] == 1){
-            $(".edit-rule-alerting-warn-custom").parent().hide();
-            $(".edit-rule-alerting-crit-custom").parent().hide();
+            $(".edit-rule-alerting-warn-custom").val("").parent().hide();
+            $(".edit-rule-alerting-crit-custom").val("").parent().hide();
         }else{             
-            $(".edit-rule-alerting-warn-custom").on("input", function(){
+            $(".edit-rule-alerting-warn-custom").val("").on("input", function(){
                 var service_id = $(this).attr("data-service-id");
                 if(!(service_id in alerting_rule_tosave["alerting"])) alerting_rule_tosave["alerting"][service_id] = {};
                 alerting_rule_tosave["alerting"][service_id]["warn_exceeds"] = parseInt($(this).val());
             }).parent().show();
               
-            $(".edit-rule-alerting-crit-custom").on("input", function(){
+            $(".edit-rule-alerting-crit-custom").val("").on("input", function(){
                 var service_id = $(this).attr("data-service-id");
                 if(!(service_id in alerting_rule_tosave["alerting"])) alerting_rule_tosave["alerting"][service_id] = {};
                 alerting_rule_tosave["alerting"][service_id]["crit_exceeds"] = parseInt($(this).val());
@@ -398,16 +486,21 @@ function initEditAlertingRule(){
         });
 
         $(".edit-rule-alerting-contacts").multiselect({
+            includeSelectAllOption: true,
             disableIfEmpty: true,
             buttonWidth: '100%',
-            onChange: function(element, checked) {
-                var service_id = element.parent().attr("data-service-id");
-                alerting_rule_tosave["users"][service_id] = [];
-                $.each($(".edit-rule-alerting-contacts[data-service-id='" + service_id + "'] option:selected"), function(){
-                    alerting_rule_tosave["users"][service_id].push($(this).val());
-                });
+            numberDisplayed: 5,
+            onSelectAll: function() {
+                alertingUsersSelectChanged();
+            },
+            onChange: function() {
+                alertingUsersSelectChanged();
+              },
+            onDeselectAll: function() {
+                alertingUsersSelectChanged();
             }
         });
+        $(".edit-rule-alerting-contacts").multiselect('deselectAll', false);
 
         $("#save-rule-alerting").on("click", function(){
             if("alerting" in alerting_rule_tosave && Object.keys(alerting_rule_tosave["alerting"]).length > 0)
@@ -417,13 +510,12 @@ function initEditAlertingRule(){
         });
         
 
-        if(rule_id in available_setup_alertings["by_rule_id"]){
-            $.each(available_setup_alertings["by_rule_id"][rule_id], function(service_id, service_data){
+        if("by_rule_id" in available_setup_alertings && rule_id in available_setup_alertings["by_rule_id"]){
+            $.each(available_setup_alertings["by_rule_id"][rule_id][node_id], function(service_id, service_data){
                 if(service_data["warn_alert_after"] == 0){
                     $(".edit-rule-alerting-warn-immediately[data-service-id='" + service_data["alerting_service"] + "']").prop("checked", true);
                     $(".edit-rule-alerting-warn-custom[data-service-id='" + service_data["alerting_service"] + "']").parent().hide();
                 }else if(service_data["warn_alert_after"] > 0){
-                    console.log( $(".edit-rule-alerting-warn-custom[data-service-id='" + service_data["alerting_service"] + "']"));
                     $(".edit-rule-alerting-warn-custom[data-service-id='" + service_data["alerting_service"] + "']").val(service_data["warn_alert_after"]).parent().show();
                 }
 
@@ -433,6 +525,11 @@ function initEditAlertingRule(){
                 }else if(service_data["crit_alert_after"] > 0){
                     $(".edit-rule-alerting-crit-custom[data-service-id='" + service_data["alerting_service"] + "']").val(service_data["crit_alert_after"]).parent().show();
                 }
+
+                var target_select = $(".edit-rule-alerting-contacts[data-service-id='" + service_id + "']");
+                $.each(service_data["alerting_user_ids"], function(arrkey, alerting_user_id){
+                    target_select.multiselect("select", alerting_user_id);
+                });
             });
         }
 
@@ -440,15 +537,34 @@ function initEditAlertingRule(){
    });
 }
 
+function alertingUsersSelectChanged(element){
+    var service_id = $(".edit-rule-alerting-contacts:visible").attr("data-service-id");
+    alerting_rule_tosave["users"][service_id] = [];
+    $.each($(".edit-rule-alerting-contacts[data-service-id='" + service_id + "'] option:selected"), function(){
+        alerting_rule_tosave["users"][service_id].push($(this).val());
+    });
+}
+
+function reloadSetupAlerting(){
+    $.get(frontend + "/sites/alerting/templates/setup_alerting_card.php", {}, function(response) {
+        $("#setup-alerting").html(response);
+        resetSetupAlertingNodeTabs();
+        adaptServiceTypeWidth();
+        initEditAlertingRule();
+        initHelpAlertingRule();
+    });
+}
+
 function messagesTrigger(data){
     var key = Object.keys(data);
-  
+ 
     if(data[key]["status"] == 0){
         if(key == "editConfiguredRule"){
             var rule_id = data[key]["data"]["rule_id_changed"];
             alerting_rules = data[key]["data"]["saved_values"];
             $("#save-" + rule_id).hide();
             $("#restore-" + rule_id).hide();
+            reloadSetupAlerting();
         }else if(key == "addCustomRule"){
             var returned_custom_rules = data[key]["data"];
             if(("by_rule_id" in returned_custom_rules)){
@@ -482,6 +598,7 @@ function messagesTrigger(data){
                     recreateTypeDropdown(node_id);
                 });
             });
+            reloadSetupAlerting();
             initWarnAndCritInputs();
             initRestorePreviousDefault();
             initSaveRuleChange();
@@ -495,7 +612,41 @@ function messagesTrigger(data){
             $(".rule[data-rule-id='" + rule_id + "']").remove();
             $("#remove_rule_modal").modal("hide");
             window.sendToWSS("backendRequest", "ChiaMgmt\\Alerting\\Alerting_Api", "Alerting_Api", "getAvailableRuleTypesAndServices", {"nodeid" : nodeid});
+        }else if(key == "editAddAlertingRule"){
+            var rule_id = data[key]["data"]["rule_id"];
+            var node_id = data[key]["data"]["node_id"];
+
+            if("by_rule_id" in data[key]["data"]["new_data"]){
+                var rule_data = data[key]["data"]["new_data"]["by_rule_id"][rule_id];
+                $.each(rule_data, function(nodeid, db_rule_data){
+                    var class_removed = false;
+                    $.each(db_rule_data, function(alerting_service_id, alerting_service_data){
+                        var target_alerting_rule = $("#setup-alerting-node-content-" + nodeid + " .rule[data-rule-id='" + alerting_service_data["rule_id"] + "']");
+                        if(!class_removed){
+                            if("by_rule_id" in available_setup_alertings && alerting_service_data["rule_id"] in available_setup_alertings["by_rule_id"] && nodeid in available_setup_alertings["by_rule_id"][alerting_service_data["rule_id"]]){
+                                delete available_setup_alertings["by_rule_id"][alerting_service_data["rule_id"]][nodeid];
+                            }
+                            target_alerting_rule.find(".alerting-service-check").removeClass("bg-success").addClass("bg-secondary");
+                            class_removed = true;
+                        }
+                        if(alerting_service_data["warn_alert_after"] >= 0 || alerting_service_data["crit_alert_after"] >= 0){
+                            target_alerting_rule.find(".alerting-service-check[data-alerting-service-id='" + alerting_service_id + "']").removeClass("bg-secondary").removeClass("bg-success").removeClass("bg-warning").addClass(alerting_service_data["alerting_user_ids"].length > 0 ? "bg-success" : "bg-warning");
+                        }
+    
+                        if(!(alerting_service_data["rule_id"] in available_setup_alertings["by_rule_id"])) available_setup_alertings["by_rule_id"][alerting_service_data["rule_id"]] = {};
+                        if(!(nodeid in available_setup_alertings["by_rule_id"][alerting_service_data["rule_id"]])) available_setup_alertings["by_rule_id"][alerting_service_data["rule_id"]][nodeid] = {};
+                        if(!(alerting_service_id in available_setup_alertings["by_rule_id"][alerting_service_data["rule_id"]][nodeid])) available_setup_alertings["by_rule_id"][alerting_service_data["rule_id"]][nodeid][alerting_service_id] = {};
+                        available_setup_alertings["by_rule_id"][alerting_service_data["rule_id"]][nodeid][alerting_service_id] = alerting_service_data;
+                    });
+                });
+            }else{
+                $("#setup-alerting-node-content-" + node_id + " .rule[data-rule-id='" + rule_id + "'] .alerting-service-check").removeClass("bg-success").removeClass("bg-warning").addClass("bg-secondary");
+                delete available_setup_alertings["by_rule_id"][rule_id][node_id];
+            }
+
+            $("#configure_rule_alerting_modal").modal("hide");
         }
+
         showMessage(0, data[key]["message"]);
     }else{
         showMessage(1, data[key]["message"]);
