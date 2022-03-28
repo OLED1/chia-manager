@@ -8,9 +8,9 @@
 
   /**
    * The System_Update_Api class handles the webgui update tasks.
-   * @version 0.1.1
+   * @version 0.1.2
    * @author OLED1 - Oliver Edtmair
-   * @since 0.1.0
+   * @since 0.1
    * @copyright Copyright (c) 2021, Oliver Edtmair (OLED1), Luca Austelat (lucaust)
    */
   class System_Update_Api{

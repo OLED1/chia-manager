@@ -9,7 +9,7 @@ $.each(userData, function(key, value){
     .node().id = "user_" + value["id"];
   }else if(value["enabled"] == 0){
     var rowNode = disabledusrdatatable
-    .row.add( [ value["id"], value["username"], value["name"] + " " + value["lastname"], value["email"] , getEnableButton(value["id"]) ] )
+    .row.add( [ value["id"], value["username"], value["name"] + " " + value["lastname"], value["email"] , getEnableButton(value["id"]) + "&nbsp" + getRemoveButton(value["id"]) ] )
     .draw()
     .node().id = "user_" + value["id"];
   }
@@ -25,10 +25,15 @@ function getEnableButton(usrid){
   return  "<button type='button' data-usrid=" + usrid + " class='enable-user btn btn-secondary wsbutton'><i class='fas fas fa-user-plus'></i></button>";
 }
 
+function getRemoveButton(usrid){
+  return "<button type='button' data-usrid=" + usrid + " class='remove-user btn btn-danger wsbutton'><i class='fas fas fa-user-minus'></i></button>";
+}
+
 initEditUser();
 initDisableUser();
 initEnableUser();
 initSendInvitationMail();
+initRemoveUser();
 
 function initEditUser(){
   $(".edit-user").off("click");
@@ -64,6 +69,28 @@ function initEnableUser(){
       "userID" : $(this).attr("data-usrid")
     }
     sendToWSS("backendRequest", "ChiaMgmt\\Users\\Users_Api", "Users_Api", "enableUser", data);
+  });
+}
+
+function initRemoveUser(){
+  $(".remove-user").off("click");
+  $(".remove-user").on("click", function(){
+    removeUserID = $(this).attr("data-usrid");
+    var data = {
+      "userID" : removeUserID
+    }
+
+    $(".userid-delete").text(removeUserID);
+    $("#username-delete").text(userData[removeUserID]["username"]);
+
+    $("#userDeleteConfirmModal").modal("show");
+    $("#remove-user-confirm").removeAttr("disabled","disabled");
+    
+    $("#remove-user-confirm").off("click");
+    $("#remove-user-confirm").on("click", function(){
+      $("#remove-user-confirm").prop("disabled","disabled");
+      sendToWSS("backendRequest", "ChiaMgmt\\Users\\Users_Api", "Users_Api", "removeDisabledUser", data);
+    });
   });
 }
 
@@ -205,7 +232,7 @@ function messagesTrigger(data){
       .draw();
 
       var rowNode = disabledusrdatatable
-      .row.add( [ userData[id]["id"], userData[id]["username"], userData[id]["name"] + " " + userData[id]["lastname"], userData[id]["email"], getEnableButton(userData[id]["id"]) ] )
+      .row.add( [ userData[id]["id"], userData[id]["username"], userData[id]["name"] + " " + userData[id]["lastname"], userData[id]["email"], getEnableButton(userData[id]["id"]) + "&nbsp" + getRemoveButton(userData[id]["id"]) ] )
       .draw()
       .node().id = "user_" + userData[id]["id"];
 
@@ -218,17 +245,27 @@ function messagesTrigger(data){
       .row(tableRow)
       .remove($("#user_" + id))
       .draw();
-
+      
       var rowNode = usrdatatable
       .row.add( [ userData[id]["id"], userData[id]["username"], userData[id]["name"] + " " + userData[id]["lastname"], userData[id]["email"], getButtons(userData[id]["id"]) ] )
       .draw()
       .node().id = "user_" + userData[id]["id"];
-
+      
       userData[id]["enabled"] = 1;
+    }else if(key == "removeDisabledUser"){
+      $("#userDeleteConfirmModal").modal("hide");
+
+      var rowNode = disabledusrdatatable
+      .row(tableRow)
+      .remove($("#user_" + data[key]["data"]["id"]))
+      .draw();
+    }else{
+      showMessage(data[key]["loglevel"], data[key]["message"]);
     }
   }
   initEditUser();
   initDisableUser();
   initEnableUser();
+  initRemoveUser();
   initSendInvitationMail();
 }

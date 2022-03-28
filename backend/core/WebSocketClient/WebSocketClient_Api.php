@@ -47,7 +47,7 @@
         if (is_resource(@fsockopen("localhost", $this->ini["socket_local_port"]))){
           $result = $this->sendToWSS("wssonlinestatus", array("command" => "onlineStatus"));
 
-          if($result["status"] == 0) return $result;
+          if($result["wssonlinestatus"]["status"] == 0) return $result["wssonlinestatus"];
           else return $this->logging_api->getErrormessage("001");
         }else{
           return $this->logging_api->getErrormessage("002");

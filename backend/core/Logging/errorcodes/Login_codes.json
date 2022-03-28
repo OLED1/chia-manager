@@ -53,7 +53,7 @@
       "002" : [1, "Authkey is not passed. Not logged in."],
       "003" : [1, "TOTP mobile is not passed. Not logged in."],
       "004" : [2, "Unknown error regarding authkey or totp mobile pass check. Please open a github issue."],
-      "005" : [2, "An error occured."],
+      "005" : [2, "No data has been found on the database."],
       "006" : [1, "Currently not logged in."],
       "007" : [1, "No active session found."]
     },
