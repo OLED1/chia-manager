@@ -3,7 +3,8 @@
 #                                                                           #
 #                   Chia Manager instance management script                 #
 #                   Current Version: 0.1.3 alpha                            #
-#                   Author: Oliver Edtmair (OLED1)                          #                  
+#                   Author: Oliver Edtmair (OLED1)                          #
+#                   Thanks for helping us testing Matthias                  #
 #                                                                           #
 #                   Changes:                                                #
 #                   - Implemented installer script                          #

@@ -328,20 +328,19 @@ install_system_modules(){
     echo "============================================================================================"
     echo "${TASK}Installing apache2, mysql-server and PHP 7.4."
     echo "============================================================================================"
-    echo "${YELLOW}Please state 'root' passwords when asked.$NOCOLOR"
     echo "${INFTXT}The following commands will be executed:"
-    echo "${INFTXT}sudo apt-get update && apt-get upgrade -y > /dev/null 2>&1"
-    echo "${INFTXT}sudo apt-get install apache2 mysql-server libapache2-mod-fcgid php7.4 php7.4-common php7.4-json php7.4-mbstring php7.4-igbinary php7.4-tokenizer php7.4-apcu php7.4-readline php7.4-sockets php7.4-intl php7.4-posix php7.4-sysvmsg php7.4-cli php7.4-fpm php7.4-mysql php7.4-zip -y"
+    echo "${INFTXT}sudo apt-get update -y > /dev/null 2>&1"
+    echo "${INFTXT}sudo apt-get upgrade -y > /dev/null 2>&1"
+    echo "${INFTXT}sudo apt-get install apache2 mysql-server libapache2-mod-fcgid php7.4 php7.4-common php7.4-json php7.4-mbstring php7.4-igbinary php7.4-tokenizer php7.4-apcu php7.4-readline php7.4-sockets php7.4-intl php7.4-posix php7.4-sysvmsg php7.4-cli php7.4-fpm php7.4-mysql php7.4-zip php7.4-curl -y"
     read_answer "y" "Proceed?"
     proceed=$?
     if [ $proceed == 1 ];then
         exit
     fi
-    echo "${INFTXT}${YELLOW}Please state 'root' passwords when asked.$NOCOLOR"
 
     sudo apt-get update -y > /dev/null 2>&1 
     apt-get upgrade -y > /dev/null 2>&1
-    sudo apt-get install apache2 mysql-server libapache2-mod-fcgid php7.4 php7.4-common php7.4-json php7.4-mbstring php7.4-igbinary php7.4-tokenizer php7.4-apcu php7.4-readline php7.4-sockets php7.4-intl php7.4-posix php7.4-sysvmsg php7.4-cli php7.4-fpm php7.4-mysql php7.4-zip -y  > /dev/null 2>&1    
+    sudo apt-get install apache2 mysql-server libapache2-mod-fcgid php7.4 php7.4-common php7.4-json php7.4-mbstring php7.4-igbinary php7.4-tokenizer php7.4-apcu php7.4-readline php7.4-sockets php7.4-intl php7.4-posix php7.4-sysvmsg php7.4-cli php7.4-fpm php7.4-mysql php7.4-zip php7.4-curl -y  > /dev/null 2>&1    
     service_installation=$?
     
     if [ $service_installation == 0 ];then
@@ -368,7 +367,6 @@ enable_services_and_apache_modules(){
     if [ $proceed == 1 ];then
         exit
     fi
-    echo "${INFTXT}${YELLOW}Please state 'root' passwords when asked.$NOCOLOR"
     
     sudo a2enmod headers proxy proxy_http proxy_fcgi ssl rewrite actions fcgid alias proxy_wstunnel  > /dev/null 2>&1
     a2enmod_success=$?
@@ -441,7 +439,7 @@ create_directories(){
 
 setup_vhost(){
     local vhost_folder="/etc/apache2/sites-available/"
-    local vhost_file="chia-manager.conf"
+    local vhost_file="${OPTIONS_ANS["dns_name"]}.conf"
     echo "============================================================================================"
     echo "${TASK}Setting up apache2 vhost."
     echo "============================================================================================"
@@ -550,7 +548,6 @@ generate_certs(){
     echo "============================================================================================"
     echo "${TASK}SSL certificate encryption set-up."
     echo "============================================================================================"
-    echo "${INFTXT}${YELLOW}Please state 'root' passwords when asked.$NOCOLOR"
     if [ ${OPTIONS_ANS["cert_generate"]} == 0 ];then
         echo "${INFTXT}We will use the default systems snakeoil certficates for connection encryption. We recommend to replace them with valid certificates."
     elif [ ${OPTIONS_ANS["cert_generate"]} == 1 ];then
@@ -701,6 +698,31 @@ set_directory_permissions(){
     return $set_permissions
 }
 
+reload_apache_php_service(){
+    echo "============================================================================================"
+    echo "${TASK}Reloading apache service and restarting php-fpm service."
+    echo "============================================================================================"
+    sudo systemctl reload apache2 > /dev/null 2>&1
+    apache2_restarted=$?
+    if [ $apache2_restarted == 0 ];then
+        echo "${SUCTXT}Successfully restarted apache2 service."
+    else
+        echo "${ERRTXT}The apache2 service could not be restarted. Please check that."
+        return 1
+    fi
+
+    systemctl restart php7.4-fpm > /dev/null 2>&1
+    php_fpm_restarted=$?
+    if [ $php_fpm_restarted == 0 ];then
+        echo "${SUCTXT}Successfully restarted php7.4-fpm service."
+    else
+        echo "${ERRTXT}The php7.4-fpm service could not be restarted. Please check that."
+        return 1
+    fi
+
+    return 0
+}
+
 show_installation_summary(){
     echo "============================================================================================"
     echo "${TASK}Installation summary."
@@ -801,5 +823,6 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         exit 1
     fi
 
+    reload_apache_php_service
     show_installation_summary
 fi
