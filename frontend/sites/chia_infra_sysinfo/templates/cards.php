@@ -152,9 +152,7 @@
 <?php } ?>
 <?php 
 function formatkBytes(int $size, int $precision = 2)
-{
-    echo "$size ";
-  
+{ 
     if($size == 0) return "0B";
     $base = log($size, 1024);
     $suffixes = array('B','KB', 'MB', 'GB', 'TB');   
