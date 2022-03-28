@@ -9,7 +9,7 @@
   $loggedin = $login_api->checklogin();
 
   $alerting_api = new Alerting_Api();
-  $alerting_rules = $alerting_api->getConfiguredRules();
+  $alerting_rules = $alerting_api->getConfiguredRules(["monitor" => 1]);
   if(array_key_exists("data", $alerting_rules)) $alerting_rules = $alerting_rules["data"];
   else $alerting_rules = [];
 

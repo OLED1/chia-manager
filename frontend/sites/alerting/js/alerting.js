@@ -202,7 +202,7 @@ function initAlertingTypesDropdown(){
         $(".add-custom-rule").on("click", function(){
             if(checkAddRuleDataComplete(nodeid)){
                 custom_rules_tosave[nodeid]["nodeid"] = nodeid;
-                custom_rules_tosave[nodeid]["service_name"] = custom_rules_tosave[nodeid]["service_name"];
+                custom_rules_tosave[nodeid]["monitor"] = 1;
     
                 window.sendToWSS("backendRequest", "ChiaMgmt\\Alerting\\Alerting_Api", "Alerting_Api", "addCustomRule", custom_rules_tosave[nodeid]);
             }else{

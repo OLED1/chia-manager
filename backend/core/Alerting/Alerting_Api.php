@@ -91,7 +91,7 @@
      * @return array
      */
     public function addCustomRule(array $data): array
-    {
+    {    
       if(array_key_exists("nodeid", $data) && array_key_exists("service_type", $data) && array_key_exists("service_type", $data) && array_key_exists("service_type", $data)){
         $found_type = $this->getAvailableRuleTypesAndServices(["typeid" => $data["service_type"], "nodeid" => $data["nodeid"]]);
 
@@ -102,9 +102,10 @@
             $found_type = $found_type["data"];
             $rule_target = $data["service_name"];
             $perc_or_min = $found_type[$data["service_type"]]["perc_or_min"];
+            $monitor = (array_key_exists("monitor", $data) ? $data["monitor"] : 1 );
 
-            $sql = $this->db_api->execute("INSERT INTO alerting_rules (id, system_target, rule_type, rule_target, rule_default, perc_or_min_value, warn_at_after, crit_at_after) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?)", 
-                                          array($data["nodeid"], $data["service_type"], $rule_target, 0, $perc_or_min, $data["warn_at_after"], $data["crit_at_after"]));
+            $sql = $this->db_api->execute("INSERT INTO alerting_rules (id, system_target, rule_type, rule_target, rule_default, perc_or_min_value, warn_at_after, crit_at_after, monitor) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?)", 
+                                          array($data["nodeid"], $data["service_type"], $rule_target, 0, $perc_or_min, $data["warn_at_after"], $data["crit_at_after"], $monitor));
 
             $new_rule_id = $this->db_api->lastInsertId();
 
@@ -228,11 +229,18 @@
         array_push($statement_array, $data["rule_id"]);
       }
 
+      if(array_key_exists("monitor", $data)){
+        if(empty($where_statement)) $where_statement .= "WHERE ";
+        else $where_statement .= "AND ";
+        $where_statement .= " ar.monitor = ?";
+        array_push($statement_array, $data["monitor"]);
+      }
+
       try{
-        $sql = $this->db_api->execute("SELECT ar.id, ar.system_target, n.id as node_id, n.hostname, ar.rule_type, alt.service_desc, alt.perc_or_min, ar.rule_target, ar.rule_default, ar.perc_or_min_value, ar.warn_at_after, ar.crit_at_after
+        $sql = $this->db_api->execute("SELECT ar.id, ar.system_target, n.id as node_id, n.hostname, ar.rule_type, cist.service_desc, cist.perc_or_min, ar.rule_target, ar.rule_default, ar.perc_or_min_value, ar.warn_at_after, ar.crit_at_after, ar.monitor
                                       FROM alerting_rules ar
                                       JOIN nodes n ON n.id = ar.system_target
-                                      JOIN alerting_types alt ON alt.id = ar.rule_type
+                                      JOIN chia_infra_service_types cist ON cist.id = ar.rule_type
                                       $where_statement", $statement_array);
 
         $returnarray = [];
@@ -267,7 +275,7 @@
         }
 
         $sql = $this->db_api->execute("SELECT id, service_desc, perc_or_min, api_data_function, rule_target_needed
-                                        FROM alerting_types $where_statement", $statement_array);
+                                        FROM chia_infra_service_types $where_statement", $statement_array);
 
         $found_alerting_types = $sql->fetchAll(\PDO::FETCH_ASSOC);
 
@@ -331,7 +339,7 @@
       }
 
       try{
-        $sql = $this->db_api->execute("SELECT ap.id, ap.rule_id, ac.user_id AS alerting_user_id, ap.rule_node_target, ap.alerting_service, ar.system_target, ap.warn_alert_after, ap.crit_alert_after
+        $sql = $this->db_api->execute("SELECT ap.id, ap.rule_id, ac.user_id AS alerting_user_id, ap.rule_node_target, ap.alerting_service, ar.system_target, ap.warn_alert_after, ap.crit_alert_after, ar.monitor
                                         FROM `alerting_procedure` ap
                                         JOIN `alerting_rules` ar ON ar.id = ap.rule_id
                                         LEFT JOIN `alerting_contact`ac ON ac.alerting_procedure_id = ap.id
@@ -453,6 +461,83 @@
       }else{
         //TODO Implement correct status code
         return array("status" => 1, "message" => "Not all data stated. Nothing to save.");   
+      }
+    }
+
+    /**
+     * Returns the current applicable alerting rule id of a specific service by stating the service_type_id, node_id and if available service_target.
+     *
+     * @param array $data
+     * @return array
+     */
+    public function getRuleInformationOfService(array $data): array
+    {     
+      if(array_key_exists("service_type_id", $data) && array_key_exists("node_id", $data) && 
+          (($data["service_type_id"] == 9 && array_key_exists("service_target", $data)) || $data["service_type_id"] < 9)){
+            $target_service_statement = "IS NOT NULL";
+            if($data["service_type_id"] == 9) $target_service_statement = "= '{$data["service_target"]}'";  
+
+          try{
+            $sql = $this->db_api->execute("SELECT id, system_target, rule_type, rule_target, rule_default, perc_or_min_value, warn_at_after, crit_at_after, monitor
+                                            FROM alerting_rules
+                                            WHERE rule_target {$target_service_statement} AND system_target = ? AND rule_type = ?
+            
+                                            UNION ALL
+            
+                                            SELECT id, system_target, rule_type, rule_target, rule_default, perc_or_min_value, warn_at_after, crit_at_after, monitor
+                                            FROM alerting_rules
+                                            WHERE rule_target IS NULL
+                                                  AND NOT EXISTS (SELECT 1
+                                                              FROM alerting_rules
+                                                              WHERE rule_target {$target_service_statement} AND system_target = ? AND rule_type = ?)
+                                                  AND system_target = 1 AND rule_type = ?", array($data["node_id"], $data["service_type_id"], $data["node_id"], $data["service_type_id"], $data["service_type_id"]));
+            
+            $found_service_rule_information = $sql->fetchAll(\PDO::FETCH_ASSOC);  
+
+            return array("status" => 0, "message" => "Rule id was found.", "data" => $found_service_rule_information[0]);
+        }catch(Exception $e){
+            //TODO Implement correct status codes
+            print_r($e);
+            return array("status" => 1, "message" => "An error occured.");
+          }
+      }else{
+        //TODO Implement correct status code
+        return array("status" => 1, "message" => "Not all data stated.");   
+      }
+    }
+
+    /**
+     * Calculates the alerting level of given values and returns the result.
+     * 1 = OK, 2 = WARN, 3 = CRIT, 4 = UNKN
+     *
+     * @param array $data
+     * @return array
+     */
+    public function calculateAlertingLevel(array $data): array
+    {
+      if(array_key_exists("current_service_level", $data) && array_key_exists("perc_or_min_value", $data) &&
+        array_key_exists("warn_level_at_after", $data) && array_key_exists("crit_level_at_after", $data) &&
+        (($data["perc_or_min_value"] == 0 && array_key_exists("defined_maximum", $data) || $data["perc_or_min_value"] == 1))){
+
+        //print_r($data);
+        $returndata = [];
+        if($data["perc_or_min_value"] == 0){
+          $current_usage = $data["current_service_level"] * 100 / $data["defined_maximum"];
+
+          if($current_usage <= $data["warn_level_at_after"]) $returndata = array("percent_usage" => $current_usage, "level" => 1);
+          else if($current_usage > $data["warn_level_at_after"] && $current_usage <= $data["crit_level_at_after"]) $returndata = array("percent_usage" => $current_usage, "level" => 2);
+          else $returndata = array("percent_usage" => $current_usage, "level" => 3);
+
+        }else if($data["perc_or_min_value"] == 1){
+
+        }else{
+          $returndata = array("percent_usage" => NULL, "level" => 4);
+        }
+
+        return array("status" => 0, "message" => "Successfully calculated current service state.", "data" => $returndata);            
+      }else{
+        //TODO Implement correct status code
+        return array("status" => 1, "message" => "Not all data stated."); 
       }
     }
   }
