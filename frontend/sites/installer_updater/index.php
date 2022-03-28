@@ -222,19 +222,19 @@
                           <div class="card-body">
                             <div class="form-group" style="margin-left: auto; margin-right: auto; width: 50%;">
                               <label for="databasename" style="margin: 0;">Databasename</label>
-                              <input id="db_name" type="text" name="databasename" class="form-control form-control-user" placeholder="chiamgmt_db" value="">
+                              <input id="db_name" type="text" name="databasename" class="form-control form-control-user" placeholder="chia_manager_db" value="">
                             </div>
                             <div class="form-group" style="margin-left: auto; margin-right: auto; width: 50%;">
                               <label for="mysqluser" style="margin: 0;">Mysql user</label>
-                              <input id="db_user" type="text" name="mysqluser" class="form-control form-control-user" placeholder="chiamgmt_user" value="">
+                              <input id="db_user" type="text" name="mysqluser" class="form-control form-control-user" placeholder="chia_manager_user" value="">
                             </div>
                             <div class="form-group" style="margin-left: auto; margin-right: auto; width: 50%;">
                               <label for="mysqluser" style="margin: 0;">Mysql password</label>
-                              <input id="db_password" type="password" name="mysqlpassword" class="form-control form-control-user" placeholder="password" value="">
+                              <input id="db_password" type="password" name="mysqlpassword" class="form-control form-control-user" placeholder="Passwort" value="">
                             </div>
                             <div class="form-group" style="margin-left: auto; margin-right: auto; width: 50%;">
                               <label for="mysqlhost" style="margin: 0;">Mysql Host</label>
-                              <input id="db_host" type="text" name="mysqlhost" class="form-control form-control-user" placeholder="Mysql Host" value="">
+                              <input id="db_host" type="text" name="mysqlhost" class="form-control form-control-user" placeholder="localhost" value="">
                               <label for="mysqlhost" style="margin: 0;">localhost or ip:port</label>
                             </div>
                             <hr>
