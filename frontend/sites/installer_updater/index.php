@@ -230,7 +230,7 @@
                             </div>
                             <div class="form-group" style="margin-left: auto; margin-right: auto; width: 50%;">
                               <label for="mysqluser" style="margin: 0;">Mysql password</label>
-                              <input id="db_password" type="password" name="mysqlpassword" class="form-control form-control-user" placeholder="Passwort" value="">
+                              <input id="db_password" type="password" name="mysqlpassword" class="form-control form-control-user" placeholder="password" value="">
                             </div>
                             <div class="form-group" style="margin-left: auto; margin-right: auto; width: 50%;">
                               <label for="mysqlhost" style="margin: 0;">Mysql Host</label>
