@@ -23,8 +23,8 @@
   <div class='col'>
     <div class='card shadow mb-4'>
       <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-        <h6 class="m-0 font-weight-bold text-primary">Systeminformation Node <bold><?php echo "{$sysinfo["hostname"]}"; ?></bold>
-          <?php if(!is_numeric($sysinfo["load_1min"])){ ?>
+        <h6 class="m-0 font-weight-bold text-primary">Systeminformation Node <bold><?php echo "{$sysinfo["node"]["hostname"]}"; ?></bold>
+          <?php if(!array_key_exists("cpu", $sysinfo) || !is_numeric($sysinfo["cpu"]["load"]["load_1_min"])){ ?>
             <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-danger'>No data found</span>
             <?php
               }else{
@@ -33,56 +33,64 @@
           <?php } ?>
         </h6>
         <div class="dropdown no-arrow">
-          <a class="dropdown-toggle" href="#" role="button" id="sysinfodropdown<?php echo "{$sysinfo["id"]}"; ?>" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i></a>
-          <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="sysinfodropdown<?php echo "{$sysinfo["id"]}"; ?>">
+          <a class="dropdown-toggle" href="#" role="button" id="sysinfodropdown<?php echo "{$nodeid}"; ?>" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i></a>
+          <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="sysinfodropdown<?php echo "{$nodeid}"; ?>">
             <div class="dropdown-header">Actions:</div>
-            <button class="sysinfo-refresh dropdown-item wsbutton" data-nodeid="<?php echo "{$sysinfo["id"]}"; ?>" href="#">Refresh Data</button>
+            <button class="sysinfo-refresh dropdown-item wsbutton" data-nodeid="<?php echo "{$nodeid}"; ?>" href="#">Refresh Data</button>
           </div>
         </div>
       </div>
       <div class="card-body">
         <div class="row">
+          <?php if(array_key_exists("filesystems", $sysinfo)){ ?>
           <div class="col">
             <div class="row">
               <div class="col">
-                <div id="filesystems_container_<?php echo "{$sysinfo["id"]}"; ?>">
+                <div id="filesystems_container_<?php echo "{$nodeid}"; ?>">
                   <div class="card shadow mb-4">
-                    <div id="filesystem_<?php echo "{$sysinfo["id"]}"; ?>" class="card-body">
+                    <div id="filesystem_<?php echo "{$nodeid}"; ?>" class="card-body">
                       <h6 class="m-0 font-weight-bold text-primary">Filesystems</h6>
-                      <?php foreach($sysinfo["filesystems"] AS $arrkey => $filesystem){ ?>
-                        <?php $percent = number_format((($filesystem[1]-$filesystem[3])/$filesystem[1])*100, 2); ?>
-                        <h4 class="small font-weight-bold"><?php echo "{$filesystem[0]} => {$filesystem[4]} (Size: " . formatkBytes($filesystem[1]) . " Used: " . formatkBytes($filesystem[1]-$filesystem[3]) . " Available: " . formatkBytes($filesystem[3]) . ")"; ?><span class="float-right"><?php echo $percent; ?>%</span></h4>
+                      <?php 
+                        foreach($sysinfo["filesystems"] AS $mountpoint => $filesystem){ 
+                      ?>
+                        <h4 class="small font-weight-bold"><?php echo "{$filesystem["device"]} => {$filesystem["mountpoint"]} (Size: " . formatkBytes($filesystem["size"]) . " Used: " . formatkBytes($filesystem["used"]) . " Available: " . formatkBytes($filesystem["avail"]) . ")"; ?><span class="float-right"><?php echo $filesystem["total_usage"]; ?>%</span></h4>
                         <div class="progress mb-4">
-                          <div class="progress-bar <?php echo ($percent <= 50 ? "bg-success" : ($percent <= 75 ? "bg-warning" : "bg-danger")); ?>" role="progressbar" style="width: <?php echo $percent; ?>%" aria-valuenow="<?php echo $percent; ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                          <div class="progress-bar <?php echo ($filesystem["service_status"] == 1 ? "bg-success" : ($filesystem["service_status"] == 2 ? "bg-warning" : "bg-danger")); ?>" role="progressbar" style="width: <?php echo $filesystem["total_usage"]; ?>%" aria-valuenow="<?php echo $filesystem["total_usage"]; ?>" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
-                      <?php } ?>
+                      <?php 
+                        }
+                      ?>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+          <?php 
+            } 
+            if(array_key_exists("memory", $sysinfo)){
+          ?>
           <div class="col">
             <div class="row">
               <div class="col">
-                <div id="ram_swap_container_<?php echo "{$sysinfo["id"]}"; ?>">
+                <div id="ram_swap_container_<?php echo "{$nodeid}"; ?>">
                   <div class="card shadow mb-4">
                     <div class="card-body">
                       <h6 class="m-0 font-weight-bold text-primary">RAM and SWAP</h6>
                       <div class="row">
-                        <?php if(floatval($sysinfo["memory_total"]) > 0){ ?>
+                        <?php if(array_key_exists("memory", $sysinfo) && array_key_exists("ram", $sysinfo["memory"]) && floatval($sysinfo["memory"]["ram"]["memory_total"]) > 0){ ?>
                         <div class="col-6">
-                          <h7 class="m-0 font-weight-bold text-primary">RAM (<?php echo number_format(floatval($sysinfo["memory_total"])/1024/1024/1024, 2) . "GB"; ?>)</h7>
+                          <h7 class="m-0 font-weight-bold text-primary">RAM (<?php echo number_format(floatval($sysinfo["memory"]["ram"]["memory_total"])/1024/1024/1024, 2) . "GB"; ?>)</h7>
                           <div class="chart-pie" style="min-height: 20vh;">
-                            <canvas id="ram_chart_<?php echo "{$sysinfo["id"]}"; ?>"></canvas>
+                            <canvas id="ram_chart_<?php echo "{$nodeid}"; ?>"></canvas>
                           </div>
                         </div>
                         <?php } ?>
-                        <?php if(floatval($sysinfo["swap_total"]) > 0){ ?>
+                        <?php if(array_key_exists("memory", $sysinfo) && array_key_exists("swap", $sysinfo["memory"]) && floatval($sysinfo["memory"]["swap"]["swap_total"]) > 0){ ?>
                         <div class="col-6">
-                          <h7 class="m-0 font-weight-bold text-primary">SWAP (<?php echo number_format(floatval($sysinfo["swap_total"])/1024/1024/1024, 2) . "GB"; ?>)</h7>
+                          <h7 class="m-0 font-weight-bold text-primary">SWAP (<?php echo number_format(floatval($sysinfo["memory"]["swap"]["swap_total"])/1024/1024/1024, 2) . "GB"; ?>)</h7>
                           <div class="chart-pie" style="min-height: 20vh;">
-                            <canvas id="swap_chart_<?php echo "{$sysinfo["id"]}"; ?>"></canvas>
+                            <canvas id="swap_chart_<?php echo "{$nodeid}"; ?>"></canvas>
                           </div>
                         </div>
                         <?php } ?>
@@ -92,46 +100,61 @@
                 </div>
               </div>
             </div>
-            <?php if($sysinfo["os_type"] == "Linux"){ ?>
+            <?php }
+              if(array_key_exists("os", $sysinfo) && $sysinfo["os"]["os_type"] == "Linux"){ 
+            ?>
             <div class="row">
               <div class="col">
-                <div id="cpu_load_container_<?php echo "{$sysinfo["id"]}"; ?>">
+                <div id="cpu_load_container_<?php echo "{$nodeid}"; ?>">
                   <div class="card shadow mb-4">
                     <div class="card-header py-3">
-                      <h7 class="m-0 font-weight-bold text-primary"><?php echo "CPU {$sysinfo["cpu_model"]} - {$sysinfo["cpu_cores"]} Cores, {$sysinfo["cpu_count"]} Threads"; ?></h7>
+                      <h7 class="m-0 font-weight-bold text-primary"><?php echo "CPU {$sysinfo["cpu"]["info"]["cpu_model"]} - {$sysinfo["cpu"]["info"]["cpu_cores"]} Cores, {$sysinfo["cpu"]["info"]["cpu_count"]} Threads"; ?></h7>
                     </div>
                     <div class="card-body">
                       <h7 class="m-0 font-weight-bold text-primary">CPU Load</h7>
                       <div class="chart-bar" style="min-height: 30vh;">
-                        <canvas id="cpu_load_chart_<?php echo "{$sysinfo["id"]}"; ?>"></canvas>
+                        <canvas id="cpu_load_chart_<?php echo "{$nodeid}"; ?>"></canvas>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            <?php } ?>
+            <?php 
+              } 
+              if(array_key_exists("cpu", $sysinfo)){
+            ?>
             <div class="row">
               <div class="col">
-                <div id="cpu_usage_container_<?php echo "{$sysinfo["id"]}"; ?>">
+                <div id="cpu_usage_container_<?php echo "{$nodeid}"; ?>">
                   <div class="card shadow mb-4">
                     <div class="card-header py-3">
-                      <h7 class="m-0 font-weight-bold text-primary"><?php echo "CPU {$sysinfo["cpu_model"]} - {$sysinfo["cpu_cores"]} Cores, {$sysinfo["cpu_count"]} Threads"; ?></h7>
+                      <h7 class="m-0 font-weight-bold text-primary">
+                        <?php
+                          if(array_key_exists("cpu", $sysinfo) && array_key_exists("info", $sysinfo["cpu"])){
+                            echo "CPU {$sysinfo["cpu"]["info"]["cpu_model"]} - {$sysinfo["cpu"]["info"]["cpu_cores"]} Cores, {$sysinfo["cpu"]["info"]["cpu_count"]} Threads"; 
+                          }else{
+                            echo "Used CPU: Unknown";
+                          }
+                        ?>
+                      </h7>
                     </div>
                     <div class="card-body">
                       <h7 class="m-0 font-weight-bold text-primary">CPU Usage</h7>
                       <div class="chart-bar" style="min-height: 30vh;">
-                        <canvas id="cpu_usage_chart_<?php echo "{$sysinfo["id"]}"; ?>"></canvas>
+                        <canvas id="cpu_usage_chart_<?php echo "{$nodeid}"; ?>"></canvas>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+            <?php
+              }
+            ?>
           </div>
         </div>
       </div>
-      <div class="card-footer">Data queried at: <span id="querydate_<?php echo "{$sysinfo["id"]}"; ?>"><?php echo "{$sysinfo["timestamp"]}"; ?></span></div>
     </div>
   </div>
 </div>

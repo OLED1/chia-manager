@@ -109,12 +109,14 @@
       try{
         $sql = $this->db_api->execute("SELECT n.id, GROUP_CONCAT(nta.description SEPARATOR ', ') AS nodetype, n.nodeauthhash, n.authtype,
                                               n.conallow, n.hostname, n.scriptversion, n.chiaversion, n.chiapath, n.ipaddress,
-                                              n.changeable, n.changedIP, MAX(cis.memory_total) AS memory_total, MAX(cis.swap_total) AS swap_total,
+                                              n.changeable, n.changedIP, MAX(cimu.memory_total) AS memory_total, MAX(cisu.swap_total) AS swap_total,
                                               MAX(cis.cpu_cores) AS cpu_cores, MAX(cis.cpu_count) AS cpu_count, MAX(cis.cpu_model) AS cpu_model, lastseen
                                       FROM nodes n
                                       JOIN nodetype nt ON nt.nodeid = n.id
                                       JOIN nodetypes_avail nta ON nta.code = nt.code {$nodetype}
                                       LEFT JOIN chia_infra_sysinfo cis ON cis.timestamp = (SELECT MAX(timestamp) FROM chia_infra_sysinfo WHERE nodeid = n.id) AND cis.nodeid = n.id
+                                      LEFT JOIN chia_infra_memory_usage cimu ON cimu.sysinfo_id = cis.id
+                                      LEFT JOIN chia_infra_swap_usage cisu ON cisu.sysinfo_id = cis.id
                                       {$nodeid}
                                       GROUP BY n.id", array());
 
@@ -611,7 +613,7 @@
             }else{
               return $this->logging_api->getErrormessage("001");
             }
-  
+
             return array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => []);
           }else{
             return $this->logging_api->getErrormessage("002");
@@ -640,11 +642,11 @@
         //if(array_key_exists("nodeid", $data) && is_int($data["nodeid"]) && $data["nodeid"] > 0) $nodeid = $data["nodeid"];
         //if(array_key_exists("nodetypes", $data) && (is_array($data["nodetypes"]) || is_string($data["nodetypes"])) $nodetypes = 
 
-        $sql = $this->db_api->execute("SELECT nt.nodeid, n.hostname, nus.onlinestatus, nus.firstreported AS node_firstreported, nus.lastreported AS node_lastreported, nta.description, nss.serviceid, nss.servicestate, nss.firstreported AS service_firstreported, nss.lastreported AS service_lastreported
+        $sql = $this->db_api->execute("SELECT nus.id AS node_up_down_id, nss.id AS service_running_status_id, nt.nodeid, n.hostname, nus.onlinestatus, nus.firstreported AS node_firstreported, nus.lastreported AS node_lastreported, nta.description, nss.serviceid, nss.servicestate, nss.firstreported AS service_firstreported, nss.lastreported AS service_lastreported
                                         FROM nodetype nt
                                         INNER JOIN nodes n ON n.id = nt.nodeid
                                         INNER JOIN LATERAL (
-                                          SELECT nodeid, onlinestatus, firstreported, lastreported FROM nodes_up_status WHERE nodeid = n.id ORDER BY firstreported DESC, lastreported DESC LIMIT 1
+                                          SELECT id, nodeid, onlinestatus, firstreported, lastreported FROM nodes_up_status WHERE nodeid = n.id ORDER BY firstreported DESC, lastreported DESC LIMIT 1
                                         ) AS nus ON nus.nodeid = nt.nodeid
                                         INNER JOIN LATERAL (
                                           SELECT id, nodeid, serviceid, servicestate, firstreported, lastreported FROM nodes_services_status WHERE nodeid = n.id AND serviceid = nt.code ORDER BY firstreported DESC, lastreported DESC LIMIT 1
@@ -661,6 +663,7 @@
                 "hostname" => $serviceinfo["hostname"]
               ],
               "onlinestatus" => [
+                "entry_id" => $serviceinfo["node_up_down_id"],
                 "status" => $serviceinfo["onlinestatus"],
                 "node_firstreported" => $serviceinfo["node_firstreported"],
                 "node_lastreported" => $serviceinfo["node_lastreported"]
@@ -669,6 +672,7 @@
             ];
           }
           $returndata[$serviceinfo["nodeid"]]["services"][$serviceinfo["serviceid"]] = [
+            "entry_id" => $serviceinfo["service_running_status_id"],
             "servicestate" => $serviceinfo["servicestate"],
             "service_desc" => $serviceinfo["description"],
             "service_firstreported" => $serviceinfo["service_firstreported"],

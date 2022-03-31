@@ -186,12 +186,13 @@
       }
 
       try{
-        $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, cis.id AS sysinfoid, cis.timestamp, cis.cpu_count, cis.cpu_cores, cis.load_1min,cis.load_5min,cis.load_15min
-                                        FROM nodes n
-                                        INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id AND cis.timestamp = (SELECT max(cis1.timestamp) FROM chia_infra_sysinfo cis1 WHERE cis1.nodeid = n.id)
-                                        WHERE n.id = (
-                                              SELECT nt.nodeid FROM nodetype nt WHERE nt.code >= 3 AND nt.code <= 5 AND nt.nodeid = n.id LIMIT 1
-                                        ) AND 5 NOT IN (SELECT rule_type FROM alerting_rules WHERE system_target = n.id AND rule_type = 5){$wherestatement}", $parameter_array);
+        $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, cis.id AS sysinfoid, cis.timestamp, cis.cpu_count, cis.cpu_cores, ciscl.load_1_min,ciscl.load_5_min,ciscl.load_15_min
+                                      FROM nodes n
+                                      INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id AND cis.timestamp = (SELECT max(cis1.timestamp) FROM chia_infra_sysinfo cis1 WHERE cis1.nodeid = n.id)
+                                      LEFT JOIN chia_infra_sysinfo_cpu_load ciscl ON ciscl.sysinfo_id = cis.id
+                                      WHERE n.id = (
+                                        SELECT nt.nodeid FROM nodetype nt WHERE nt.code >= 3 AND nt.code <= 5 AND nt.nodeid = n.id LIMIT 1
+                                      ) AND 5 NOT IN (SELECT rule_type FROM alerting_rules WHERE system_target = n.id AND rule_type = 5){$wherestatement}", $parameter_array);
 
         $returnarray = [];
         foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $load_infos){
@@ -262,11 +263,12 @@
       }
 
       try{
-        $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, cis.id AS sysinfoid, cis.timestamp, cis.memory_total,cis.memory_free, cis.memory_buffers,cis.memory_shared,cis.memory_cached
+        $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, cis.id AS sysinfoid, cis.timestamp, cimu.memory_total,cimu.memory_free, cimu.memory_buffers,cimu.memory_shared,cimu.memory_cached
                                         FROM nodes n
                                         INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id AND cis.timestamp = (SELECT max(cis1.timestamp) FROM chia_infra_sysinfo cis1 WHERE cis1.nodeid = n.id)
+                                        LEFT JOIN chia_infra_memory_usage cimu ON cimu.sysinfo_id = cis.id
                                         WHERE n.id = (
-                                            SELECT nt.nodeid FROM nodetype nt WHERE nt.code >= 3 AND nt.code <= 5 AND nt.nodeid = n.id LIMIT 1
+                                          SELECT nt.nodeid FROM nodetype nt WHERE nt.code >= 3 AND nt.code <= 5 AND nt.nodeid = n.id LIMIT 1
                                         ) AND 7 NOT IN (SELECT rule_type FROM alerting_rules WHERE system_target = n.id AND rule_type = 7){$wherestatement}", $parameter_array);
 
         $returnarray = [];
@@ -300,12 +302,13 @@
       }
 
       try{
-        $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, cis.id AS sysinfoid, cis.timestamp, cis.swap_total
-                                        FROM nodes n
-                                        INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id AND cis.timestamp = (SELECT max(cis1.timestamp) FROM chia_infra_sysinfo cis1 WHERE cis1.nodeid = n.id)
-                                        WHERE n.id = (
-                                          SELECT nt.nodeid FROM nodetype nt WHERE nt.code >= 3 AND nt.code <= 5 AND nt.nodeid = n.id LIMIT 1
-                                        ) AND 8 NOT IN (SELECT rule_type FROM alerting_rules WHERE system_target = n.id AND rule_type = 8){$wherestatement}", $parameter_array);
+        $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, cis.id AS sysinfoid, cis.timestamp, cisu.swap_total
+                                      FROM nodes n
+                                      INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id AND cis.timestamp = (SELECT max(cis1.timestamp) FROM chia_infra_sysinfo cis1 WHERE cis1.nodeid = n.id)
+                                      LEFT JOIN chia_infra_swap_usage cisu ON cisu.sysinfo_id = cis.id
+                                      WHERE n.id = (
+                                        SELECT nt.nodeid FROM nodetype nt WHERE nt.code >= 3 AND nt.code <= 5 AND nt.nodeid = n.id LIMIT 1
+                                      ) AND 8 NOT IN (SELECT rule_type FROM alerting_rules WHERE system_target = n.id AND rule_type = 8){$wherestatement}", $parameter_array);
 
         $returnarray = [];
         foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $swap_usage){

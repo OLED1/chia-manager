@@ -517,21 +517,27 @@
     {
       if(array_key_exists("current_service_level", $data) && array_key_exists("perc_or_min_value", $data) &&
         array_key_exists("warn_level_at_after", $data) && array_key_exists("crit_level_at_after", $data) &&
-        (($data["perc_or_min_value"] == 0 && array_key_exists("defined_maximum", $data) || $data["perc_or_min_value"] == 1))){
+        (($data["perc_or_min_value"] == 0 && array_key_exists("defined_maximum", $data) || ($data["perc_or_min_value"] == 1 && array_key_exists("current_service_minutes", $data))))){ 
 
-        //print_r($data);
         $returndata = [];
         if($data["perc_or_min_value"] == 0){
           $current_usage = $data["current_service_level"] * 100 / $data["defined_maximum"];
 
-          if($current_usage <= $data["warn_level_at_after"]) $returndata = array("percent_usage" => $current_usage, "level" => 1);
+          if($current_usage <= $data["warn_level_at_after"]) $returndata = array("time_or_usage" => $current_usage, "level" => 1);
           else if($current_usage > $data["warn_level_at_after"] && $current_usage <= $data["crit_level_at_after"]) $returndata = array("percent_usage" => $current_usage, "level" => 2);
-          else $returndata = array("percent_usage" => $current_usage, "level" => 3);
-
+          else $returndata = array("time_or_usage" => $current_usage, "level" => 3);
         }else if($data["perc_or_min_value"] == 1){
+          if($data["current_service_level"] == 1){
+            $returndata = array("time_or_usage" => $data["current_service_minutes"], "level" => 1);
+          }else if($data["current_service_level"] == 0){
+            $level = 1;
+            if($data["current_service_minutes"] >= $data["warn_level_at_after"]) $level = 2;
+            if($data["current_service_minutes"] >= $data["crit_level_at_after"]) $level = 3;
 
+            $returndata = array("time_or_usage" => $data["current_service_minutes"], "level" => $level);
+          }
         }else{
-          $returndata = array("percent_usage" => NULL, "level" => 4);
+          $returndata = array("time_or_usage" => NULL, "level" => 4);
         }
 
         return array("status" => 0, "message" => "Successfully calculated current service state.", "data" => $returndata);            
@@ -539,6 +545,13 @@
         //TODO Implement correct status code
         return array("status" => 1, "message" => "Not all data stated."); 
       }
+    }
+
+    public function alertAllFoundWARNandCRIT(): array
+    {
+      
+      
+      return array("status" => 0, "message" => "Successfully alerted all configured and found WARN, CRIT and UNKN messages."); 
     }
   }
 ?>

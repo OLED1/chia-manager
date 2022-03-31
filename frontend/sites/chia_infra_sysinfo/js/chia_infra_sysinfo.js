@@ -39,7 +39,7 @@ function initSysinfoRefresh(){
 }
 
 function querySystemInfo(nodeid){
-  var authhash = sysinfodata[nodeid]["nodeauthhash"];
+  var authhash = sysinfodata[nodeid]["node"]["nodeauthhash"];
   var dataforclient = {
     "nodeinfo" : {
       "nodeid" : nodeid,
@@ -64,212 +64,223 @@ function initSysinfoNodeActions(){
 function initAndDrawRAMorSWAPChart(nodeid, type){
   var infodata = sysinfodata[nodeid];
 
-  if(type == "ram"){
-    var memorytotal = parseInt(infodata["memory_total"]);
-    var memoryfree = parseInt(infodata["memory_free"]) + parseInt(infodata["memory_buffers"]) + parseInt(infodata["memory_cached"]) - parseInt(infodata["memory_shared"]);
-    var memoryused = ((memorytotal - memoryfree)/1024/1024/1024).toFixed(2);
-    memoryfree = (memoryfree/1024/1024/1024).toFixed(2);
-
-    var labels = ["RAM used", "RAM free"];
-    var data = [memoryused, memoryfree];
-  }else if(type == "swap"){
-    var used = (parseInt(infodata["swap_total"]) - parseInt(infodata["swap_free"]))/1024/1024/1024;
-    var free = parseInt(infodata["swap_free"])/1024/1024/1024;
-
-    var labels = ["SWAP used", "SWAP free"];
-    var data = [used.toFixed(2), free.toFixed(2)];
-  }
-
-  var target = $("#" + type + "_chart_" + nodeid);
-  if(target.length > 0){
-    if(!(nodeid in ramswapcharts)) ramswapcharts[nodeid] = {};
-    else if((nodeid in ramswapcharts) && (type in ramswapcharts[nodeid])) ramswapcharts[nodeid][type].destroy();
-
-    var thischartctx = document.getElementById(type + "_chart_" + nodeid).getContext("2d");
-    ramswapcharts[nodeid][type] = new Chart(thischartctx, {
-      type: 'doughnut',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: data,
-          backgroundColor: ['rgba(245, 189, 39, 0.5)','rgba(93, 211, 158, 0.5)'],
-        }],
-      },
-      options: {
-        maintainAspectRatio: false,
-        responsive: true,
-        resizeDelay: 50,
-        legend: {
-          display: false
+  if("memory" in infodata){
+    if(type == "ram"){
+      var memorytotal = parseInt(infodata["memory"]["ram"]["memory_total"]);
+      var memoryfree = parseInt(infodata["memory"]["ram"]["memory_free"]) + parseInt(infodata["memory"]["ram"]["memory_buffers"]) + parseInt(infodata["memory"]["ram"]["memory_cached"]) - parseInt(infodata["memory"]["ram"]["memory_shared"]);
+      var memoryused = ((memorytotal - memoryfree)/1024/1024/1024).toFixed(2);
+      memoryfree = (memoryfree/1024/1024/1024).toFixed(2);
+  
+      var labels = ["RAM used", "RAM free"];
+      var data = [memoryused, memoryfree];
+    }else if(type == "swap"){
+      var used = (parseInt(infodata["memory"]["swap"]["swap_total"]) - parseInt(infodata["memory"]["swap"]["swap_free"]))/1024/1024/1024;
+      var free = parseInt(infodata["memory"]["swap"]["swap_free"])/1024/1024/1024;
+  
+      var labels = ["SWAP used", "SWAP free"];
+      var data = [used.toFixed(2), free.toFixed(2)];
+    }
+  
+    var target = $("#" + type + "_chart_" + nodeid);
+    if(target.length > 0){
+      if(!(nodeid in ramswapcharts)) ramswapcharts[nodeid] = {};
+      else if((nodeid in ramswapcharts) && (type in ramswapcharts[nodeid])) ramswapcharts[nodeid][type].destroy();
+  
+      var thischartctx = document.getElementById(type + "_chart_" + nodeid).getContext("2d");
+      ramswapcharts[nodeid][type] = new Chart(thischartctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: ['rgba(245, 189, 39, 0.5)','rgba(93, 211, 158, 0.5)'],
+          }],
         },
-        plugins: {
+        options: {
+          maintainAspectRatio: false,
+          responsive: true,
+          resizeDelay: 50,
           legend: {
-            display: true,
-            labels: {
-                color: chartcolor
-            }
+            display: false
           },
-          tooltip: {
-            callbacks: {
-              label: function(context){
-                return context.label + ": " + context.formattedValue + " GB";
+          plugins: {
+            legend: {
+              display: true,
+              labels: {
+                  color: chartcolor
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context){
+                  return context.label + ": " + context.formattedValue + " GB";
+                }
               }
             }
           }
-        }
-      },
-    });
+        },
+      });
+    }
   }
 }
 
 function initAndDrawLoadChart(nodeid){
   var infodata = sysinfodata[nodeid];
-  if(infodata["os_type"] != "Linux") return;
-  var thischartctx = document.getElementById("cpu_load_chart_" + nodeid).getContext("2d");
-  if(!(nodeid in loadCharts)) loadCharts[nodeid] = {};
-  else if((nodeid in loadCharts)) loadCharts[nodeid]["load"].destroy();
-  
-  loadCharts[nodeid]["load"] = new Chart(thischartctx, {
-    data: {
-      labels: ["Load 1min","Load 5min", "Load 15min"],
-      datasets: [{
-        type: 'line',
-        label: "Max load",
-        borderColor: 'rgba(245, 39, 39, 1)',
-        borderDash: [5, 5],
-        borderwidth: 1,
-        data: [(parseInt(infodata["cpu_count"]) * 2),(parseInt(infodata["cpu_count"]) * 2),(parseInt(infodata["cpu_count"]) * 2)],
-        fill: true
-      },{
-        type: 'line',
-        label: "Preferred max load",
-        borderColor: 'rgba(245, 142, 39, 1)',
-        borderDash: [5, 5],
-        borderwidth: 1,
-        data: [parseInt(infodata["cpu_count"]), parseInt(infodata["cpu_count"]), parseInt(infodata["cpu_count"])],
-        fill: false
-      },{
-        type: 'bar',
-        label: "Load",
-        borderColor: ['rgba(111, 180, 255, 1)','rgba(51, 150, 255, 1)','rgba(0, 123, 255, 1)'],
-        backgroundColor: ['rgba(111, 180, 255, 0.5)','rgba(51, 150, 255, 0.5)','rgba(0, 123, 255, 0.5)'],
-        data: [infodata["load_1min"],infodata["load_5min"],infodata["load_15min"]],
-        fill: true
-      }]
-    },
-    options: {
-      responsive: true,
-      interaction: {
-        mode: 'index',
-        intersect: false,
+
+  if("cpu" in infodata && "os" in infodata){
+    if(infodata["os"]["os_type"] != "Linux") return;
+    var thischartctx = document.getElementById("cpu_load_chart_" + nodeid).getContext("2d");
+    if(!(nodeid in loadCharts)) loadCharts[nodeid] = {};
+    else if((nodeid in loadCharts)) loadCharts[nodeid]["load"].destroy();
+
+    var max_load = parseInt(infodata["cpu"]["info"]["cpu_count"]) * 2;
+    var preferred_max_load = parseInt(infodata["cpu"]["info"]["cpu_count"]);
+   
+    loadCharts[nodeid]["load"] = new Chart(thischartctx, {
+      data: {
+        labels: ["Load 1min","Load 5min", "Load 15min"],
+        datasets: [{
+          type: 'line',
+          label: "Max load",
+          borderColor: 'rgba(245, 39, 39, 1)',
+          borderDash: [5, 5],
+          borderwidth: 1,
+          data: [max_load,max_load,max_load],
+          fill: true
+        },{
+          type: 'line',
+          label: "Preferred max load",
+          borderColor: 'rgba(245, 142, 39, 1)',
+          borderDash: [5, 5],
+          borderwidth: 1,
+          data: [preferred_max_load, preferred_max_load, preferred_max_load],
+          fill: false
+        },{
+          type: 'bar',
+          label: "Load",
+          borderColor: ['rgba(111, 180, 255, 1)','rgba(51, 150, 255, 1)','rgba(0, 123, 255, 1)'],
+          backgroundColor: ['rgba(111, 180, 255, 0.5)','rgba(51, 150, 255, 0.5)','rgba(0, 123, 255, 0.5)'],
+          data: [infodata["cpu"]["load"]["load_1_min"],infodata["cpu"]["load"]["load_5_min"],infodata["cpu"]["load"]["load_15_min"]],
+          fill: true
+        }]
       },
-      maintainAspectRatio: false,
-      cutoutPercentage: 0,
-      scales: {
-        y: {
-          beginAtZero: true,
-            ticks : {
-              color: chartcolor
+      options: {
+        responsive: true,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        maintainAspectRatio: false,
+        cutoutPercentage: 0,
+        scales: {
+          y: {
+            beginAtZero: true,
+              ticks : {
+                color: chartcolor
+            }
+          },
+          x: {
+              ticks : {
+                  color: chartcolor
+              },
+              gridLines: {
+                display: false,
+                drawBorder: false
+              }
           }
         },
-        x: {
-            ticks : {
-                color: chartcolor
-            },
-            gridLines: {
-              display: false,
-              drawBorder: false
-            }
-        }
-      },
-      legend: {
-        display: false
-      },
-      plugins: {
         legend: {
-            display: true,
-            labels: {
-                color: chartcolor
-            }
-        }
-    },
-    }
-  });
+          display: false
+        },
+        plugins: {
+          legend: {
+              display: true,
+              labels: {
+                  color: chartcolor
+              }
+          }
+      },
+      }
+    });
+  }
 }
 
 function initAndDrawCPUUsageChart(nodeid){
   var infodata = sysinfodata[nodeid];
-  var thischartctx = document.getElementById("cpu_usage_chart_" + nodeid).getContext("2d");
-  if(!(nodeid in cpuUsageCharts)) cpuUsageCharts[nodeid] = {};
-  else if((nodeid in cpuUsageCharts)) cpuUsageCharts[nodeid].destroy();
 
-  var labels = [];
-  var data = [];
-  var max_count = [];
-  $.each(infodata["cpu_usages"], function(corenumber, usage){
-    labels.push("CPU " + corenumber);
-    data.push(usage);
-    max_count.push(100);
-  });
-    
-  cpuUsageCharts[nodeid] = new Chart(thischartctx, {
-    data: {
-      labels: labels,
-      datasets: [{
-        type: 'line',
-        label: "Max",
-        borderColor: 'rgba(245, 39, 39, 1)',
-        borderDash: [5, 5],
-        borderwidth: 1,
-        data: max_count,
-        fill: true
-      },{
-        type: 'bar',
-        label: "CPU usages",
-        borderColor: 'rgba(111, 180, 255, 1)',
-        backgroundColor: 'rgba(111, 180, 255, 0.5)',
-        data: data,
-        fill: true
-      }]
-    },
-    options: {
-      responsive: true,
-      interaction: {
-        mode: 'index',
-        intersect: false,
+  if("cpu" in infodata){
+    var thischartctx = document.getElementById("cpu_usage_chart_" + nodeid).getContext("2d");
+    if(!(nodeid in cpuUsageCharts)) cpuUsageCharts[nodeid] = {};
+    else if((nodeid in cpuUsageCharts)) cpuUsageCharts[nodeid].destroy();
+  
+    var labels = [];
+    var data = [];
+    var max_count = [];
+    $.each(infodata["cpu"]["usage"]["usages"], function(corenumber, usage){
+      labels.push("CPU " + corenumber);
+      data.push(usage);
+      max_count.push(100);
+    });
+      
+    cpuUsageCharts[nodeid] = new Chart(thischartctx, {
+      data: {
+        labels: labels,
+        datasets: [{
+          type: 'line',
+          label: "Max",
+          borderColor: 'rgba(245, 39, 39, 1)',
+          borderDash: [5, 5],
+          borderwidth: 1,
+          data: max_count,
+          fill: true
+        },{
+          type: 'bar',
+          label: "CPU usages",
+          borderColor: 'rgba(111, 180, 255, 1)',
+          backgroundColor: 'rgba(111, 180, 255, 0.5)',
+          data: data,
+          fill: true
+        }]
       },
-      maintainAspectRatio: false,
-      cutoutPercentage: 0,
-      scales: {
-        y: {
-          beginAtZero: true,
-            ticks : {
-              color: chartcolor
+      options: {
+        responsive: true,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        maintainAspectRatio: false,
+        cutoutPercentage: 0,
+        scales: {
+          y: {
+            beginAtZero: true,
+              ticks : {
+                color: chartcolor
+            }
+          },
+          x: {
+              ticks : {
+                  color: chartcolor
+              },
+              gridLines: {
+                display: false,
+                drawBorder: false
+              }
           }
         },
-        x: {
-            ticks : {
-                color: chartcolor
-            },
-            gridLines: {
-              display: false,
-              drawBorder: false
-            }
-        }
-      },
-      legend: {
-        display: false
-      },
-      plugins: {
         legend: {
-            display: true,
-            labels: {
-                color: chartcolor
-            }
-        }
-    },
-    }
-  });
+          display: false
+        },
+        plugins: {
+          legend: {
+              display: true,
+              labels: {
+                  color: chartcolor
+              }
+          }
+      },
+      }
+    });
+  }
 }
 
 function setServiceBadge(){
