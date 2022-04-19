@@ -61,9 +61,9 @@ function initAndCreateLoadCharts(){
         data["preferred_max_load"] = [];
         $.each(loadData, function(arrkey, loadsinfo){
             labels.push(loadsinfo["timestamp"]);
-            data["load1min"].push(loadsinfo["load_1min"]);
-            data["load5min"].push(loadsinfo["load_5min"]);
-            data["load15min"].push(loadsinfo["load_15min"]);
+            data["load1min"].push($.isNumeric(loadsinfo["load_1_min"]) ? loadsinfo["load_1_min"] : 0);
+            data["load5min"].push($.isNumeric(loadsinfo["load_5_min"]) ? loadsinfo["load_5_min"] : 0);
+            data["load15min"].push($.isNumeric(loadsinfo["load_15_min"]) ? loadsinfo["load_15_min"] : 0);
             data["max_load"].push(parseInt(loadsinfo["cpu_count"]) * 2);
             data["preferred_max_load"].push(loadsinfo["cpu_count"]);
         });
@@ -76,7 +76,7 @@ function initAndCreateLoadCharts(){
               thisloadChartctx = $("#sysinfo_loads_chart-" + nodeid);
               setTimeout(function(){
                 drawLoadChart(nodeid, thisloadChartctx, labels, data);
-              }, 100);
+              }, 400);
             });
         }else{
             drawLoadChart(nodeid, thisloadChartctx, labels, data);
@@ -164,6 +164,7 @@ function drawLoadChart(nodeid, thisloadChartctx, labels, data){
             }
         }
     });
+
     $("#load1min_cur-" + nodeid).text(data["load1min"][data["load1min"].length-1]);
     $("#load1min_min-" + nodeid).text(Math.min.apply(Math,data["load1min"]));
     $("#load1min_max-" + nodeid).text(Math.max.apply(Math,data["load1min"]));
@@ -190,9 +191,9 @@ function initAndCreateRAMCharts(){
         data["used"] = [];
         $.each(memorydata, function(arrkey, memoryinfo){
             labels.push(memoryinfo["timestamp"]);
-            data["total"].push((parseInt(memoryinfo["memory_total"])/1024/1024/1024).toFixed(2));
-            var free = parseInt(memoryinfo["memory_free"]) + parseInt(memoryinfo["memory_buffers"]) + parseInt(memoryinfo["memory_cached"]) - parseInt(memoryinfo["memory_shared"]);
-            data["used"].push(((parseInt(memoryinfo["memory_total"]) - free)/1024/1024/1024).toFixed(2));
+            data["total"].push($.isNumeric(memoryinfo["memory_total"]) ? (parseInt(memoryinfo["memory_total"])/1024/1024/1024).toFixed(2) : 0);
+            var free = ($.isNumeric(memoryinfo["memory_free"]) ? parseInt(memoryinfo["memory_free"]) : 0) + ($.isNumeric(memoryinfo["memory_buffers"]) ? parseInt(memoryinfo["memory_buffers"]) : 0) + ($.isNumeric(memoryinfo["memory_cached"]) ? parseInt(memoryinfo["memory_cached"]) : 0) - ($.isNumeric(memoryinfo["memory_shared"]) ? parseInt(memoryinfo["memory_shared"]) : 0);
+            data["used"].push($.isNumeric(memoryinfo["memory_total"]) ? ((parseInt(memoryinfo["memory_total"]) - free)/1024/1024/1024).toFixed(2) : 0);
         });
 
         var thisramChartctx = $("#sysinfo_memory_chart-" + nodeid);
@@ -203,7 +204,7 @@ function initAndCreateRAMCharts(){
               thisramChartctx = $("#sysinfo_memory_chart-" + nodeid);
               setTimeout(function(){
                 drawRAMChart(nodeid, thisramChartctx, labels, data);
-              }, 100);
+              }, 400);
             });
         }else{
             drawRAMChart(nodeid, thisramChartctx, labels, data);
@@ -300,8 +301,8 @@ function initAndCreateSWAPCharts(){
         data["used"] = [];
         $.each(swapdata, function(arrkey, memoryinfo){
             labels.push(memoryinfo["timestamp"]);
-            data["total"].push((parseInt(memoryinfo["swap_total"])/1024/1024/1024).toFixed(2));
-            data["used"].push(((parseInt(memoryinfo["swap_total"]) - parseInt(memoryinfo["swap_free"]))/1024/1024/1024).toFixed(2));
+            data["total"].push($.isNumeric(memoryinfo["swap_total"]) ? (parseInt(memoryinfo["swap_total"])/1024/1024/1024).toFixed(2) : 0);
+            data["used"].push((($.isNumeric(memoryinfo["swap_total"]) ? (parseInt(memoryinfo["swap_total"])) : 0) - ($.isNumeric(memoryinfo["swap_free"]) ? (parseInt(memoryinfo["swap_free"])/1024/1024/1024) : 0)).toFixed(2));
         });
 
         var thisswapChartctx = $("#sysinfo_swap_chart-" + nodeid);
@@ -406,9 +407,9 @@ function initAndCreateBuffersCharts(){
         data["shared"] = [];
         $.each(cachesdata, function(arrkey, memoryinfo){
             labels.push(memoryinfo["timestamp"]);
-            data["buffers"].push((parseInt(memoryinfo["memory_buffers"])/1024/1024).toFixed(2));
-            data["cached"].push((parseInt(memoryinfo["memory_cached"])/1024/1024).toFixed(2));
-            data["shared"].push((parseInt(memoryinfo["memory_shared"])/1024/1024).toFixed(2));
+            data["buffers"].push($.isNumeric(memoryinfo["memory_buffers"]) ? (parseInt(memoryinfo["memory_buffers"])/1024/1024).toFixed(2) : 0);
+            data["cached"].push($.isNumeric(memoryinfo["memory_cached"]) ? (parseInt(memoryinfo["memory_cached"])/1024/1024).toFixed(2) : 0);
+            data["shared"].push($.isNumeric(memoryinfo["memory_shared"]) ? (parseInt(memoryinfo["memory_shared"])/1024/1024).toFixed(2) : 0);
         });
 
         var thiscacheChartctx = $("#sysinfo_caches_chart-" + nodeid);
@@ -416,7 +417,7 @@ function initAndCreateBuffersCharts(){
             setTimeout(function(){
                 thiscacheChartctx = $("#sysinfo_caches_chart-" + nodeid);
                 drawBuffersChart(nodeid, thiscacheChartctx, labels, data);
-            }, 200);
+            }, 400);
         }else{
             drawBuffersChart(nodeid, thiscacheChartctx, labels, data);
         }

@@ -56,14 +56,16 @@
         if(strtotime($data["from"]) &&  strtotime($data["to"]) && new \DateTime($data["from"]) < new \DateTime($data["to"])){
           try{
             if(array_key_exists("node_ids", $data) && is_array($data["node_ids"])){
-              $sql = $this->db_api->execute("SELECT n.id, n.hostname, cis.timestamp, cis.load_1min, cis.load_5min, cis.load_15min, cis.cpu_count, cis.cpu_cores FROM nodes n 
+              $sql = $this->db_api->execute("SELECT n.id, n.hostname, cis.timestamp, ciscl.load_1_min, ciscl.load_5_min, ciscl.load_15_min, cis.cpu_count, cis.cpu_cores FROM nodes n 
                                             INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id
+                                            LEFT JOIN chia_infra_sysinfo_cpu_load ciscl ON ciscl.sysinfo_id = cis.id
                                             WHERE n.authtype = 2 AND n.id in (?) AND cis.timestamp BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND cis.id mod 10 = 0
                                             ORDER BY timestamp ASC", 
                                             array(implode(",", $data["node_ids"]), $data["from"], $data["to"]));  
             }else{
-              $sql = $this->db_api->execute("SELECT n.id, n.hostname, cis.timestamp, cis.load_1min, cis.load_5min, cis.load_15min, cis.cpu_count, cis.cpu_cores FROM nodes n 
+              $sql = $this->db_api->execute("SELECT n.id, n.hostname, cis.timestamp, ciscl.load_1_min, ciscl.load_5_min, ciscl.load_15_min, cis.cpu_count, cis.cpu_cores FROM nodes n 
                                               INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id
+                                              LEFT JOIN chia_infra_sysinfo_cpu_load ciscl ON ciscl.sysinfo_id = cis.id
                                               WHERE n.authtype = 2 AND cis.timestamp BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND cis.id mod 10 = 0
                                               ORDER BY timestamp ASC", 
                                               array($data["from"], $data["to"]));
@@ -103,14 +105,18 @@
         if(strtotime($data["from"]) &&  strtotime($data["to"]) && new \DateTime($data["from"]) < new \DateTime($data["to"])){
           try{
             if(array_key_exists("node_ids", $data) && is_array($data["node_ids"])){
-              $sql = $this->db_api->execute("SELECT n.id, n.hostname, cis.timestamp, cis.memory_total, cis.memory_free, cis.memory_buffers, cis.memory_cached, cis.memory_shared, cis.swap_total, cis.swap_free FROM nodes n 
+              $sql = $this->db_api->execute("SELECT n.id, n.hostname, cis.timestamp, cimu.memory_total, cimu.memory_free, cimu.memory_buffers, cimu.memory_cached, cimu.memory_shared, cisu.swap_total, cisu.swap_free FROM nodes n 
                                             INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id
+                                            LEFT JOIN chia_infra_swap_usage cisu ON cisu.sysinfo_id = cis.id
+                                            LEFT JOIN chia_infra_memory_usage cimu ON cimu.sysinfo_id = cis.id
                                             WHERE n.authtype = 2 AND n.id in (?) AND cis.timestamp BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND cis.id mod 10 = 0
                                             ORDER BY timestamp ASC", 
                                             array(implode(",", $data["node_ids"]), $data["from"], $data["to"]));    
             }else{
-              $sql = $this->db_api->execute("SELECT n.id, n.hostname, cis.timestamp, cis.memory_total, cis.memory_free, cis.memory_buffers, cis.memory_cached, cis.memory_shared, cis.swap_total, cis.swap_free FROM nodes n 
+              $sql = $this->db_api->execute("SELECT n.id, n.hostname, cis.timestamp, cimu.memory_total, cimu.memory_free, cimu.memory_buffers, cimu.memory_cached, cimu.memory_shared, cisu.swap_total, cisu.swap_free FROM nodes n 
                                               INNER JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id
+                                              LEFT JOIN chia_infra_swap_usage cisu ON cisu.sysinfo_id = cis.id
+                                              LEFT JOIN chia_infra_memory_usage cimu ON cimu.sysinfo_id = cis.id
                                               WHERE n.authtype = 2 AND cis.timestamp BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND cis.id mod 10 = 0
                                               ORDER BY timestamp ASC", 
                                               array($data["from"], $data["to"]));   
@@ -206,9 +212,11 @@
             $sql = $this->db_api->execute("SELECT nus.nodeid, n.hostname, nus.onlinestatus,  nus.firstreported AS node_firstreported, nus.lastreported AS node_lastreported
                                             FROM nodes_up_status nus
                                             JOIN nodes n ON n.id = nus.nodeid
-                                            WHERE nus.firstreported BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) {$nodeids}
+                                            WHERE ((nus.firstreported BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME))
+                                              OR (nus.firstreported <= CAST(? AS DATETIME) AND nus.lastreported >= (CAST(? AS DATETIME) - INTERVAL 1 MINUTE)))
+                                              {$nodeids}
                                             ORDER BY nus.firstreported DESC", 
-                                            array($data["from"], $data["to"]));
+                                            array($data["from"], $data["to"], $data["from"], $data["to"]));
 
             $historicalNodeUPdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
 
@@ -216,9 +224,11 @@
                                             FROM nodes_services_status nss
                                             JOIN nodes n ON n.id = nss.nodeid
                                             JOIN nodetypes_avail nta ON nta.code = nss.serviceid
-                                            WHERE nss.firstreported BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) {$nodeids}
+                                            WHERE ((nss.firstreported BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME)) 
+                                              OR (nss.firstreported <= CAST(? AS DATETIME) AND nss.lastreported >= (CAST(? AS DATETIME) - INTERVAL 1 MINUTE)))
+                                              {$nodeids}
                                             ORDER BY nss.firstreported DESC", 
-                                            array($data["from"], $data["to"]));
+                                            array($data["from"], $data["to"], $data["from"], $data["to"]));
 
             $historicalServicesdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
             
@@ -255,9 +265,11 @@
                 $totalSeconds = $returndata[$nodeupinfo["nodeid"]]["statistics"]["node"]["totalSeconds"];
                 $upInSeconds = $returndata[$nodeupinfo["nodeid"]]["statistics"]["node"]["upInSeconds"];
                 $downInSeconds = $returndata[$nodeupinfo["nodeid"]]["statistics"]["node"]["downInSeconds"];
+
+                
                 $upInPercent = number_format($upInSeconds / $totalSeconds * 100, 2);
                 $downInPercent = number_format($downInSeconds / $totalSeconds * 100, 2);
-
+                
                 $returndata[$nodeupinfo["nodeid"]]["statistics"]["node"]["upInPercent"] = $upInPercent;
                 $returndata[$nodeupinfo["nodeid"]]["statistics"]["node"]["downInPercent"] = $downInPercent;
               }

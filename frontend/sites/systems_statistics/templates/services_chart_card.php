@@ -3,7 +3,7 @@
     use ChiaMgmt\System_Statistics\System_Statistics_Api;
     require __DIR__ . '/../../../../vendor/autoload.php';
     include_once(__DIR__ . '/functions.php');
-    include(__DIR__ . "/../../standard_headers.php");
+    include_once(__DIR__ . "/../../standard_headers.php");
 
     $login_api = new Login_Api();
     $ini = parse_ini_file(__DIR__.'/../../../../backend/config/config.ini.php');
@@ -31,7 +31,7 @@
     }else{
         $historyServicesData = [];
     }
-
+    
     echo "<script nonce={$ini["nonce_key"]}>
             historyServicesData[" . $_GET["nodeid"] . "] = " . json_encode($historyServicesData) . ";
         </script>";
