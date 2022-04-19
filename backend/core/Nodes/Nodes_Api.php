@@ -5,6 +5,7 @@
   use ChiaMgmt\WebSocket\WebSocket_Api;
   use ChiaMgmt\Encryption\Encryption_Api;
   use ChiaMgmt\Chia_Overall\Chia_Overall_Api;
+  use ChiaMgmt\Chia_Infra_Sysinfo\Chia_Infra_Sysinfo_Api;
 
   /**
    * The Nodes_Api class contains every needed methods to manage all available nodes.
@@ -39,10 +40,15 @@
      */
     private $encryption_api;
     /**
-     * Holds an instance to the Webocket Server Class.
+     * Holds an instance to the Chia_Overall_Api Class.
      * @var Chia_Overall_Api
      */
     private $chia_overall_api;
+        /**
+     * Holds an instance to the Chia_Infra_Sysinfo Class.
+     * @var Chia_Infra_Sysinfo
+     */
+    private $chia_infra_sysinfo_api;
     /**
      * Holds an instance to the Webocket Server Class.
      * @var WebSocketServer
@@ -554,6 +560,9 @@
           return $this->logging_api->getErrormessage("001", $e);
         }
 
+        $this->chia_infra_sysinfo_api = new Chia_Infra_Sysinfo_Api();
+        $this->chia_infra_sysinfo_api->setAllNodesSystemAndServicesUpStatus($this->getCurrentChiaNodesUPAndServiceStatus()["data"]);
+
         return array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => []);
       }else{
         return $this->logging_api->getErrormessage("002");
@@ -613,6 +622,9 @@
             }else{
               return $this->logging_api->getErrormessage("001");
             }
+
+            $this->chia_infra_sysinfo_api = new Chia_Infra_Sysinfo_Api();
+            $this->chia_infra_sysinfo_api->setAllNodesSystemAndServicesUpStatus($this->getCurrentChiaNodesUPAndServiceStatus()["data"]);
 
             return array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => []);
           }else{

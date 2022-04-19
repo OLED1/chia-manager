@@ -10,6 +10,73 @@ reloadTables();
 reinitQueryAllButton();
 initSysinfoRefresh();
 initSysinfoNodeActions();
+initSetDownTime();
+
+$(".datepicker").datetimepicker({
+  format: 'Y-m-d H:i:s'
+});
+
+$('#alerting_service_and_type_select').multiselect({
+  nonSelectedText: 'Alerting type and service',
+  disabledText: "Not needed",
+  includeSelectAllOption: true,
+  numberDisplayed: 5,
+  enableClickableOptGroups: true,
+  enableCollapsibleOptGroups: true,
+  collapseOptGroupsByDefault: true,
+  disableIfEmpty: true,
+  enableFiltering: true,
+  includeResetOption: true,
+  maxHeight: 500,
+  onSelectAll: function(element, checked) {
+    checkDowntimeInfosStated();
+  },
+  onChange: function(element, checked) {
+    checkDowntimeInfosStated();
+  },
+  onDeselectAll: function() {
+    checkDowntimeInfosStated();
+  }
+});
+
+$(".downtime_input").on("change", function(){
+  checkDowntimeInfosStated();
+});
+
+$(".downtime_input").on("input", function(){
+  checkDowntimeInfosStated();
+});
+
+$("#downtime_save").on("click", function(){
+  if(checkDowntimeInfosStated()){
+    var nodeid = $("#saveDowntimeModal").attr("data-downtime-for");
+    var downtime_values = getSetupDowntimeValues();
+    
+    $("#saveDowntimeNode").text(configureable_downtimes[nodeid]["hostname"] + " (" + nodeid + ")");
+    $("#saveDowntimeTimeRange").text(downtime_values["time_from"] + " - " + downtime_values["time_to"]);
+    $("#saveDowntimeComment").text(downtime_values["comment"]);
+  
+    if(downtime_values["downtime_type"] == 0){
+      $("#saveDowntimeTargets").text("Whole node and all services");
+      delete downtime_values["selected_services"];
+    }else if(downtime_values["downtime_type"] == 1){
+      $("#saveDowntimeTargets").html("Only specific services");
+      var selected_elements = downtime_values["selected_services"];
+      downtime_values["selected_services"] = selected_elements.map(function(i, el) {
+        $("#saveDowntimeTargets").append("<li>" + configureable_downtimes[nodeid]["services"][$(el).attr("data-typeid")]["service_type_desc"] + " -> " + $(el).text() + "</li>");
+        return { "type_id" : $(el).attr("data-typeid"), "data-service-target" : $(el).attr("data-real-service-target") };
+      }).get();
+    }
+    $("#saveDowntimeModal").modal("show");
+  
+    $("#createAndSaveDowntime").off("click");
+    $("#createAndSaveDowntime").on("click", function(){
+      downtime_values["nodeid"] = nodeid;
+      downtime_values["created_by"] = userID;
+      sendToWSS("backendRequest", "ChiaMgmt\\Alerting\\Alerting_Api", "Alerting_Api", "setUpNewDowntime", downtime_values);
+    });
+  }
+});
 
 function reinitQueryAllButton(){
   $("#queryAllNodes").off("click");
@@ -35,7 +102,8 @@ function initSysinfoRefresh(){
   $(".sysinfo-refresh").on("click", function(e){
     e.preventDefault();
     var nodeid = $(this).attr("data-nodeid");
-    querySystemInfo(nodeid)  });
+    querySystemInfo(nodeid);
+  });
 }
 
 function querySystemInfo(nodeid){
@@ -59,6 +127,116 @@ function initSysinfoNodeActions(){
     $("#updatenode").removeAttr("disabled");
     $("#action_node_log").children().remove();
   });
+}
+
+function initSetDownTime(){
+  $(".sysinfo-set-downtime").off("click");
+  $(".sysinfo-set-downtime").on("click", function(){
+    var nodeid = $(this).attr("data-nodeid");
+    var sysinfo = sysinfodata[nodeid]["node"];
+
+    $("#saveDowntimeModal").attr("data-downtime-for", nodeid);
+    $("#downtimeModalHostname").text(sysinfo["hostname"] + " (ID: " + nodeid + ")");
+
+    //Reset to default
+    $("#downtime_select_type").text("Type").attr("data-selected","");
+    var target_service_and_type_select = $('#alerting_service_and_type_select');
+    target_service_and_type_select.children().remove();
+
+    //Setup functions
+    $("#downtime_select_type").parent().find(".dropdown-item").off("click");
+    $("#downtime_select_type").parent().find(".dropdown-item").on("click", function(){
+      $("#downtime_select_type").text($(this).text());
+      downtime_type = $(this).attr("data-value");
+      $("#downtime_select_type").attr("data-selected", downtime_type);
+
+      if(downtime_type == 0){ //Downtime whole node
+        target_service_and_type_select.children().remove();
+      }else{
+        if(nodeid in configureable_downtimes){
+          $.each(configureable_downtimes[nodeid]["services"], function(type_id, found_types){
+            target_service_and_type_select.append("<optgroup label='" + found_types["service_type_desc"] + "'>");
+            $.each(found_types["configurable_services"], function(arrkey, configurable_services){
+              target_service_and_type_select.append("<option data-typeid='" + type_id + "' data-real-service-target='" + configurable_services["real_service_target"] + "' value='" + type_id + "_" + arrkey + "'>" + configurable_services["service_target"] + "</option>");
+            });
+            target_service_and_type_select.append("</optgroup>");
+          });
+
+        }
+      }
+      
+      $('#alerting_service_and_type_select').multiselect('rebuild');
+      checkDowntimeInfosStated();
+    });
+    
+    updateFoundDowntimesInModal(nodeid);
+    $('#alerting_service_and_type_select').multiselect('rebuild');
+    $("#setDownTimeModal").modal("show");
+  });
+}
+
+function checkDowntimeInfosStated(){
+  var downtime_values = getSetupDowntimeValues();
+  var downtime_type = downtime_values["downtime_type"];
+  var selected_services = downtime_values["selected_services"];
+  var time_from_valid = moment(downtime_values["time_from"],"YYYY-MM-DD HH:mm:ss", true).isValid();
+  var time_to_valid = moment(downtime_values["time_to"],"YYYY-MM-DD HH:mm:ss", true).isValid();
+  var to_is_after_from = moment(downtime_values["time_to"]).isAfter(downtime_values["time_from"]);
+  var comment_valid = (downtime_values["comment"].trim().length > 1 ? true : false);
+
+  if((downtime_type == 0 || (downtime_type == 1 && selected_services.length > 0)) && time_from_valid && time_to_valid && to_is_after_from && comment_valid){
+    $("#downtime_save").show();
+    return true;
+  }else{
+    $("#downtime_save").hide();
+    return false;
+  }
+}
+
+function getSetupDowntimeValues(){
+  return {
+    "downtime_type" : $("#downtime_select_type").attr("data-selected"),
+    "selected_services" : $("#alerting_service_and_type_select option:selected"),
+    "time_from" : $("#downtime_input_from").val(),
+    "time_to" : $("#downtime_input_to").val(),
+    "comment" : $("#downtime_input_comment").val()
+  };
+}
+
+function updateFoundDowntimesInModal(nodeid){
+  if(nodeid in found_downtimes){
+    console.log(found_downtimes[nodeid]);
+    $.each(found_downtimes[nodeid], function(starttype, downtimes){
+      var cardclass = "";
+      var downtime_container_target = "";
+      var downtime_count = 0;
+      if(starttype == 0){
+        cardclass = "alert-light";
+        downtime_container_target = "downTimeModalExpired";
+      }else if(starttype == 1){
+        cardclass = "alert-success";
+        downtime_container_target = "downTimeModalCurrent";
+      }else if(starttype == 2){
+        cardclass = "alert-primary";
+        downtime_container_target = "downTimeModalUpcomming";
+      }
+      
+      $("#" + downtime_container_target).children().remove();
+      console.log(downtimes);
+      $.each(downtimes, function(downtime_id, this_downtime){
+        $("#" + downtime_container_target).append(
+          "<div id='downtime_" + downtime_id + "' class='alert " + cardclass + "' role='alert'>" +
+            "<p class='dowtime-short-desc-content'><b class='downtime-short-desc-title'>" + this_downtime["downtime_comment"] + "</b><br>" +
+            "Created by: " + this_downtime["username"] + "<br>" +
+            "Target: " + (this_downtime["downtime_type"] == 0 ? "Whole node" : this_downtime["service_desc"] + " (" + this_downtime["downtime_service_target"] + ")") + "<br>" +
+            "Starts: " + this_downtime["downtime_from"] + "<br>" +
+            "Ends: " + this_downtime["downtime_to"] + "</p>" +
+          "</div>");
+          downtime_count += 1;
+      });
+      $("#" + downtime_container_target + "Count").text("(" + downtime_count + ")");
+    });
+  }
 }
 
 function initAndDrawRAMorSWAPChart(nodeid, type){
@@ -301,20 +479,29 @@ function messagesTrigger(data){
   var key = Object.keys(data);
 
   if(data[key]["status"] == 0){
-    if(key == "updateSystemInfo"){
+    if(key == "queryNodesServicesStatus" || key == "updateSystemInfo" || key == "updateChiaStatus" || key == "setNodeUpDown"){
       $.get(frontend + "/sites/chia_infra_sysinfo/templates/cards.php", {}, function(response) {
         $('#all_node_sysinfo_container').html(response);
         reloadTables();
         reinitQueryAllButton();
         initSysinfoRefresh();
         initSysinfoNodeActions();
+        initSetDownTime();
         sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getCurrentChiaNodesUPAndServiceStatus", {});
       });
-    }else if(key == "queryNodesServicesStatus" || key == "updateChiaStatus" || key == "setNodeUpDown"){
-      sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getCurrentChiaNodesUPAndServiceStatus", {});
     }else if(key == "getCurrentChiaNodesUPAndServiceStatus"){
       if("data" in data[key]){
         services_states = data[key]["data"];
+      }
+    }else if(key == "setUpNewDowntime"){
+      console.log(data);
+      $("#setDownTimeModal").modal("hide");
+      $("#saveDowntimeModal").modal("hide");
+      if(data[key]["data"].length > 0){
+        $.each(found_downtimes, function(nodeid, downtimes){
+          found_downtimes[nodeid] = downtimes;
+          updateFoundDowntimesInModal(nodeid); 
+        });
       }
     }
     setTimeout(function(){
@@ -327,5 +514,7 @@ function messagesTrigger(data){
         $(this).removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-danger").addClass("badge-danger").html("Node not reachable");
       }
     });
+  }else{
+    console.log(data[key]["message"]);
   }
 }

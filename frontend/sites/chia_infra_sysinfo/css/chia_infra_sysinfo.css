@@ -1,0 +1,13 @@
+.dowtime-short-desc-content {
+    margin: 0; 
+    font-size: 0.9em;
+}
+
+.downtime-short-desc-title {
+    font-size: 1.1em;
+}
+
+.downtimeModalContainer{
+    max-height: 15em; 
+    overflow: auto;
+}

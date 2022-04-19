@@ -221,6 +221,8 @@
             $this->updateAvailableServices($updateData);
           }
 
+          $this->alerting_api->alertAllFoundWARNandCRIT();
+
           return array("status" => 0, "message" => "Successfully updated system information for node $nodeid.", "data" => ["nodeid" => $nodeid]);
         }catch(\Exception $e){
           print_r($e);
@@ -290,7 +292,7 @@
           if($sysinfodata["service_type"] == 1){
             $returnarray[$sysinfodata["id"]]["node"] = [
               "hostname" => $sysinfodata["hostname"],
-              "nodeauthhash" => $sysinfodata["nodeauthhash"],
+              "nodeauthhash" => $this->encryption_api->decryptString($sysinfodata["nodeauthhash"]),
               "upstatus" => $sysinfodata["service_state"],
               "status_since" => $sysinfodata["time_or_usage"],
               "monitor_service" => $sysinfodata["monitor"]
@@ -552,9 +554,13 @@
      *
      * @return array
      */
-    public function setAllNodesSystemAndServicesUpStatus(): array
+    public function setAllNodesSystemAndServicesUpStatus(array $data = []): array
     {
-      $available_nodes = $this->nodes_api->getCurrentChiaNodesUPAndServiceStatus()["data"];
+      if(array_key_exists("node_and_service_up_status", $data)){
+        $available_nodes = $data["node_and_service_up_status"];
+      }else{
+        $available_nodes = $this->nodes_api->getCurrentChiaNodesUPAndServiceStatus()["data"];
+      }
 
       foreach($available_nodes AS $nodeid => $services_data){
         $this_service_type_id = 1;
