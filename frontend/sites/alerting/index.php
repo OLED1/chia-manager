@@ -4,7 +4,6 @@
 
   $alerting_api = new Alerting_Api();
   $alerting_services = $alerting_api->getAvailableServices()["data"];
-  //print_r($alerting_services);
 
   echo "<script nonce={$ini["nonce_key"]}>
           var siteID = 14;
@@ -43,7 +42,7 @@
     <div class="tab-pane fade" id="<?php echo $alerting_service["service_id"]; ?>" role="tabpanel" aria-labelledby="<?php echo $alerting_service["service_id"]; ?>-tab">
       <?php
         $_GET[$alerting_service["service_id"]] = $alerting_service; 
-        include("templates/alerting_services/{$alerting_service["service_id"]}_card.php"); 
+        include("templates/alerting_services/" . strtolower($alerting_service["service_id"]) . "_card.php"); 
       ?>
     </div>
     <?php } ?>
@@ -59,6 +58,9 @@
     <li class="nav-item">
       <a class="nav-link" id="setup-alerting-tab" data-toggle="tab" href="#setup-alerting" role="tab" aria-controls="rules" aria-selected="true">Setup alerting</a>
     </li>
+    <li class="nav-item">
+      <a class="nav-link" id="alerting-history-tab" data-toggle="tab" href="#alerting-history" role="tab" aria-controls="rules" aria-selected="true">Alerting history</a>
+    </li>
   </ul>
   <div id="setup-node-alerting-pane" class="tab-content">
     <div class="tab-pane fade" id="configure-rules" role="tabpanel" aria-labelledby="configure-rules-tab">
@@ -66,6 +68,9 @@
     </div>
     <div class="tab-pane fade" id="setup-alerting" role="tabpanel" aria-labelledby="setup-alerting-tab">
     <?php include("templates/setup_alerting_card.php"); ?>
+    </div>
+    <div class="tab-pane fade" id="alerting-history" role="tabpanel" aria-labelledby="alerting-history-tab">
+      ...
     </div>
   </div>
 </div>
