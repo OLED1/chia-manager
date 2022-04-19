@@ -1,0 +1,23 @@
+<style>
+    .state-ok{
+        background-color: green;
+    }
+    .state-warn{
+        background-color: yellow;
+    }
+    .state-crit{
+        background-color: red;
+    }
+    .state-unkn{
+        background-color: orange;
+    }
+</style>
+<h4>Alerting for service '[SERVICENAME]' on host [HOSTNAME]</h4>
+<p>Hello [USERNAME],<br><br>
+The system detected an important service change:</p>
+<p>Hostname: [HOSTNAME]<br/>
+Servicename - Servicetarget: '[SERVICENAME]' - '[SERVICETARGET]'<br/>
+Service changed from [PREVSTATE] to [NEWSTATE]<br/>
+New state reason: [SERVICEDOWNDESC]
+New state since [STATESINCE] minutes</p>
+[URGENTACTION]

@@ -14,11 +14,11 @@
   $system_api = new System_Api();
   $mailing = $system_api->getSpecificSystemSetting("mailing")["data"];
   $mailing_confirmed = $mailing["mailing"]["confirmed"];
-  $service_enabled = $_GET["mail"]["enabled"];
+  $service_enabled = $_GET["Mail"]["enabled"];
 
   echo "<script nonce={$ini["nonce_key"]}>
-    var mail_service_id = {$_GET["mail"]["id"]};
-    var service_id_hr = '{$_GET["mail"]["service_id"]}';
+    var mail_service_id = {$_GET["Mail"]["id"]};
+    var service_id_hr = '{$_GET["Mail"]["service_id"]}';
     var frontend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}';
   </script>";
 ?>
@@ -28,7 +28,7 @@
       <div class="card-body">
         <h5>Setup</h5>
         System mailing enabled: <span class="badge <?php echo ($mailing_confirmed ? "badge-success" : "badge-danger"); ?>"><?php echo ($mailing_confirmed ? "Enabled and confirmed" : "Not enabled. Please setup on the settings page.") ?></span><br>
-        Enable alerting service: <input id="enable_mailing" class="wsbutton" data-service-id="<?php echo $_GET["mail"]["id"]; ?>" type="checkbox" aria-label="Checkbox for following text input" <?php echo ($mailing_confirmed ? "disabled" : ""); echo ($service_enabled == 1 ? " checked" : ""); ?>>
+        Enable alerting service: <input id="enable_mailing" class="wsbutton" data-service-id="<?php echo $_GET["Mail"]["id"]; ?>" type="checkbox" aria-label="Checkbox for following text input" <?php echo ($mailing_confirmed ? "disabled" : ""); echo ($service_enabled == 1 ? " checked" : ""); ?>>
       </div>
     </div>
   </div>

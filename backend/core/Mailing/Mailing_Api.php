@@ -45,7 +45,6 @@
      * Initialises the needed and above stated private variables.
      */
     public function __construct(object $server = NULL){
-      $this->mailer = new PHPMailer(true);
       $this->logging_api = new Logging_Api($this, $server);
       $this->system_api = new System_Api();
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
@@ -117,6 +116,7 @@
         $mailer = "Chia Management";
 
         try{
+          $this->mailer = new PHPMailer(true);
           $mail = $this->mailer;
           //$mail->SMTPDebug = SMTP::DEBUG_SERVER;
           $mail->isSMTP();
