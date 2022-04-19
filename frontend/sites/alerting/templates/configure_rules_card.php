@@ -149,7 +149,7 @@
             <h6>Configured custom rules for host <?php echo $chia_node["hostname"]; ?></h6>
             <div id="custom_rules_<?php echo $chia_node["nodeid"]; ?>">
             <?php 
-              if(array_key_exists("by_rule_default", $alerting_rules) && array_key_exists(1, $alerting_rules["by_rule_default"]) && count($alerting_rules["by_rule_default"][1]) > 0){ 
+              if(array_key_exists("by_rule_default", $alerting_rules) && array_key_exists(0, $alerting_rules["by_rule_default"]) && count($alerting_rules["by_rule_default"][0]) > 0){ 
                 foreach($alerting_rules["by_rule_default"][0] AS $rule_id => $rule){
                   if($rule["node_id"] != $chia_node["nodeid"]) continue;
             ?>
