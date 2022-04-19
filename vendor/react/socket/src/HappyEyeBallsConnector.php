@@ -31,23 +31,29 @@ final class HappyEyeBallsConnector implements ConnectorInterface
 
     public function connect($uri)
     {
-
+        $original = $uri;
         if (\strpos($uri, '://') === false) {
-            $parts = \parse_url('tcp://' . $uri);
-            unset($parts['scheme']);
+            $uri = 'tcp://' . $uri;
+            $parts = \parse_url($uri);
+            if (isset($parts['scheme'])) {
+                unset($parts['scheme']);
+            }
         } else {
             $parts = \parse_url($uri);
         }
 
         if (!$parts || !isset($parts['host'])) {
-            return Promise\reject(new \InvalidArgumentException('Given URI "' . $uri . '" is invalid'));
+            return Promise\reject(new \InvalidArgumentException(
+                'Given URI "' . $original . '" is invalid (EINVAL)',
+                \defined('SOCKET_EINVAL') ? \SOCKET_EINVAL : 22
+            ));
         }
 
         $host = \trim($parts['host'], '[]');
 
         // skip DNS lookup / URI manipulation if this URI already contains an IP
-        if (false !== \filter_var($host, \FILTER_VALIDATE_IP)) {
-            return $this->connector->connect($uri);
+        if (@\inet_pton($host) !== false) {
+            return $this->connector->connect($original);
         }
 
         $builder = new HappyEyeBallsConnectionBuilder(

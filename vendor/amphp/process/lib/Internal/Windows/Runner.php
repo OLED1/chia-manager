@@ -41,12 +41,15 @@ final class Runner implements ProcessRunner
         // We can't execute the exe from within the PHAR, so copy it out...
         if (\strncmp($wrapperPath, "phar://", 7) === 0) {
             if (self::$pharWrapperPath === null) {
-                self::$pharWrapperPath = \sys_get_temp_dir() . "amphp-process-wrapper-" . \hash('sha1', \file_get_contents(self::WRAPPER_EXE_PATH));
-                \copy(self::WRAPPER_EXE_PATH, self::$pharWrapperPath);
+                $fileHash = \hash_file('sha1', self::WRAPPER_EXE_PATH);
+                self::$pharWrapperPath = \sys_get_temp_dir() . "/amphp-process-wrapper-" . $fileHash;
 
-                \register_shutdown_function(static function () {
-                    @\unlink(self::$pharWrapperPath);
-                });
+                if (
+                    !\file_exists(self::$pharWrapperPath)
+                    || \hash_file('sha1', self::$pharWrapperPath) !== $fileHash
+                ) {
+                    \copy(self::WRAPPER_EXE_PATH, self::$pharWrapperPath);
+                }
             }
 
             $wrapperPath = self::$pharWrapperPath;
@@ -82,7 +85,14 @@ final class Runner implements ProcessRunner
         $options['bypass_shell'] = true;
 
         $handle = new Handle;
-        $handle->proc = @\proc_open($this->makeCommand($cwd ?? ''), self::FD_SPEC, $pipes, $cwd ?: null, $env ?: null, $options);
+        $handle->proc = @\proc_open(
+            $this->makeCommand($cwd ?? ''),
+            self::FD_SPEC,
+            $pipes,
+            $cwd ?: null,
+            $env ?: null,
+            $options
+        );
 
         if (!\is_resource($handle->proc)) {
             $message = "Could not start process";
@@ -151,9 +161,6 @@ final class Runner implements ProcessRunner
     {
         /** @var Handle $handle */
         \exec('taskkill /F /T /PID ' . $handle->wrapperPid . ' 2>&1', $output, $exitCode);
-        if ($exitCode) {
-            throw new ProcessException("Terminating process failed");
-        }
 
         $failStart = false;
 
