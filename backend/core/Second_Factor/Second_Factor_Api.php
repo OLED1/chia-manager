@@ -209,7 +209,7 @@
                     }
                 }else{
                     return $this->logging_api->getErrormessage("002");
-                }    
+                } 
             }catch(\Exception $e){
                 return $this->logging_api->getErrormessage("003", $e);
             }
