@@ -253,7 +253,7 @@
       }
 
       try{
-          $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, cias.service_type,
+          $sql = $this->db_api->execute("SELECT n.id, cias.id AS service_id, n.hostname, n.nodeauthhash, cias.service_type,
                                                 cis.os_type, cis.os_name,
                                                 cis.cpu_count, cis.cpu_cores, cis.cpu_model,
                                                 ciscl.load_1_min,ciscl.load_5_min ,ciscl.load_15_min,
@@ -262,7 +262,10 @@
                                                 cisu.swap_total, cisu.swap_free,
                                                 cisf.device, cisf.size, cisf.used, cisf.avail, cisf.mountpoint,
                                                 cias.curr_service_insert_id, cias.service_state, cias.time_or_usage, cias.service_state_first_reported, cias.service_state_last_reported,
-                                                ar.monitor
+                                                ar.monitor,
+                                                (CASE WHEN ad.downtime_comment IS NOT NULL THEN 1
+                                                 	  ELSE 0
+                                                 END) AS downtime_active
                                         FROM nodes n
                                         LEFT JOIN chia_infra_available_services cias ON cias.id = (SELECT cias1.id
                                                                                                     FROM chia_infra_available_services cias1
@@ -280,8 +283,9 @@
                                         LEFT JOIN chia_infra_swap_usage cisu ON cisu.id = cias.curr_service_insert_id AND cias.service_type = 8
                                         LEFT JOIN chia_infra_sysinfo_filesystems cisf ON cisf.id = cias.curr_service_insert_id AND cias.service_type = 9
                                         LEFT JOIN alerting_rules ar on ar.id = cias.refers_to_rule_id
-                                        $statement_string
-                                        ORDER BY n.id ASC, cias.service_type ASC, cias.curr_service_insert_id ASC", 
+                                        LEFT JOIN alerting_downtimes ad ON ad.node_id = n.id AND (ad.downtime_type = 0 OR (ad.downtime_type = 1 AND ad.downtime_service_type = cias.service_type AND ad.downtime_service_target = cias.service_target)) AND NOW() BETWEEN ad.downtime_from AND ad.downtime_to
+                                        $statement_string AND ar.monitor = 1
+                                        ORDER BY n.id ASC, cias.service_type ASC, cisf.mountpoint ASC", 
                                         $statement_array);
         
         $found_sysinfo_data = $sql->fetchAll(\PDO::FETCH_ASSOC);
@@ -291,52 +295,67 @@
           if(!array_key_exists($sysinfodata["id"], $returnarray)) $returnarray[$sysinfodata["id"]] = [];
           if($sysinfodata["service_type"] == 1){
             $returnarray[$sysinfodata["id"]]["node"] = [
+              "service_id" => $sysinfodata["service_id"],
               "hostname" => $sysinfodata["hostname"],
               "nodeauthhash" => $this->encryption_api->decryptString($sysinfodata["nodeauthhash"]),
               "upstatus" => $sysinfodata["service_state"],
               "status_since" => $sysinfodata["time_or_usage"],
-              "monitor_service" => $sysinfodata["monitor"]
+              "monitor_service" => $sysinfodata["monitor"],
+              "downtime_active" => $sysinfodata["downtime_active"]
             ];
           }else if($sysinfodata["service_type"] == 2){
             $returnarray[$sysinfodata["id"]]["farmer"] = [
+              "service_id" => $sysinfodata["service_id"],
               "service_state" => $sysinfodata["service_state"],
               "status_since" => $sysinfodata["time_or_usage"],
-              "monitor_service" => $sysinfodata["monitor"]
+              "monitor_service" => $sysinfodata["monitor"],
+              "downtime_active" => $sysinfodata["downtime_active"]
             ];
           }else if($sysinfodata["service_type"] == 3){
             $returnarray[$sysinfodata["id"]]["harvester"] = [
+              "service_id" => $sysinfodata["service_id"],
               "service_state" => $sysinfodata["service_state"],
               "status_since" => $sysinfodata["time_or_usage"],
-              "monitor_service" => $sysinfodata["monitor"]
+              "monitor_service" => $sysinfodata["monitor"],
+              "downtime_active" => $sysinfodata["downtime_active"]
             ];
           }else if($sysinfodata["service_type"] == 4){
             $returnarray[$sysinfodata["id"]]["wallet"] = [
+              "service_id" => $sysinfodata["service_id"],
               "service_state" => $sysinfodata["service_state"],
               "status_since" => $sysinfodata["time_or_usage"],
-              "monitor_service" => $sysinfodata["monitor"]
+              "monitor_service" => $sysinfodata["monitor"],
+              "downtime_active" => $sysinfodata["downtime_active"]
             ];
           }else if($sysinfodata["service_type"] == 5){
             if(!array_key_exists("cpu", $returnarray[$sysinfodata["id"]])) $returnarray[$sysinfodata["id"]]["cpu"] = [];
             $returnarray[$sysinfodata["id"]]["cpu"]["load"] = [
+              "service_id" => $sysinfodata["service_id"],
               "load_1_min" => $sysinfodata["load_1_min"],
               "load_5_min" => $sysinfodata["load_5_min"],
               "load_15_min" => $sysinfodata["load_15_min"],
               "usage_15_min" => $sysinfodata["time_or_usage"],
               "service_state" => $sysinfodata["service_state"],
-              "monitor_service" => $sysinfodata["monitor"]
+              "monitor_service" => $sysinfodata["monitor"],
+              "downtime_active" => $sysinfodata["downtime_active"]
             ];
           }else if($sysinfodata["service_type"] == 6){
             if(!array_key_exists("cpu", $returnarray[$sysinfodata["id"]])) $returnarray[$sysinfodata["id"]]["cpu"] = [];
             if(!array_key_exists("usage", $returnarray[$sysinfodata["id"]]["cpu"]) || !array_key_exists("overall", $returnarray[$sysinfodata["id"]]["cpu"]["usage"])){
               $returnarray[$sysinfodata["id"]]["cpu"]["usage"]["overall"] = [
+                "service_id" => $sysinfodata["service_id"],
+                "servic_type" => "CPU total usage",
+                "service_target" => "None",
                 "total_usage" => $sysinfodata["time_or_usage"],
                 "service_state" => $sysinfodata["service_state"],
-                "monitor_service" => $sysinfodata["monitor"]
+                "monitor_service" => $sysinfodata["monitor"],
+                "downtime_active" => $sysinfodata["downtime_active"]
               ];
             }
             $returnarray[$sysinfodata["id"]]["cpu"]["usage"]["usages"][$sysinfodata["cpu_number"]] = $sysinfodata["cpu_usage"];
           }else if($sysinfodata["service_type"] == 7){
             $returnarray[$sysinfodata["id"]]["memory"]["ram"] = [
+              "service_id" => $sysinfodata["service_id"],
               "memory_total" => $sysinfodata["memory_total"],
               "memory_free" => $sysinfodata["memory_free"],
               "memory_buffers" => $sysinfodata["memory_buffers"],
@@ -344,18 +363,22 @@
               "memory_cached" => $sysinfodata["memory_cached"],
               "service_status" => $sysinfodata["service_state"],
               "total_usage" => $sysinfodata["time_or_usage"],
-              "monitor_service" => $sysinfodata["monitor"]
+              "monitor_service" => $sysinfodata["monitor"],
+              "downtime_active" => $sysinfodata["downtime_active"]
             ];
           }else if($sysinfodata["service_type"] == 8){
             $returnarray[$sysinfodata["id"]]["memory"]["swap"] = [
+              "service_id" => $sysinfodata["service_id"],
               "swap_total" => $sysinfodata["swap_total"],
               "swap_free" => $sysinfodata["swap_free"],
               "service_status" => $sysinfodata["service_state"],
               "total_usage" => $sysinfodata["time_or_usage"],
-              "monitor_service" => $sysinfodata["monitor"]
+              "monitor_service" => $sysinfodata["monitor"],
+              "downtime_active" => $sysinfodata["downtime_active"]
             ];
           }else if($sysinfodata["service_type"] == 9){
             $returnarray[$sysinfodata["id"]]["filesystems"][$sysinfodata["mountpoint"]] = [
+              "service_id" => $sysinfodata["service_id"],
               "device" => $sysinfodata["device"],
               "mountpoint" => $sysinfodata["mountpoint"],
               "size" => $sysinfodata["size"],
@@ -363,7 +386,8 @@
               "avail" => $sysinfodata["avail"],
               "service_status" => $sysinfodata["service_state"],
               "total_usage" => $sysinfodata["time_or_usage"],
-              "monitor_service" => $sysinfodata["monitor"]
+              "monitor_service" => $sysinfodata["monitor"],
+              "downtime_active" => $sysinfodata["downtime_active"]
             ];
           }
           if(($sysinfodata["service_type"] == 5 || $sysinfodata["service_type"] == 6) && 
@@ -412,7 +436,7 @@
       }
 
       if(!is_null($server)){
-        return $server->$callfunction($querydata);
+        return $server->$callfunction($querydata)[$callfunction];
       }else{
         $this->websocket_api = new WebSocket_Api();
         return $this->websocket_api->sendToWSS($callfunction, $querydata);
@@ -595,6 +619,71 @@
       }
 
       return array("status" => 0, "message" => "Successfully set all nodes system and service status.");
+    }
+
+    /**
+     * Sets the status of a certain service to monitored or unmonitored.
+     *
+     * @param array $data
+     * @return array
+     */
+    public function editMonitoredServices(array $data): array
+    {
+      if(array_key_exists("node_id", $data) && is_numeric($data["node_id"]) && $data["node_id"] > 2 && 
+        array_key_exists("service_id", $data) && is_numeric($data["service_id"]) &&
+        array_key_exists("monitor", $data) && is_bool($data["monitor"])){
+
+        try{
+          print_r($data);
+
+          $sql = $this->db_api->execute("SELECT cias.id AS service_id, cias.service_type, ar.id AS alerting_id, 
+                                          (CASE WHEN (cias.service_target IS NULL OR cias.service_target = '') AND cist.perc_or_min= 1 THEN 'total downtime'
+                                                WHEN (cias.service_target IS NULL OR cias.service_target = '') AND cist.perc_or_min = 0 THEN 'total usage'
+                                                ELSE cias.service_target
+                                          END) AS service_target, ar.rule_default, ar.monitor 
+                                        FROM chia_infra_available_services cias
+                                        JOIN alerting_rules ar ON ar.id = cias.refers_to_rule_id 
+                                        JOIN chia_infra_service_types cist on cist.id = cias.service_type
+                                        WHERE cias.id = ? AND cias.node_id = ?", 
+                                        array($data["service_id"], $data["node_id"]));
+
+          $found_service = $sql->fetchAll(\PDO::FETCH_ASSOC);
+          print_r($found_service);
+
+          if(array_key_exists(0, $found_service) && array_key_exists("rule_default", $found_service[0])){
+            $found_service = $found_service[0];
+            $default_rule = boolval($found_service["rule_default"]);
+            $service_type = $found_service["service_type"];
+            $rule_target = $found_service["service_target"];
+
+            if($default_rule){
+              echo "Default rule - Insert custom rule.";
+              $add_custom_rule_callback = $this->alerting_api->addCustomRule(["nodeid" => $data["node_id"], "service_type" => $service_type, "monitor" => boolval($data["monitor"]), "service_name" => $rule_target, "warn_at_after" => -1, "crit_at_after" => -1]);
+              print_r($add_custom_rule_callback);
+            }else{
+              echo "Not default rule - Update existing rule.";
+            }
+
+            $new_monitored_services = $this->alerting_api->getConfigurableDowntimeServices(["node_id" => $data["node_id"]]);
+            if(array_key_exists("data", $new_monitored_services)) $new_monitored_services = $new_monitored_services["data"];
+            else $new_monitored_services = [];
+
+            return array("status" => 0, "message" => "Successfully set monitor to {$data["monitor"]} for service with ID {$data["service_id"]}.", "data" => $new_monitored_services);
+          }else{
+            //TODO Implement correct status code
+            return array("status" => 1, "message" => "This service has no valid alerting rule. Please report this error to the dev team.");
+          }
+
+        }catch(\Exception $e){
+          //TODO Implement correct status codes
+          print_r($e);
+          return array("status" => 1, "message" => "An error occured.");
+        }
+
+      }else{
+        //TODO Implement correct status code
+        return array("status" => 1, "message" => "Not all data stated.");
+      }
     }
   }
 ?>
