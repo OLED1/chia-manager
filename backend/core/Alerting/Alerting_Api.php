@@ -98,18 +98,25 @@
      */
     public function addCustomRule(array $data): array
     {    
-      if(array_key_exists("nodeid", $data) && array_key_exists("service_type", $data) && array_key_exists("service_type", $data) && array_key_exists("service_type", $data)){
+      print_r($data);
+      
+      if(array_key_exists("nodeid", $data) && array_key_exists("service_type", $data) && array_key_exists("service_type", $data) && 
+        array_key_exists("service_type", $data) && array_key_exists("service_name", $data) && array_key_exists("warn_at_after", $data) && array_key_exists("crit_at_after", $data)){
+
         $found_type = $this->getAvailableRuleTypesAndServices(["typeid" => $data["service_type"], "nodeid" => $data["nodeid"]]);
+
+        echo "Found type:";
+        print_r($found_type);
 
         if(array_key_exists("data", $found_type) && array_key_exists($data["service_type"], $found_type["data"]) && 
           array_key_exists("available_services", $found_type["data"][$data["service_type"]]) && array_key_exists($data["nodeid"], $found_type["data"][$data["service_type"]]["available_services"]) &&
           in_array($data["service_name"], $found_type["data"][$data["service_type"]]["available_services"][$data["nodeid"]]["configurable_services"])){           
           try{
             $found_type = $found_type["data"];
-            $rule_target = $data["service_name"];
-            $perc_or_min = $found_type[$data["service_type"]]["perc_or_min"];
-            $monitor = (array_key_exists("monitor", $data) ? $data["monitor"] : 1 );
-
+            $rule_target = ($found_type[$data["service_type"]]["rule_target_needed"] == 0 ? NULL : $data["service_name"]);
+            $perc_or_min = $found_type[$data["service_type"]]["perc_or_min"];           
+            $monitor = (array_key_exists("monitor", $data) ? intval(boolval($data["monitor"])) : 1 );
+            
             $sql = $this->db_api->execute("INSERT INTO alerting_rules (id, system_target, rule_type, rule_target, rule_default, perc_or_min_value, warn_at_after, crit_at_after, monitor) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?)", 
                                           array($data["nodeid"], $data["service_type"], $rule_target, 0, $perc_or_min, $data["warn_at_after"], $data["crit_at_after"], $monitor));
 
@@ -117,6 +124,13 @@
 
             $new_rule = $this->getConfiguredRules(["rule_id" => $new_rule_id]);
             if(array_key_exists("data", $new_rule)){
+              $sql = $this->db_api->execute("UPDATE chia_infra_available_services
+                                              SET refers_to_rule_id = ?
+                                              WHERE (service_target = ? OR service_target = '' OR service_target IS NULL) AND node_id = ? AND service_type = ? 
+                                              ORDER BY id DESC
+                                              LIMIT 1", 
+              array($new_rule_id, $rule_target, $data["nodeid"], $data["service_type"]));
+
               return array("status" => 0, "message" => "Successfully created new custom rule.", "data" => $new_rule["data"]);
             }else{
               return $new_rule;
@@ -243,7 +257,12 @@
       }
 
       try{
-        $sql = $this->db_api->execute("SELECT ar.id, ar.system_target, n.id as node_id, n.hostname, ar.rule_type, cist.service_desc, cist.perc_or_min, ar.rule_target, ar.rule_default, ar.perc_or_min_value, ar.warn_at_after, ar.crit_at_after, ar.monitor
+        $sql = $this->db_api->execute("SELECT ar.id, ar.system_target, n.id as node_id, n.hostname, ar.rule_type, cist.service_desc, cist.perc_or_min, 
+                                        (CASE WHEN (ar.rule_target IS NULL OR ar.rule_target = '') AND cist.perc_or_min = 1 THEN 'total downtime'
+                                              WHEN (ar.rule_target IS NULL OR ar.rule_target = '') AND cist.perc_or_min = 0 THEN 'total usage'
+                                              ELSE ar.rule_target
+                                        END) AS rule_target,
+                                        ar.rule_default, ar.perc_or_min_value, ar.warn_at_after, ar.crit_at_after, ar.monitor
                                       FROM alerting_rules ar
                                       JOIN nodes n ON n.id = ar.system_target
                                       JOIN chia_infra_service_types cist ON cist.id = ar.rule_type
@@ -574,7 +593,10 @@
                 WHEN cias.service_state = 3 AND TIMESTAMPDIFF(MINUTE,cias.service_state_first_reported,NOW()) >= ap.crit_alert_after AND ap.crit_alert_after > -1 THEN 1
                 WHEN cias.service_state = 4 THEN 1
                 ELSE 0
-          END) AS alert_service_now, TIMESTAMPDIFF(MINUTE,cias.service_state_first_reported,NOW()) AS state_since, ac.user_id AS alert_to_user, u.name, u.lastname, u.username, u.email, ass.id AS alerting_service_id, ass.service_id AS alerting_service_desc
+          END) AS alert_service_now, TIMESTAMPDIFF(MINUTE,cias.service_state_first_reported,NOW()) AS state_since, ac.user_id AS alert_to_user, u.name, u.lastname, u.username, u.email, ass.id AS alerting_service_id, ass.service_id AS alerting_service_desc,
+          (CASE WHEN ad.downtime_comment IS NULL THEN 0
+                ELSE 1
+          END) AS downtime_active
           FROM nodes n
           LEFT JOIN chia_infra_available_services cias ON cias.id = (SELECT ciassub.id
                                                                     FROM chia_infra_available_services ciassub
@@ -593,10 +615,11 @@
           LEFT JOIN alerting_available_states avs1 ON avs1.id = cias1.service_state
           LEFT JOIN alerting_procedure ap ON ap.rule_id = ar.id AND ap.rule_node_target = n.id
           LEFT JOIN alerting_contact ac ON ac.alerting_procedure_id = ap.id
+          LEFT JOIN alerting_downtimes ad ON ad.node_id = n.id AND NOW() BETWEEN ad.downtime_from AND ad.downtime_to
           JOIN alerting_services ass ON ass.id = ap.alerting_service AND ass.enabled = 1
           JOIN users u ON u.id = ac.user_id AND u.enabled = 1
           WHERE {$statement_string} AND ar.monitor = 1 AND NOT EXISTS ( SELECT 1 FROM alerting_history ah WHERE ah.avail_alerting_serv_id = cias.id  AND ah.service_alerted_using = ass.id )
-          HAVING alert_service_now = 1 AND alert_to_user IS NOT NULL
+          HAVING alert_service_now = 1 AND alert_to_user IS NOT NULL AND downtime_active = 0
           ORDER BY n.id ASC, cias.service_type ASC, cias.curr_service_insert_id ASC"
         , $statement_array);
 
@@ -722,6 +745,17 @@
     public function getSetupDowntimes(array $data = []): array
     {
       return $this->alerting_downtimes->getSetupDowntimes($data);
+    }
+
+    /**
+     * Edits the information (Comment, Start date, enddate) of one or more downtime(s).
+     *
+     * @param array $data
+     * @return array
+     */
+    public function editDowntimes(array $data = []): array
+    {
+      return $this->alerting_downtimes->editDowntimes($data);
     }
   }
 ?>

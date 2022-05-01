@@ -22,16 +22,24 @@
     public function getConfigurableDowntimeServices(array $data = []): array
     {
         try{
+            echo "Welcome to getConfigurableDowntimeServices, you sent data is:";
+            print_r($data);
+
             $statement_string = "n.id = (
                 SELECT nt.nodeid FROM nodetype nt WHERE nt.code >= 3 AND nt.code <= 5 AND nt.nodeid = n.id LIMIT 1
             )";
             $statement_array = [];
-            if(array_key_exists("node_id", $data) && is_numeric($data["nodeid"])){
+            if(array_key_exists("node_id", $data) && is_numeric($data["node_id"])){
             $statement_string = "n.id = ?";
             array_push($statement_array, $data["node_id"]);
             }
 
-            $sql = $this->db_api->execute("SELECT n.id, n.hostname, n.nodeauthhash, cias.service_type, cist.service_desc,
+            if(array_key_exists("monitor", $data) && is_bool($data["monitor"])){
+                $statement_string .= " AND ar.monitor = ?";
+                array_push($statement_array, $data["monitor"]);
+            }
+
+            $sql = $this->db_api->execute("SELECT n.id, cias.id AS service_id, n.hostname, n.nodeauthhash, cias.service_type, cist.service_desc,
                                         (CASE WHEN cias.service_target IS NULL OR cias.service_target = '' THEN 'Total (down)time'
                                             ELSE cias.service_target
                                         END) AS service_target, cias.service_target AS real_service_target, ar.monitor
@@ -43,7 +51,7 @@
                                                                                         LIMIT 1)
                                         LEFT JOIN chia_infra_service_types cist ON cist.id = cias.service_type                                                           
                                         LEFT JOIN alerting_rules ar on ar.id = cias.refers_to_rule_id
-                                        WHERE $statement_string and ar.monitor = 1
+                                        WHERE $statement_string
                                         ORDER BY n.id ASC, cias.service_type ASC, cias.service_target ASC", $statement_array);
 
             $found_configureable_downtimes = $sql->fetchAll(\PDO::FETCH_ASSOC);
@@ -51,9 +59,9 @@
             foreach($found_configureable_downtimes AS $arrkey => $thisservice){
                 if(!array_key_exists($thisservice["id"], $returnarray)) $returnarray[$thisservice["id"]] = ["hostname" => $thisservice["hostname"], "nodeauthhash" => $thisservice["nodeauthhash"], "services" => []];
                 if(!array_key_exists($thisservice["service_type"], $returnarray[$thisservice["id"]]["services"])){
-                    $returnarray[$thisservice["id"]]["services"][$thisservice["service_type"]] = [ "service_type_desc" => $thisservice["service_desc"] , "configurable_services" => [["real_service_target" => $thisservice["real_service_target"], "service_target" => $thisservice["service_target"]]]];
+                    $returnarray[$thisservice["id"]]["services"][$thisservice["service_type"]] = [ "service_type_desc" => $thisservice["service_desc"] , "configurable_services" => [$thisservice["service_id"] => [ "service_id" => $thisservice["service_id"], "real_service_target" => $thisservice["real_service_target"], "service_target" => $thisservice["service_target"], "monitor" => $thisservice["monitor"]]]];
                 }else{
-                    array_push($returnarray[$thisservice["id"]]["services"][$thisservice["service_type"]]["configurable_services"], ["real_service_target" => $thisservice["real_service_target"], "service_target" => $thisservice["service_target"]]);
+                    $returnarray[$thisservice["id"]]["services"][$thisservice["service_type"]]["configurable_services"][$thisservice["service_id"]] = [ "service_id" => $thisservice["service_id"], "real_service_target" => $thisservice["real_service_target"], "service_target" => $thisservice["service_target"], "monitor" => $thisservice["monitor"]];
                 } 
             }
 
@@ -173,6 +181,79 @@
             //TODO Implement correct status code
             print_r($e);
             return array("status" => 1, "message" => "An error occured.");
+        }
+    }
+
+    /**
+     * Edits the information (Comment, Start date, enddate) of one or more downtime(s).
+     *
+     * @param array $data
+     * @return array
+     */
+    public function editDowntimes(array $data = []): array
+    {
+        $date_time_regex = "(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) ";
+        if(array_key_exists("ids_to_edit", $data) && count($data["ids_to_edit"]) > 0 && 
+            ((array_key_exists("edit_downtime_comment", $data) && trim($data["edit_downtime_comment"]) != "") ||
+            (array_key_exists("edit_downtime_from", $data) && preg_match($date_time_regex, $data["edit_downtime_from"])) || 
+            (array_key_exists("edit_downtime_to", $data) && preg_match($date_time_regex, $data["edit_downtime_to"])) ||
+            (array_key_exists("remove_downtimes", $data) && $data["remove_downtimes"])
+        )){
+            
+            if($data["edit_downtime_from"] != "" && $data["edit_downtime_to"] != ""){
+                $edit_downtime_from = new \DateTime($data["edit_downtime_from"]);
+                $edit_downtime_to = new \DateTime($data["edit_downtime_to"]);
+                
+                if($edit_downtime_from > $edit_downtime_to){
+                    //TODO Implement correct status code
+                    return array("status" => 1, "message" => "Date 'from' can't be newer than date 'to'.");
+                }
+            }
+
+            if($data["remove_downtimes"]) $update_statement = "DELETE FROM alerting_downtimes";
+            else $update_statement = "UPDATE alerting_downtimes SET ";
+            $update_array = [];
+            if(!$data["remove_downtimes"] && trim($data["edit_downtime_comment"]) != ""){
+                $update_statement .= "downtime_comment = ?";
+                array_push($update_array, trim($data["edit_downtime_comment"]));
+            }
+            if(!$data["remove_downtimes"] && preg_match($date_time_regex, $data["edit_downtime_from"])){
+                if(count($update_array) > 0) $update_statement .= ", ";
+                $update_statement .= "downtime_from = ?";
+                array_push($update_array, trim($data["edit_downtime_from"]));
+            }
+            if(!$data["remove_downtimes"] && preg_match($date_time_regex, $data["edit_downtime_to"])){
+                if(count($update_array) > 0) $update_statement .= ", ";
+                $update_statement .= "downtime_to = ?";
+                array_push($update_array, trim($data["edit_downtime_to"]));
+            } 
+            
+            $update_statement .= " WHERE id = ?";
+            foreach($data["ids_to_edit"] AS $arrkey => $downtime_id){
+                if($arrkey > 0){
+                    $update_statement .= " OR id = ?";   
+                }
+                array_push($update_array, $downtime_id);
+            }
+            
+            try{
+                $sql = $this->db_api->execute($update_statement, $update_array);
+                
+                $found_downtimes = $this->getSetupDowntimes();
+                if(array_key_exists("data", $found_downtimes)){
+                    $found_downtimes = $found_downtimes["data"];
+                }else{
+                    return $found_downtimes;
+                }
+
+                return array("status" => 0, "message" => "Successfully edited stated downtimes.", "data" => $found_downtimes);
+            }catch(\Exception $e){
+                //TODO Implement correct status code
+                print_r($e);
+                return array("status" => 1, "message" => "An error occured.");
+            }
+        }else{
+            return array("status" => 1, "message" => "Not all data stated.");
         }
     }
   }
