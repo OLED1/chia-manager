@@ -24,6 +24,13 @@
   if(array_key_exists("data", $found_downtimes)) $found_downtimes = $found_downtimes["data"];
   else $found_downtimes = [];
 
+  $monitored_services = $alerting_api->getConfigurableDowntimeServices();
+  if(array_key_exists("data", $monitored_services)) $monitored_services = $monitored_services["data"];
+  else $monitored_services = [];
+
+  /*echo "<pre>";
+  print_r($sysinfos["data"]);
+  echo "</pre>";*/
 
   if(array_key_exists("data", $sysinfos) && count($sysinfos["data"]) > 0){
     echo 
@@ -31,6 +38,7 @@
       var sysinfodata = " . json_encode($sysinfos["data"]) . "; 
       var configureable_downtimes = " . json_encode($configureable_downtimes) . ";
       var found_downtimes = " . json_encode($found_downtimes) . ";
+      var monitored_services = " . json_encode($monitored_services) . ";
     </script>";
 
     foreach($sysinfos["data"] AS $nodeid => $sysinfo){
@@ -71,7 +79,7 @@
               }else{
             ?>
             <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-secondary'>Processing...</span>
-            <?php echo getWARNLevelBadge($sysinfo["node"]["upstatus"]); ?>
+            <?php echo getWARNLevelBadge($sysinfo["node"]["upstatus"], $sysinfo["node"]["downtime_active"]); ?>
           <?php } ?>
         </h6>
         <div class="dropdown no-arrow">
@@ -100,7 +108,7 @@
                       ?>
                         <h4 class="small font-weight-bold">
                           <?php echo "{$filesystem["device"]} => {$filesystem["mountpoint"]} (Size: " . formatkBytes($filesystem["size"]) . " Used: " . formatkBytes($filesystem["used"]) . " Available: " . formatkBytes($filesystem["avail"]) . ")"; ?><span class="float-right"><?php echo $filesystem["total_usage"]; ?>%</span>
-                          <?php echo getWARNLevelBadge($filesystem["service_status"]); ?>
+                          <?php echo getWARNLevelBadge($filesystem["service_status"], $filesystem["downtime_active"]); ?>
                         </h4>
                         <div class="progress mb-4">
                           <div class="progress-bar <?php echo ($filesystem["service_status"] == 1 ? "bg-success" : ($filesystem["service_status"] == 2 ? "bg-warning" : "bg-danger")); ?>" role="progressbar" style="width: <?php echo $filesystem["total_usage"]; ?>%" aria-valuenow="<?php echo $filesystem["total_usage"]; ?>" aria-valuemin="0" aria-valuemax="100"></div>
@@ -150,7 +158,7 @@
                       <div class="row">
                         <?php if(array_key_exists("memory", $sysinfo) && array_key_exists("ram", $sysinfo["memory"]) && floatval($sysinfo["memory"]["ram"]["memory_total"]) > 0){ ?>
                         <div class="col-6">
-                          <h7 class="m-0 font-weight-bold text-primary">RAM (Available: <?php echo number_format(floatval($sysinfo["memory"]["ram"]["memory_total"])/1024/1024/1024, 2) . "GB"; ?>), <?php echo "&nbsp;Usage: {$sysinfo["memory"]["ram"]["total_usage"]}%&nbsp;" . getWARNLevelBadge($sysinfo["memory"]["ram"]["service_status"]); ?></h7>
+                          <h7 class="m-0 font-weight-bold text-primary">RAM (Available: <?php echo number_format(floatval($sysinfo["memory"]["ram"]["memory_total"])/1024/1024/1024, 2) . "GB"; ?>), <?php echo "&nbsp;Usage: {$sysinfo["memory"]["ram"]["total_usage"]}%&nbsp;" . getWARNLevelBadge($sysinfo["memory"]["ram"]["service_status"], $sysinfo["memory"]["ram"]["downtime_active"]); ?></h7>
                           <div class="chart-pie" style="min-height: 20vh;">
                             <canvas id="ram_chart_<?php echo "{$nodeid}"; ?>"></canvas>
                           </div>
@@ -158,7 +166,7 @@
                         <?php } ?>
                         <?php if(array_key_exists("memory", $sysinfo) && array_key_exists("swap", $sysinfo["memory"]) && floatval($sysinfo["memory"]["swap"]["swap_total"]) > 0){ ?>
                         <div class="col-6">
-                          <h7 class="m-0 font-weight-bold text-primary">SWAP (Available: <?php echo number_format(floatval($sysinfo["memory"]["swap"]["swap_total"])/1024/1024/1024, 2) . "GB"; ?>)<?php echo "&nbsp;Usage: {$sysinfo["memory"]["swap"]["total_usage"]}%&nbsp;" . getWARNLevelBadge($sysinfo["memory"]["swap"]["service_status"]); ?></h7>
+                          <h7 class="m-0 font-weight-bold text-primary">SWAP (Available: <?php echo number_format(floatval($sysinfo["memory"]["swap"]["swap_total"])/1024/1024/1024, 2) . "GB"; ?>)<?php echo "&nbsp;Usage: {$sysinfo["memory"]["swap"]["total_usage"]}%&nbsp;" . getWARNLevelBadge($sysinfo["memory"]["swap"]["service_status"], $sysinfo["memory"]["swap"]["downtime_active"]); ?></h7>
                           <div class="chart-pie" style="min-height: 20vh;">
                             <canvas id="swap_chart_<?php echo "{$nodeid}"; ?>"></canvas>
                           </div>
@@ -179,7 +187,7 @@
                   <div class="card shadow mb-4">
                     <div class="card-body">
                       <h7 class="m-0 font-weight-bold text-primary">CPU Load
-                      <?php echo ",&nbsp;Usage: {$sysinfo["cpu"]["load"]["usage_15_min"]}%&nbsp;" . getWARNLevelBadge($sysinfo["cpu"]["load"]["service_state"]); ?>
+                      <?php echo ",&nbsp;Usage: {$sysinfo["cpu"]["load"]["usage_15_min"]}%&nbsp;" . getWARNLevelBadge($sysinfo["cpu"]["load"]["service_state"], $sysinfo["cpu"]["load"]["downtime_active"]); ?>
                       </h7>
                       <div class="chart-bar" style="min-height: 30vh;">
                         <canvas id="cpu_load_chart_<?php echo "{$nodeid}"; ?>"></canvas>
@@ -199,7 +207,7 @@
                   <div class="card shadow mb-4">
                     <div class="card-body">
                       <h7 class="m-0 font-weight-bold text-primary">CPU Usage
-                      <?php echo ",&nbsp;Usage: {$sysinfo["cpu"]["usage"]["overall"]["total_usage"]}%&nbsp;" . getWARNLevelBadge($sysinfo["cpu"]["usage"]["overall"]["service_state"]); ?>
+                      <?php echo ",&nbsp;Usage: {$sysinfo["cpu"]["usage"]["overall"]["total_usage"]}%&nbsp;" . getWARNLevelBadge($sysinfo["cpu"]["usage"]["overall"]["service_state"], $sysinfo["cpu"]["usage"]["overall"]["downtime_active"]); ?>
                       </h7>
                       <div class="chart-bar" style="min-height: 30vh;">
                         <canvas id="cpu_usage_chart_<?php echo "{$nodeid}"; ?>"></canvas>
@@ -243,18 +251,23 @@ function formatkBytes(int $size, int $precision = 2)
     return round(pow(1024, $base - floor($base)), $precision) . $suffixes[floor($base)];
 }
 
-function getWARNLevelBadge(int $warnlevel){
+function getWARNLevelBadge(int $warnlevel, bool $downtime_active){
+  $downtime_active_string = "";
+  if($downtime_active){
+    $downtime_active_string .= " (Downtime)";
+  }
+
   switch ($warnlevel) {
     case 1:
-        return "<span class='badge statusbadge badge-success'>OK</span>";
+        return "<span class='badge statusbadge badge-success'>OK{$downtime_active_string}</span>";
     case 2:
-      return "<span class='badge statusbadge badge-warning'>WARN</span>";
+      return "<span class='badge statusbadge badge-warning'>WARN{$downtime_active_string}</span>";
     case 3:
-      return "<span class='badge statusbadge badge-danger'>CRIT</span>";
+      return "<span class='badge statusbadge badge-danger'>CRIT{$downtime_active_string}</span>";
     case 4:
-      return "<span class='badge statusbadge badge-secondary'>UNKN</span>";
+      return "<span class='badge statusbadge badge-secondary'>UNKN{$downtime_active_string}</span>";
     default:
-      return "<span class='badge statusbadge badge-secondary'>UNKN</span>";
+      return "<span class='badge statusbadge badge-secondary'>UNKN{$downtime_active_string}</span>";
   }
 }
 ?>
