@@ -45,7 +45,7 @@
   include("templates/cards.php"); 
 ?>
 </div>
-<div class="modal fade" id="setDownTimeModal" data-authhash="" data-conf-id="" tabindex="-1" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static">
+<div class="modal fade" id="setDownTimeModal" data-node-id="" tabindex="-1" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static">
   <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
     <div class="modal-content">
       <div class="modal-header">
@@ -96,8 +96,7 @@
                     <h6>
                       Upcomming&nbsp;
                       <span id="downTimeModalUpcommingCount">(?)</span>&nbsp;
-                      <button type="button" class="btn btn-warning btn-sm" data-toggle="tooltip" data-placement="top" title="Edit (all) services"><i class="fa-regular fa-pen-to-square"></i></button>
-                      <button type="button" class="btn btn-primary btn-sm" data-toggle="tooltip" data-placement="top" title="View details (all)"><i class="fa-regular fa-eye"></i></button>
+                      <button type="button" class="btn btn-warning btn-sm  edit-downtimes" data-starttype=2 data-toggle="tooltip" data-placement="top" title="Edit (all) services"><i class="fa-regular fa-pen-to-square"></i></button>
                     </h6>
                     <div id="downTimeModalUpcomming" class="downtimeModalContainer">
                     </div>
@@ -110,8 +109,7 @@
                     <h6>
                       Current&nbsp;
                       <span id="downTimeModalCurrentCount">(?)</span>&nbsp;
-                      <button type="button" class="btn btn-warning btn-sm" data-toggle="tooltip" data-placement="top" title="Edit (all) services"><i class="fa-regular fa-pen-to-square"></i></button>
-                      <button type="button" class="btn btn-primary btn-sm" data-toggle="tooltip" data-placement="top" title="View details (all)"><i class="fa-regular fa-eye"></i></button>
+                      <button type="button" class="btn btn-warning btn-sm edit-downtimes" data-starttype=1 data-toggle="tooltip" data-placement="top" title="Edit (all) services"><i class="fa-regular fa-pen-to-square"></i></button>
                     </h6>
                     <div id="downTimeModalCurrent" class="downtimeModalContainer">
                     </div>
@@ -156,6 +154,113 @@
       <div class="modal-footer">
         <button type="button" id="createAndSaveDowntime" class="btn btn-success wsbutton">Create downtime</button>
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Continue editing</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="editDowntimeModal" data-edit-starttype="" tabindex="-1" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="removeNodeModalModalTitle">Edit downtimes</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <h4>Select downtime(s) to edit</h4>
+        <div class="input-group mb-3">
+          <select id="edit_downtime_services_select" multiple="multiple">
+          </select>
+        </div>
+        <h4>Downtime(s) that will be edited</h4>
+        <div id="editDowntimeServicesDetails" style="overflow: auto; height: 25em;">
+        </div>
+        <h4>Edit or remove selected downtimes(s)</h4>
+        <p>All empty boxes will not edit this specific setting to the selected downtimes.</p>
+        <div>
+        <div class="input-group mb-3">
+            <span class="input-group-text" id="edit_downtime_comment">Remove selected</span>
+            <div class="input-group-prepend">
+              <div class="input-group-text">
+                <input id="remove_selected_downtimes" type="checkbox" aria-label="Checkbox for following text input">
+              </div>
+            </div>
+          </div>
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <span class="input-group-text" id="edit_downtime_comment">Comment</span>
+            </div>
+            <input id="edit_downtime_comment_input" type="text" class="form-control edit-downtime-input" placeholder="Comment" aria-label="Comment" aria-describedby="edit_downtime_comment">
+          </div>
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <span class="input-group-text" id="edit_downtime_from">Start time (from)</span>
+            </div>
+            <input id="edit_downtime_from_input" type="text" class="form-control datepicker  edit-downtime-input" placeholder="Start time" aria-label="Start time" aria-describedby="edit_downtime_from">
+          </div>
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <span class="input-group-text" id="edit_downtime_to">End time (to)</span>
+            </div>
+            <input id="edit_downtime_to_input" type="text" class="form-control datepicker  edit-downtime-input" placeholder="End time" aria-label="End time" aria-describedby="edit_downtime_to">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="saveDowntimeEditChanges" class="btn btn-success">Save changes</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="saveEditDowntimes" tabindex="-1" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="removeNodeModalModalTitle">Edit selected downtime(s)?</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Do you really want to edit the following downtime(s)? The changes will take affect to all selected downtime(s).</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="saveEditedAndSelectedDowntimes" class="btn btn-danger wsbutton">Edit selected downtime(s)</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Recheck</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="changeMonitoredServices" tabindex="-1" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="removeNodeModalModalTitle"><i class="fa-solid fa-puzzle-piece"></i> Enable or disable service monitoring</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <p>Decide whether a service should be monitored (will be activated automatically when detected) or unmonitored if not necessarry.</p>
+        </div>
+        <div class="row">
+          <div class="col">
+            <h4>Monitored services</h4>
+            <div id="monitored_services" style="height: 40em; overflow: auto;">
+            </div>
+          </div>
+          <div class="col">
+            <h4>Unmonitored services</h4>
+            <div id="unmonitored_services" style="height: 40em; overflow: auto;">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
