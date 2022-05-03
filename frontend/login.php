@@ -49,8 +49,9 @@
   <link href="frameworks/node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
   <link href="css/google_fonts/nunito/nunito-font.css" rel="stylesheet">
   <!-- Custom styles for this template-->
-  <link href="frameworks/bootstrap/css/sb-admin-2.min.css" rel="stylesheet">
+<link href="frameworks/bootstrap/css/sb-admin-2.min.css" rel="stylesheet">
   <link href="css/custom.css" rel="stylesheet">
+  <link href="css/main.css" rel="stylesheet">
 </head>
 
 <body class="bg-gradient-primary">

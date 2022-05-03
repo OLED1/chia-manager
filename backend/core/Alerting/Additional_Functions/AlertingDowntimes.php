@@ -22,9 +22,6 @@
     public function getConfigurableDowntimeServices(array $data = []): array
     {
         try{
-            echo "Welcome to getConfigurableDowntimeServices, you sent data is:";
-            print_r($data);
-
             $statement_string = "n.id = (
                 SELECT nt.nodeid FROM nodetype nt WHERE nt.code >= 3 AND nt.code <= 5 AND nt.nodeid = n.id LIMIT 1
             )";

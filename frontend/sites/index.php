@@ -88,6 +88,7 @@
       <!-- Custom styles for this template-->
       <link href="<?php echo $frontendurl; ?>/css/custom.css" rel="stylesheet">
       <link href="<?php echo $frontendurl; ?>/css/gui-modes/dark/mode.css" rel="stylesheet">
+      <link href="<?php echo $frontendurl; ?>/css/main.css" rel="stylesheet">
         
   </head>
   <body id="page-top" class="gui-mode-elem <?php echo $gui_mode_string; ?>" style="overflow: auto;">
@@ -442,7 +443,7 @@
     <!-- Page level plugins -->
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/node_modules/datatables.net/js/jquery.dataTables.min.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/node_modules/datatables.net-bs4/js/dataTables.bootstrap4.min.js"></script>
-    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/node_modules/chartjs/chart.js"></script>
+    <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/node_modules/chart.js/dist/chart.min.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/node_modules/moment/moment.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/jquery-datetimepicker/build/jquery.datetimepicker.full.min.js"></script>
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/frameworks/node_modules/marked/marked.min.js"></script>
