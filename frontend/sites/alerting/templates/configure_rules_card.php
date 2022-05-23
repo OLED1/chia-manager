@@ -42,7 +42,7 @@
 ?>
 <div class="card shadow" style="margin: 1em;">
   <div class="card-body">
-    <h5>Default rules</h5>
+    <h3>Default rules</h3>
     <p>Define at which time a service should get a specific alerting level. These rules are only defining default rules for all services which are not having custom rules.<br>
     To set up an alerting level valid you need to set at least 1 % or 1 minute.</p>
     <div class="default_rules">

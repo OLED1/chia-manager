@@ -97,16 +97,11 @@
      * @return array
      */
     public function addCustomRule(array $data): array
-    {    
-      print_r($data);
-      
+    {         
       if(array_key_exists("nodeid", $data) && array_key_exists("service_type", $data) && array_key_exists("service_type", $data) && 
         array_key_exists("service_type", $data) && array_key_exists("service_name", $data) && array_key_exists("warn_at_after", $data) && array_key_exists("crit_at_after", $data)){
 
         $found_type = $this->getAvailableRuleTypesAndServices(["typeid" => $data["service_type"], "nodeid" => $data["nodeid"]]);
-
-        echo "Found type:";
-        print_r($found_type);
 
         if(array_key_exists("data", $found_type) && array_key_exists($data["service_type"], $found_type["data"]) && 
           array_key_exists("available_services", $found_type["data"][$data["service_type"]]) && array_key_exists($data["nodeid"], $found_type["data"][$data["service_type"]]["available_services"]) &&
@@ -289,7 +284,7 @@
      * @param array $data
      * @return array
      */
-    public function getAvailableRuleTypesAndServices(array $data = []): array
+    /*public function getAvailableRuleTypesAndServices(array $data = []): array
     {
       try{
         $where_statement = "";
@@ -309,6 +304,7 @@
 
         $returnarray = [];
         foreach($found_alerting_types AS $arrkey => $this_alerting_service){
+
           if(!is_null($this_alerting_service["api_data_function"])){
             if(!array_key_exists($this_alerting_service["id"], $returnarray)){
               $returnarray[$this_alerting_service["id"]] = [];
@@ -322,6 +318,71 @@
               $returnarray[$this_alerting_service["id"]]["available_services"] = (array_key_exists("data", $returned_data) ? $returned_data["data"] : []);
           }
         }
+
+        echo "<pre>";
+        print_r($returnarray);
+        echo "</pre>";
+
+        return array("status" => 0, "message" => "Successfully loaded all available configurations.", "data" => $returnarray);
+      }catch(\Exeption $e){
+        //TODO Implement correct status codes
+        print_r($e);
+        return array("status" => 1, "message" => "An error occured.");
+      }
+    }*/
+    public function getAvailableRuleTypesAndServices(array $data = []): array
+    {
+      try{
+        $statement_string = "n.id = (
+          SELECT nt.nodeid FROM nodetype nt WHERE nt.code >= 3 AND nt.code <= 5 AND nt.nodeid = n.id LIMIT 1
+        )";
+        $statement_array = [];
+        if(!is_null($data) && array_key_exists("nodeid", $data) && is_numeric($data["nodeid"])){
+          $statement_string = "n.id = ?";
+          array_push($statement_array, $data["nodeid"]);
+        }
+
+        if(array_key_exists("typeid", $data) && is_numeric($data["typeid"])){
+          if(count($statement_array) > 0) $statement_string .= "AND ";
+          $statement_string .= "cias.service_type = ?";
+          array_push($statement_array, $data["typeid"]);
+        }
+
+        $sql = $this->db_api->execute("SELECT n.id, cias.service_type, cist.service_desc, cist.perc_or_min, cist.rule_target_needed,
+                                      (CASE WHEN cisf.mountpoint IS NULL AND cist.perc_or_min = 0 THEN 'total percent'
+                                          WHEN cisf.mountpoint IS NULL AND cist.perc_or_min = 1 THEN 'total downtime'
+                                          ELSE cisf.mountpoint
+                                      END) AS service_target
+                                      FROM nodes n
+                                      LEFT JOIN chia_infra_available_services cias ON cias.id = (SELECT cias1.id
+                                                                    FROM chia_infra_available_services cias1
+                                                                    WHERE cias1.service_target = cias.service_target AND cias1.service_type = cias.service_type AND cias1.node_id = n.id       
+                                                                    ORDER BY cias1.service_state_first_reported DESC
+                                                                    LIMIT 1)
+                                      LEFT JOIN chia_infra_sysinfo_filesystems cisf ON cisf.id = cias.curr_service_insert_id AND cias.service_type = 9
+                                      LEFT JOIN alerting_rules ar on ar.id = cias.refers_to_rule_id
+                                      LEFT JOIN chia_infra_service_types cist ON cist.id = cias.service_type
+                                      WHERE $statement_string AND ar.monitor = 1
+                                      ORDER BY n.id ASC, cias.service_type ASC, cisf.mountpoint ASC", $statement_array);
+
+
+        $returnarray = [];
+        foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $this_alerting_service){
+          if(!array_key_exists($this_alerting_service["service_type"], $returnarray)){
+            $returnarray[$this_alerting_service["service_type"]] = [];
+            $returnarray[$this_alerting_service["service_type"]] = $this_alerting_service;
+            $returnarray[$this_alerting_service["service_type"]]["available_services"] = [];
+          } 
+
+          if(!array_key_exists($this_alerting_service["id"], $returnarray[$this_alerting_service["service_type"]]["available_services"])) $returnarray[$this_alerting_service["service_type"]]["available_services"][$this_alerting_service["id"]] = [];
+          if(!array_key_exists("configurable_services", $returnarray[$this_alerting_service["service_type"]]["available_services"][$this_alerting_service["id"]])) $returnarray[$this_alerting_service["service_type"]]["available_services"][$this_alerting_service["id"]]["configurable_services"] = [];
+          array_push($returnarray[$this_alerting_service["service_type"]]["available_services"][$this_alerting_service["id"]]["configurable_services"], $this_alerting_service["service_target"]);
+        }    
+
+        
+        /*echo "<pre>";
+        print_r($returnarray);
+        echo "</pre>";*/
 
         return array("status" => 0, "message" => "Successfully loaded all available configurations.", "data" => $returnarray);
       }catch(\Exeption $e){
@@ -353,6 +414,13 @@
         else $where_statement .= "AND ";
         $where_statement .= " ap.rule_node_target = ?";
         array_push($statement_array, $data["node_id"]);
+      }
+
+      if(array_key_exists("monitor", $data)){
+        if(empty($where_statement)) $where_statement .= "WHERE ";
+        else $where_statement .= "AND ";
+        $where_statement .= " ar.monitor = ?";
+        array_push($statement_array, $data["monitor"]);
       }
 
       if(array_key_exists("alerting_service", $data)){

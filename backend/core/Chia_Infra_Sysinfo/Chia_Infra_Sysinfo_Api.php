@@ -436,7 +436,7 @@
       }
 
       if(!is_null($server)){
-        return $server->$callfunction($querydata)[$callfunction];
+        return $server->$callfunction($querydata);
       }else{
         $this->websocket_api = new WebSocket_Api();
         return $this->websocket_api->sendToWSS($callfunction, $querydata);
@@ -634,13 +634,17 @@
         array_key_exists("monitor", $data) && is_bool($data["monitor"])){
 
         try{
-          print_r($data);
-
           $sql = $this->db_api->execute("SELECT cias.id AS service_id, cias.service_type, ar.id AS alerting_id, 
                                           (CASE WHEN (cias.service_target IS NULL OR cias.service_target = '') AND cist.perc_or_min= 1 THEN 'total downtime'
                                                 WHEN (cias.service_target IS NULL OR cias.service_target = '') AND cist.perc_or_min = 0 THEN 'total usage'
                                                 ELSE cias.service_target
-                                          END) AS service_target, ar.rule_default, ar.monitor 
+                                          END) AS service_target, 
+                                          (CASE WHEN ar.warn_at_after = -1 AND ar.crit_at_after = -1 AND ar.rule_default = 0 THEN 0 #Revert entry to default rule
+                                                WHEN (ar.warn_at_after > -1 OR ar.crit_at_after > -1) AND ar.rule_default = 0 THEN 1 #Update found rule to monitor = 1
+                                           		  WHEN ar.rule_default = 1 THEN 2 #Do nothing (it's a default rule)
+                                                ELSE 2 #Do nothing (it's a default rule)
+                                          END) AS update_replace_delete, ar.rule_default, 
+                                          (SELECT id from alerting_rules WHERE system_target = 1 AND rule_type = cias.service_type AND rule_default = 1) AS default_rule_id, ar.monitor 
                                         FROM chia_infra_available_services cias
                                         JOIN alerting_rules ar ON ar.id = cias.refers_to_rule_id 
                                         JOIN chia_infra_service_types cist on cist.id = cias.service_type
@@ -648,7 +652,6 @@
                                         array($data["service_id"], $data["node_id"]));
 
           $found_service = $sql->fetchAll(\PDO::FETCH_ASSOC);
-          print_r($found_service);
 
           if(array_key_exists(0, $found_service) && array_key_exists("rule_default", $found_service[0])){
             $found_service = $found_service[0];
@@ -657,11 +660,29 @@
             $rule_target = $found_service["service_target"];
 
             if($default_rule){
-              echo "Default rule - Insert custom rule.";
               $add_custom_rule_callback = $this->alerting_api->addCustomRule(["nodeid" => $data["node_id"], "service_type" => $service_type, "monitor" => boolval($data["monitor"]), "service_name" => $rule_target, "warn_at_after" => -1, "crit_at_after" => -1]);
-              print_r($add_custom_rule_callback);
             }else{
-              echo "Not default rule - Update existing rule.";
+              $statement_data_array = [];
+              $statement = "";
+              if($found_service["monitor"] == 0){
+                if($found_service["update_replace_delete"] == 0){ //0 = Revert to default rule, which is per default an enabled monitoring rule
+                  $statement = "UPDATE chia_infra_available_services SET refers_to_rule_id = ? WHERE id = ?;
+                                DELETE FROM alerting_rules WHERE id = ?;"; 
+                  array_push($statement_data_array, $found_service["default_rule_id"], $found_service["service_id"], $found_service["alerting_id"]);
+                }else if($found_service["update_replace_delete"] == 1){ // 1 = Disable the existing service by disable it's custom rule.
+                  $statement = "UPDATE alerting_rules SET monitor = 1 WHERE id = ?";
+                  array_push($statement_data_array, $found_service["alerting_id"]);
+                }else{
+                  //TODO Implement correct status code
+                  return array("status" => 1, "message" => "A default rule cannot be edited.");
+                }
+
+              }else if($found_service["monitor"] == 1){
+                $statement = "UPDATE alerting_rules SET monitor = 0 WHERE id = ?";
+                array_push($statement_data_array, $found_service["alerting_id"]);
+              }
+
+              $sql = $this->db_api->execute($statement, $statement_data_array);
             }
 
             $new_monitored_services = $this->alerting_api->getConfigurableDowntimeServices(["node_id" => $data["node_id"]]);
