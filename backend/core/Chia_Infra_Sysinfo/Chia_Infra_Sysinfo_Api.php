@@ -262,7 +262,7 @@
                                                 cisu.swap_total, cisu.swap_free,
                                                 cisf.device, cisf.size, cisf.used, cisf.avail, cisf.mountpoint,
                                                 cias.curr_service_insert_id, cias.service_state, cias.time_or_usage, cias.service_state_first_reported, cias.service_state_last_reported,
-                                                ar.monitor,
+                                                cist.service_desc, ar.monitor,
                                                 (CASE WHEN ad.downtime_comment IS NOT NULL THEN 1
                                                  	  ELSE 0
                                                  END) AS downtime_active
@@ -284,6 +284,7 @@
                                         LEFT JOIN chia_infra_sysinfo_filesystems cisf ON cisf.id = cias.curr_service_insert_id AND cias.service_type = 9
                                         LEFT JOIN alerting_rules ar on ar.id = cias.refers_to_rule_id
                                         LEFT JOIN alerting_downtimes ad ON ad.node_id = n.id AND (ad.downtime_type = 0 OR (ad.downtime_type = 1 AND ad.downtime_service_type = cias.service_type AND ad.downtime_service_target = cias.service_target)) AND NOW() BETWEEN ad.downtime_from AND ad.downtime_to
+                                        LEFT JOIN chia_infra_service_types cist ON cist.id = cias.service_type
                                         $statement_string AND ar.monitor = 1
                                         ORDER BY n.id ASC, cias.service_type ASC, cisf.mountpoint ASC", 
                                         $statement_array);
@@ -292,6 +293,9 @@
 
         $returnarray = [];
         foreach($found_sysinfo_data AS $arrkey => $sysinfodata){
+          $data_current = (strtotime() - strtotime($sysinfodata["service_state_last_reported"] <= 2 ? true : false ));
+
+
           if(!array_key_exists($sysinfodata["id"], $returnarray)) $returnarray[$sysinfodata["id"]] = [];
           if($sysinfodata["service_type"] == 1){
             $returnarray[$sysinfodata["id"]]["node"] = [
@@ -301,7 +305,11 @@
               "upstatus" => $sysinfodata["service_state"],
               "status_since" => $sysinfodata["time_or_usage"],
               "monitor_service" => $sysinfodata["monitor"],
-              "downtime_active" => $sysinfodata["downtime_active"]
+              "downtime_active" => $sysinfodata["downtime_active"],
+              "state_first_reported" => $sysinfodata["service_state_first_reported"],
+              "state_last_reported" => $sysinfodata["service_state_last_reported"],
+              "data_current" => $data_current,
+              "service_desc" => $sysinfodata["service_desc"]
             ];
           }else if($sysinfodata["service_type"] == 2){
             $returnarray[$sysinfodata["id"]]["farmer"] = [
@@ -309,7 +317,11 @@
               "service_state" => $sysinfodata["service_state"],
               "status_since" => $sysinfodata["time_or_usage"],
               "monitor_service" => $sysinfodata["monitor"],
-              "downtime_active" => $sysinfodata["downtime_active"]
+              "downtime_active" => $sysinfodata["downtime_active"],
+              "state_first_reported" => $sysinfodata["service_state_first_reported"],
+              "state_last_reported" => $sysinfodata["service_state_last_reported"],
+              "data_current" => $data_current,
+              "service_desc" => $sysinfodata["service_desc"]
             ];
           }else if($sysinfodata["service_type"] == 3){
             $returnarray[$sysinfodata["id"]]["harvester"] = [
@@ -317,7 +329,11 @@
               "service_state" => $sysinfodata["service_state"],
               "status_since" => $sysinfodata["time_or_usage"],
               "monitor_service" => $sysinfodata["monitor"],
-              "downtime_active" => $sysinfodata["downtime_active"]
+              "downtime_active" => $sysinfodata["downtime_active"],
+              "state_first_reported" => $sysinfodata["service_state_first_reported"],
+              "state_last_reported" => $sysinfodata["service_state_last_reported"],
+              "data_current" => $data_current,
+              "service_desc" => $sysinfodata["service_desc"]
             ];
           }else if($sysinfodata["service_type"] == 4){
             $returnarray[$sysinfodata["id"]]["wallet"] = [
@@ -325,7 +341,11 @@
               "service_state" => $sysinfodata["service_state"],
               "status_since" => $sysinfodata["time_or_usage"],
               "monitor_service" => $sysinfodata["monitor"],
-              "downtime_active" => $sysinfodata["downtime_active"]
+              "downtime_active" => $sysinfodata["downtime_active"],
+              "state_first_reported" => $sysinfodata["service_state_first_reported"],
+              "state_last_reported" => $sysinfodata["service_state_last_reported"],
+              "data_current" => $data_current,
+              "service_desc" => $sysinfodata["service_desc"]
             ];
           }else if($sysinfodata["service_type"] == 5){
             if(!array_key_exists("cpu", $returnarray[$sysinfodata["id"]])) $returnarray[$sysinfodata["id"]]["cpu"] = [];
@@ -337,7 +357,11 @@
               "usage_15_min" => $sysinfodata["time_or_usage"],
               "service_state" => $sysinfodata["service_state"],
               "monitor_service" => $sysinfodata["monitor"],
-              "downtime_active" => $sysinfodata["downtime_active"]
+              "downtime_active" => $sysinfodata["downtime_active"],
+              "state_first_reported" => $sysinfodata["service_state_first_reported"],
+              "state_last_reported" => $sysinfodata["service_state_last_reported"],
+              "data_current" => $data_current,
+              "service_desc" => $sysinfodata["service_desc"]
             ];
           }else if($sysinfodata["service_type"] == 6){
             if(!array_key_exists("cpu", $returnarray[$sysinfodata["id"]])) $returnarray[$sysinfodata["id"]]["cpu"] = [];
@@ -349,7 +373,11 @@
                 "total_usage" => $sysinfodata["time_or_usage"],
                 "service_state" => $sysinfodata["service_state"],
                 "monitor_service" => $sysinfodata["monitor"],
-                "downtime_active" => $sysinfodata["downtime_active"]
+                "downtime_active" => $sysinfodata["downtime_active"],
+                "state_first_reported" => $sysinfodata["service_state_first_reported"],
+                "state_last_reported" => $sysinfodata["service_state_last_reported"],
+                "data_current" => $data_current,
+                "service_desc" => $sysinfodata["service_desc"]
               ];
             }
             $returnarray[$sysinfodata["id"]]["cpu"]["usage"]["usages"][$sysinfodata["cpu_number"]] = $sysinfodata["cpu_usage"];
@@ -364,7 +392,11 @@
               "service_status" => $sysinfodata["service_state"],
               "total_usage" => $sysinfodata["time_or_usage"],
               "monitor_service" => $sysinfodata["monitor"],
-              "downtime_active" => $sysinfodata["downtime_active"]
+              "downtime_active" => $sysinfodata["downtime_active"],
+              "state_first_reported" => $sysinfodata["service_state_first_reported"],
+              "state_last_reported" => $sysinfodata["service_state_last_reported"],
+              "data_current" => $data_current,
+              "service_desc" => $sysinfodata["service_desc"]
             ];
           }else if($sysinfodata["service_type"] == 8){
             $returnarray[$sysinfodata["id"]]["memory"]["swap"] = [
@@ -374,7 +406,11 @@
               "service_status" => $sysinfodata["service_state"],
               "total_usage" => $sysinfodata["time_or_usage"],
               "monitor_service" => $sysinfodata["monitor"],
-              "downtime_active" => $sysinfodata["downtime_active"]
+              "downtime_active" => $sysinfodata["downtime_active"],
+              "state_first_reported" => $sysinfodata["service_state_first_reported"],
+              "state_last_reported" => $sysinfodata["service_state_last_reported"],
+              "data_current" => $data_current,
+              "service_desc" => $sysinfodata["service_desc"]
             ];
           }else if($sysinfodata["service_type"] == 9){
             $returnarray[$sysinfodata["id"]]["filesystems"][$sysinfodata["mountpoint"]] = [
@@ -387,7 +423,11 @@
               "service_status" => $sysinfodata["service_state"],
               "total_usage" => $sysinfodata["time_or_usage"],
               "monitor_service" => $sysinfodata["monitor"],
-              "downtime_active" => $sysinfodata["downtime_active"]
+              "downtime_active" => $sysinfodata["downtime_active"],
+              "state_first_reported" => $sysinfodata["service_state_first_reported"],
+              "state_last_reported" => $sysinfodata["service_state_last_reported"],
+              "data_current" => $data_current,
+              "service_desc" => $sysinfodata["service_desc"]
             ];
           }
           if(($sysinfodata["service_type"] == 5 || $sysinfodata["service_type"] == 6) && 

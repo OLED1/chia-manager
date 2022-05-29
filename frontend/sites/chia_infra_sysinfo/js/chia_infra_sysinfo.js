@@ -6,12 +6,20 @@ setTimeout(function(){
   setServiceBadge();
 }, 700);
 
-reloadTables();
-reinitQueryAllButton();
-initSysinfoRefresh();
-initSysinfoNodeActions();
-initSetDownTime();
-initEditMonitoredServices();
+reinitAll();
+
+function reinitAll(){
+  reloadTables();
+  reinitQueryAllButton();
+  initSysinfoRefresh();
+  initSysinfoNodeActions();
+  initSetDownTime();
+  initEditMonitoredServices();
+  initRebuildTooltips();
+  initQuickCheckboxes();
+  countAndSetWarningsBadge();
+  initNodeTabChange();
+}
 
 $(".datepicker").datetimepicker({
   format: 'Y-m-d H:i:s'
@@ -152,6 +160,67 @@ $("#remove_selected_downtimes").on("click", function(){
   }
 });
 
+$(".quick_option_radio").on("click", function(){
+  var type = $(this).val();
+
+  if(type == "dt"){
+    $("#quick_option_dt_time_from").show();
+    $("#quick_option_dt_time_to").show();
+  }else{
+    $("#quick_option_dt_time_from").hide();
+    $("#quick_option_dt_time_to").hide();
+  }
+
+  $(".quick_option_input").removeAttr("disabled");
+});
+
+$(".quick_option_input").on("input", function(){
+  checkQuickOptionsFilled();
+});
+
+$(".quick_option_input").on("change", function(){
+  checkQuickOptionsFilled();
+});
+
+$(".quick_option_radio").on("click", function(){
+  checkQuickOptionsFilled();
+});
+
+$("#save_quick_action").on("click", function(){
+  if(checkQuickOptionsFilled()){
+    var selected_type = $("input[name='quick_option_type_radio']:checked").val();
+    var selected_services = $(".quick_select_service:visible:checked");
+    var node_id = $(".quick_select_all:visible").closest(".node-details-pane").attr("data-node-id");
+    var user_id = userID;
+
+    console.log(selected_type + " " + node_id + " " + user_id);
+    console.log(selected_services);
+
+    $("#quickOptionsSaveDTorACK").modal("show");
+    
+  }else{
+    showMessage(1, "No data to save.");  
+  }
+});
+
+function checkQuickOptionsFilled(){
+  var all_stated = true;
+  $(".quick_option_input:visible").each(function(){
+    console.log($(this).val());
+    if($(this).val().trim().length == 0){
+      all_stated = false;
+    }
+  });
+  if(all_stated) $("#save_quick_action").removeClass("btn-outline-success").addClass("btn-success").removeAttr("disabled");
+  else $("#save_quick_action").removeClass("btn-success").addClass("btn-outline-success").attr("disabled","disabled");
+
+  return all_stated;
+}
+
+function countAndSetWarningsBadge(){
+  console.log($(".node-details-tab"));
+}
+
 function reinitQueryAllButton(){
   $("#queryAllNodes").off("click");
   $("#queryAllNodes").on("click", function(){
@@ -161,6 +230,37 @@ function reinitQueryAllButton(){
   });
 }
 
+function initRebuildTooltips(){
+  $(".badge[data-toggle='tooltip'").tooltip();
+}
+
+function initQuickCheckboxes(){
+  $(".quick_select_all").off("click");
+  $(".quick_select_all").on("click", function(){
+    var node_tab = $(this).closest(".node-details-pane");
+    if($(this).is(":checked")) node_tab.find(".quick_select_service").prop("checked", true);
+    else node_tab.find(".quick_select_service").prop("checked", false);
+    checkQuickSelectCount(node_tab);
+  });
+
+  $(".quick_select_service").off("click");
+  $(".quick_select_service").on("click", function(){
+    var node_tab =  $(this).closest(".node-details-pane");
+    checkQuickSelectCount(node_tab);
+  });
+}
+
+function initNodeTabChange(){
+  $(".node-tab").off("click");
+  $(".node-tab").on("click", function(){
+    $(".quick_select_all").prop("checked", false);
+    $(".quick_select_service").prop("checked", false);
+    $("#quick_action_show_info").show();
+    $("#quick_action_set_action").hide();
+    $(".quick_option_input").attr("disabled","disabled");
+    $(".quick_option_radio").prop("checked", false).parent().removeClass("active");
+  });
+}
 
 function reloadTables(){
   $.each(sysinfodata, function(nodeid, sysinfo){
@@ -169,6 +269,19 @@ function reloadTables(){
     initAndDrawLoadChart(nodeid);
     initAndDrawCPUUsageChart(nodeid);
   });
+}
+
+function checkQuickSelectCount(node_tab){
+  var selected_quick_options = node_tab.find(".quick_select_service:checked");
+  console.log(selected_quick_options);
+
+  if(selected_quick_options.length > 0){
+    $("#quick_action_show_info").hide();
+    $("#quick_action_set_action").show();
+  }else{
+    $("#quick_action_show_info").show();
+    $("#quick_action_set_action").hide();
+  }
 }
 
 function initSysinfoRefresh(){
@@ -668,12 +781,7 @@ function messagesTrigger(data){
     if(key == "queryNodesServicesStatus" || key == "updateSystemInfo" || key == "updateChiaStatus" || key == "setNodeUpDown"){
       $.get(frontend + "/sites/chia_infra_sysinfo/templates/cards.php", {}, function(response) {
         $('#all_node_sysinfo_container').html(response);
-        reloadTables();
-        reinitQueryAllButton();
-        initSysinfoRefresh();
-        initSysinfoNodeActions();
-        initSetDownTime();
-        initEditMonitoredServices();
+        reinitAll();
         sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getCurrentChiaNodesUPAndServiceStatus", {});
       });
     }else if(key == "getCurrentChiaNodesUPAndServiceStatus"){

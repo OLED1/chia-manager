@@ -11,3 +11,32 @@
     max-height: 15em; 
     overflow: auto;
 }
+
+.service-state{
+    width: 4.3em;
+}
+
+.service-name{
+    width: 15em;
+}
+
+.service-summary{
+    width: 30em;
+}
+
+.service-state-since{
+    width: 11.5em;
+}
+
+.service-last-checked{
+    width: 5em;
+}
+
+.service-workload{
+    width: 20em;
+}
+
+.progress{
+    width: 100%;
+    border: 1px solid lightslategray;
+}

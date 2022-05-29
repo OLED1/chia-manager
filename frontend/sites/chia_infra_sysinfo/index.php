@@ -40,6 +40,38 @@
     </div>
   </div>
 </div>
+<div class="row">
+  <div class="col">
+    <div class="card shadow mb-4">
+      <div class="card-body">
+        <h4>Quick actions for selected services (overview)</h4>
+        <div id="quick_action_set_action" style="display: none;">
+          <div class="input-group mb-3">
+            <div class="input-group-prepend">
+              <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                <label class="btn btn-outline-primary">
+                  <input type="radio" class="quick_option_radio" value="ack" name="quick_option_type_radio">Acknowledge
+                </label>
+                <label class="btn btn-outline-primary">
+                  <input type="radio" class="quick_option_radio" value="dt" name="quick_option_type_radio">Downtime
+                </label>
+              </div>
+            </div>
+            <input type="text" id="quick_option_dt_time_from" class="form-control datepicker quick_option_input" placeholder="Downtime from" style="width: 5em; display: none;" disabled>
+            <input type="text" id="quick_option_dt_time_to" class="form-control datepicker quick_option_input" placeholder="Downtime to" style="width: 5em; display: none;" disabled>
+            <input type="text" id="quick_option_comment_input" class="form-control quick_option_input" placeholder="Acknowledge or Downtime text" disabled>
+            <div class="input-group-append">
+              <button id="save_quick_action" class="btn btn-outline-success" type="button" disabled><i class="fa-solid fa-floppy-disk"></i></button>
+            </div>
+          </div>
+        </div>
+        <div id="quick_action_show_info" class="alert alert-secondary" role="alert">
+          Select the checkboxes of the services you want to set up a downtime or an acknowledgement for.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 <div id="all_node_sysinfo_container">
 <?php
   include("templates/cards.php"); 
@@ -261,6 +293,25 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="quickOptionsSaveDTorACK" tabindex="-1" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="removeNodeModalModalTitle">Do you really want to create the following <span id="quickOptionCreateType"></span>?</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Do you really want to edit the following downtime(s)? The changes will take affect to all selected downtime(s).</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="saveEditedAndSelectedDowntimes" class="btn btn-danger wsbutton">Edit selected downtime(s)</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Recheck</button>
       </div>
     </div>
   </div>
