@@ -1,3 +1,7 @@
+/* ------------------------------------------ */
+/* Overall functions and variable definitions */
+/* ------------------------------------------ */
+
 var ramswapcharts = {};
 var loadCharts = {};
 var cpuUsageCharts = {};
@@ -7,19 +11,6 @@ setTimeout(function(){
 }, 700);
 
 reinitAll();
-
-function reinitAll(){
-  reloadTables();
-  reinitQueryAllButton();
-  initSysinfoRefresh();
-  initSysinfoNodeActions();
-  initSetDownTime();
-  initEditMonitoredServices();
-  initRebuildTooltips();
-  initQuickCheckboxes();
-  countAndSetWarningsBadge();
-  initNodeTabChange();
-}
 
 $(".datepicker").datetimepicker({
   format: 'Y-m-d H:i:s'
@@ -47,6 +38,88 @@ $('#alerting_service_and_type_select').multiselect({
     checkDowntimeInfosStated();
   }
 });
+
+function reinitAll(){
+  reloadTables();
+  reinitQueryAllButton();
+  initSysinfoRefresh();
+  initSysinfoNodeActions();
+  initSetDownTime();
+  initEditMonitoredServices();
+  initRebuildTooltips();
+  initQuickCheckboxes();
+  initNodeTabChange();
+}
+
+function reinitQueryAllButton(){
+  $("#queryAllNodes").off("click");
+  $("#queryAllNodes").on("click", function(){
+    $.each(sysinfodata, function(nodeid, farmdata) {
+      querySystemInfo(nodeid);
+    });
+  });
+}
+
+function initRebuildTooltips(){
+  $(".badge[data-toggle='tooltip'").tooltip();
+}
+
+function initNodeTabChange(){
+  $(".node-tab").off("click");
+  $(".node-tab").on("click", function(){
+    $(".quick_select_all").prop("checked", false);
+    $(".quick_select_service").prop("checked", false);
+    $("#quick_action_show_info").show();
+    $("#quick_action_set_action").hide();
+    $(".quick_option_input").attr("disabled","disabled");
+    $(".quick_option_radio").prop("checked", false).parent().removeClass("active");
+  });
+}
+
+function reloadTables(){
+  $.each(sysinfodata, function(nodeid, sysinfo){
+    initAndDrawRAMorSWAPChart(nodeid, "ram");
+    initAndDrawRAMorSWAPChart(nodeid, "swap");
+    initAndDrawLoadChart(nodeid);
+    initAndDrawCPUUsageChart(nodeid);
+  });
+}
+
+function initSysinfoRefresh(){
+  $(".sysinfo-refresh").off("click");
+  $(".sysinfo-refresh").on("click", function(e){
+    e.preventDefault();
+    var nodeid = $(this).attr("data-nodeid");
+    querySystemInfo(nodeid);
+  });
+}
+
+function querySystemInfo(nodeid){
+  var authhash = sysinfodata[nodeid]["node"]["nodeauthhash"];
+  var dataforclient = {
+    "nodeinfo" : {
+      "nodeid" : nodeid,
+      "authhash": authhash
+    }
+  }
+
+  sendToWSS("backendRequest", "ChiaMgmt\\Chia_Infra_Sysinfo\\Chia_Infra_Sysinfo_Api", "Chia_Infra_Sysinfo_Api", "querySystemInfo", dataforclient);
+}
+
+function initSysinfoNodeActions(){
+  $(".sysinfo-node-actions").off("click");
+  $(".sysinfo-node-actions").on("click", function(e){
+    e.preventDefault();
+    $("#nodeactionmodal").attr("data-nodeid", $(this).attr("data-nodeid"));
+    sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getUpdateChannels", {});
+    $("#updatenode").removeAttr("disabled");
+    $("#action_node_log").children().remove();
+  });
+}
+
+/* ------------------------------------------ */
+/* All functions regarding Downtimes */
+/* ------------------------------------------ */
 
 $("#edit_downtime_services_select").multiselect({
   nonSelectedText: 'Select downtime(s) to edit',
@@ -160,162 +233,6 @@ $("#remove_selected_downtimes").on("click", function(){
   }
 });
 
-$(".quick_option_radio").on("click", function(){
-  var type = $(this).val();
-
-  if(type == "dt"){
-    $("#quick_option_dt_time_from").show();
-    $("#quick_option_dt_time_to").show();
-  }else{
-    $("#quick_option_dt_time_from").hide();
-    $("#quick_option_dt_time_to").hide();
-  }
-
-  $(".quick_option_input").removeAttr("disabled");
-});
-
-$(".quick_option_input").on("input", function(){
-  checkQuickOptionsFilled();
-});
-
-$(".quick_option_input").on("change", function(){
-  checkQuickOptionsFilled();
-});
-
-$(".quick_option_radio").on("click", function(){
-  checkQuickOptionsFilled();
-});
-
-$("#save_quick_action").on("click", function(){
-  if(checkQuickOptionsFilled()){
-    var selected_type = $("input[name='quick_option_type_radio']:checked").val();
-    var selected_services = $(".quick_select_service:visible:checked");
-    var node_id = $(".quick_select_all:visible").closest(".node-details-pane").attr("data-node-id");
-    var user_id = userID;
-
-    console.log(selected_type + " " + node_id + " " + user_id);
-    console.log(selected_services);
-
-    $("#quickOptionsSaveDTorACK").modal("show");
-    
-  }else{
-    showMessage(1, "No data to save.");  
-  }
-});
-
-function checkQuickOptionsFilled(){
-  var all_stated = true;
-  $(".quick_option_input:visible").each(function(){
-    console.log($(this).val());
-    if($(this).val().trim().length == 0){
-      all_stated = false;
-    }
-  });
-  if(all_stated) $("#save_quick_action").removeClass("btn-outline-success").addClass("btn-success").removeAttr("disabled");
-  else $("#save_quick_action").removeClass("btn-success").addClass("btn-outline-success").attr("disabled","disabled");
-
-  return all_stated;
-}
-
-function countAndSetWarningsBadge(){
-  console.log($(".node-details-tab"));
-}
-
-function reinitQueryAllButton(){
-  $("#queryAllNodes").off("click");
-  $("#queryAllNodes").on("click", function(){
-    $.each(sysinfodata, function(nodeid, farmdata) {
-      querySystemInfo(nodeid);
-    });
-  });
-}
-
-function initRebuildTooltips(){
-  $(".badge[data-toggle='tooltip'").tooltip();
-}
-
-function initQuickCheckboxes(){
-  $(".quick_select_all").off("click");
-  $(".quick_select_all").on("click", function(){
-    var node_tab = $(this).closest(".node-details-pane");
-    if($(this).is(":checked")) node_tab.find(".quick_select_service").prop("checked", true);
-    else node_tab.find(".quick_select_service").prop("checked", false);
-    checkQuickSelectCount(node_tab);
-  });
-
-  $(".quick_select_service").off("click");
-  $(".quick_select_service").on("click", function(){
-    var node_tab =  $(this).closest(".node-details-pane");
-    checkQuickSelectCount(node_tab);
-  });
-}
-
-function initNodeTabChange(){
-  $(".node-tab").off("click");
-  $(".node-tab").on("click", function(){
-    $(".quick_select_all").prop("checked", false);
-    $(".quick_select_service").prop("checked", false);
-    $("#quick_action_show_info").show();
-    $("#quick_action_set_action").hide();
-    $(".quick_option_input").attr("disabled","disabled");
-    $(".quick_option_radio").prop("checked", false).parent().removeClass("active");
-  });
-}
-
-function reloadTables(){
-  $.each(sysinfodata, function(nodeid, sysinfo){
-    initAndDrawRAMorSWAPChart(nodeid, "ram");
-    initAndDrawRAMorSWAPChart(nodeid, "swap");
-    initAndDrawLoadChart(nodeid);
-    initAndDrawCPUUsageChart(nodeid);
-  });
-}
-
-function checkQuickSelectCount(node_tab){
-  var selected_quick_options = node_tab.find(".quick_select_service:checked");
-  console.log(selected_quick_options);
-
-  if(selected_quick_options.length > 0){
-    $("#quick_action_show_info").hide();
-    $("#quick_action_set_action").show();
-  }else{
-    $("#quick_action_show_info").show();
-    $("#quick_action_set_action").hide();
-  }
-}
-
-function initSysinfoRefresh(){
-  $(".sysinfo-refresh").off("click");
-  $(".sysinfo-refresh").on("click", function(e){
-    e.preventDefault();
-    var nodeid = $(this).attr("data-nodeid");
-    querySystemInfo(nodeid);
-  });
-}
-
-function querySystemInfo(nodeid){
-  var authhash = sysinfodata[nodeid]["node"]["nodeauthhash"];
-  var dataforclient = {
-    "nodeinfo" : {
-      "nodeid" : nodeid,
-      "authhash": authhash
-    }
-  }
-
-  sendToWSS("backendRequest", "ChiaMgmt\\Chia_Infra_Sysinfo\\Chia_Infra_Sysinfo_Api", "Chia_Infra_Sysinfo_Api", "querySystemInfo", dataforclient);
-}
-
-function initSysinfoNodeActions(){
-  $(".sysinfo-node-actions").off("click");
-  $(".sysinfo-node-actions").on("click", function(e){
-    e.preventDefault();
-    $("#nodeactionmodal").attr("data-nodeid", $(this).attr("data-nodeid"));
-    sendToWSS("backendRequest", "ChiaMgmt\\Nodes\\Nodes_Api", "Nodes_Api", "getUpdateChannels", {});
-    $("#updatenode").removeAttr("disabled");
-    $("#action_node_log").children().remove();
-  });
-}
-
 function initSetDownTime(){
   $(".sysinfo-set-downtime").off("click");
   $(".sysinfo-set-downtime").on("click", function(){
@@ -358,72 +275,6 @@ function initSetDownTime(){
     updateFoundDowntimesInModal(nodeid);
     $('#alerting_service_and_type_select').multiselect('rebuild');
     $("#setDownTimeModal").attr("data-node-id", nodeid).modal("show");
-  });
-}
-
-function initEditMonitoredServices(){
-  $(".sysinfo-edit-services").off("click");
-  $(".sysinfo-edit-services").on("click", function(){
-    var nodeid = $(this).attr("data-nodeid");
-    recreateMonitoredServicesLists(nodeid);
-  });
-}
-
-function recreateMonitoredServicesLists(nodeid){
-  var monitored_target = $("#monitored_services");
-  var unmonitored_target = $("#unmonitored_services");
-
-  monitored_target.children().remove();
-  unmonitored_target.children().remove();
-  if(nodeid in monitored_services){
-    $.each(monitored_services[nodeid]["services"], function(type_id, found_types){
-      $.each(found_types["configurable_services"], function(arrkey, configurable_services){
-        var service = 
-          "<div id='service_" + configurable_services["service_id"] + "' class='input-group input-group-sm mb-1'>" +
-            "<div class='input-group-prepend' style='width: 90%;'>" +
-              "<span class='input-group-text' style='width: 40%;'>" + found_types["service_type_desc"] + "</span>" +
-              "<span class='input-group-text' data-toggle='tooltip' data-placement='top' title='" + configurable_services["service_target"] + "' style='width: 60%;'>" + (configurable_services["service_target"].length > 35 ? jQuery.trim(configurable_services["service_target"]).substring(0, 35) + "..." : configurable_services["service_target"]) + "</span>" +
-              "</div>";
-
-        if(configurable_services["monitor"] == 1){
-          service += "<button type='button' data-node-id='" + nodeid + "' data-service-id='" + configurable_services["service_id"] + "' data-type-id='" + type_id + "' class='btn btn-danger wsbutton enable-disable-service' data-toggle='tooltip' data-placement='top' title='Disable service for active alerting and monitoring.'><i class='fa-solid fa-folder-minus'></i></button></div>";
-          monitored_target.append(service);
-        }else if(configurable_services["monitor"] == 0){
-          service += "<button type='button' data-node-id='" + nodeid + "' data-service-id='" + configurable_services["service_id"] + "' data-type-id='" + type_id + "' class='btn btn-success wsbutton enable-disable-service' data-toggle='tooltip' data-placement='top' title='Enable service for active alerting and monitoring.'><i class='fa-solid fa-folder-plus'></i></button></div>";
-          unmonitored_target.append(service);
-        }
-      });
-    });
-
-    $('[data-toggle="tooltip"]').tooltip({container: 'body'});
-    initDisableOrEnableService();
-    $("#changeMonitoredServices").modal("show");
-  }
-}
-
-function initDisableOrEnableService(){
-  $(".enable-disable-service").off("click");
-  $(".enable-disable-service").on("click", function(){
-    var node_id = $(this).attr("data-node-id");
-    var service_id = $(this).attr("data-service-id");
-    var type_id = $(this).attr("data-type-id");
-    $(this).tooltip("hide");
-
-    if(node_id in monitored_services && "services" in monitored_services[node_id] &&
-      type_id in monitored_services[node_id]["services"] && "configurable_services" in monitored_services[node_id]["services"][type_id] &&
-      service_id in monitored_services[node_id]["services"][type_id]["configurable_services"]
-    ){     
-      var data_to_save = {
-        node_id : node_id,
-        service_id : service_id,
-        monitor : !monitored_services[node_id]["services"][type_id]["configurable_services"][service_id]["monitor"]
-      };
-
-      console.log(data_to_save);
-      sendToWSS("backendRequest", "ChiaMgmt\\Chia_Infra_Sysinfo\\Chia_Infra_Sysinfo_Api", "Chia_Infra_Sysinfo_Api", "editMonitoredServices", data_to_save);
-    }else{
-      showMessage(1, "This seems no to be a valid service.");
-    }
   });
 }
 
@@ -537,6 +388,243 @@ function updateFoundDowntimesInModal(nodeid){
     $("#" + downtime_container_target + "Count").text("(" + downtime_count + ")");
   });
 }
+
+/* ------------------------------------------ */
+/* Functions regarding quick options */
+/* ------------------------------------------ */
+
+$(".quick_option_radio").on("click", function(){
+  var type = $(this).val();
+
+  if(type == "dt"){
+    $("#quick_option_dt_time_from").show();
+    $("#quick_option_dt_time_to").show();
+  }else{
+    $("#quick_option_dt_time_from").hide();
+    $("#quick_option_dt_time_to").hide();
+  }
+
+  $(".quick_option_input").removeAttr("disabled");
+});
+
+$(".quick_option_input").on("input", function(){
+  checkQuickOptionsFilled();
+});
+
+$(".quick_option_input").on("change", function(){
+  checkQuickOptionsFilled();
+});
+
+$(".quick_option_radio").on("click", function(){
+  checkQuickOptionsFilled();
+});
+
+$("#save_quick_action").on("click", function(){
+  if(checkQuickOptionsFilled()){
+    var selected_type = $("input[name='quick_option_type_radio']:checked").val();
+    var selected_services = $(".quick_select_service:visible:checked");
+    var node_id = $(".quick_select_all:visible").closest(".node-details-pane").attr("data-node-id");
+    var user_id = userID;
+
+    $("#quickOptionDowntimeIcon").hide();
+    $("#quickOptionAcknowledgeIcon").hide();
+    $("#quickOptionDTOptions").hide();
+    $("#quickOptionHost").text(sysinfodata[node_id]["node"]["hostname"]);
+    $("#quickOptionDTACKMessage").text($("#quick_option_comment_input").val());
+
+    var function_to_call = "";
+    var class_to_call = "";
+    if(selected_type == "dt"){
+      $("#quickOptionDowntimeIcon").show();
+      $(".quickOptionCreateType").text("downtime");
+      $("#quickOptionDTOptions").show();
+      $("#quickOptionDTFrom").text($("#quick_option_dt_time_from").val());
+      $("#quickOptionDTTo").text($("#quick_option_dt_time_to").val());
+      $("#quickOptionSelectedServicesCount").text(selected_services.length);
+      $('input[name="quickOptionsdtRange"]').prop("checked", false).last().prop("checked", true);
+      function_to_call = "setUpNewDowntime";
+    }else if(selected_type == "ack"){
+      $("#quickOptionAcknowledgeIcon").show();
+      $(".quickOptionCreateType").text("acknowledgement");
+      function_to_call = "setUpNewAcknowledgement";
+    }
+
+    $("#quickOptionsSaveDTorACK").modal("show");
+    $("#saveSetupQuickOption").off("click");
+    $("#saveSetupQuickOption").on("click", function(){    
+      quick_option_values = getSetupQuickOptionValues();
+      quick_option_values["nodeid"] = node_id;
+      quick_option_values["created_by"] = user_id;
+
+      var selected_elements = quick_option_values["selected_services"];
+      quick_option_values["selected_services"] = selected_elements.map(function(i, el) {
+        return { "type_id" : $(el).attr("data-service-type"), "data-service-target" : configureable_downtimes[node_id]["services"][$(el).attr("data-service-type")]["configurable_services"][$(el).val()]["real_service_target"] };
+      }).get();
+     
+      sendToWSS("backendRequest", "ChiaMgmt\\Alerting\\Alerting_Api", "Alerting_Api", function_to_call, quick_option_values);
+    });
+  }else{
+    showMessage(1, "No data to save.");  
+  }
+});
+
+function checkQuickOptionsFilled(){
+  var all_stated = true;
+  $(".quick_option_input:visible").each(function(){
+    if($(this).val().trim().length == 0){
+      all_stated = false;
+    }
+  });
+
+  if(all_stated) $("#save_quick_action").removeClass("btn-outline-success").addClass("btn-success").removeAttr("disabled");
+  else $("#save_quick_action").removeClass("btn-success").addClass("btn-outline-success").attr("disabled","disabled");
+
+  return all_stated;
+}
+
+function initQuickCheckboxes(){
+  $(".quick_select_all").off("click");
+  $(".quick_select_all").on("click", function(){
+    var node_tab = $(this).closest(".node-details-pane");
+    if($(this).is(":checked")) node_tab.find(".quick_select_service").prop("checked", true);
+    else node_tab.find(".quick_select_service").prop("checked", false);
+    checkQuickSelectCount(node_tab);
+  });
+
+  $(".quick_select_service").off("click");
+  $(".quick_select_service").on("click", function(){
+    var node_tab =  $(this).closest(".node-details-pane");
+    checkQuickSelectCount(node_tab);
+  });
+}
+
+function checkQuickSelectCount(node_tab){
+  var selected_quick_options = node_tab.find(".quick_select_service:checked");
+
+  if(selected_quick_options.length > 0){
+    $("#quick_action_show_info").hide();
+    $("#quick_action_set_action").show();
+  }else{
+    $("#quick_action_show_info").show();
+    $("#quick_action_set_action").hide();
+  }
+}
+
+function checkQuickOptionsInfosStated(){
+  var quick_options = getSetupQuickOptionValues();
+  var comment_valid = (quick_options["comment"].trim().length > 1 ? true : false);
+  var downtime_type = quick_options["downtime_type"];
+  var selected_services = quick_options["selected_services"];
+  var time_from_valid = moment(quick_options["time_from"],"YYYY-MM-DD HH:mm:ss", true).isValid();
+  var time_to_valid = moment(quick_options["time_to"],"YYYY-MM-DD HH:mm:ss", true).isValid();
+  var to_is_after_from = moment(quick_options["time_to"]).isAfter(quick_options["time_from"]);
+
+  if(quick_options["dt_or_ack"] == "ack" && comment_valid){
+    return true;
+  }else if(quick_options["dt_or_ack"] == "dt" && (downtime_type == 0 || (downtime_type == 1 && selected_services.length > 0)) && time_from_valid && time_to_valid && to_is_after_from && comment_valid){
+    return true;
+  }else{
+    return false;
+  }
+}
+
+function getSetupQuickOptionValues(){
+  return {
+    "dt_or_ack" : $("input[name='quick_option_type_radio']:checked").val(),
+    "downtime_type" : $("input[name='quickOptionsdtRange']:checked").val(),
+    "selected_services" : $(".quick_select_service:visible:checked"),
+    "time_from" : $("#quick_option_dt_time_from").val(),
+    "time_to" : $("#quick_option_dt_time_to").val(),
+    "comment" : $("#quick_option_comment_input").val()
+  };
+}
+
+/* ------------------------------------------ */
+/* Functions regarding services */
+/* ------------------------------------------ */
+
+function initEditMonitoredServices(){
+  $(".sysinfo-edit-services").off("click");
+  $(".sysinfo-edit-services").on("click", function(){
+    var nodeid = $(this).attr("data-nodeid");
+    recreateMonitoredServicesLists(nodeid);
+  });
+}
+
+function recreateMonitoredServicesLists(nodeid){
+  var monitored_target = $("#monitored_services");
+  var unmonitored_target = $("#unmonitored_services");
+
+  monitored_target.children().remove();
+  unmonitored_target.children().remove();
+  if(nodeid in monitored_services){
+    $.each(monitored_services[nodeid]["services"], function(type_id, found_types){
+      $.each(found_types["configurable_services"], function(arrkey, configurable_services){
+        var service = 
+          "<div id='service_" + configurable_services["service_id"] + "' class='input-group input-group-sm mb-1'>" +
+            "<div class='input-group-prepend' style='width: 90%;'>" +
+              "<span class='input-group-text' style='width: 40%;'>" + found_types["service_type_desc"] + "</span>" +
+              "<span class='input-group-text' data-toggle='tooltip' data-placement='top' title='" + configurable_services["service_target"] + "' style='width: 60%;'>" + (configurable_services["service_target"].length > 35 ? jQuery.trim(configurable_services["service_target"]).substring(0, 35) + "..." : configurable_services["service_target"]) + "</span>" +
+              "</div>";
+
+        if(configurable_services["monitor"] == 1){
+          service += "<button type='button' data-node-id='" + nodeid + "' data-service-id='" + configurable_services["service_id"] + "' data-type-id='" + type_id + "' class='btn btn-danger wsbutton enable-disable-service' data-toggle='tooltip' data-placement='top' title='Disable service for active alerting and monitoring.'><i class='fa-solid fa-folder-minus'></i></button></div>";
+          monitored_target.append(service);
+        }else if(configurable_services["monitor"] == 0){
+          service += "<button type='button' data-node-id='" + nodeid + "' data-service-id='" + configurable_services["service_id"] + "' data-type-id='" + type_id + "' class='btn btn-success wsbutton enable-disable-service' data-toggle='tooltip' data-placement='top' title='Enable service for active alerting and monitoring.'><i class='fa-solid fa-folder-plus'></i></button></div>";
+          unmonitored_target.append(service);
+        }
+      });
+    });
+
+    $('[data-toggle="tooltip"]').tooltip({container: 'body'});
+    initDisableOrEnableService();
+    $("#changeMonitoredServices").modal("show");
+  }
+}
+
+function initDisableOrEnableService(){
+  $(".enable-disable-service").off("click");
+  $(".enable-disable-service").on("click", function(){
+    var node_id = $(this).attr("data-node-id");
+    var service_id = $(this).attr("data-service-id");
+    var type_id = $(this).attr("data-type-id");
+    $(this).tooltip("hide");
+
+    if(node_id in monitored_services && "services" in monitored_services[node_id] &&
+      type_id in monitored_services[node_id]["services"] && "configurable_services" in monitored_services[node_id]["services"][type_id] &&
+      service_id in monitored_services[node_id]["services"][type_id]["configurable_services"]
+    ){     
+      var data_to_save = {
+        node_id : node_id,
+        service_id : service_id,
+        monitor : !monitored_services[node_id]["services"][type_id]["configurable_services"][service_id]["monitor"]
+      };
+
+      sendToWSS("backendRequest", "ChiaMgmt\\Chia_Infra_Sysinfo\\Chia_Infra_Sysinfo_Api", "Chia_Infra_Sysinfo_Api", "editMonitoredServices", data_to_save);
+    }else{
+      showMessage(1, "This seems no to be a valid service.");
+    }
+  });
+}
+
+function setServiceBadge(){
+  $.each(services_states, function(nodeid, nodedata){
+    if(nodedata === "undefined" || nodedata["onlinestatus"]["status"] == 0){
+      statustext = "Node not reachable";
+      statusicon = "badge-danger";
+    }else if(nodedata["onlinestatus"]["status"] == 1){
+      statustext = "Node connected";
+      statusicon = "badge-success";
+    }
+
+    $(".statusbadge[data-node-id='" + nodeid + "'").removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-warning").removeClass("badge-danger").addClass(statusicon).text(statustext);
+  });
+}
+
+/* ------------------------------------------ */
+/* Functions regarding chart drawing */
+/* ------------------------------------------ */
 
 function initAndDrawRAMorSWAPChart(nodeid, type){
   var infodata = sysinfodata[nodeid];
@@ -760,22 +848,14 @@ function initAndDrawCPUUsageChart(nodeid){
   }
 }
 
-function setServiceBadge(){
-  $.each(services_states, function(nodeid, nodedata){
-    if(nodedata === "undefined" || nodedata["onlinestatus"]["status"] == 0){
-      statustext = "Node not reachable";
-      statusicon = "badge-danger";
-    }else if(nodedata["onlinestatus"]["status"] == 1){
-      statustext = "Node connected";
-      statusicon = "badge-success";
-    }
-
-    $(".statusbadge[data-node-id='" + nodeid + "'").removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-warning").removeClass("badge-danger").addClass(statusicon).text(statustext);
-  });
-}
+/* ------------------------------------------ */
+/* Functions regarding data transmission */
+/* ------------------------------------------ */
 
 function messagesTrigger(data){
   var key = Object.keys(data);
+
+  console.log(data);
 
   if(data[key]["status"] == 0){
     if(key == "queryNodesServicesStatus" || key == "updateSystemInfo" || key == "updateChiaStatus" || key == "setNodeUpDown"){
@@ -789,11 +869,11 @@ function messagesTrigger(data){
         services_states = data[key]["data"];
       }
     }else if(key == "setUpNewDowntime"){
-      $("#saveDowntimeModal").modal("hide");
+      if($("#saveDowntimeModal").is(":visible")) $("#saveDowntimeModal").modal("hide");
 
       $.each(data[key]["data"], function(nodeid, downtimes){
         found_downtimes[nodeid] = downtimes;
-        updateFoundDowntimesInModal(nodeid);
+        if($("#saveDowntimeModal").is(":visible")) updateFoundDowntimesInModal(nodeid);
       });
     }else if(key == "editDowntimes"){
       $("#saveEditDowntimes").modal("hide");
