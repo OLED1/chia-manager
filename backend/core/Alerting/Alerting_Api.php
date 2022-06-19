@@ -564,12 +564,12 @@
      * @return array
      */
     public function getRuleInformationOfService(array $data): array
-    {     
+    {          
       if(array_key_exists("service_type_id", $data) && array_key_exists("node_id", $data) && 
           (($data["service_type_id"] == 9 && array_key_exists("service_target", $data)) || $data["service_type_id"] < 9)){
             $target_service_statement = "IS NOT NULL";
-            if($data["service_type_id"] == 9) $target_service_statement = "= '{$data["service_target"]}'";  
-
+            if($data["service_type_id"] == 9) $target_service_statement = "= '{$data["service_target"]}'";
+            
           try{
             $sql = $this->db_api->execute("SELECT id, system_target, rule_type, rule_target, rule_default, perc_or_min_value, warn_at_after, crit_at_after, monitor
                                             FROM alerting_rules

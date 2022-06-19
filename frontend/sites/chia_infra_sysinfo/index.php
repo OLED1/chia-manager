@@ -301,17 +301,36 @@
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="removeNodeModalModalTitle">Do you really want to create the following <span id="quickOptionCreateType"></span>?</h5>
+        <h5 class="modal-title" id="removeNodeModalModalTitle">
+          <i id="quickOptionDowntimeIcon" class="fa-solid fa-pause fa-lg"></i>
+          <i id="quickOptionAcknowledgeIcon" class="fa-solid fa-note-sticky fa-lg"></i>
+          Create <span class="quickOptionCreateType"></span>
+        </h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
       <div class="modal-body">
-        <p>Do you really want to edit the following downtime(s)? The changes will take affect to all selected downtime(s).</p>
+        <p>Do you really want to create the following <span class="quickOptionCreateType"></span>(s) for host <span id="quickOptionHost"></span>?
+        </p>
+        <div id="quickOptionDTOptions">
+          <p>Downtime from: <span id="quickOptionDTFrom"></span><br>
+          Downtime to: <span id="quickOptionDTTo"></span>
+          </p>
+          <div class="custom-control custom-radio">
+            <input type="radio" id="dt_whole_node" name="quickOptionsdtRange" class="custom-control-input" value=0>
+            <label class="custom-control-label" for="dt_whole_node">Set downtime for the whole node</label>
+          </div>
+          <div class="custom-control custom-radio">
+            <input type="radio" id="dt_only_selected" name="quickOptionsdtRange" class="custom-control-input" value=1>
+            <label class="custom-control-label" for="dt_only_selected">Set downtime for selected <span id="quickOptionSelectedServicesCount"></span> services</label>
+          </div>
+        </div>
+        <p>Comment: <span id="quickOptionDTACKMessage"></span></p>
       </div>
       <div class="modal-footer">
-        <button type="button" id="saveEditedAndSelectedDowntimes" class="btn btn-danger wsbutton">Edit selected downtime(s)</button>
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Recheck</button>
+        <button type="button" id="saveSetupQuickOption" class="btn btn-success wsbutton">Set&nbsp;<span class="quickOptionCreateType"></span></button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
       </div>
     </div>
   </div>

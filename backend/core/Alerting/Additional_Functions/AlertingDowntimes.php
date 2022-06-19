@@ -31,7 +31,7 @@
             array_push($statement_array, $data["node_id"]);
             }
 
-            if(array_key_exists("monitor", $data) && is_bool($data["monitor"])){
+            if(array_key_exists("monitor", $data)){
                 $statement_string .= " AND ar.monitor = ?";
                 array_push($statement_array, $data["monitor"]);
             }
@@ -71,7 +71,8 @@
     }
 
     /**
-     * Creates a new downtime for all or specific services of a certain Chia node
+     * Creates a new downtime for all or specific services of a certain Chia node.
+     * Downtimetype 0 = Node, 1 = Service
      *
      * @param array $data
      * @return array
@@ -90,9 +91,7 @@
             $time_from = new \DateTime($data["time_from"]);
             $time_to = new \DateTime($data["time_to"]);
 
-            if($time_to > $time_from){  
-                print_r($data);
-                
+            if($time_to > $time_from){                
                 $insert_statement = "INSERT INTO alerting_downtimes (id, node_id, downtime_type, downtime_service_type, downtime_service_target, downtime_comment, downtime_from, downtime_to, downtime_created, downtime_created_by) ";
                 $insert_array = [];
                 if($data["downtime_type"] == 0){
@@ -101,10 +100,13 @@
                 }else if($data["downtime_type"] == 1){
                     $insert_statement .= "VALUES";
                     foreach($data["selected_services"] AS $arrkey => $downtime_for_service){
-                        print_r($downtime_for_service);
-                        echo "\n";
-                        $insert_statement .= "(NULL, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)" . (array_key_exists($arrkey+1, $data["selected_services"]) ? "," : "");
-                        array_push($insert_array, $data["nodeid"], $data["downtime_type"], $downtime_for_service["type_id"], $downtime_for_service["data-service-target"], $data["comment"], $data["time_from"], $data["time_to"], $data["created_by"]);
+                        if(array_key_exists("type_id", $downtime_for_service) && array_key_exists("data-service-target", $downtime_for_service)){
+                            $insert_statement .= "(NULL, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)" . (array_key_exists($arrkey+1, $data["selected_services"]) ? "," : "");
+                            array_push($insert_array, $data["nodeid"], $data["downtime_type"], $downtime_for_service["type_id"], $downtime_for_service["data-service-target"], $data["comment"], $data["time_from"], $data["time_to"], $data["created_by"]);
+                        }else{
+                            //TODO Implement correct status code
+                            return array("status" => 1, "message" => "Service incomplete. Missing key 'type_id' or key 'data-service-target'.");
+                        }
                     }
                 }
 
@@ -119,9 +121,11 @@
                 $found_downtimes = $this->getSetupDowntimes();
                 return array("status" => 0, "message" => "Successfully set new downtime.", "data" => (array_key_exists("data", $found_downtimes) ? $found_downtimes["data"] : []));
             }else{
+                //TODO Implement correct status code
                 return array("status" => 1, "message" => "Downtime end time must be newer than downtime start time.");
             }
         }else{
+            //TODO Implement correct status code
             return array("status" => 1, "message" => "Not all data stated or wrong data sent.");
         }
     }
