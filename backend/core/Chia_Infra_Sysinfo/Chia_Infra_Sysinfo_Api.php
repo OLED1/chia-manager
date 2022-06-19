@@ -99,7 +99,7 @@
           
           $sql = $this->db_api->execute("INSERT INTO chia_infra_sysinfo (id, nodeid, cpu_count, cpu_cores, cpu_model, os_type, os_name) VALUES(NULL, ?, ?, ?, ?, ?, ?)",
           array($nodeid, $data["system"]["cpu"]["physical_cores"], ($data["system"]["cpu"]["logical_cores"] / $data["system"]["cpu"]["physical_cores"]), $data["system"]["cpu"]["model"],
-                $data["system"]["os"]["type"], $data["system"]["os"]["name"]
+                $data["system"]["os"]["type"], implode(",", $data["system"]["os"]["name"])
               ));
           
           $last_insert_id = $this->db_api->lastInsertId();
@@ -123,6 +123,7 @@
             "defined_maximum" => ($data["system"]["cpu"]["physical_cores"] * 2),
             "current_service_level" => $load_15_min
           ];
+
           $this->updateAvailableServices($updateData);
 
           /**
@@ -198,7 +199,7 @@
           $statement_data = [];
           $this_service_type_id = 9;
           foreach($data["system"]["filesystem"] AS $arrkey => $thisfsdata){
-            if(array_key_exists("device", $thisfsdata)) array_push($statement_data, $thisfsdata["device"], $thisfsdata["total"], $thisfsdata["used"], $thisfsdata["free"], $thisfsdata["mountpoint"]); //Client version >=0.3
+            if(array_key_exists("device", $thisfsdata)) array_push($statement_data, addslashes($thisfsdata["device"]), $thisfsdata["total"], $thisfsdata["used"], $thisfsdata["free"], addslashes($thisfsdata["mountpoint"])); //Client version >=0.3
             else array_push($statement_data, $thisfsdata[0], $thisfsdata[1], $thisfsdata[2], $thisfsdata[3], $thisfsdata[5]);  //Client version < 0.3, TODO Cleanup in some versions
             $statement_string .= "(NULL, {$last_insert_id}, ?, ?, ?, ?, ?)";
             if(array_key_exists($arrkey+1, $data["system"]["filesystem"])) $statement_string .= ",";
@@ -293,13 +294,14 @@
 
         $returnarray = [];
         foreach($found_sysinfo_data AS $arrkey => $sysinfodata){
-          $data_current = (strtotime() - strtotime($sysinfodata["service_state_last_reported"] <= 2 ? true : false ));
+          $data_current = (strtotime("now") - strtotime($sysinfodata["service_state_last_reported"]) <= 120 ? true : false );
 
 
           if(!array_key_exists($sysinfodata["id"], $returnarray)) $returnarray[$sysinfodata["id"]] = [];
           if($sysinfodata["service_type"] == 1){
             $returnarray[$sysinfodata["id"]]["node"] = [
               "service_id" => $sysinfodata["service_id"],
+              "service_type" => $sysinfodata["service_type"],
               "hostname" => $sysinfodata["hostname"],
               "nodeauthhash" => $this->encryption_api->decryptString($sysinfodata["nodeauthhash"]),
               "upstatus" => $sysinfodata["service_state"],
@@ -314,6 +316,7 @@
           }else if($sysinfodata["service_type"] == 2){
             $returnarray[$sysinfodata["id"]]["farmer"] = [
               "service_id" => $sysinfodata["service_id"],
+              "service_type" => $sysinfodata["service_type"],
               "service_state" => $sysinfodata["service_state"],
               "status_since" => $sysinfodata["time_or_usage"],
               "monitor_service" => $sysinfodata["monitor"],
@@ -326,6 +329,7 @@
           }else if($sysinfodata["service_type"] == 3){
             $returnarray[$sysinfodata["id"]]["harvester"] = [
               "service_id" => $sysinfodata["service_id"],
+              "service_type" => $sysinfodata["service_type"],
               "service_state" => $sysinfodata["service_state"],
               "status_since" => $sysinfodata["time_or_usage"],
               "monitor_service" => $sysinfodata["monitor"],
@@ -338,6 +342,7 @@
           }else if($sysinfodata["service_type"] == 4){
             $returnarray[$sysinfodata["id"]]["wallet"] = [
               "service_id" => $sysinfodata["service_id"],
+              "service_type" => $sysinfodata["service_type"],
               "service_state" => $sysinfodata["service_state"],
               "status_since" => $sysinfodata["time_or_usage"],
               "monitor_service" => $sysinfodata["monitor"],
@@ -351,6 +356,7 @@
             if(!array_key_exists("cpu", $returnarray[$sysinfodata["id"]])) $returnarray[$sysinfodata["id"]]["cpu"] = [];
             $returnarray[$sysinfodata["id"]]["cpu"]["load"] = [
               "service_id" => $sysinfodata["service_id"],
+              "service_type" => $sysinfodata["service_type"],
               "load_1_min" => $sysinfodata["load_1_min"],
               "load_5_min" => $sysinfodata["load_5_min"],
               "load_15_min" => $sysinfodata["load_15_min"],
@@ -368,7 +374,7 @@
             if(!array_key_exists("usage", $returnarray[$sysinfodata["id"]]["cpu"]) || !array_key_exists("overall", $returnarray[$sysinfodata["id"]]["cpu"]["usage"])){
               $returnarray[$sysinfodata["id"]]["cpu"]["usage"]["overall"] = [
                 "service_id" => $sysinfodata["service_id"],
-                "servic_type" => "CPU total usage",
+                "service_type" => $sysinfodata["service_type"],
                 "service_target" => "None",
                 "total_usage" => $sysinfodata["time_or_usage"],
                 "service_state" => $sysinfodata["service_state"],
@@ -384,6 +390,7 @@
           }else if($sysinfodata["service_type"] == 7){
             $returnarray[$sysinfodata["id"]]["memory"]["ram"] = [
               "service_id" => $sysinfodata["service_id"],
+              "service_type" => $sysinfodata["service_type"],
               "memory_total" => $sysinfodata["memory_total"],
               "memory_free" => $sysinfodata["memory_free"],
               "memory_buffers" => $sysinfodata["memory_buffers"],
@@ -401,6 +408,7 @@
           }else if($sysinfodata["service_type"] == 8){
             $returnarray[$sysinfodata["id"]]["memory"]["swap"] = [
               "service_id" => $sysinfodata["service_id"],
+              "service_type" => $sysinfodata["service_type"],
               "swap_total" => $sysinfodata["swap_total"],
               "swap_free" => $sysinfodata["swap_free"],
               "service_status" => $sysinfodata["service_state"],
@@ -415,8 +423,9 @@
           }else if($sysinfodata["service_type"] == 9){
             $returnarray[$sysinfodata["id"]]["filesystems"][$sysinfodata["mountpoint"]] = [
               "service_id" => $sysinfodata["service_id"],
-              "device" => $sysinfodata["device"],
-              "mountpoint" => $sysinfodata["mountpoint"],
+              "service_type" => $sysinfodata["service_type"],
+              "device" => html_entity_decode(stripslashes($sysinfodata["device"]),ENT_QUOTES,'UTF-8'),
+              "mountpoint" => html_entity_decode(stripslashes($sysinfodata["mountpoint"]),ENT_QUOTES,'UTF-8'),
               "size" => $sysinfodata["size"],
               "used" => $sysinfodata["used"],
               "avail" => $sysinfodata["avail"],
@@ -619,7 +628,7 @@
      * @return array
      */
     public function setAllNodesSystemAndServicesUpStatus(array $data = []): array
-    {
+    {     
       if(array_key_exists("node_and_service_up_status", $data)){
         $available_nodes = $data["node_and_service_up_status"];
       }else{
@@ -638,8 +647,9 @@
           "current_service_level" => $services_data["onlinestatus"]["status"],
           "current_service_minutes" => $node_up_down_since
         ];
+
         $this->updateAvailableServices($updateData);
-        
+       
         foreach($services_data["services"] AS $service_id => $node_service_state){
           $service_up_down_since = (strtotime($node_service_state["service_lastreported"]) - strtotime($node_service_state["service_firstreported"])) / 60;
           
@@ -652,7 +662,6 @@
             "current_service_level" => $node_service_state["servicestate"],
             "current_service_minutes" => $service_up_down_since
           ];
-
 
           $this->updateAvailableServices($updateData);
         }

@@ -49,18 +49,24 @@
     echo "<div class='tab-content'>";
 
     $first = true;
+
+    include("functions.php");
+    
     foreach($sysinfos["data"] AS $nodeid => $sysinfo){
+      /*echo "<pre>";
+      print_r($sysinfo);
+      echo "</pre>";*/
       if(!array_key_exists("cpu", $sysinfo) && !array_key_exists("memory", $sysinfo) && !array_key_exists("filesystem", $sysinfo)){
 ?>
   <div class='row tab-pane fade show <?php echo ($first ? "active" : ""); ?>' id="node-<?php echo $nodeid; ?>" role="tabpanel" aria-labelledby="node-tab-<?php echo $nodeid; ?>"'>
-  <?php $first = false; ?>
+    <?php $first = false; ?>
     <div class='col'>
       <div class='card shadow mb-4'>
         <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
           <h6 class="m-0 font-weight-bold text-primary">
             Systeminformation Node <bold><?php echo "{$sysinfo["node"]["hostname"]}"; ?></bold>
             <span id='servicestatus_<?php echo $nodeid; ?>' data-node-id='<?php echo $nodeid; ?>' class='badge statusbadge badge-danger'>No data found</span>
-            <?php echo (!$sysinfo["node"]["data_current"] ? "<span class='badge statusbadge badge-warning' data-toggle='tooltip' data-placement='top' title='Shown data outdated! {$sysinfo["node"]["state_last_reported"]}'><i class='fa-solid fa-triangle-exclamation'></i></span>" : ""); ?> 
+            <?php echo ($sysinfo["node"]["data_current"] ? "<span class='badge statusbadge badge-warning' data-toggle='tooltip' data-placement='top' title='Shown data outdated! {$sysinfo["node"]["state_last_reported"]}'><i class='fa-solid fa-triangle-exclamation'></i></span>" : ""); ?> 
           </h6>
         </div>
         <div class="card-body">
@@ -79,7 +85,7 @@
         } 
   ?>
   <div class='row tab-pane fade show <?php echo ($first ? "active" : ""); ?>' id="node-<?php echo $nodeid; ?>" role="tabpanel" aria-labelledby="node-tab-<?php echo $nodeid; ?>"'>
-  <?php $first = false; ?>
+    <?php $first = false; ?>
     <div class='col'>
       <div class='card shadow mb-4'>
         <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
@@ -101,7 +107,7 @@
               <button class="sysinfo-refresh dropdown-item wsbutton" data-nodeid="<?php echo "{$nodeid}"; ?>" href="#">Refresh Data</button>
               <button class="sysinfo-edit-services dropdown-item wsbutton" data-nodeid="<?php echo "{$nodeid}"; ?>" href="#">Edit monitored services</button>
               <button class="sysinfo-set-downtime dropdown-item wsbutton" data-nodeid="<?php echo "{$nodeid}"; ?>" href="#">Downtimes</button>
-              <button class="sysinfo-acknowledge-messages dropdown-item wsbutton" data-nodeid="<?php echo "{$nodeid}"; ?>" href="#">Acknowledge services</button>
+              <!--<button class="sysinfo-acknowledge-messages dropdown-item wsbutton" data-nodeid="<?php echo "{$nodeid}"; ?>" href="#">Acknowledge services</button>-->
             </div>
           </div>
         </div>
@@ -117,7 +123,7 @@
           <div class="tab-content">
             <!-- Overview Pane -->
             <div class="tab-pane fade show node-details-pane active" id="overview-<?php echo $nodeid; ?>" data-node-id="<?php echo $nodeid; ?>" role="tabpanel" aria-labelledby="overview-tab-<?php echo $nodeid; ?>">
-              <div class="row">
+            <div class="row">
                 <div id="services_overview_<?php echo $nodeid; ?>" class="col py-2">
                   <!-- Header -->
                   <div class="input-group input-group">
@@ -129,6 +135,7 @@
                       <span class="input-group-text service-name">Service</span>
                     </div>
                     <div class="input-group-prepend">
+                      <span class="input-group-text service-notes">Notes</span>
                       <span class="input-group-text service-summary">Summary</span>
                       <span class="input-group-text service-state-since">State since</span>
                       <span class="input-group-text service-last-checked">Checked</span>
@@ -136,8 +143,41 @@
                     </div>
                   </div>
                   <!-- Services -->
+                  <!-- Server downtime -->
+                  <?php 
+                    if(array_key_exists("node", $sysinfo)){
+                      $node = $sysinfo["node"];
+                  ?>
+                  <div class="input-group input-group">
+                    <div class="input-group-prepend">
+                      <div class="input-group-text check-service">
+                        <input type="checkbox" class="quick_select_service" aria-label="Checkbox for following text input" value="<?php echo $node["service_id"]; ?>" data-service-type="<?php echo $node["service_type"]; ?>">
+                      </div>
+                      <?php 
+                        echo getWARNLevelBadge($node["upstatus"], $node["downtime_active"], 1); 
+                      ?>
+                      <span class="input-group-text service-name">Server upstatus</span>
+                    </div>
+                    <div class="input-group-prepend">
+                      <span class="input-group-text service-notes">
+                        <?php
+                          if($node["downtime_active"]) echo "<span class='badge badge-primary' data-toggle='tooltip' data-placement='top' title='This service is currently in downtime.'><i class='fa-solid fa-pause'></i></span>&nbsp;";
+                          if(!$node["data_current"]) echo "<span class='badge statusbadge badge-warning' data-toggle='tooltip' data-placement='top' title='Shown data outdated! {$node["state_last_reported"]}'><i class='fa-solid fa-triangle-exclamation'></i></span>";
+                        ?>
+                      </span>
+                      <span class="input-group-text service-summary"><?php echo "{$node["service_desc"]}: " . ($node["upstatus"] == 1 ? "Up and running." : "Currently not reachable."); ?></span>
+                      <span class="input-group-text service-state-since"><?php echo $node["state_first_reported"]; ?></span>
+                      <span class="input-group-text service-last-checked"><?php echo calculateLastCheckedTime($node["state_last_reported"]); ?></span>
+                      <span class="input-group-text service-workload">
+                        <div class="progress">
+                          <div class="progress-bar" style="width: <?php echo ($node["upstatus"] == 1 ? "100" : "0"); ?>%;" role="progressbar" aria-valuenow="<?php echo ($node["upstatus"] == 1 ? "100" : "0"); ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                      </span>
+                    </div>
+                  </div>
                   <!-- CPU Load -->
                   <?php 
+                    }
                     if(array_key_exists("os", $sysinfo) && $sysinfo["os"]["os_type"] == "Linux"){
                       $cpu_load = $sysinfo["cpu"]["load"];
                       $cpu_info = $sysinfo["cpu"]["info"]; 
@@ -145,7 +185,7 @@
                   <div class="input-group input-group">
                     <div class="input-group-prepend">
                       <div class="input-group-text check-service">
-                        <input type="checkbox" class="quick_select_service" aria-label="Checkbox for following text input">
+                        <input type="checkbox" class="quick_select_service" aria-label="Checkbox for following text input" value="<?php echo $cpu_load["service_id"]; ?>" data-service-type="<?php echo $cpu_load["service_type"]; ?>">
                       </div>
                       <?php 
                         echo getWARNLevelBadge($cpu_load["service_state"], $cpu_load["downtime_active"], 1); 
@@ -153,6 +193,12 @@
                       <span class="input-group-text service-name">CPU Load</span>
                     </div>
                     <div class="input-group-prepend">
+                      <span class="input-group-text service-notes">
+                        <?php
+                          if($cpu_load["downtime_active"]) echo "<span class='badge badge-primary' data-toggle='tooltip' data-placement='top' title='This service is currently in downtime.'><i class='fa-solid fa-pause'></i></span>&nbsp;";
+                          if(!$cpu_load["data_current"]) echo "<span class='badge statusbadge badge-warning' data-toggle='tooltip' data-placement='top' title='Shown data outdated! {$node["state_last_reported"]}'><i class='fa-solid fa-triangle-exclamation'></i></span>";
+                        ?>
+                      </span>
                       <span class="input-group-text service-summary"><?php echo "{$cpu_load["service_desc"]}: " . number_format($cpu_load["load_15_min"], 2) . " at {$cpu_info["cpu_count"]} Cores (" . number_format($cpu_load["load_15_min"] / $cpu_info["cpu_count"], 2) . " per Core)"; ?></span>
                       <span class="input-group-text service-state-since"><?php echo $cpu_load["state_first_reported"]; ?></span>
                       <span class="input-group-text service-last-checked"><?php echo calculateLastCheckedTime($cpu_load["state_last_reported"]); ?></span>
@@ -172,13 +218,15 @@
                   <div class="input-group input-group">
                     <div class="input-group-prepend">
                       <div class="input-group-text check-service">
-                        <input type="checkbox" class="quick_select_service" aria-label="Checkbox for following text input">
+                        <input type="checkbox" class="quick_select_service" aria-label="Checkbox for following text input" value="<?php echo $cpu_usage_overall["service_id"]; ?>" data-service-type="<?php echo $cpu_usage_overall["service_type"]; ?>">
                       </div>
                       <?php echo getWARNLevelBadge($cpu_usage_overall["service_state"], $cpu_usage_overall["downtime_active"], 1); ?>
                       <span class="input-group-text service-name">CPU Utilisation</span>
                     </div>
                     <div class="input-group-prepend">
-                      <span class="input-group-text service-summary"><?php echo "{$cpu_usage_overall["servic_type"]}: {$cpu_usage_overall["total_usage"]}%" ?></span>
+                      <span class="input-group-text service-notes">
+                      </span>
+                      <span class="input-group-text service-summary"><?php echo "CPU total usage: {$cpu_usage_overall["total_usage"]}%" ?></span>
                       <span class="input-group-text service-state-since"><?php echo $cpu_usage_overall["state_first_reported"]; ?></span>
                       <span class="input-group-text service-last-checked"><?php echo calculateLastCheckedTime($cpu_usage_overall["state_last_reported"]); ?></span>
                       <span class="input-group-text service-workload">
@@ -197,7 +245,7 @@
                   <div class="input-group input-group">
                     <div class="input-group-prepend">
                       <div class="input-group-text check-service">
-                        <input type="checkbox" class="quick_select_service" aria-label="Checkbox for following text input">
+                        <input type="checkbox" class="quick_select_service" aria-label="Checkbox for following text input" value="<?php echo $memory_ram["service_id"]; ?>" data-service-type="<?php echo $memory_ram["service_type"]; ?>">
                       </div>
                       <?php echo getWARNLevelBadge($memory_ram["service_status"], $memory_ram["downtime_active"], 1); ?>
                       <span class="input-group-text service-name">RAM usage</span>
@@ -209,6 +257,8 @@
                         $memoryused = floatval(number_format(($memorytotal - $memoryfree)/1024/1024/1024, 2));
                         $memoryusedperc = number_format(($memoryused / ($memorytotal/1024/1024/1024)) * 100, 2);
                       ?>
+                      <span class="input-group-text service-notes">
+                      </span>
                       <span class="input-group-text service-summary"><?php echo "{$memory_ram["service_desc"]}: {$memoryused}GB of " . formatkBytes($memorytotal) . " ({$memoryusedperc}%)"; ?></span>
                       <span class="input-group-text service-state-since"><?php echo $memory_ram["state_first_reported"]; ?></span>
                       <span class="input-group-text service-last-checked"><?php echo calculateLastCheckedTime($memory_ram["state_last_reported"]); ?></span>
@@ -228,7 +278,7 @@
                   <div class="input-group input-group">
                     <div class="input-group-prepend">
                       <div class="input-group-text check-service">
-                        <input type="checkbox" class="quick_select_service" aria-label="Checkbox for following text input">
+                        <input type="checkbox" class="quick_select_service" aria-label="Checkbox for following text input" value="<?php echo $memory_swap["service_id"]; ?>" data-service-type="<?php echo $memory_swap["service_type"]; ?>">
                       </div>
                       <?php echo getWARNLevelBadge($memory_ram["service_status"], $memory_ram["downtime_active"], 1); ?>
                       <span class="input-group-text service-name">SWAP usage</span>
@@ -238,6 +288,8 @@
                         $swapused = number_format((intval($memory_swap["swap_total"]) - intval($memory_swap["swap_free"]))/1024/1024/1024, 2);
                         $swapusedperc = number_format(($swapused / ($memory_swap["swap_total"]/1024/1024/1024)) * 100, 2);
                       ?>
+                      <span class="input-group-text service-notes">
+                      </span>
                       <span class="input-group-text service-summary"><?php echo "{$memory_swap["service_desc"]}: {$swapused}GB of " . formatkBytes($memory_swap["swap_total"]) . " ({$swapusedperc}%)"; ?></span>
                       <span class="input-group-text service-state-since"><?php echo $memory_swap["state_first_reported"]; ?></span>
                       <span class="input-group-text service-last-checked"><?php echo calculateLastCheckedTime($memory_swap["state_last_reported"]); ?></span>
@@ -257,18 +309,20 @@
                     <div class="input-group input-group">
                       <div class="input-group-prepend">
                         <div class="input-group-text check-service">
-                          <input type="checkbox" class="quick_select_service" aria-label="Checkbox for following text input">
+                          <input type="checkbox" class="quick_select_service" aria-label="Checkbox for following text input" value="<?php echo $filesystem["service_id"]; ?>" data-service-type="<?php echo $filesystem["service_type"]; ?>">
                         </div>
                         <?php echo getWARNLevelBadge($filesystem["service_status"], $filesystem["downtime_active"], 1); ?>
                         <span class="input-group-text service-name"><?php echo "fs_{$filesystem["mountpoint"]}"; ?></span>
                       </div>
                       <div class="input-group-prepend">
+                        <span class="input-group-text service-notes">
+                        </span>
                         <span class="input-group-text service-summary"><?php echo "{$filesystem["service_desc"]}: " . formatkBytes($filesystem["used"]) . " of " . formatkBytes($filesystem["size"]) . " ({$filesystem["total_usage"]}%)"; ?></span>
                         <span class="input-group-text service-state-since"><?php echo $filesystem["state_first_reported"]; ?></span>
                         <span class="input-group-text service-last-checked"><?php echo calculateLastCheckedTime($filesystem["state_last_reported"]); ?></span>
                         <span class="input-group-text service-workload">
                           <div class="progress">
-                            <div class="progress-bar" style="width: <?php echo $filesystem["total_usage"]; ?>%;" role="progressbar" aria-valuenow="<?php echo $$filesystem["total_usage"]; ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                            <div class="progress-bar" style="width: <?php echo $filesystem["total_usage"]; ?>%;" role="progressbar" aria-valuenow="<?php echo $filesystem["total_usage"]; ?>" aria-valuemin="0" aria-valuemax="100"></div>
                           </div>
                         </span>
                       </div>
@@ -282,12 +336,14 @@
                     <div class="input-group input-group">
                       <div class="input-group-prepend">
                         <div class="input-group-text check-service">
-                          <input type="checkbox" class="quick_select_service" aria-label="Checkbox for following text input">
+                          <input type="checkbox" class="quick_select_service" aria-label="Checkbox for following text input" value="<?php echo $farmer_service["service_id"]; ?>" data-service-type="<?php echo $farmer_service["service_type"]; ?>">
                         </div>
                         <?php echo getWARNLevelBadge($farmer_service["service_state"], $farmer_service["downtime_active"], 1); ?>
                         <span class="input-group-text service-name"><?php echo "{$farmer_service["service_desc"]}"; ?></span>
                       </div>
                       <div class="input-group-prepend">
+                        <span class="input-group-text service-notes">
+                        </span>
                         <span class="input-group-text service-summary"><?php echo "{$farmer_service["service_desc"]}: The service is currently " . ($farmer_service["service_state"] == 1 ? "running" : "not running") . "."; ?></span>
                         <span class="input-group-text service-state-since"><?php echo $farmer_service["state_first_reported"]; ?></span>
                         <span class="input-group-text service-last-checked"><?php echo calculateLastCheckedTime($farmer_service["state_last_reported"]); ?></span>
@@ -306,12 +362,14 @@
                     <div class="input-group input-group">
                       <div class="input-group-prepend">
                         <div class="input-group-text check-service">
-                          <input type="checkbox" class="quick_select_service" aria-label="Checkbox for following text input">
+                          <input type="checkbox" class="quick_select_service" aria-label="Checkbox for following text input" value="<?php echo $harvester_service["service_id"]; ?>" data-service-type="<?php echo $harvester_service["service_type"]; ?>">
                         </div>
                         <?php echo getWARNLevelBadge($harvester_service["service_state"], $harvester_service["downtime_active"], 1); ?>
                         <span class="input-group-text service-name"><?php echo "{$harvester_service["service_desc"]}"; ?></span>
                       </div>
                       <div class="input-group-prepend">
+                        <span class="input-group-text service-notes">
+                        </span>
                         <span class="input-group-text service-summary"><?php echo "{$harvester_service["service_desc"]}: The service is currently " . ($harvester_service["service_state"] == 1 ? "running" : "not running") . "."; ?></span>
                         <span class="input-group-text service-state-since"><?php echo $harvester_service["state_first_reported"]; ?></span>
                         <span class="input-group-text service-last-checked"><?php echo calculateLastCheckedTime($harvester_service["state_last_reported"]); ?></span>
@@ -330,12 +388,14 @@
                     <div class="input-group input-group">
                       <div class="input-group-prepend">
                         <div class="input-group-text check-service">
-                          <input type="checkbox" class="quick_select_service" aria-label="Checkbox for following text input">
+                          <input type="checkbox" class="quick_select_service" aria-label="Checkbox for following text input" value="<?php echo $wallet_service["service_id"]; ?>" data-service-type="<?php echo $wallet_service["service_type"]; ?>">
                         </div>
                         <?php echo getWARNLevelBadge($wallet_service["service_state"], $wallet_service["downtime_active"], 1); ?>
                         <span class="input-group-text service-name"><?php echo "{$wallet_service["service_desc"]}"; ?></span>
                       </div>
                       <div class="input-group-prepend">
+                        <span class="input-group-text service-notes">
+                        </span>
                         <span class="input-group-text service-summary"><?php echo "{$wallet_service["service_desc"]}: The service is currently " . ($wallet_service["service_state"] == 1 ? "running" : "not running") . "."; ?></span>
                         <span class="input-group-text service-state-since"><?php echo $wallet_service["state_first_reported"]; ?></span>
                         <span class="input-group-text service-last-checked"><?php echo calculateLastCheckedTime($wallet_service["state_last_reported"]); ?></span>
@@ -366,14 +426,14 @@
                             <?php 
                               foreach($sysinfo["filesystems"] AS $mountpoint => $filesystem){ 
                             ?>
-                              <h4 class="small font-weight-bold">
-                                <?php echo "{$filesystem["device"]} => {$filesystem["mountpoint"]}<br>(Size: " . formatkBytes($filesystem["size"]) . ", Used: " . formatkBytes($filesystem["used"]) . " Available: " . formatkBytes($filesystem["avail"]) . ")"; ?><span class="float-right"><?php echo $filesystem["total_usage"]; ?>%</span>
-                                <?php echo getWARNLevelBadge($filesystem["service_status"], $filesystem["downtime_active"], 0); ?>
-                                <?php echo (!$filesystem["data_current"] ? "<span class='badge statusbadge badge-warning' data-toggle='tooltip' data-placement='top' title='Shown data outdated! {$filesystem["state_last_reported"]}'><i class='fa-solid fa-triangle-exclamation'></i></span>" : ""); ?>
-                              </h4>
-                              <div class="progress mb-4">
-                                <div class="progress-bar <?php echo ($filesystem["service_status"] == 1 ? "bg-success" : ($filesystem["service_status"] == 2 ? "bg-warning" : "bg-danger")); ?>" role="progressbar" style="width: <?php echo $filesystem["total_usage"]; ?>%" aria-valuenow="<?php echo $filesystem["total_usage"]; ?>" aria-valuemin="0" aria-valuemax="100"></div>
-                              </div>
+                            <h4 class="small font-weight-bold">
+                              <?php echo "{$filesystem["device"]} => {$filesystem["mountpoint"]}<br>(Size: " . formatkBytes($filesystem["size"]) . ", Used: " . formatkBytes($filesystem["used"]) . " Available: " . formatkBytes($filesystem["avail"]) . ")"; ?><span class="float-right"><?php echo $filesystem["total_usage"]; ?>%</span>
+                              <?php echo getWARNLevelBadge($filesystem["service_status"], $filesystem["downtime_active"], 0); ?>
+                              <?php echo ($filesystem["data_current"] ? "" : "<span class='badge statusbadge badge-warning' data-toggle='tooltip' data-placement='top' title='Shown data outdated! {$filesystem["state_last_reported"]}'><i class='fa-solid fa-triangle-exclamation'></i></span>"); ?>
+                            </h4>
+                            <div class="progress mb-4">
+                              <div class="progress-bar <?php echo ($filesystem["service_status"] == 1 ? "bg-success" : ($filesystem["service_status"] == 2 ? "bg-warning" : "bg-danger")); ?>" role="progressbar" style="width: <?php echo $filesystem["total_usage"]; ?>%" aria-valuenow="<?php echo $filesystem["total_usage"]; ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
                             <?php 
                               }
                             ?>
@@ -394,16 +454,16 @@
                           <h6 class="m-0 font-weight-bold text-primary">System information</h6>
                           <ul class="list-group">
                             <li class="list-group-item d-flex justify-content-between align-items-center">
-                              OS info
-                              <span class="badge badge-primary badge-pill"><?php echo "{$sysinfo["os"]["os_type"]} ({$sysinfo["os"]["os_name"]})"; ?></span>
+                                OS info
+                                <span class="badge badge-primary badge-pill"><?php echo "{$sysinfo["os"]["os_type"]} ({$sysinfo["os"]["os_name"]})"; ?></span>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
-                              CPU info
-                              <span class="badge badge-primary badge-pill"><?php echo "{$sysinfo["cpu"]["info"]["cpu_model"]} ({$sysinfo["cpu"]["info"]["cpu_cores"]} CPU(s), {$sysinfo["cpu"]["info"]["cpu_count"]} threads)"; ?></span>
+                                CPU info
+                                <span class="badge badge-primary badge-pill"><?php echo "{$sysinfo["cpu"]["info"]["cpu_model"]} ({$sysinfo["cpu"]["info"]["cpu_cores"]} CPU(s), {$sysinfo["cpu"]["info"]["cpu_count"]} threads)"; ?></span>
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
-                              Memory
-                              <span class="badge badge-primary badge-pill"><?php echo "RAM: " . number_format(floatval($sysinfo["memory"]["ram"]["memory_total"])/1024/1024/1024, 2) . "GB" . ", SWAP " . number_format(floatval($sysinfo["memory"]["swap"]["swap_total"])/1024/1024/1024, 2) . "GB"; ?></span>
+                                Memory
+                                <span class="badge badge-primary badge-pill"><?php echo "RAM: " . number_format(floatval($sysinfo["memory"]["ram"]["memory_total"])/1024/1024/1024, 2) . "GB" . ", SWAP " . number_format(floatval($sysinfo["memory"]["swap"]["swap_total"])/1024/1024/1024, 2) . "GB"; ?></span>
                             </li>
                           </ul>
                         </div>
@@ -413,32 +473,32 @@
                   <?php if(array_key_exists("memory", $sysinfo)){ ?>
                   <div class="row">
                     <div class="col">
-                      <div id="ram_swap_container_<?php echo "{$nodeid}"; ?>">
-                        <div class="card shadow mb-4">
-                          <div class="card-body">
-                            <div class="row">
-                              <?php if(array_key_exists("memory", $sysinfo) && array_key_exists("ram", $sysinfo["memory"]) && floatval($sysinfo["memory"]["ram"]["memory_total"]) > 0){ ?>
-                              <div class="col-6">
-                                <h7 class="m-0 font-weight-bold text-primary">
-                                  RAM (Available: <?php echo number_format(floatval($sysinfo["memory"]["ram"]["memory_total"])/1024/1024/1024, 2) . "GB"; ?>)<br><?php echo "Usage: {$sysinfo["memory"]["ram"]["total_usage"]}%&nbsp;" . getWARNLevelBadge($sysinfo["memory"]["ram"]["service_status"], $sysinfo["memory"]["ram"]["downtime_active"], 0); ?>
-                                  <?php echo (!$filesystem["memory"]["ram"]["data_current"] ? "<span class='badge statusbadge badge-warning' data-toggle='tooltip' data-placement='top' title='Shown data outdated! {$sysinfo["memory"]["ram"]["state_last_reported"]}'><i class='fa-solid fa-triangle-exclamation'></i></span>" : ""); ?>
-                                </h7>
-                                <div class="chart-pie" style="min-height: 20vh;">
-                                  <canvas id="ram_chart_<?php echo "{$nodeid}"; ?>"></canvas>
+                        <div id="ram_swap_container_<?php echo "{$nodeid}"; ?>">
+                            <div class="card shadow mb-4">
+                                <div class="card-body">
+                                    <div class="row">
+                                    <?php if(array_key_exists("memory", $sysinfo) && array_key_exists("ram", $sysinfo["memory"]) && floatval($sysinfo["memory"]["ram"]["memory_total"]) > 0){ ?>
+                                    <div class="col-6">
+                                        <h7 class="m-0 font-weight-bold text-primary">
+                                            RAM (Available: <?php echo number_format(floatval($sysinfo["memory"]["ram"]["memory_total"])/1024/1024/1024, 2) . "GB"; ?>)<br><?php echo "Usage: {$sysinfo["memory"]["ram"]["total_usage"]}%&nbsp;" . getWARNLevelBadge($sysinfo["memory"]["ram"]["service_status"], $sysinfo["memory"]["ram"]["downtime_active"], 0); ?>
+                                            <?php echo (!$sysinfo["memory"]["ram"]["data_current"] ? "<span class='badge statusbadge badge-warning' data-toggle='tooltip' data-placement='top' title='Shown data outdated! {$sysinfo["memory"]["ram"]["state_last_reported"]}'><i class='fa-solid fa-triangle-exclamation'></i></span>" : ""); ?>
+                                        </h7>
+                                    <div class="chart-pie" style="min-height: 20vh;">
+                                        <canvas id="ram_chart_<?php echo "{$nodeid}"; ?>"></canvas>
+                                    </div>
                                 </div>
-                              </div>
-                              <?php } ?>
-                              <?php if(array_key_exists("memory", $sysinfo) && array_key_exists("swap", $sysinfo["memory"]) && floatval($sysinfo["memory"]["swap"]["swap_total"]) > 0){ ?>
-                              <div class="col-6">
-                                <h7 class="m-0 font-weight-bold text-primary">
-                                  SWAP (Available: <?php echo number_format(floatval($sysinfo["memory"]["swap"]["swap_total"])/1024/1024/1024, 2) . "GB"; ?>)<br><?php echo "Usage: {$sysinfo["memory"]["swap"]["total_usage"]}%&nbsp;" . getWARNLevelBadge($sysinfo["memory"]["swap"]["service_status"], $sysinfo["memory"]["swap"]["downtime_active"], 0); ?>
-                                  <?php echo (!$filesystem["memory"]["swap"]["data_current"] ? "<span class='badge statusbadge badge-warning' data-toggle='tooltip' data-placement='top' title='Shown data outdated! {$sysinfo["memory"]["swap"]["state_last_reported"]}'><i class='fa-solid fa-triangle-exclamation'></i></span>" : ""); ?>
-                                </h7>
-                                <div class="chart-pie" style="min-height: 20vh;">
-                                  <canvas id="swap_chart_<?php echo "{$nodeid}"; ?>"></canvas>
+                                <?php } ?>
+                                <?php if(array_key_exists("memory", $sysinfo) && array_key_exists("swap", $sysinfo["memory"]) && floatval($sysinfo["memory"]["swap"]["swap_total"]) > 0){ ?>
+                                <div class="col-6">
+                                    <h7 class="m-0 font-weight-bold text-primary">
+                                        SWAP (Available: <?php echo number_format(floatval($sysinfo["memory"]["swap"]["swap_total"])/1024/1024/1024, 2) . "GB"; ?>)<br><?php echo "Usage: {$sysinfo["memory"]["swap"]["total_usage"]}%&nbsp;" . getWARNLevelBadge($sysinfo["memory"]["swap"]["service_status"], $sysinfo["memory"]["swap"]["downtime_active"], 0); ?>
+                                        <?php echo (!$sysinfo["memory"]["swap"]["data_current"] ? "<span class='badge statusbadge badge-warning' data-toggle='tooltip' data-placement='top' title='Shown data outdated! {$sysinfo["memory"]["swap"]["state_last_reported"]}'><i class='fa-solid fa-triangle-exclamation'></i></span>" : ""); ?>
+                                    </h7>
+                                    <div class="chart-pie" style="min-height: 20vh;">
+                                        <canvas id="swap_chart_<?php echo "{$nodeid}"; ?>"></canvas>
+                                    </div>
                                 </div>
-                              </div>
-                              <?php } ?>
+                                <?php } ?>
                             </div>
                           </div>
                         </div>
@@ -455,7 +515,7 @@
                           <div class="card-body">
                             <h7 class="m-0 font-weight-bold text-primary">CPU Load
                               <?php echo ",&nbsp;Usage: {$sysinfo["cpu"]["load"]["usage_15_min"]}%&nbsp;" . getWARNLevelBadge($sysinfo["cpu"]["load"]["service_state"], $sysinfo["cpu"]["load"]["downtime_active"], 0); ?>
-                              <?php echo (!$filesystem["cpu"]["load"]["data_current"] ? "<span class='badge statusbadge badge-warning' data-toggle='tooltip' data-placement='top' title='Shown data outdated! {$sysinfo["cpu"]["load"]["state_last_reported"]}'><i class='fa-solid fa-triangle-exclamation'></i></span>" : ""); ?>
+                              <?php echo (!$sysinfo["cpu"]["load"]["data_current"] ? "<span class='badge statusbadge badge-warning' data-toggle='tooltip' data-placement='top' title='Shown data outdated! {$sysinfo["cpu"]["load"]["state_last_reported"]}'><i class='fa-solid fa-triangle-exclamation'></i></span>" : ""); ?>
                             </h7>
                             <div class="chart-bar" style="min-height: 30vh;">
                               <canvas id="cpu_load_chart_<?php echo "{$nodeid}"; ?>"></canvas>
@@ -476,7 +536,7 @@
                           <div class="card-body">
                             <h7 class="m-0 font-weight-bold text-primary">CPU Usage
                               <?php echo ",&nbsp;Usage: {$sysinfo["cpu"]["usage"]["overall"]["total_usage"]}%&nbsp;" . getWARNLevelBadge($sysinfo["cpu"]["usage"]["overall"]["service_state"], $sysinfo["cpu"]["usage"]["overall"]["downtime_active"], 0); ?>
-                              <?php echo (!$filesystem["cpu"]["usage"]["overall"]["data_current"] ? "<span class='badge statusbadge badge-warning' data-toggle='tooltip' data-placement='top' title='Shown data outdated! {$sysinfo["cpu"]["usage"]["overall"]["state_last_reported"]}'><i class='fa-solid fa-triangle-exclamation'></i></span>" : ""); ?>
+                              <?php echo (!$sysinfo["cpu"]["usage"]["overall"]["data_current"] ? "<span class='badge statusbadge badge-warning' data-toggle='tooltip' data-placement='top' title='Shown data outdated! {$sysinfo["cpu"]["usage"]["overall"]["state_last_reported"]}'><i class='fa-solid fa-triangle-exclamation'></i></span>" : ""); ?>
                             </h7>
                             <div class="chart-bar" style="min-height: 30vh;">
                               <canvas id="cpu_usage_chart_<?php echo "{$nodeid}"; ?>"></canvas>
@@ -512,67 +572,6 @@
     </div>
   </div>
 </div>
-<?php } ?>
 <?php 
-function formatkBytes(int $size, int $precision = 2)
-{ 
-    if($size == 0) return "0B";
-    $base = log($size, 1024);
-    $suffixes = array('B','KB', 'MB', 'GB', 'TB');   
-
-    return round(pow(1024, $base - floor($base)), $precision) . $suffixes[floor($base)];
-}
-
-function getWARNLevelBadge(int $warnlevel, bool $downtime_active, int $badge_or_overview = 0){
-  $downtime_active_string = "";
-  if($downtime_active){
-    $downtime_active_string .= " (Downtime)";
-  }
-
-  if($badge_or_overview == 0) return getLevelBadge($warnlevel, $downtime_active_string);
-  if($badge_or_overview == 1) return getOverviewLevel($warnlevel, $downtime_active_string); 
-}
-
-function getLevelBadge(int $warnlevel, string $downtime_active_string){
-  switch ($warnlevel) {
-    case 1:
-        return "<span class='badge statusbadge badge-success'>OK{$downtime_active_string}</span>";
-    case 2:
-      return "<span class='badge statusbadge badge-warning'>WARN{$downtime_active_string}</span>";
-    case 3:
-      return "<span class='badge statusbadge badge-danger'>CRIT{$downtime_active_string}</span>";
-    default:
-      return "<span class='badge statusbadge badge-secondary'>UNKN{$downtime_active_string}</span>";
-  }
-}
-
-function getOverviewLevel(int $warnlevel, string $downtime_active_string){
-  switch ($warnlevel) {
-    case 1:
-        return "<span class='input-group-text service-state bg-success'>OK{$downtime_active_string}</span>";
-    case 2:
-      return "<span class='input-group-text service-state bg-warning'>WARN{$downtime_active_string}</span>";
-    case 3:
-      return "<span class='input-group-text service-state bg-danger'>CRIT{$downtime_active_string}</span>";
-    default:
-      return "<span class='input-group-text service-state bg-secondary'>UNKN{$downtime_active_string}</span>";
-  }
-}
-
-function calculateLastCheckedTime(string $start_time){
-  $time_unit = ["s","m","h","wk","M"];
-  $time_calc = [1, 60, 3600, 604800, 2628000];
-
-  $d1 = strtotime("now");
-  $d2 = strtotime($start_time);
-  $seconds = abs($d1-$d2);
-
-  foreach($time_calc AS $arrkey => $this_time_calc){
-    $time_in_curr_unit = $seconds / $this_time_calc;
-    if(strlen(intval($time_in_curr_unit)) <= 2){
-      return number_format($time_in_curr_unit, 2) . "{$time_unit[$arrkey]}";
-    }
-  }
-}
-
+  } 
 ?>
