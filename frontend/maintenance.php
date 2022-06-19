@@ -8,35 +8,36 @@
   $system_update_state = $system_update_api->checkUpdateRoutine();
   $ini = parse_ini_file(__DIR__.'/../backend/config/config.ini.php');
 
-  if($system_update_state["data"]["maintenance_mode"] == 0){
+  /*if($system_update_state["data"]["maintenance_mode"] == 0){
     header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/index.php");
   }else{
     $page = $_SERVER['PHP_SELF'];
     $sec = "10";
     header("Refresh: $sec; url=$page");
-  }
+  }*/
 ?>
 <!DOCTYPE html>
 <html lang="en">
   <head>
-      <meta charset="utf-8">
-      <meta http-equiv="X-UA-Compatible" content="IE=edge">
-      <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-      <meta name="description" content="">
-      <meta name="author" content="">
-      <meta name="robots" content="noindex">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <meta name="robots" content="noindex">
 
-      <title>Chia® Manager - Maintenance</title>
+    <title>Chia® Manager - Maintenance</title>
 
-      <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico">
-      <link rel="icon" type="image/png" href="img/favicon.png" sizes="32x32">
-      <link rel="icon" type="image/png" href="img/favicon.png" sizes="96x96">
+    <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico">
+    <link rel="icon" type="image/png" href="img/favicon.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="img/favicon.png" sizes="96x96">
 
-      <!-- Custom fonts for this template-->
-      <link href="frameworks/node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
-      <link href="css/google_fonts/nunito/nunito-font.css" rel="stylesheet">
-      <!-- Custom styles for this template-->
-      <link href="frameworks/bootstrap/css/sb-admin-2.min.css" rel="stylesheet">
+    <!-- Custom fonts for this template-->
+    <link href="frameworks/node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="css/google_fonts/nunito/nunito-font.css" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <link href="css/tailwind.css" rel="stylesheet" type="text/css">
   </head>
   <body class="bg-gradient-primary">
     <div class="container" style="display: none;">

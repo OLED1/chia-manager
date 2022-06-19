@@ -1,7 +1,12 @@
+const colors = require('tailwindcss/colors')
+
 module.exports = {
-  content: [],
+  content: ["/var/www/dev.chiamgmt.edtmair.at/frontend/*.{html,js,php}"],
   theme: {
     extend: {},
   },
-  plugins: [],
+  plugins: [
+    require('tailwindcss'),
+    //require('autoprefixer'),
+  ],
 }
