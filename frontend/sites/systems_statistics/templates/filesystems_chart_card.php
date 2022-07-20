@@ -2,45 +2,40 @@
   use ChiaMgmt\Login\Login_Api;
   use ChiaMgmt\System_Statistics\System_Statistics_Api;
   require __DIR__ . '/../../../../vendor/autoload.php';
-  include_once(__DIR__ . "/../../standard_headers.php");
 
-  $login_api = new Login_Api();
-  $ini = parse_ini_file(__DIR__.'/../../../../backend/config/config.ini.php');
-  $loggedin = $login_api->checklogin();
+    if(!array_key_exists("sess_id", $_GET) || !array_key_exists("user_id", $_GET) || !array_key_exists("nodeid", $_GET) || !array_key_exists("from", $_GET) || !array_key_exists("to", $_GET)){
+        echo "Incomplete Request.";
+        die();
+    }
 
-  if($loggedin["status"] > 0){
-    header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/login.php");
-  }
+    $site_data_to_load = [
+        React\Promise\resolve((new Login_Api())->checklogin($_GET["sess_id"], $_GET["user_id"])),
+        React\Promise\resolve((new System_Statistics_Api())->getFilesystemsHistory(["from" => $_GET["from"], "to" => $_GET["to"], "node_ids" => [$_GET["nodeid"]]]))
+    ];
 
-  $alldatastated = true;
-  if(!array_key_exists("nodeid", $_GET) || !array_key_exists("from", $_GET) || !array_key_exists("to", $_GET)){
-    $alldatastated = false;
-  }
+    $ini = parse_ini_file(__DIR__.'/../../../../backend/config/config.ini.php');
+    React\Promise\all($site_data_to_load)->then(function($all_returned) use($ini){
+        if($all_returned[0]["status"] > 0){
+            echo "NOT AUTHENTICATED.";
+            exit();
+        }
 
-  $data = [
-      "from" => $_GET["from"],
-      "to" => $_GET["to"],
-      "node_ids" => [$_GET["nodeid"]]
-  ];
+        $historyFilesystemData = $all_returned[1];
+        if(array_key_exists("data", $historyFilesystemData) && array_key_exists($_GET["nodeid"], $historyFilesystemData["data"])){
+          $historyFilesystemData = $historyFilesystemData["data"][$_GET["nodeid"]];
+        }else{
+          $historyFilesystemData = [];
+        }
 
-  $system_statistics_api = new System_Statistics_Api();
-  $historyFilesystemData = $system_statistics_api->getFilesystemsHistory($data);
-  if(array_key_exists("data", $historyFilesystemData) && array_key_exists($_GET["nodeid"], $historyFilesystemData["data"])){
-    $historyFilesystemData = $historyFilesystemData["data"][$_GET["nodeid"]];
-  }else{
-    $historyFilesystemData = [];
-  }
-
-  echo "<script nonce={$ini["nonce_key"]}>
+        echo "<script nonce={$ini["nonce_key"]}>
             historyFilesystemData[" . $_GET["nodeid"] . "] = " . json_encode($historyFilesystemData) .";
         </script>";
 
-  $nodeid = $_GET["nodeid"];
+        $nodeid = $_GET["nodeid"];
 ?>
 <div class="card shadow mb-4">
     <div class="card-body">
 <?php
-if($alldatastated){
     if(count($historyFilesystemData) > 0){
         foreach($historyFilesystemData AS $mountpoint => $thisfilesystem){
 ?>
@@ -87,8 +82,6 @@ if($alldatastated){
     There is either no node configured or you may need to wait for at least 24 hours so the instance can query more data.<br>
     If you think there should be data and this is a system fault, please open a ticket on github.
     <?php } ?>
-<?php }else{ ?>
-    Some parameters are missing. You need to state "nodeid", "from"-date and "to"-date. Could not load systems load data.
-<?php } ?>
     </div>
 </div>
+<?php }); ?>

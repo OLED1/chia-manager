@@ -33,7 +33,10 @@
       "011" : [0, "Node IP address changed. Please follow instructions on frontend."],
       "012" : [0, "This node is waiting for authentication please wait."],
       "013" : [0, "This node is already existing. Please configure your authkey in the nodes config file."],
-      "014" : [1, "Cannot add host. Not all data stated. Are you connected to the right websocket server?"]
+      "014" : [1, "Cannot add host. Not all data stated. Are you connected to the right websocket server?"],
+      "015" : [2, "An error occured."],
+      "016" : [2, "An error occured."],
+      "017" : [2, "An error occured."]
     }
   }
 }

@@ -1,8 +1,10 @@
 <?php
+  use React\EventLoop\Loop;
   use Ratchet\Server\IoServer;
   use Ratchet\Http\HttpServer;
   use Ratchet\WebSocket\WsServer;
-  use ChiaMgmt\WebSocketServer\ChiaWebSocketServer;
+  //use ChiaMgmt\WebSocketServer\ChiaWebSocketServer;
+  use ChiaMgmt\WebSocketServer\ChiaWebSocketServerNew;
 
   require __DIR__ . '/../../../vendor/autoload.php';
 
@@ -13,7 +15,8 @@
 
   $ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
 
-  $wsServer = new WsServer(new ChiaWebSocketServer());
+  //$wsServer = new WsServer(new ChiaWebSocketServer());
+  $wsServer = new WsServer(new ChiaWebSocketServerNew());
   $server = IoServer::factory(
     new HttpServer(
       $wsServer

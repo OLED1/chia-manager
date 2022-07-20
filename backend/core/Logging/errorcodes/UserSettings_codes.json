@@ -7,7 +7,9 @@
     "setGuiMode" : {
       "001" : [2, "An error occured."],
       "002" : [1, "Requested Gui Mode not supported."],
-      "003" : [1, "Not all data stated."]
+      "003" : [1, "Not all data stated."],
+      "004" : [2, "An error occured."],
+      "005" : [2, "An error occured."]
     },
     "getGuiMode" : {
       "001" : [2, "An error occured."],

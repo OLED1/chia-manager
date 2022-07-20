@@ -1,15 +1,17 @@
 <?php
+  use React\Promise;
+  use ChiaMgmt\Users\Users_Api;
   include("../standard_headers.php");
 
-  use ChiaMgmt\Users\Users_Api;
-  $users_api = new Users_Api();
-  $users = $users_api->getUserData()["data"];
+  $user_data = Promise\resolve((new Users_Api())->getUserData());
+  $user_data->then(function($user_data_returned) use($ini){
+    $users = $user_data_returned["data"];
 
-  echo "<script nonce={$ini["nonce_key"]}>
-          var userData = " . json_encode($users) . ";
-          var userID = {$_COOKIE["user_id"]};
-          var siteID = 4;
-        </script>";
+    echo "<script nonce={$ini["nonce_key"]}>
+            var userData = " . json_encode($users) . ";
+            var userID = {$_COOKIE["user_id"]};
+            var siteID = 4;
+          </script>";
 ?>
 <!-- Page Heading -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -200,3 +202,4 @@
 </div>
 
 <script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/users/js/users.js"?>></script>
+<?php }); ?>

@@ -7,89 +7,89 @@
 
   require __DIR__ . '/../../vendor/autoload.php';
 
-  $system_update_api = new System_Update_Api();
-  $system_update_state = $system_update_api->checkUpdateRoutine();
-
-  $system_api = new System_Api();
-  $all_settings = $system_api->getAllSystemSettings()["data"];
-  if(array_key_exists("alerting", $all_settings)){
-    $alerting = $all_settings["alerting"];
-  }else{
-    $alerting = array("mail" => false, "gotify" => false);
-    $system_api->setSystemSettings(array("alerting" => $alerting));
-  }
-
-  if((array_key_exists("process_update", $system_update_state["data"]) && $system_update_state["data"]["process_update"]) || array_key_exists("db_install_needed", $system_update_state["data"])){
-    header("Location: http://{$_SERVER['SERVER_NAME']}/frontend/sites/installer_updater/");
-  }
+  $check_login = React\Promise\resolve((new Login_Api())->checklogin());
+  $update_running = React\Promise\resolve((new System_Update_Api())->checkUpdateRoutine());
+  $all_system_settings = React\Promise\resolve((new System_Api())->getAllSystemSettings());
+  $setup_gui_mod = React\Promise\resolve((new UserSettings_Api())->getGuiMode($_COOKIE["user_id"]));
+  $own_userdata = React\Promise\resolve((new Users_Api())->getOwnUserData($_COOKIE["user_id"]));
 
   $ini = parse_ini_file(__DIR__.'/../../backend/config/config.ini.php');
   $frontendurl = $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"];
-  $login_api = new Login_Api();
-  $loggedin = $login_api->checklogin();
 
-  if($loggedin["status"] > 0 || !array_key_exists("user_id", $_COOKIE) || is_null($_COOKIE["user_id"])){
-    header("Location: {$frontendurl}/login.php");
-  }
+  React\Promise\all([$check_login, $update_running, $all_system_settings, $setup_gui_mod, $own_userdata])->then(function($all_returned) use($ini, $frontendurl){
+    $loggedin = $all_returned[0];
+    if($loggedin["status"] > 0 || !array_key_exists("user_id", $_COOKIE) || is_null($_COOKIE["user_id"])){
+      header("Location: {$frontendurl}/login.php");
+    }
 
-  $users_api = new Users_Api();
-  $user_settings_api = new UserSettings_Api();
+    $system_update_state = $all_returned[1];
+    if((array_key_exists("process_update", $system_update_state["data"]) && $system_update_state["data"]["process_update"]) || array_key_exists("db_install_needed", $system_update_state["data"])){
+      header("Location: http://{$_SERVER['SERVER_NAME']}/frontend/sites/installer_updater/");
+    }
 
-  $setup_gui_mod = $user_settings_api->getGuiMode($_COOKIE["user_id"]);
-  if(array_key_exists("data", $setup_gui_mod) || array_key_exists("gui_mode", $setup_gui_mod["data"])){
-    $gui_mode = $setup_gui_mod["data"]["gui_mode"];
-  }else{
-    $user_settings_api->setGuiMode(["gui_mode" => 1]);
-    $gui_mode = 1;
-  }
-  $gui_mode_string = ($gui_mode == 1 ? "gui-mode-light" : "gui-mode-dark");
+    $all_settings = $all_returned[2];
+    if(array_key_exists("alerting", $all_settings)){
+      $alerting = $all_settings["alerting"];
+    }else{
+      $alerting = array("mail" => false, "gotify" => false);
+      $check_table = React\Promise\resolve(((new System_Api()))->setSystemSettings(array("alerting" => $alerting)));
+      $check_table->otherwise(function (\Exception $e){
+        echo "AN ERROR OCCURED SETTING THE ALERTING TYPE.";
+      });
+    }
 
-  $userData = array();
-  if(array_key_exists("user_id", $_COOKIE)) $userData = $users_api->getOwnUserData($_COOKIE["user_id"]);
+    $setup_gui_mod = $all_returned[3];
+    if(array_key_exists("data", $setup_gui_mod) || array_key_exists("gui_mode", $setup_gui_mod["data"])){
+      $gui_mode = $setup_gui_mod["data"]["gui_mode"];
+    }else{
+      $user_settings_api->setGuiMode(["gui_mode" => 1]);
+      $gui_mode = 1;
+    }
 
-  echo "
-  <script nonce={$ini["nonce_key"]}>
-    var backend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["backend_url"]}';
-    var frontend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}';
-    var websocket = '{$ini["socket_protocol"]}://{$ini["socket_domain"]}{$ini["socket_listener"]}';
-    var authhash = '{$ini["web_client_auth_hash"]}';
-    var userdata = " . json_encode($userData["data"]) . ";
-    var userID = {$_COOKIE["user_id"]};
-    var sessid = '{$_COOKIE["PHPSESSID"]}';
-    var darkmode = {$gui_mode};
-    var chartcolor = '" . ($gui_mode == 1 ? "#858796" : "#fff") . "';
-    var alerting = " . json_encode($alerting) . ";
-    var intervals = {};
-  </script>";
+    $gui_mode_string = ($gui_mode == 1 ? "gui-mode-light" : "gui-mode-dark");
+
+    echo "
+      <script nonce={$ini["nonce_key"]}>
+        var backend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["backend_url"]}';
+        var frontend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}';
+        var websocket = '{$ini["socket_protocol"]}://{$ini["socket_domain"]}{$ini["socket_listener"]}';
+        var authhash = '{$ini["web_client_auth_hash"]}';
+        var userdata = " . json_encode($all_returned[4]["data"]) . ";
+        var userID = {$_COOKIE["user_id"]};
+        var sessid = '{$_COOKIE["PHPSESSID"]}';
+        var darkmode = {$gui_mode};
+        var chartcolor = '" . ($gui_mode == 1 ? "#858796" : "#fff") . "';
+        var alerting = " . json_encode($alerting) . ";
+        var intervals = {};
+      </script>";
 ?>
 <html lang="en">
   <head>
-      <meta charset="utf-8">
-      <meta http-equiv="X-UA-Compatible" content="IE=edge">
-      <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-      <meta name="description" content="">
-      <meta name="author" content="">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
 
-      <title>Chia® Manager - Dashboard</title>
+    <title>Chia® Manager - Dashboard</title>
 
-      <link rel="shortcut icon" type="image/x-icon" href="<?php echo $ini["frontend_url"]."/img/favicon.ico"?>">
-      <link rel="icon" type="image/png" href="<?php echo $ini["frontend_url"]."/img/favicon.png"?>" sizes="32x32">
-      <link rel="icon" type="image/png" href="<?php echo $ini["frontend_url"]."/img/favicon.png"?>" sizes="96x96">
+    <link rel="shortcut icon" type="image/x-icon" href="<?php echo $ini["frontend_url"]."/img/favicon.ico"?>">
+    <link rel="icon" type="image/png" href="<?php echo $ini["frontend_url"]."/img/favicon.png"?>" sizes="32x32">
+    <link rel="icon" type="image/png" href="<?php echo $ini["frontend_url"]."/img/favicon.png"?>" sizes="96x96">
 
-      <!-- Custom fonts for this template-->
-      <link href="<?php echo $frontendurl; ?>/frameworks/node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
-      <link href="<?php echo $ini["frontend_url"]; ?>/css/google_fonts/nunito/nunito-font.css" rel="stylesheet">
-      <!-- Styles for vendor products -->
-      <link href="<?php echo $frontendurl; ?>/frameworks/bootstrap/css/sb-admin-2.min.css" rel="stylesheet">
-      <link href="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-      <link href="<?php echo $frontendurl; ?>/frameworks/davidstutz-multiselect/css/bootstrap-multiselect.min.css" rel="stylesheet">
-      <link href="<?php echo $frontendurl; ?>/frameworks/node_modules/datatables.net-bs4/css/dataTables.bootstrap4.min.css" rel="stylesheet">
-      <link href="<?php echo $frontendurl; ?>/frameworks/jquery-datetimepicker/build/jquery.datetimepicker.min.css" rel="stylesheet">
-      <!-- Custom styles for this template-->
-      <link href="<?php echo $frontendurl; ?>/css/custom.css" rel="stylesheet">
-      <link href="<?php echo $frontendurl; ?>/css/gui-modes/dark/mode.css" rel="stylesheet">
-      <link href="<?php echo $frontendurl; ?>/css/main.css" rel="stylesheet">
-        
+    <!-- Custom fonts for this template-->
+    <link href="<?php echo $frontendurl; ?>/frameworks/node_modules/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+    <link href="<?php echo $ini["frontend_url"]; ?>/css/google_fonts/nunito/nunito-font.css" rel="stylesheet">
+    <!-- Styles for vendor products -->
+    <link href="<?php echo $frontendurl; ?>/frameworks/bootstrap/css/sb-admin-2.min.css" rel="stylesheet">
+    <link href="<?php echo $frontendurl; ?>/frameworks/bootstrap/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="<?php echo $frontendurl; ?>/frameworks/davidstutz-multiselect/css/bootstrap-multiselect.min.css" rel="stylesheet">
+    <link href="<?php echo $frontendurl; ?>/frameworks/node_modules/datatables.net-bs4/css/dataTables.bootstrap4.min.css" rel="stylesheet">
+    <link href="<?php echo $frontendurl; ?>/frameworks/jquery-datetimepicker/build/jquery.datetimepicker.min.css" rel="stylesheet">
+    <!-- Custom styles for this template-->
+    <link href="<?php echo $frontendurl; ?>/css/custom.css" rel="stylesheet">
+    <link href="<?php echo $frontendurl; ?>/css/gui-modes/dark/mode.css" rel="stylesheet">
+    <link href="<?php echo $frontendurl; ?>/css/main.css" rel="stylesheet">    
   </head>
   <body id="page-top" class="gui-mode-elem <?php echo $gui_mode_string; ?>" style="overflow: auto;">
     <div id="wrapper">
@@ -275,7 +275,7 @@
               </li>
               <li class="nav-item dropdown no-arrow">
                 <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  <span id="sitewrapperusername" class="mr-2 d-none d-lg-inline text-gray-600 small"><?php echo $userData["data"]["name"] . " " . $userData["data"]["lastname"]; ?></span>
+                  <span id="sitewrapperusername" class="mr-2 d-none d-lg-inline text-gray-600 small"></span>
                   <img class="img-profile rounded-circle" src="../frameworks/bootstrap/img/undraw_profile.svg">
                 </a>
                 <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
@@ -453,3 +453,4 @@
     <script nonce=<?php echo $ini["nonce_key"]; ?> src="<?php echo $frontendurl; ?>/js/sitewrapper/sitewrapper.js"></script>
   </body>
 </html>
+<?php }); ?>

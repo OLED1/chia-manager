@@ -281,6 +281,7 @@ $(function(){
         "action" : action,
         "data" : data
       },
+      async: true,
       success: function (result, status, xhr) {
         if(result["status"] == 0){
           if(action == "login"){

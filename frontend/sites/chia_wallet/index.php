@@ -1,59 +1,69 @@
 <?php
+  use React\Promise;
   use ChiaMgmt\Nodes\Nodes_Api;
   use ChiaMgmt\Chia_Overall\Chia_Overall_Api;
   use ChiaMgmt\Exchangerates\Exchangerates_Api;
   include("../standard_headers.php");
 
   $nodes_api = new Nodes_Api();
-  $all_nodes = $nodes_api->getConfiguredNodes(["nodetypenum" => 5]);
-  $services_states = $nodes_api->getCurrentChiaNodesUPAndServiceStatus();
-  if(array_key_exists("data", $services_states)){
-    $services_states = $services_states["data"];
-  }else{
-    $services_states = [];
-  }
+  $exchangerates_api = new Exchangerates_Api();
 
-  $chia_nodes = [];
-  if(array_key_exists("data", $all_nodes)){
-    foreach($all_nodes["data"] AS $nodeid => $nodedata){
-      if($nodedata["authtype"] == 2){
-        $thishostinfo["hostname"] = $nodedata["hostname"];
-        $thishostinfo["nodeid"] = $nodedata["id"];
-        $thishostinfo["nodeauthhash"] = $nodedata["nodeauthhash"];
-        $chia_nodes[$nodedata["id"]] = $thishostinfo;
+  $site_infos_to_load = [
+    Promise\resolve($nodes_api->getConfiguredNodes(["nodetypenum" => 5])),
+    Promise\resolve($nodes_api->getCurrentChiaNodesUPAndServiceStatus()),
+    Promise\resolve($exchangerates_api->getUserDefaultCurrency($_COOKIE["user_id"])),
+    Promise\resolve($exchangerates_api->getUserExchangeData(["userid" => $_COOKIE["user_id"]])),
+    Promise\resolve((new Chia_Overall_Api())->getOverallChiaData())
+  ];
+
+  Promise\all($site_infos_to_load)->then(function($all_returned) use($ini){
+    $all_nodes = $all_returned[0];
+    $services_states = $all_returned[1];
+    $defaultCurrency = $all_returned[2];
+    $exchangerate = $all_returned[3];
+    $chia_overall_data = $all_returned[4];
+
+    if(array_key_exists("data", $services_states)){
+      $services_states = $services_states["data"];
+    }else{
+      $services_states = [];
+    }
+
+    $chia_nodes = [];
+    if(array_key_exists("data", $all_nodes)){
+      foreach($all_nodes["data"] AS $nodeid => $nodedata){
+        if($nodedata["authtype"] == 2){
+          $thishostinfo["hostname"] = $nodedata["hostname"];
+          $thishostinfo["nodeid"] = $nodedata["id"];
+          $thishostinfo["nodeauthhash"] = $nodedata["nodeauthhash"];
+          $chia_nodes[$nodedata["id"]] = $thishostinfo;
+        }
       }
     }
-  }
 
-  $chia_overall_api = new Chia_Overall_Api();
-  $exchangerates_api = new Exchangerates_Api();
-  $defaultCurrency = $exchangerates_api-> getUserDefaultCurrency($_COOKIE["user_id"]);
-  $chia_overall_data = $chia_overall_api->getOverallChiaData();
+    if($defaultCurrency["status"] == 0) $defaultCurrency = $defaultCurrency["data"]["currency_code"];
+    else $defaultCurrency = "usd";
 
-  if($defaultCurrency["status"] == 0) $defaultCurrency = $defaultCurrency["data"]["currency_code"];
-  else $defaultCurrency = "usd";
+    if($exchangerate["status"] == 0 && array_key_exists("exchangerate", $exchangerate["data"])){
+      $exchangerate = $exchangerate["data"]["exchangerate"];
+    }else{
+      $defaultCurrency = "usd";
+      $exchangerate = 1;
+    }
 
-  $exchangerate = $exchangerates_api->queryExchangeRatesData($defaultCurrency);
-  if($exchangerate["status"] == 0 && array_key_exists($defaultCurrency, $exchangerate["data"])){
-    $exchangerate = $exchangerate["data"][$defaultCurrency]["currency_rate"];
-  }else{
-    $defaultCurrency = "usd";
-    $exchangerate = 1;
-  }
+    $chiapriceindefcurr = number_format(floatval($chia_overall_data["data"]["price_usd"]) * floatval($exchangerate), 2);
 
-  $chiapriceindefcurr = number_format(floatval($chia_overall_data["data"]["price_usd"]) * floatval($exchangerate), 2);
-
-  echo "<script nonce={$ini["nonce_key"]}>
-    var siteID = 5;
-    var chiaNodes = " . json_encode($chia_nodes) . ";
-    var chiaWalletData = {};
-    var transactionData = {};
-    var defaultCurrency = '{$defaultCurrency}';
-    var exchangerate = {$exchangerate};
-    var chiapricedefcurr = {$chiapriceindefcurr};
-    var chiaoveralldata = " . json_encode($chia_overall_data["data"]) . ";
-    var services_states = " . json_encode($services_states) . ";
-  </script>";
+    echo "<script nonce={$ini["nonce_key"]}>
+      var siteID = 5;
+      var chiaNodes = " . json_encode($chia_nodes) . ";
+      var chiaWalletData = {};
+      var transactionData = {};
+      var defaultCurrency = '{$defaultCurrency}';
+      var exchangerate = {$exchangerate};
+      var chiapricedefcurr = {$chiapriceindefcurr};
+      var chiaoveralldata = " . json_encode($chia_overall_data["data"]) . ";
+      var services_states = " . json_encode($services_states) . ";
+    </script>";
 ?>
 <!-- Page Heading -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -80,18 +90,23 @@
     </div>
   </div>
 </div>
-<?php foreach($chia_nodes AS $arrkey => $nodeinfo){ ?>
-  <div id="walletcontainer_<?php echo $nodeinfo["nodeid"]; ?>">
-    <?php
-        $_GET['nodeid'] = $nodeinfo["nodeid"];
-        $_GET['defaultCurrency'] = $defaultCurrency;
-        $_GET['exchangerate'] = $exchangerate;
-        $_GET['chiapriceindefcurr'] = $chiapriceindefcurr;
-        $_GET['chia_overall_data'] = $chia_overall_data["data"];
-        include("templates/cards.php"); 
-    ?> 
-  </div>
-<?php } ?>
+<?php 
+  $wallet_cards = [];
+  $browser = new React\Http\Browser();
+  $templates_path = "{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}/sites/chia_wallet/templates/";
+
+  foreach($chia_nodes AS $arrkey => $nodeinfo){ 
+    $default_get_params = "?user_id={$_COOKIE['user_id']}&sess_id={$_COOKIE['PHPSESSID']}&nodeid={$nodeinfo["nodeid"]}&defaultCurrency={$defaultCurrency}&exchangerate={$exchangerate}&chiapriceindefcurr={$chiapriceindefcurr}&chia_overall_data=" . json_encode($chia_overall_data["data"]);
+
+    $wallet_cards[$nodeinfo["nodeid"]] = $browser->get("{$templates_path}cards.php{$default_get_params}");
+  }
+
+  React\Promise\all($wallet_cards)->then(function($all_returned){
+    foreach($all_returned AS $nodeid => $this_wallet_node_card){
+      echo "<div id='walletcontainer_{$nodeid}'>{$this_wallet_node_card->getBody()}</div>";
+    }
+  });
+?>
 <div class="modal fade" id="transactiondetailsmodal" style="text-align: center;" data-nodeid="" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true" data-keyboard="false" data-backdrop="static">
   <div class="modal-dialog modal-dialog-centered" role="document" style="text-align: left; max-width: 100%; width: auto !important; display: inline-block; height: 30em;">
     <div class="modal-content" style="height: 30em;">
@@ -210,4 +225,4 @@
   </div>
 </div>
 <script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_wallet/js/chia_wallet.js"?>></script>
-
+<?php }); ?>

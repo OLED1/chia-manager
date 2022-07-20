@@ -10,7 +10,10 @@
   "errormessages" : {
     "queryExchangeRatesData" : {
       "001" : [2, "An error occured."],
-      "002" : [1, "API values not set in configuration file."]
+      "002" : [1, "API values not set in configuration file."],
+      "003" : [2, "An error occured."],
+      "004" : [2, "An error occured."],
+      "005" : [2, "An error occured."]
     },
     "getAllCurrencies" : {
       "001" : [2, "An error occured."]
@@ -21,7 +24,8 @@
     },
     "setUserDefaultCurrency" : {
       "001" : [2, "An error occured."],
-      "002" : [1, "Not all data stated."]
+      "002" : [1, "Not all data stated."],
+      "003" : [2, "An error occured."]
     },
     "getExchangerate" : {
       "001" : [1, "Requested currency not found or not existing."],

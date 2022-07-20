@@ -1,61 +1,74 @@
 <?php
+  use React\Promise;
   use ChiaMgmt\Login\Login_Api;
   use ChiaMgmt\Chia_Infra_Sysinfo\Chia_Infra_Sysinfo_Api;
   use ChiaMgmt\Alerting\Alerting_Api;
   require __DIR__ . '/../../../../vendor/autoload.php';
 
-  $login_api = new Login_Api();
-  $ini = parse_ini_file(__DIR__.'/../../../../backend/config/config.ini.php');
-  $loggedin = $login_api->checklogin();
-
-  if($loggedin["status"] > 0){
-    header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/login.php");
+  if(!array_key_exists("sess_id", $_GET) || ! array_key_exists("user_id", $_GET)){
+    echo "Incomplete Request.";
+    die();
   }
 
-  $chia_infra_sysinfo_api = new Chia_Infra_Sysinfo_Api();
-  $sysinfos = $chia_infra_sysinfo_api->getSystemInfo();
+  $ini = parse_ini_file(__DIR__.'/../../../../backend/config/config.ini.php');
 
   $alerting_api = new Alerting_Api();
-  $configureable_downtimes = $alerting_api->getConfigurableDowntimeServices(["monitor" => 1]);
-  if(array_key_exists("data", $configureable_downtimes)) $configureable_downtimes = $configureable_downtimes["data"];
-  else $configureable_downtimes = [];
+  $site_infos_to_load = [
+    Promise\resolve((new Login_Api())->checklogin($_GET["sess_id"], $_GET["user_id"])),
+    Promise\resolve((new Chia_Infra_Sysinfo_Api())->getSystemInfo()),
+    Promise\resolve($alerting_api->getConfigurableDowntimeServices(["monitor" => 1])),
+    Promise\resolve($alerting_api->getSetupDowntimes()),
+    Promise\resolve($alerting_api->getConfigurableDowntimeServices()),
+  ];
 
-  $found_downtimes = $alerting_api->getSetupDowntimes();
-  if(array_key_exists("data", $found_downtimes)) $found_downtimes = $found_downtimes["data"];
-  else $found_downtimes = [];
-
-  $monitored_services = $alerting_api->getConfigurableDowntimeServices();
-  if(array_key_exists("data", $monitored_services)) $monitored_services = $monitored_services["data"];
-  else $monitored_services = [];
-
-  if(array_key_exists("data", $sysinfos) && count($sysinfos["data"]) > 0){
-    echo 
-    "<script nonce={$ini["nonce_key"]}> 
-      var sysinfodata = " . json_encode($sysinfos["data"]) . "; 
-      var configureable_downtimes = " . json_encode($configureable_downtimes) . ";
-      var found_downtimes = " . json_encode($found_downtimes) . ";
-      var monitored_services = " . json_encode($monitored_services) . ";
-    </script>";
-
-    $first = true;
-    echo "<ul class='nav nav-tabs' role='tablist'>";
-    foreach($sysinfos["data"] AS $nodeid => $sysinfo){
-      echo "<li class='nav-item' role='presentation'>
-              <a class='nav-link " . ($first ? "active" : "") . " node-tab' id='node-tab-$nodeid' data-toggle='tab' href='#node-$nodeid' role='tab' aria-controls='node-$nodeid' aria-selected='true'>{$sysinfo["node"]["hostname"]}</a>
-            </li>";
-      $first = false;
+  Promise\all($site_infos_to_load)->then(function($all_returned) use($ini){
+    if($all_returned[0]["status"] > 0){
+      echo "NOT AUTHENTICATED.";
+      exit();
     }
-    echo "</ul>";
-    echo "<div class='tab-content'>";
 
-    $first = true;
+    $sysinfos = $all_returned[1];
+    $configureable_downtimes = $all_returned[2];
+    $found_downtimes = $all_returned[3];
+    $monitored_services = $all_returned[4];
 
-    include("functions.php");
+    if(array_key_exists("data", $configureable_downtimes)) $configureable_downtimes = $configureable_downtimes["data"];
+    else $configureable_downtimes = [];
     
-    foreach($sysinfos["data"] AS $nodeid => $sysinfo){
-      /*echo "<pre>";
-      print_r($sysinfo);
-      echo "</pre>";*/
+    if(array_key_exists("data", $found_downtimes)) $found_downtimes = $found_downtimes["data"];
+    else $found_downtimes = [];
+    
+    if(array_key_exists("data", $monitored_services)) $monitored_services = $monitored_services["data"];
+    else $monitored_services = [];
+      
+    if(array_key_exists("data", $sysinfos) && count($sysinfos["data"]) > 0){
+      echo 
+      "<script nonce={$ini["nonce_key"]}> 
+        var sysinfodata = " . json_encode($sysinfos["data"]) . "; 
+        var configureable_downtimes = " . json_encode($configureable_downtimes) . ";
+        var found_downtimes = " . json_encode($found_downtimes) . ";
+        var monitored_services = " . json_encode($monitored_services) . ";
+      </script>";
+
+      $first = true;
+      echo "<ul class='nav nav-tabs' role='tablist'>";
+      foreach($sysinfos["data"] AS $nodeid => $sysinfo){
+        echo "<li class='nav-item' role='presentation'>
+                <a class='nav-link " . ($first ? "active" : "") . " node-tab' id='node-tab-$nodeid' data-toggle='tab' href='#node-$nodeid' role='tab' aria-controls='node-$nodeid' aria-selected='true'>{$sysinfo["node"]["hostname"]}</a>
+              </li>";
+        $first = false;
+      }
+      echo "</ul>";
+      echo "<div class='tab-content'>";
+
+      $first = true;
+
+      include("functions.php");
+      
+      foreach($sysinfos["data"] AS $nodeid => $sysinfo){
+        /*echo "<pre>";
+        print_r($sysinfo);
+        echo "</pre>";*/
       if(!array_key_exists("cpu", $sysinfo) && !array_key_exists("memory", $sysinfo) && !array_key_exists("filesystem", $sysinfo)){
 ?>
   <div class='row tab-pane fade show <?php echo ($first ? "active" : ""); ?>' id="node-<?php echo $nodeid; ?>" role="tabpanel" aria-labelledby="node-tab-<?php echo $nodeid; ?>"'>
@@ -574,4 +587,5 @@
 </div>
 <?php 
   } 
+});
 ?>

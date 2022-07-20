@@ -7,7 +7,6 @@
     "invalidateLogin" : "005",
     "getCurrentUserInfos" : "006",
     "setSession" : "007",
-    "logout" : "008",
     "checklogin" : "009",
     "invalidateAllNotLoggedin" : "010"
   },
@@ -22,7 +21,8 @@
     "checkAuthKey" : {
       "001" : [1, "Authkey not found or not valid (anymore)."],
       "002" : [2, "An error occured."],
-      "003" : [2, "You are not authenticated."]
+      "003" : [2, "You are not authenticated."],
+      "004" : [2, "An error occured. User session could not be updated."]
     },
     "checkTOTPMobilePassed" : {
       "001" : [2, "An error occured."],
@@ -31,7 +31,9 @@
     "generateAndsendAuthKey" : {
       "001" : [2, "An error occured."],
       "002" : [2, "Your are not authenticated."],
-      "003" : [2, "An error occured, statuscode not known."]
+      "003" : [2, "An error occured, statuscode not known."],
+      "004" : [2, "An error occured."],
+      "005" : [2, "An error occured."]
     },
     "invalidateLogin" : {
       "001" : [2, "An error occured."],
@@ -44,18 +46,15 @@
     "setSession" : {
       "001" : [1, "Wrong username or password."]
     },
-    "logout" : {
-      "001" : [0, "Logged Out."],
-      "002" : [2, "An error occured."]
-    },
     "checklogin" : {
       "001" : [1, "You are not logged in (anymore)."],
       "002" : [1, "Authkey is not passed. Not logged in."],
       "003" : [1, "TOTP mobile is not passed. Not logged in."],
       "004" : [2, "Unknown error regarding authkey or totp mobile pass check. Please open a github issue."],
-      "005" : [2, "No data has been found on the database."],
+      "005" : [1, "No active session has been found on the database."],
       "006" : [1, "Currently not logged in."],
-      "007" : [1, "No active session found."]
+      "007" : [1, "No active session found."],
+      "008" : [2, "Error during session update."]
     },
     "invalidateAllNotLoggedin" : {
       "001" : [2, "An error occured."]

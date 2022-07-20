@@ -3,50 +3,61 @@
   use ChiaMgmt\Chia_Wallet\Chia_Wallet_Api;
   require __DIR__ . '/../../../../vendor/autoload.php';
 
-  $login_api = new Login_Api();
+  if(!array_key_exists("sess_id", $_GET) || !array_key_exists("user_id", $_GET) || !array_key_exists("nodeid", $_GET) || !array_key_exists("defaultCurrency", $_GET) ||
+    !array_key_exists("exchangerate", $_GET) || !array_key_exists("chiapriceindefcurr", $_GET) || !array_key_exists("chia_overall_data", $_GET)
+  ){
+    echo "Incomplete Request.";
+    die();
+  }
+
+  $site_data_to_load = [
+    React\Promise\resolve((new Login_Api())->checklogin($_GET["sess_id"], $_GET["user_id"])),
+    React\Promise\resolve((new Chia_Wallet_Api())->getWalletData(["nodeid" => $_GET["nodeid"]]))
+  ];
+
   $ini = parse_ini_file(__DIR__.'/../../../../backend/config/config.ini.php');
-  $loggedin = $login_api->checklogin();
+  React\Promise\all($site_data_to_load)->then(function($all_returned) use($ini){
+    if($all_returned[0]["status"] > 0){
+      echo "NOT AUTHENTICATED.";
+      exit();
+    }
 
-  if($loggedin["status"] > 0){
-    header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/login.php");
-  }
+    $all_wallet_data = $all_returned[1];
+    $walletdata = [];
+    $transactions = [];
+    if(array_key_exists("data", $all_wallet_data) && array_key_exists($_GET["nodeid"], $all_wallet_data["data"]) && 
+        array_key_exists("walletinfo", $all_wallet_data["data"][$_GET["nodeid"]]) && !is_null($all_wallet_data["data"][$_GET["nodeid"]]["walletinfo"])){
+      $walletdata = $all_wallet_data["data"][$_GET["nodeid"]]["walletinfo"];
+    }
+    if(array_key_exists("data", $all_wallet_data) && array_key_exists($_GET["nodeid"], $all_wallet_data["data"]) && 
+      array_key_exists("transactions", $all_wallet_data["data"][$_GET["nodeid"]]) && !is_null($all_wallet_data["data"][$_GET["nodeid"]]["transactions"])){
+      $transactions = $all_wallet_data["data"][$_GET["nodeid"]]["transactions"];
+    }
 
-  $chia_wallet_api = new Chia_Wallet_Api();
-  $all_wallet_data = $chia_wallet_api->getWalletData(["nodeid" => $_GET["nodeid"]]);
-  $walletdata = [];
-  $transactions = [];
-  if(array_key_exists("data", $all_wallet_data) && array_key_exists($_GET["nodeid"], $all_wallet_data["data"]) && 
-      array_key_exists("walletinfo", $all_wallet_data["data"][$_GET["nodeid"]]) && !is_null($all_wallet_data["data"][$_GET["nodeid"]]["walletinfo"])){
-    $walletdata = $all_wallet_data["data"][$_GET["nodeid"]]["walletinfo"];
-  }
-  if(array_key_exists("data", $all_wallet_data) && array_key_exists($_GET["nodeid"], $all_wallet_data["data"]) && 
-    array_key_exists("transactions", $all_wallet_data["data"][$_GET["nodeid"]]) && !is_null($all_wallet_data["data"][$_GET["nodeid"]]["transactions"])){
-    $transactions = $all_wallet_data["data"][$_GET["nodeid"]]["transactions"];
-  }
+    if(array_key_exists("defaultCurrency", $_GET) && !is_null($_GET["defaultCurrency"])) $defaultCurrency = $_GET["defaultCurrency"];
+    else $defaultCurrency = "usd";
+    if(array_key_exists("exchangerate", $_GET) && !is_null($_GET["exchangerate"])) $exchangerate = $_GET["exchangerate"];
+    else $exchangerate = 0;
+    if(array_key_exists("chiapriceindefcurr", $_GET) && !is_null($_GET["chiapriceindefcurr"])) $chiapriceindefcurr = $_GET["chiapriceindefcurr"];
+    else $chiapriceindefcurr = 0;
 
-  if(array_key_exists("defaultCurrency", $_GET) && !is_null($_GET["defaultCurrency"])) $defaultCurrency = $_GET["defaultCurrency"];
-  else $defaultCurrency = "usd";
-  if(array_key_exists("exchangerate", $_GET) && !is_null($_GET["exchangerate"])) $exchangerate = $_GET["exchangerate"];
-  else $exchangerate = 0;
-  if(array_key_exists("chiapriceindefcurr", $_GET) && !is_null($_GET["chiapriceindefcurr"])) $chiapriceindefcurr = $_GET["chiapriceindefcurr"];
-  else $chiapriceindefcurr = 0;
+    $nodeid = $_GET["nodeid"];
+    $hostinfo = $all_wallet_data["data"][$nodeid]["hostinfo"];
+    $chia_overall_data = json_decode($_GET["chia_overall_data"], true);
 
-  $nodeid = $_GET["nodeid"];
-  $hostinfo = $all_wallet_data["data"][$_GET["nodeid"]]["hostinfo"];
-
-  if(count($walletdata) > 0){
-    echo "<script nonce={$ini["nonce_key"]}>
-            chiaWalletData[" . $_GET["nodeid"] . "] = " . json_encode($walletdata) . ";
-            transactionData[" . $_GET["nodeid"] . "] = " . json_encode($transactions) . ";
-          </script>";
-    foreach($walletdata as $walletid => $thiswallet){
-      $wallettype = function($wallettype){
-        switch($wallettype){
-          case 0: return "STANDARD_WALLET";
-          case 9: return "POOLING_WALLET";
-          default: return "UNKNOWN_WALLET";
-        }
-      };
+    if(count($walletdata) > 0){
+      echo "<script nonce={$ini["nonce_key"]}>
+              chiaWalletData[{$nodeid}] = " . json_encode($walletdata) . ";
+              transactionData[{$nodeid}] = " . json_encode($transactions) . ";
+            </script>";
+      foreach($walletdata as $walletid => $thiswallet){
+        $wallettype = function($wallettype){
+          switch($wallettype){
+            case 0: return "STANDARD_WALLET";
+            case 9: return "POOLING_WALLET";
+            default: return "UNKNOWN_WALLET";
+          }
+        };
 ?>
 <div class='row'>
   <div class='col'>
@@ -86,10 +97,10 @@
           <div class='col-12 col-md-6 mb-4'>
             <div class='card text-white shadow'>
               <div class='card-body'>
-                <?php $syncpercent = number_format(($thiswallet['walletheight'] / $_GET["chia_overall_data"]["xch_blockheight"] * 100), 2); ?>
-                Current blocks synced <?php echo ($syncpercent <= 40 ? "({$syncpercent}% - {$thiswallet['walletheight']}&nbsp;/&nbsp;{$_GET["chia_overall_data"]["xch_blockheight"]})" : ""); ?>
+                <?php $syncpercent = number_format(($thiswallet['walletheight'] / $chia_overall_data["xch_blockheight"] * 100), 2); ?>
+                Current blocks synced <?php echo ($syncpercent <= 40 ? "({$syncpercent}% - {$thiswallet['walletheight']}&nbsp;/&nbsp;{$chia_overall_data["xch_blockheight"]})" : ""); ?>
                 <div class="progress">
-                  <div id="<?php echo "sync_progress_{$nodeid}_{$thiswallet['walletid']}"; ?>" class="progress-bar bg-primary" role="progressbar" style="width: <?php echo "{$syncpercent}"; ?>%;" aria-valuenow="<?php echo "{$syncpercent}"; ?>" aria-valuemin="0" aria-valuemax="100"><?php echo "{$syncpercent}% - {$thiswallet['walletheight']}&nbsp;/&nbsp;{$_GET["chia_overall_data"]["xch_blockheight"]}" ?></div>
+                  <div id="<?php echo "sync_progress_{$nodeid}_{$thiswallet['walletid']}"; ?>" class="progress-bar bg-primary" role="progressbar" style="width: <?php echo "{$syncpercent}"; ?>%;" aria-valuenow="<?php echo "{$syncpercent}"; ?>" aria-valuemin="0" aria-valuemax="100"><?php echo "{$syncpercent}% - {$thiswallet['walletheight']}&nbsp;/&nbsp;{$chia_overall_data["xch_blockheight"]}" ?></div>
                 </div>
               </div>
             </div>
@@ -182,38 +193,36 @@
                   if(array_key_exists($thiswallet['walletid'], $transactions) && count($transactions[$thiswallet['walletid']]) > 0){
                 ?>
                 <div class="table-responsive">
-                    <table class="table table-bordered dataTable_<?php echo $nodeid; ?>" id="<?php echo "transactions_{$nodeid}_{$thiswallet['walletid']}"; ?>" width="100%" cellspacing="0">
-                        <thead>
-                            <tr>
-                              <th>ID</th>
-                              <th>Date</th>
-                              <th>Amount</th>
-                              <th>Receiver</th>
-                              <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                              <th>ID</th>
-                              <th>Date</th>
-                              <th>Amount</th>
-                              <th>Receiver</th>
-                              <th>Actions</th>
-                            </tr>
-                        </tfoot>
-                    </table>
+                  <table class="table table-bordered dataTable_<?php echo $nodeid; ?>" id="<?php echo "transactions_{$nodeid}_{$thiswallet['walletid']}"; ?>" width="100%" cellspacing="0">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Receiver</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <th>ID</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Receiver</th>
+                        <th>Actions</th>
+                      </tr>
+                    </tfoot>
+                  </table>
                 </div>
-                <?php
-                  }else{
-                    echo "<div class='card bg-warning text-white shadow'>
-                            <div class='card-body'>
-                              There are currently no transactions to show.
-                            </div>
-                          </div>";
-                  }
-                ?>
+                <?php }else{ ?>
+                <div class='card bg-warning text-white shadow'>
+                  <div class='card-body'>
+                    There are currently no transactions to show.
+                  </div>
+                </div>
+                <?php } ?>
               </div>
             </div>
           </div>
@@ -222,7 +231,7 @@
       <div class="card-footer">
         Data queried at: <span id="querydate_<?php echo "{$nodeid}"; ?>"><?php echo "{$thiswallet["querydate"]}"; ?></span>
       </div>
-    <?php }else{ ?>
+      <?php }else{ ?>
       <div class="card-body">
         <div class="card bg-danger text-white shadow">
           <div class="card-body">
@@ -230,7 +239,7 @@
           </div>
         </div>
       </div>
-    <?php } ?>
+      <?php } ?>
     </div>
   </div>
 </div>
@@ -248,4 +257,6 @@
     </div>
   </div>
 </div>
-<?php } ?>
+<?php } 
+  });
+?>

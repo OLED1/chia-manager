@@ -5,54 +5,66 @@
   use ChiaMgmt\Users\Users_Api;
   require __DIR__ . '/../../../../vendor/autoload.php';
 
-  $login_api = new Login_Api();
-  $ini = parse_ini_file(__DIR__.'/../../../../backend/config/config.ini.php');
-  $loggedin = $login_api->checklogin();
+  if(!array_key_exists("sess_id", $_GET) || !array_key_exists("user_id", $_GET)){
+    echo "Incomplete Request.";
+    die();
+  }
 
   $alerting_api = new Alerting_Api();
-  $alerting_rules = $alerting_api->getConfiguredRules(["monitor" => 1]);
-  if(array_key_exists("data", $alerting_rules)) $alerting_rules = $alerting_rules["data"];
-  else $alerting_rules = [];
 
-  $alerting_custom_rules = $alerting_api->getAvailableRuleTypesAndServices();
-  if(array_key_exists("data", $alerting_custom_rules)) $alerting_custom_rules = $alerting_custom_rules["data"];
-  else $alerting_custom_rules = [];
+  $site_data_to_load = [
+    React\Promise\resolve((new Login_Api())->checklogin($_GET["sess_id"], $_GET["user_id"])),
+    React\Promise\resolve($alerting_api->getConfiguredRules(["monitor" => 1])),
+    React\Promise\resolve($alerting_api->getAvailableRuleTypesAndServices()),
+    React\Promise\resolve($alerting_api->getConfiguredAlertingRules()),
+    React\Promise\resolve($alerting_api->getAvailableServices()),
+    React\Promise\resolve((new Users_Api())->getUserData()),
+    React\Promise\resolve((new Nodes_Api())->getConfiguredNodes())
+  ];
 
-  $configured_alertings = $alerting_api->getConfiguredAlertingRules();
-  if(array_key_exists("data", $configured_alertings)) $configured_alertings = $configured_alertings["data"];
-  else $configured_alertings = [];
+  $ini = parse_ini_file(__DIR__.'/../../../../backend/config/config.ini.php');
+  React\Promise\all($site_data_to_load)->then(function($all_returned) use($ini){   
+    if($all_returned[0]["status"] > 0){
+      echo "NOT AUTHENTICATED.";
+      exit();
+    }
 
-  $alerting_services = $alerting_api->getAvailableServices()["data"];
+    $alerting_rules = $all_returned[1];
+    if(array_key_exists("data", $alerting_rules)) $alerting_rules = $alerting_rules["data"];
+    else $alerting_rules = [];
   
-  $users_api = new Users_Api();
-  $users = $users_api->getUserData()["data"];
+    $alerting_custom_rules = $all_returned[2];
+    if(array_key_exists("data", $alerting_custom_rules)) $alerting_custom_rules = $alerting_custom_rules["data"];
+    else $alerting_custom_rules = [];
+  
+    $configured_alertings = $all_returned[3];
+    if(array_key_exists("data", $configured_alertings)) $configured_alertings = $configured_alertings["data"];
+    else $configured_alertings = [];
+  
+    $alerting_services = $all_returned[4]["data"];
 
+    $users = $all_returned[5]["data"];
 
-  $nodes_api = new Nodes_Api();
-  $all_nodes = $nodes_api->getConfiguredNodes();
-  $chia_nodes = [];
-  if(array_key_exists("data", $all_nodes)){
-    foreach($all_nodes["data"] AS $nodeid => $nodedata){
-      if($nodedata["authtype"] == 2){
-        $thishostinfo["hostname"] = $nodedata["hostname"];
-        $thishostinfo["nodeid"] = $nodedata["id"];
-        array_push($chia_nodes, $thishostinfo);
+    $all_nodes = $all_returned[6];
+    $chia_nodes = [];
+    if(array_key_exists("data", $all_nodes)){
+      foreach($all_nodes["data"] AS $nodeid => $nodedata){
+        if($nodedata["authtype"] == 2){
+          $thishostinfo["hostname"] = $nodedata["hostname"];
+          $thishostinfo["nodeid"] = $nodedata["id"];
+          array_push($chia_nodes, $thishostinfo);
+        }
       }
     }
-  }
 
-  if($loggedin["status"] > 0){
-    header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/login.php");
-  }
-
-  echo "<script nonce={$ini["nonce_key"]}>
-    var alerting_rules = " . json_encode($alerting_rules) . ";
-    var alerting_services = " . json_encode($alerting_services) . ";
-    var available_custom_rules = " . json_encode($alerting_custom_rules) . ";
-    var available_setup_alertings = " . json_encode($configured_alertings) . ";
-    var users = " . json_encode($users) . "
-    var nodes = " . json_encode($chia_nodes) . ";
-  </script>";
+    echo "<script nonce={$ini["nonce_key"]}>
+      var alerting_rules = " . json_encode($alerting_rules) . ";
+      var alerting_services = " . json_encode($alerting_services) . ";
+      var available_custom_rules = " . json_encode($alerting_custom_rules) . ";
+      var available_setup_alertings = " . json_encode($configured_alertings) . ";
+      var users = " . json_encode($users) . "
+      var nodes = " . json_encode($chia_nodes) . ";
+    </script>";
 ?>
 <div class="card shadow" style="margin: 1em;">
   <div class="card-body">
@@ -257,3 +269,4 @@
     </div>
   </div>
 </div>
+<?php }); ?>

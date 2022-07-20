@@ -1,5 +1,6 @@
 <?php
   namespace ChiaMgmt\Alerting\Additional_Functions;
+  use React\Promise;
   use ChiaMgmt\DB\DB_Api;
 
   class AlertingDowntimes{
@@ -19,9 +20,9 @@
      * @param array $data
      * @return array
      */
-    public function getConfigurableDowntimeServices(array $data = []): array
+    public function getConfigurableDowntimeServices(array $data = []): object
     {
-        try{
+        $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
             $statement_string = "n.id = (
                 SELECT nt.nodeid FROM nodetype nt WHERE nt.code >= 3 AND nt.code <= 5 AND nt.nodeid = n.id LIMIT 1
             )";
@@ -36,38 +37,44 @@
                 array_push($statement_array, $data["monitor"]);
             }
 
-            $sql = $this->db_api->execute("SELECT n.id, cias.id AS service_id, n.hostname, n.nodeauthhash, cias.service_type, cist.service_desc,
-                                        (CASE WHEN cias.service_target IS NULL OR cias.service_target = '' THEN 'Total (down)time'
-                                            ELSE cias.service_target
-                                        END) AS service_target, cias.service_target AS real_service_target, ar.monitor
-                                        FROM nodes n
-                                        LEFT JOIN chia_infra_available_services cias ON cias.id = (SELECT cias1.id
-                                                                                        FROM chia_infra_available_services cias1
-                                                                                        WHERE cias1.service_target = cias.service_target AND cias1.service_type = cias.service_type AND cias1.node_id = n.id       
-                                                                                        ORDER BY cias1.service_state_first_reported DESC
-                                                                                        LIMIT 1)
-                                        LEFT JOIN chia_infra_service_types cist ON cist.id = cias.service_type                                                           
-                                        LEFT JOIN alerting_rules ar on ar.id = cias.refers_to_rule_id
-                                        WHERE $statement_string
-                                        ORDER BY n.id ASC, cias.service_type ASC, cias.service_target ASC", $statement_array);
+            $configurable_dt_services = Promise\resolve((new DB_Api())->execute("SELECT n.id, cias.id AS service_id, n.hostname, n.nodeauthhash, cias.service_type, cist.service_desc,
+                                                                                (CASE WHEN cias.service_target IS NULL OR cias.service_target = '' THEN 'Total (down)time'
+                                                                                    ELSE cias.service_target
+                                                                                END) AS service_target, cias.service_target AS real_service_target, ar.monitor
+                                                                                FROM nodes n
+                                                                                LEFT JOIN chia_infra_available_services cias ON cias.id = (SELECT cias1.id
+                                                                                                                                FROM chia_infra_available_services cias1
+                                                                                                                                WHERE cias1.service_target = cias.service_target AND cias1.service_type = cias.service_type AND cias1.node_id = n.id       
+                                                                                                                                ORDER BY cias1.service_state_first_reported DESC
+                                                                                                                                LIMIT 1)
+                                                                                LEFT JOIN chia_infra_service_types cist ON cist.id = cias.service_type                                                           
+                                                                                LEFT JOIN alerting_rules ar on ar.id = cias.refers_to_rule_id
+                                                                                WHERE $statement_string
+                                                                                ORDER BY n.id ASC, cias.service_type ASC, cias.service_target ASC", $statement_array));
 
-            $found_configureable_downtimes = $sql->fetchAll(\PDO::FETCH_ASSOC);
-            $returnarray = [];
-            foreach($found_configureable_downtimes AS $arrkey => $thisservice){
-                if(!array_key_exists($thisservice["id"], $returnarray)) $returnarray[$thisservice["id"]] = ["hostname" => $thisservice["hostname"], "nodeauthhash" => $thisservice["nodeauthhash"], "services" => []];
-                if(!array_key_exists($thisservice["service_type"], $returnarray[$thisservice["id"]]["services"])){
-                    $returnarray[$thisservice["id"]]["services"][$thisservice["service_type"]] = [ "service_type_desc" => $thisservice["service_desc"] , "configurable_services" => [$thisservice["service_id"] => [ "service_id" => $thisservice["service_id"], "real_service_target" => $thisservice["real_service_target"], "service_target" => $thisservice["service_target"], "monitor" => $thisservice["monitor"]]]];
-                }else{
-                    $returnarray[$thisservice["id"]]["services"][$thisservice["service_type"]]["configurable_services"][$thisservice["service_id"]] = [ "service_id" => $thisservice["service_id"], "real_service_target" => $thisservice["real_service_target"], "service_target" => $thisservice["service_target"], "monitor" => $thisservice["monitor"]];
-                } 
-            }
+            $configurable_dt_services->then(function($configurable_dt_services_returned) use(&$resolve){
+                $returnarray = [];
+                foreach($configurable_dt_services_returned->resultRows AS $arrkey => $thisservice){
+                    if(!array_key_exists($thisservice["id"], $returnarray)) $returnarray[$thisservice["id"]] = ["hostname" => $thisservice["hostname"], "nodeauthhash" => $thisservice["nodeauthhash"], "services" => []];
+                    if(!array_key_exists($thisservice["service_type"], $returnarray[$thisservice["id"]]["services"])){
+                        $returnarray[$thisservice["id"]]["services"][$thisservice["service_type"]] = [ "service_type_desc" => $thisservice["service_desc"] , "configurable_services" => [$thisservice["service_id"] => [ "service_id" => $thisservice["service_id"], "real_service_target" => $thisservice["real_service_target"], "service_target" => $thisservice["service_target"], "monitor" => $thisservice["monitor"]]]];
+                    }else{
+                        $returnarray[$thisservice["id"]]["services"][$thisservice["service_type"]]["configurable_services"][$thisservice["service_id"]] = [ "service_id" => $thisservice["service_id"], "real_service_target" => $thisservice["real_service_target"], "service_target" => $thisservice["service_target"], "monitor" => $thisservice["monitor"]];
+                    } 
+                }
+    
+                $resolve(array("status" => 0, "message" => "Successfully returned all found configurable downtime services.", "data" => $returnarray)); 
+            })->otherwise(function(\Exception $e) use(&$resolve){
+                //TODO Implement correct status code
+                $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+            });
+        };
 
-            return array("status" => 0, "message" => "Successfully returned all found configurable downtime services.", "data" => $returnarray); 
-        }catch(\Exception $e){
-            //TODO Implement correct status code
-            print_r($e);
-            return array("status" => 1, "message" => "An error occured.");
-        }
+        $canceller = function () {
+            throw new Exception('Promise cancelled');
+        };
+    
+        return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -137,8 +144,58 @@
      * @param array $data
      * @return array
      */
-    public function getSetupDowntimes(array $data = []): array
+    public function getSetupDowntimes(array $data = []): object
     {
+        $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+            $time_past = "24";
+            $where_statement = "";
+            $statement_array[0] = $time_past;
+            if(array_key_exists("time_past", $data) && is_numeric($data["time_past"]) && $data["time_past"] > 0){
+                $time_past = $data["time_past"];
+                $statement_array[0] = $time_past;
+            }
+    
+            if(array_key_exists("node_id", $data) && is_numeric($data["node_id"]) && $data["node_id"] > 2){
+                $where_statement .= " AND node_id = ?";
+                array_push($statement_array, $data["node_id"]); 
+            }
+
+            $setup_downtimes = Promise\resolve((new DB_Api)->execute("SELECT ad.id, ad.node_id, ad.downtime_type, ad.downtime_service_type, cist.service_desc, ad.downtime_comment, ad.downtime_from, ad.downtime_to, ad.downtime_created, ad.downtime_created_by, u.name, u.lastname, u.username,
+                                                                            (CASE WHEN ad.downtime_to < NOW() THEN 0
+                                                                                WHEN ad.downtime_from < NOW() AND ad.downtime_to > NOW() THEN 1
+                                                                                WHEN ad.downtime_from > NOW() THEN 2
+                                                                                ELSE 0
+                                                                            END) AS downtime_active,
+                                                                            (CASE WHEN ad.downtime_service_target IS NULL OR ad.downtime_service_target = '' THEN 'total (downtime)'
+                                                                                ELSE ad.downtime_service_target
+                                                                            END) AS downtime_service_target
+                                                                        FROM alerting_downtimes ad
+                                                                        JOIN chia_infra_service_types cist ON cist.id = ad.downtime_service_type
+                                                                        JOIN users u ON u.id = ad.downtime_created_by
+                                                                        WHERE downtime_to >= NOW() -INTERVAL ? HOUR OR downtime_from >= NOW()
+                                                                        ORDER BY downtime_active", 
+                                                                        $statement_array));
+
+            $setup_downtimes->then(function($setup_downtimes_returned) use(&$resolve){
+                $returnarray = [];
+                foreach($setup_downtimes_returned->resultRows AS $arrkey => $this_downtime){
+                    if(!array_key_exists($this_downtime["node_id"], $returnarray)) $returnarray[$this_downtime["node_id"]] = [ 0 => [], 1 => [], 2 => [] ];
+                    $returnarray[$this_downtime["node_id"]][$this_downtime["downtime_active"]][$this_downtime["id"]] = $this_downtime;
+                }
+    
+                $resolve(array("status" => 0, "message" => "Successfully returnded found setup downtimes.", "data" => $returnarray));   
+            })->otherwise(function(\Exception $e) use(&$resolve){
+                //TODO Implement correct status code
+                $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+            });
+        };
+
+        $canceller = function () {
+            throw new Exception('Promise cancelled');
+        };
+    
+        return new Promise\Promise($resolver, $canceller);
+        
         $time_past = "24";
         $where_statement = "";
         $statement_array[0] = $time_past;
@@ -169,7 +226,7 @@
                                             ORDER BY downtime_active", 
                                             $statement_array);
 
-            $found_downtimes = $sql->fetchAll(\PDO::FETCH_ASSOC);
+            $found_downtimes = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/;
             $returnarray = [];
 
             foreach($found_downtimes AS $arrkey => $this_downtime){

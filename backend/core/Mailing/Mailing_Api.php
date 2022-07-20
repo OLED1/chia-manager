@@ -1,11 +1,14 @@
 <?php
   namespace ChiaMgmt\Mailing;
-
-  use ChiaMgmt\Logging\Logging_Api;
+  use React\Promise;
+  use React\ChildProcess;
   use ChiaMgmt\System\System_Api;
+  use ChiaMgmt\Logging\Logging_Api;
   use PHPMailer\PHPMailer\PHPMailer;
   use PHPMailer\PHPMailer\SMTP;
   use PHPMailer\PHPMailer\Exception;
+
+  require __DIR__ . '/../../../vendor/autoload.php';
 
   /**
    * The Mailing_Api class enables the sending of mails using PHPMailer.
@@ -97,58 +100,33 @@
      * @param  string $message    The mail's message as html formatted
      * @return array              Returns a status code array
      */
-    public function sendMail(array $recepients, string $subject , string $message): array
-    {
-      $mailsettings = $this->system_api->getSpecificSystemSetting("mailing");
+    public function sendMail(array $recepients, string $subject , string $message): object
+    {     
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($recepients, $subject, $message){
+        $cmd = "php " . __DIR__ . "/Mail_Background.php '" . implode(",", $recepients) . "' '{$subject}' '{$message}'";
+       
+        $process = new ChildProcess\Process($cmd);
+        $process->start();
+  
+        $process->stdout->on('data', function ($chunk) use($resolve){
+          $returned_message = (!is_null($chunk) ? json_decode($chunk, true) : array());
 
-      if($mailsettings["status"] == 0 && Count($mailsettings["data"]) > 0){
-        $mailsettings_data = $mailsettings["data"]["mailing"];
-
-        $message .= "<br><br>This mail was automatically generated. Please do not reply to this e-mail.";
-        $footer = "Sent by Chia Management (<a href='{$this->ini["app_protocol"]}://{$this->ini["app_domain"]}'>{$this->ini["app_protocol"]}://{$this->ini["app_domain"]}</a>) {$this->ini["versnummer"]}.";
-        $preheader = substr($message, 0, 100);
-
-        $template = file_get_contents(__DIR__."/template.html");
-        $template =  str_replace("[MAILTEXT]",$message, $template);
-        $template =  str_replace("[PREHEADER]",$preheader, $template);
-        $template =  str_replace("[MAILINFO]",$footer, $template);
-
-        $mailer = "Chia Management";
-
-        try{
-          $this->mailer = new PHPMailer(true);
-          $mail = $this->mailer;
-          //$mail->SMTPDebug = SMTP::DEBUG_SERVER;
-          $mail->isSMTP();
-          $mail->Host       = $mailsettings_data["mailserverdomain"]["value"];
-          $mail->SMTPAuth   = true;
-          $mail->Username   = $mailsettings_data["loginname"]["value"];
-          $mail->Password   = $mailsettings_data["loginpassword"]["value"];
-          if($mailsettings_data["security"]["value"] == "ssl_tls") $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-          else if($mailsettings_data["security"]["value"] == "starttls") $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-
-          $mail->Port       = $mailsettings_data["mailserverport"]["value"];
-
-          //Recipients
-          $mail->setFrom($mailsettings_data["fromuser"]["value"]."@".$mailsettings_data["domain"]["value"], $mailer);
-          $mail->addReplyTo($mailsettings_data["fromuser"]["value"]."@".$mailsettings_data["domain"]["value"], 'Information');
-          foreach ($recepients as $recepient) {
-            $mail->addBCC($recepient);
+          if(!is_null($returned_message) && array_key_exists("status", $returned_message) && $returned_message["status"] == 0){
+            $resolve(array("status" => 0, "message" => "Message has been sent on " . date("Y-m-d H:i:s") . "."));
+            return;
+          }else if(!is_null($returned_message) && array_key_exists("data", $returned_message) && $returned_message["status"] != 0){
+            $resolve($this->logging_api->getErrormessage("sendMail", "001","Message could not be sent. Mailer Error: " . $returned_message["data"] . "."));
+          }else{
+            $resolve($this->logging_api->getErrormessage("sendMail", "002","Message could not be sent. UNKNOWN Error."));
           }
+        });
+      };
 
-          // Content
-          $mail->isHTML(true);
-          $mail->Subject = $subject;
-          $mail->Body    = $template;
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
 
-          $mail->send();
-
-          return array("status" => 0, "message" => "Message has been sent.");
-        }catch (\Exception $e) {
-          return $this->logging_api->getErrormessage("001","Message could not be sent. Mailer Error: {$mail->ErrorInfo}.");
-        }
-      }
-      return $mailsettings;
+      return new Promise\Promise($resolver, $canceller);
     }
   }
 ?>

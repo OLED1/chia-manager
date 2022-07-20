@@ -1,5 +1,7 @@
 <?php
   namespace ChiaMgmt\Nodes;
+  use React\Promise;
+  use React\Http\Browser;
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\WebSocket\WebSocket_Api;
@@ -72,10 +74,11 @@
      * Function made for: Backend / Web GUI
      * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[List of nodes of active subscriptions]}
      */
-    public function getActiveSubscriptions(): array
+    public function getActiveSubscriptions(): object
     {
-      $this->websocket_api = new WebSocket_Api();
-      return $this->websocket_api->sendToWSS("getActiveSubscriptions")["getActiveSubscriptions"];
+      return Promise\resolve((new WebSocket_Api())->sendToWSS("getActiveSubscriptions"))->then(function($subscriptions){
+        return (array_key_exists("getActiveSubscriptions", $subscriptions) ? $subscriptions["getActiveSubscriptions"] : []);
+      });
     }
 
     /**
@@ -84,10 +87,11 @@
      * Function made for: Backend / Web GUI
      * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[List of nodes of active requests]}
      */
-    public function getActiveRequests(): array
+    public function getActiveRequests(): object
     {
-      $this->websocket_api = new WebSocket_Api();
-      return $this->websocket_api->sendToWSS("getActiveRequests")["getActiveRequests"];
+      return Promise\resolve((new WebSocket_Api())->sendToWSS("getActiveRequests"))->then(function($requests){
+        return (array_key_exists("getActiveRequests", $requests) ? $requests["getActiveRequests"] : []);
+      });
     }
 
     /**
@@ -96,49 +100,54 @@
      * @throws Exception $e       Throws an exception on db errors.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB stored node information]}
      */
-    public function getConfiguredNodes(array $data = []): array
+    public function getConfiguredNodes(array $data = []): object
     {
-      $nodeid = "";
-      $nodetype = "";
-
-      if(array_key_exists("nodeid", $data) && is_numeric($data["nodeid"]) && $data["nodeid"] > 0){
-        $nodeid = "WHERE n.id = {$data["nodeid"]}";
-      }
-
-      if(array_key_exists("nodetypenum", $data) && (is_numeric($data["nodetypenum"]) || is_array($data["nodetypenum"]))){
-        if(is_numeric($data["nodetypenum"] && $data["nodetypenum"] > 0 && $data["nodetypenum"] < 6)) $nodetype = "AND nt.code = {$data["nodetypenum"]}";
-        else if(is_array($data["nodetypenum"])) $nodetype = "AND nt.code IN (" . implode(",", $data["nodetypenum"]) . ")";
-      }
-
-      $returndata = array();
-
-      try{
-        $sql = $this->db_api->execute("SELECT n.id, GROUP_CONCAT(nta.description SEPARATOR ', ') AS nodetype, n.nodeauthhash, n.authtype,
-                                              n.conallow, n.hostname, n.scriptversion, n.chiaversion, n.chiapath, n.ipaddress,
-                                              n.changeable, n.changedIP, MAX(cimu.memory_total) AS memory_total, MAX(cisu.swap_total) AS swap_total,
-                                              MAX(cis.cpu_cores) AS cpu_cores, MAX(cis.cpu_count) AS cpu_count, MAX(cis.cpu_model) AS cpu_model, lastseen
-                                      FROM nodes n
-                                      JOIN nodetype nt ON nt.nodeid = n.id
-                                      JOIN nodetypes_avail nta ON nta.code = nt.code {$nodetype}
-                                      LEFT JOIN chia_infra_sysinfo cis ON cis.timestamp = (SELECT MAX(timestamp) FROM chia_infra_sysinfo WHERE nodeid = n.id) AND cis.nodeid = n.id
-                                      LEFT JOIN chia_infra_memory_usage cimu ON cimu.sysinfo_id = cis.id
-                                      LEFT JOIN chia_infra_swap_usage cisu ON cisu.sysinfo_id = cis.id
-                                      {$nodeid}
-                                      GROUP BY n.id", array());
-
-        $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
-        $returnarray = array();
-
-        foreach ($sqdata as $arrkey => $conninfo) {
-          $returnarray[$conninfo["id"]] = $conninfo;
-          $returnarray[$conninfo["id"]]["nodeauthhash"] = $this->encryption_api->decryptString($conninfo["nodeauthhash"]);
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+        $nodeid = "";
+        $nodetype = "";
+  
+        if(array_key_exists("nodeid", $data) && is_numeric($data["nodeid"]) && $data["nodeid"] > 0){
+          $nodeid = "WHERE n.id = {$data["nodeid"]}";
         }
 
-        return array("status" => 0, "message" => "Sucessfully loaded all client data.", "data" => $returnarray);
-      }
-      catch(\Exception $e){
-        return $this->logging_api->getErrormessage("001", $e);
-      }
+        if(array_key_exists("nodetypenum", $data) && (is_numeric($data["nodetypenum"]) || is_array($data["nodetypenum"]))){
+          if(is_numeric($data["nodetypenum"] && $data["nodetypenum"] > 0 && $data["nodetypenum"] < 6)) $nodetype = "AND nt.code = {$data["nodetypenum"]}";
+          else if(is_array($data["nodetypenum"])) $nodetype = "AND nt.code IN (" . implode(",", $data["nodetypenum"]) . ")";
+        }
+
+        $client_nodes = Promise\resolve((new DB_Api())->execute("SELECT n.id, GROUP_CONCAT(nta.description SEPARATOR ', ') AS nodetype, n.nodeauthhash, n.authtype,
+                                                                        n.conallow, n.hostname, n.scriptversion, n.chiaversion, n.chiapath, n.ipaddress,
+                                                                        n.changeable, n.changedIP, MAX(cimu.memory_total) AS memory_total, MAX(cisu.swap_total) AS swap_total,
+                                                                        MAX(cis.cpu_cores) AS cpu_cores, MAX(cis.cpu_count) AS cpu_count, MAX(cis.cpu_model) AS cpu_model, lastseen
+                                                                FROM nodes n
+                                                                JOIN nodetype nt ON nt.nodeid = n.id
+                                                                JOIN nodetypes_avail nta ON nta.code = nt.code {$nodetype}
+                                                                LEFT JOIN chia_infra_sysinfo cis ON cis.timestamp = (SELECT MAX(timestamp) FROM chia_infra_sysinfo WHERE nodeid = n.id) AND cis.nodeid = n.id
+                                                                LEFT JOIN chia_infra_memory_usage cimu ON cimu.sysinfo_id = cis.id
+                                                                LEFT JOIN chia_infra_swap_usage cisu ON cisu.sysinfo_id = cis.id
+                                                                {$nodeid}
+                                                                GROUP BY n.id", array()));
+
+        $client_nodes->then(function($client_nodes_returned) use(&$resolve){
+          $returndata = array();
+
+          foreach ($client_nodes_returned->resultRows as $arrkey => $conninfo) {
+            $returnarray[$conninfo["id"]] = $conninfo;
+            $returnarray[$conninfo["id"]]["nodeauthhash"] = $this->encryption_api->decryptString($conninfo["nodeauthhash"]);
+          }
+  
+          $resolve(array("status" => 0, "message" => "Sucessfully loaded all client data.", "data" => $returnarray));
+        })->otherwise(function(\Exception $e) use(&$resolve){
+          $resolve($this->logging_api->getErrormessage("getConfiguredNodes", "001", $e));
+        });
+  
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -147,21 +156,22 @@
      * @throws Exception $e       Throws an exception on db errors.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB stored node type information]}
      */
-    public function getNodeTypes(): array
+    public function getNodeTypes(): object
     {
-      try{
-        $sql = $this->db_api->execute("SELECT id, description, code, allowed_authtype, nodetype FROM nodetypes_avail WHERE selectable = 1", array());
+      $resolver = function (callable $resolve, callable $reject, callable $notify){
+        $node_types = Promise\resolve((new DB_Api())->execute("SELECT id, description, code, allowed_authtype, nodetype FROM nodetypes_avail WHERE selectable = 1", array()));
+        $node_types->then(function($node_types_returned) use(&$resolve){
+          $resolve(array("status" => 0, "message" => "Sucessfully loaded all available nodetypes.", "data" => $node_types_returned->resultRows));
+        })->otherwise(function(\Exception $e) use(&$resolve){
+          $resolve($this->logging_api->getErrormessage("getNodeTypes", "001", $e));
+        });
+      };
 
-        $returndata = array();
-        foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $info){
-          $returndata["by-id"][$info["id"]] = $info;
-          $returndata["by-desc"][$info["description"]] = $info;
-        }
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
 
-        return array("status" => 0, "message" => "Sucessfully loaded all available nodetypes.", "data" => $returndata);
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("001", $e);
-      }
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -215,7 +225,7 @@
       if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data) && array_key_exists("nodetypes", $data)){
         try{
           $sql = $this->db_api->execute("SELECT id, allowed_authtype, nodetype FROM nodetypes_avail WHERE selectable = 1 AND id IN ({$data["nodetypes"]})", array());
-          $sqreturn = $sql->fetchAll(\PDO::FETCH_ASSOC);
+          $sqreturn = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/;
 
           $types = [];
           $allowed_authtype = [];
@@ -310,7 +320,7 @@
       if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data)){
         try{
           $sql = $this->db_api->execute("SELECT changeable FROM nodes WHERE id = ?", array($data["nodeid"]));
-          $sqldata = $sql->fetchAll(\PDO::FETCH_ASSOC);
+          $sqldata = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/;
 
           if(count($sqldata) == 1){
             $changeable = $sqldata[0]["changeable"];
@@ -351,8 +361,32 @@
      * @param  array $loginData [description]
      * @return array            [description]
      */
-    public function loginStatus(array $data, array $loginData = NULL): array
+    public function loginStatus(array $data, array $loginData = NULL): object
     {
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData){
+        if(array_key_exists("authhash", $loginData)){
+          $loginStatus = Promise\resolve((new DB_Api())->execute("SELECT n.id, GROUP_CONCAT(nta.description SEPARATOR ', ') AS nodetype, n.hostname
+                                                                      FROM nodes n
+                                                                      JOIN nodetype nt ON nt.nodeid = n.id
+                                                                      JOIN nodetypes_avail nta ON nta.code = nt.code
+                                                                      WHERE n.nodeauthhash = ?
+                                                                      GROUP BY n.id", array($this->encryption_api->encryptString($loginData["authhash"]))));
+          $loginStatus->then(function($loginStatus_returned) use(&$resolve){
+            $resolve(array("status" => 0, "method" => "loginStatus", "message" => "This node is logged in.", "data" => $loginStatus_returned->resultRows[0]));
+          })->otherwise(function (\Exception $e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("loginStatus", "001", $e));
+          });
+        }else{
+          $resolve($this->logging_api->getErrormessage("loginStatus", "002"));
+        }
+      };  
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
+      
       if(array_key_exists("authhash", $loginData)){
         try{
           $sql = $this->db_api->execute("SELECT n.id, GROUP_CONCAT(nta.description SEPARATOR ', ') AS nodetype, n.hostname
@@ -361,7 +395,8 @@
           JOIN nodetypes_avail nta ON nta.code = nt.code
           WHERE n.nodeauthhash = ?
           GROUP BY n.id", array($this->encryption_api->encryptString($loginData["authhash"])));
-          $sqldata = $sql->fetchAll(\PDO::FETCH_ASSOC)[0];
+          //$sqldata = $sql->fetchAll(\PDO::FETCH_ASSOC)[0];
+          $sqldata = $sql[0];
 
           return array("status" => 0, "method" => "loginStatus", "message" => "This node is logged in.", "data" => $sqldata);
         }catch(\Exception $e){
@@ -407,7 +442,7 @@
     {
       try{
         $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
-        $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
+        $nodeid = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/[0]["id"];
 
         return array("status" => 0, "message" => "Successfully queried node update status.", "data" => array("nodeid" => $nodeid, "status" => $data));
       }catch(\Exception $e){
@@ -423,42 +458,61 @@
      * @param  array $loginData                { NULL } No loginData needed to query this function.
      * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" => ["Requested infos - array"]}
      */
-    public function checkUpdatesAndChannels(array $data = [], array $loginData = NULL): array
+    public function checkUpdatesAndChannels(array $data = []): object
     {
-      $updatepackagepath = "https://files.chiamgmt.edtmair.at/client/";
-      $version_file_json = file_get_contents("{$updatepackagepath}/versions.json");
-      $version_file_data = json_decode($version_file_json, true);
-      $returndata = [];
-      $returndata["available_channels"] = array_keys($version_file_data);
-      $returndata["updateinfos"] = [];
-      $overall_chia_data = $this->chia_overall_api->getOverallChiaData();
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+        $updatepackagepath = "https://files.chiamgmt.edtmair.at/client/versions.json";
 
-      try{
+        $browser = new Browser();
+        $client_updates = $browser->get($updatepackagepath)->then(
+          function ($client_updates_returned){
+            return json_decode($client_updates_returned->getBody(), true);
+          },
+          function (\Exception $e) use(&$resolve){
+            return $resolve($this->logging_api->getErrormessage("checkUpdatesAndChannels", "001", $e));
+          }
+        );
+
+        $overall_chia_data = Promise\resolve($this->chia_overall_api->getOverallChiaData());
+
         if(array_key_exists("nodeid", $data) && is_numeric($data["nodeid"])){
-          $sql = $this->db_api->execute("SELECT id, hostname, scriptversion, updatechannel, chiaversion FROM nodes WHERE authtype = 2 AND id = ?", array($data["nodeid"]));
+          $node_data = Promise\resolve((new DB_Api())->execute("SELECT id, hostname, scriptversion, updatechannel, chiaversion FROM nodes WHERE authtype = 2 AND id = ?", array($data["nodeid"])));
         }else{
-          $sql = $this->db_api->execute("SELECT id, hostname, scriptversion, updatechannel, chiaversion FROM nodes WHERE authtype = 2", array());
+          $node_data = Promise\resolve((new DB_Api())->execute("SELECT id, hostname, scriptversion, updatechannel, chiaversion FROM nodes WHERE authtype = 2", array()));
         }
+        
+        Promise\all([$client_updates, $overall_chia_data, $node_data])->then(function($all_returned) use(&$resolve){
+          $version_file_data = $all_returned[0];
+          $overall_chia_data = $all_returned[1];
+          $node_data = $all_returned[2]->resultRows;
 
-        foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $nodedata){
-          $returndata["updateinfos"][$nodedata["id"]] = $nodedata;
+          $returndata = [];
+          foreach($node_data AS $arrkey => $nodedata){
+            $returndata["updateinfos"][$nodedata["id"]] = $nodedata;
 
-          $returndata["updateinfos"][$nodedata["id"]]["updateavailable"] =  2;
-          if(array_key_exists($nodedata["updatechannel"], $version_file_data)){
-            if(!is_null($nodedata["scriptversion"])) $returndata["updateinfos"][$nodedata["id"]]["updateavailable"] = (int)version_compare($nodedata["scriptversion"], $version_file_data[$nodedata["updatechannel"]][array_key_first($version_file_data[$nodedata["updatechannel"]])]);
-            $returndata["updateinfos"][$nodedata["id"]]["remoteversion"] = $version_file_data[$nodedata["updatechannel"]][array_key_first($version_file_data[$nodedata["updatechannel"]])];
+            $returndata["updateinfos"][$nodedata["id"]]["updateavailable"] =  2;
+            if(array_key_exists($nodedata["updatechannel"], $version_file_data)){
+              if(!is_null($nodedata["scriptversion"])) $returndata["updateinfos"][$nodedata["id"]]["updateavailable"] = (int)version_compare($nodedata["scriptversion"], $version_file_data[$nodedata["updatechannel"]][array_key_first($version_file_data[$nodedata["updatechannel"]])]);
+              $returndata["updateinfos"][$nodedata["id"]]["remoteversion"] = $version_file_data[$nodedata["updatechannel"]][array_key_first($version_file_data[$nodedata["updatechannel"]])];
+            }
+  
+            $returndata["updateinfos"][$nodedata["id"]]["chiaupdateavail"] =  2;
+            if(array_key_exists("data", $overall_chia_data) && array_key_exists("blockchain_version", $overall_chia_data["data"])){
+              if(!is_null($nodedata["chiaversion"]) && !empty($nodedata["chiaversion"])) $returndata["updateinfos"][$nodedata["id"]]["chiaupdateavail"] = (int)version_compare(trim($nodedata["chiaversion"]), trim($overall_chia_data["data"]["blockchain_version"]));
+            }
           }
 
-          $returndata["updateinfos"][$nodedata["id"]]["chiaupdateavail"] =  2;
-          if(array_key_exists("data", $overall_chia_data) && array_key_exists("blockchain_version", $overall_chia_data["data"])){
-            if(!is_null($nodedata["chiaversion"]) && !empty($nodedata["chiaversion"])) $returndata["updateinfos"][$nodedata["id"]]["chiaupdateavail"] = (int)version_compare(trim($nodedata["chiaversion"]), trim($overall_chia_data["data"]["blockchain_version"]));
-          }
-        }
+          $resolve(array("status" => 0, "message" => "Successfully loaded all requested data.", "data" => $returndata));
+        })->otherwise(function (\Exception $e) use(&$resolve){
+          $resolve($this->logging_api->getErrormessage("checkUpdatesAndChannels", "002", $e));
+        });
+      };
 
-        return array("status" =>0, "message" => "Successfully loaded all requested data.", "data" => $returndata);
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("001", $e);
-      }
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -499,43 +553,60 @@
      * @param  Object $server     An instance to the Webscoket server to be able to communicate with the nodes directly.
      * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function queryNodesServicesStatus(array $data = [], array $loginData = NULL, Object $server = NULL): array
+    public function queryNodesServicesStatus(array $data = [], array $loginData = NULL, Object $server = NULL): object
     {
-      $client_nodes = $this->getConfiguredNodes(["nodetypenum" => [3,4,5]]);        
-      if(!is_null($server)){
-        $activeSubscriptions = $server->getActiveSubscriptions($loginData)["getActiveSubscriptions"];
-      }else{
-        $this->websocket_api = new WebSocket_Api();
-        $activeSubscriptions = $this->websocket_api->sendToWSS("getActiveSubscriptions")["getActiveSubscriptions"];
-      }
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData, $server){
+        $client_nodes = Promise\resolve($this->getConfiguredNodes(["nodetypenum" => [3,4,5]]));
+        $client_nodes->then(function($client_nodes_returned) use(&$resolve, $server, $loginData){
+          if(!is_null($server)){
+            $activeSubscriptions = Promise\resolve($server->getActiveSubscriptions($loginData));
+          }else{
+            $activeSubscriptions = Promise\resolve((new WebSocket_Api())->sendToWSS("getActiveSubscriptions"));
+          }
+  
+          $activeSubscriptions->then(function($activeSubscriptions_returned) use(&$resolve, $client_nodes_returned){
+            $activeSubscriptions_returned = $activeSubscriptions_returned["getActiveSubscriptions"];
+            
+            if(array_key_exists("data", $activeSubscriptions_returned)){
+              foreach($client_nodes_returned["data"] AS $nodeid => $nodedata){
+                $found = false;
+                foreach(explode(",",$nodedata["nodetype"]) AS $arrkey => $nodetype){
+                  if(array_key_exists($nodetype, $activeSubscriptions_returned["data"])){
+                    foreach($activeSubscriptions_returned["data"][$nodetype] AS $connectionnr => $conninfo){
+                      if($conninfo["nodeid"] == $nodeid){
+                        $found = true;
 
-      if(array_key_exists("data", $activeSubscriptions)){
-        foreach($client_nodes["data"] AS $nodeid => $nodedata){
-          $found = false;
-          foreach(explode(",",$nodedata["nodetype"]) AS $arrkey => $nodetype){
-            if(array_key_exists($nodetype, $activeSubscriptions["data"])){
-              foreach($activeSubscriptions["data"][$nodetype] AS $connectionnr => $conninfo){
-                if($conninfo["nodeid"] == $nodeid){
-                  $found = true;
-                  $this->setNodeUpDown(["nodeid" => $nodeid, "updown" => 1]);
-                  if(!is_null($server)){
-                    $querydata = ["data" => ["get_chia_status" => ["status" => 0,"message" => "Query chia wallet/farmer/harvester running status.","data"=> []]],"nodeinfo" => ["authhash" => $nodedata["nodeauthhash"]]];
-                    $this->server->messageSpecificNode($querydata);
+                        Promise\resolve($this->setNodeUpDown(["nodeid" => $nodeid, "updown" => 1]));
+
+                        if(!is_null($server)){
+                          $querydata = ["data" => ["get_chia_status" => ["status" => 0,"message" => "Query chia wallet/farmer/harvester running status.","data"=> []]],"nodeinfo" => ["authhash" => $nodedata["nodeauthhash"]]];
+                          Promise\resolve($server->messageSpecificNode($querydata));
+                        }
+                        break;
+                      }
+                    }
                   }
-                  break;
+                  if($found) break;
+                }
+                if(!$found){
+                  $promises = [
+                    Promise\resolve($this->setNodeUpDown(["nodeid" => $nodeid, "updown" => 0])),
+                    Promise\resolve($this->updateChiaStatus(["nodeid" => $nodeid, "farmer" => ["status" => 1], "wallet" => ["status" => 1], "harvester" => ["status" => 1]]))
+                  ];
                 }
               }
             }
-            if($found) break;
-          }
-          if(!$found){
-            $this->setNodeUpDown(["nodeid" => $nodeid, "updown" => 0]);
-            $this->updateChiaStatus(["nodeid" => $nodeid, "farmer" => ["status" => 1], "wallet" => ["status" => 1], "harvester" => ["status" => 1]]);
-          } 
-        }
-      }  
-      
-      return array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => ["onlinestatus" => 0]);
+            
+            $resolve(array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => ["onlinestatus" => 0]));
+          });
+        });
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -545,12 +616,51 @@
      * @param array $data   { "nodeid" : [The systems node id], "updown" : [0=Node Down/1=Node UP] }
      * @return array        Returnes the current status information stored in the database.
      */
-    public function setNodeUpDown(array $data): array
+    public function setNodeUpDown(array $data): object
     {
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){       
+        if(array_key_exists("nodeid", $data) && is_numeric($data["nodeid"]) && $data["nodeid"] > 0 && array_key_exists("updown", $data) && is_numeric($data["updown"]) && ($data["updown"] == 0 || $data["updown"] == 1)){
+          $nodes_up_status = Promise\resolve((new DB_Api())->execute("SELECT id, nodeid, onlinestatus, lastreported FROM nodes_up_status WHERE nodeid = ? ORDER BY firstreported DESC LIMIT 1", array($data["nodeid"])));
+          $nodes_up_status->then(function($nodes_up_status_returned) use(&$resolve, $data){
+            $nodes_up_status_returned = $nodes_up_status_returned->resultRows;
+            if(!array_key_exists(0, $nodes_up_status_returned) || $nodes_up_status_returned[0]["onlinestatus"] != $data["updown"]){
+              $set_node_up = Promise\resolve((new DB_Api())->execute("INSERT INTO nodes_up_status (id, nodeid, onlinestatus, firstreported, lastreported) VALUES(NULL, ?, ?, current_timestamp(), current_timestamp())", array($data["nodeid"], $data["updown"])));
+              $set_node_up->otherwise(function (\Exception $e) use(&$resolve){
+                return $resolve($this->logging_api->getErrormessage("setNodeUpDown", "003", $e));
+              });
+            }
+            if(count($nodes_up_status_returned) == 1){
+              $update_node_laston = Promise\resolve((new DB_Api())->execute("UPDATE nodes_up_status SET lastreported = current_timestamp() WHERE id = ?", array($nodes_up_status_returned[0]["id"])));
+              $update_node_laston->otherwise(function (\Exception $e) use(&$resolve){
+                return $resolve($this->logging_api->getErrormessage("setNodeUpDown", "004", $e));
+              });
+            }
+            
+            $getNodesStatus = Promise\resolve($this->getCurrentChiaNodesUPAndServiceStatus());
+            $getNodesStatus->then(function($getNodesStatus_returned) use(&$resolve){
+              $setNodesStatus = Promise\resolve((new Chia_Infra_Sysinfo_Api())->setAllNodesSystemAndServicesUpStatus($getNodesStatus_returned["data"]));
+              $setNodesStatus->then(function($setNodesStatus_returned) use(&$resolve){
+                $resolve(array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => []));
+              });
+            });
+          })->otherwise(function (\Exception $e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("setNodeUpDown", "001", $e));
+          });
+        }else{
+          $resolve($this->logging_api->getErrormessage("setNodeUpDown", "002"));
+        }
+      };
+      
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
+      
       if(array_key_exists("nodeid", $data) && is_numeric($data["nodeid"]) && $data["nodeid"] > 0 && array_key_exists("updown", $data) && is_numeric($data["updown"]) && ($data["updown"] == 0 || $data["updown"] == 1)){
         try{
           $sql = $this->db_api->execute("SELECT id, nodeid, onlinestatus, lastreported FROM nodes_up_status WHERE nodeid = ? ORDER BY firstreported DESC LIMIT 1", array($data["nodeid"]));
-          $founddata = $sql->fetchAll(\PDO::FETCH_ASSOC);
+          $founddata = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/;
 
           if(!array_key_exists(0, $founddata) || $founddata[0]["onlinestatus"] != $data["updown"]){
             $this->db_api->execute("INSERT INTO nodes_up_status (id, nodeid, onlinestatus, firstreported, lastreported) VALUES(NULL, ?, ?, current_timestamp(), current_timestamp())", array($data["nodeid"], $data["updown"]));
@@ -579,63 +689,87 @@
      * @param array $loginData   { "authhash" => [The node's authhash] } *Must be set when no nodeid is set in $data  
      * @return array              Returnes the current status information stored in the database.
      */
-    public function updateChiaStatus(array $data, array $loginData = NULL): array
+    public function updateChiaStatus(array $data, array $loginData = NULL): object
     {
-      try{
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData){
         if(array_key_exists("wallet", $data) && array_key_exists("farmer", $data) && array_key_exists("harvester", $data)){
           $nodeid = NULL;
-          if(array_key_exists("nodeid", $data) && is_int($data["nodeid"]) && $data["nodeid"] > 0) $nodeid = $data["nodeid"];
-          else if(!is_null($loginData) && array_key_exists("authhash", $loginData) && is_string($loginData["authhash"])){
-            $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
-            $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
+          if(array_key_exists("nodeid", $data) && is_int($data["nodeid"]) && $data["nodeid"] > 0){
+            $nodeid = Promise\resolve($data["nodeid"]);
+          }else if(!is_null($loginData) && array_key_exists("authhash", $loginData) && is_string($loginData["authhash"])){
+            $nodeid = Promise\resolve((new DB_Api())->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"]))));
           }
-  
-          if(!is_null($nodeid) && $nodeid > 0){        
-            $sql = $this->db_api->execute("SELECT nt.nodeid, n.hostname, n.nodeauthhash, nta.code AS serviceid, LOWER(nta.description) AS description, nss.id AS curr_service_state_id, nss.servicestate, nss.firstreported, nss.lastreported
-                                            FROM nodetype nt
-                                            LEFT JOIN nodes n ON n.id = nt.nodeid
-                                            LEFT JOIN LATERAL (
-                                              SELECT id, nodeid, serviceid, servicestate, firstreported, lastreported FROM nodes_services_status WHERE nodeid = n.id AND serviceid = nt.code ORDER BY firstreported DESC LIMIT 1
-                                            ) AS nss
-                                            ON nss.serviceid = nt.code
-                                            JOIN nodetypes_avail nta ON nta.code = nt.code
-                                            WHERE nt.code IN (3,4,5) AND n.id = ?", array($nodeid));
+          
+          $nodeid->then(function($nodeid_returned) use(&$resolve, $data){
+            if(!is_numeric($nodeid_returned)) $nodeid_returned = $nodeid_returned->resultRows[0]["id"];
 
-            $founddata = $sql->fetchAll(\PDO::FETCH_ASSOC);
-            if(count($founddata) > 0){
-              foreach($founddata AS $arrkey => $savedstates){
-                if(is_numeric($data[$savedstates["description"]])){
-                  $reported_service_state = intval(!boolval($data[$savedstates["description"]]));
-                }else if(is_bool($data[$savedstates["description"]])){
-                  $reported_service_state = intval(boolval($data[$savedstates["description"]]));
-                }else if(is_array($data[$savedstates["description"]])){
-                  $reported_service_state = intval(!boolval($data[$savedstates["description"]]["status"]));
+            if(!is_null($nodeid_returned) && $nodeid_returned > 0){ 
+              $chia_nodes = Promise\resolve((new DB_Api())->execute("SELECT nt.nodeid, n.hostname, n.nodeauthhash, nta.code AS serviceid, LOWER(nta.description) AS description, nss.id AS curr_service_state_id, nss.servicestate, nss.firstreported, nss.lastreported
+                                                                      FROM nodetype nt
+                                                                      LEFT JOIN nodes n ON n.id = nt.nodeid
+                                                                      LEFT JOIN LATERAL (
+                                                                        SELECT id, nodeid, serviceid, servicestate, firstreported, lastreported FROM nodes_services_status WHERE nodeid = n.id AND serviceid = nt.code ORDER BY firstreported DESC LIMIT 1
+                                                                      ) AS nss
+                                                                      ON nss.serviceid = nt.code
+                                                                      JOIN nodetypes_avail nta ON nta.code = nt.code
+                                                                      WHERE nt.code IN (3,4,5) AND n.id = ?", array($nodeid_returned)));
+
+              $chia_nodes->then(function($chia_nodes_returned) use(&$resolve, $data){
+                $chia_nodes_returned = $chia_nodes_returned->resultRows;
+
+                if(count($chia_nodes_returned) > 0){
+                  foreach($chia_nodes_returned AS $arrkey => $savedstates){
+                    if(is_numeric($data[$savedstates["description"]])){
+                      $reported_service_state = intval(!boolval($data[$savedstates["description"]]));
+                    }else if(is_bool($data[$savedstates["description"]])){
+                      $reported_service_state = intval(boolval($data[$savedstates["description"]]));
+                    }else if(is_array($data[$savedstates["description"]])){
+                      $reported_service_state = intval(!boolval($data[$savedstates["description"]]["status"]));
+                    }
+    
+                    if((is_numeric($savedstates["servicestate"]) || is_null($savedstates["servicestate"])) && array_key_exists($savedstates["description"], $data) && (($reported_service_state != $savedstates["servicestate"]) || is_null($savedstates["servicestate"]))){
+                      $insert_service_state = Promise\resolve((new DB_Api())->execute("INSERT INTO nodes_services_status (id, nodeid, serviceid, servicestate, firstreported, lastreported) VALUES(NULL, ?, ?, ?, current_timestamp(), current_timestamp())", array($nodeid, $savedstates["serviceid"], $reported_service_state)));
+                      $insert_service_state->otherwise(function(\Exception $e) use(&$resolve){
+                        return $resolve($this->logging_api->getErrormessage("updateChiaStatus", "006", $e));
+                      });
+                    }
+                    if(is_numeric($savedstates["servicestate"])){
+                      $update_lastreported = Promise\resolve((new DB_Api())->execute("UPDATE nodes_services_status SET lastreported = current_timestamp() WHERE id = ?", array($savedstates["curr_service_state_id"])));
+                      $update_lastreported->otherwise(function(\Exception $e) use(&$resolve){
+                        return $resolve($this->logging_api->getErrormessage("updateChiaStatus", "007", $e));
+                      });
+                    }
+                  }
+                }else{
+                  $resolve($this->logging_api->getErrormessage("updateChiaStatus", "001"));
                 }
 
-                if((is_numeric($savedstates["servicestate"]) || is_null($savedstates["servicestate"])) && array_key_exists($savedstates["description"], $data) && (($reported_service_state != $savedstates["servicestate"]) || is_null($savedstates["servicestate"]))){
-                  $this->db_api->execute("INSERT INTO nodes_services_status (id, nodeid, serviceid, servicestate, firstreported, lastreported) VALUES(NULL, ?, ?, ?, current_timestamp(), current_timestamp())", array($nodeid, $savedstates["serviceid"], $reported_service_state));
-                }
-                if(is_numeric($savedstates["servicestate"])){
-                  $this->db_api->execute("UPDATE nodes_services_status SET lastreported = current_timestamp() WHERE id = ?", array($savedstates["curr_service_state_id"]));
-                }
-              }
+                $get_current_nodes_states = Promise\resolve($this->getCurrentChiaNodesUPAndServiceStatus());
+                $get_current_nodes_states->then(function($get_current_nodes_states_returned) use(&$resolve){
+                  $set_current_nodes_states = Promise\resolve((new Chia_Infra_Sysinfo_Api())->setAllNodesSystemAndServicesUpStatus($get_current_nodes_states_returned["data"]));
+                  $set_current_nodes_states->then(function($set_current_nodes_states_returned) use(&$resolve){
+                    $resolve(array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => []));
+                  });
+                });
+              })->otherwise(function(\Exception $e) use(&$resolve){
+                $resolve($this->logging_api->getErrormessage("updateChiaStatus", "005", $e));
+              });
             }else{
-              return $this->logging_api->getErrormessage("001");
+              $resolve($this->logging_api->getErrormessage("updateChiaStatus", "002"));
             }
-
-            $this->chia_infra_sysinfo_api = new Chia_Infra_Sysinfo_Api();
-            $this->chia_infra_sysinfo_api->setAllNodesSystemAndServicesUpStatus($this->getCurrentChiaNodesUPAndServiceStatus()["data"]);
-
-            return array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => []);
-          }else{
-            return $this->logging_api->getErrormessage("002");
-          }
+          })->otherwise(function(\Exception $e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("updateChiaStatus", "004", $e));
+          });
         }else{
-          return $this->logging_api->getErrormessage("003");
+          $resolve($this->logging_api->getErrormessage("updateChiaStatus", "003"));
         }
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("004", $e);
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -645,57 +779,59 @@
      * @param  array  $data                    { nodeid : [int], nodetypes : [string|array] } 
      * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function getCurrentChiaNodesUPAndServiceStatus(array $data = []): array
+    public function getCurrentChiaNodesUPAndServiceStatus(array $data = []): object
     {
-      try{
-        $nodeid = NULL;
-        $nodetypes = NULL;
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){       
+        $nodes_infos = Promise\resolve((new DB_Api())->execute("SELECT nus.id AS node_up_down_id, nss.id AS service_running_status_id, nt.nodeid, n.hostname, nus.onlinestatus, nus.firstreported AS node_firstreported, nus.lastreported AS node_lastreported, nta.description, nss.serviceid, nss.servicestate, nss.firstreported AS service_firstreported, nss.lastreported AS service_lastreported
+                                                                FROM nodetype nt
+                                                                INNER JOIN nodes n ON n.id = nt.nodeid
+                                                                INNER JOIN LATERAL (
+                                                                  SELECT id, nodeid, onlinestatus, firstreported, lastreported FROM nodes_up_status WHERE nodeid = n.id ORDER BY firstreported DESC, lastreported DESC LIMIT 1
+                                                                ) AS nus ON nus.nodeid = nt.nodeid
+                                                                INNER JOIN LATERAL (
+                                                                  SELECT id, nodeid, serviceid, servicestate, firstreported, lastreported FROM nodes_services_status WHERE nodeid = n.id AND serviceid = nt.code ORDER BY firstreported DESC, lastreported DESC LIMIT 1
+                                                                ) AS nss
+                                                                INNER JOIN nodetypes_avail nta ON nta.code = nt.code
+                                                                WHERE nt.code IN (3,4,5)", array()));
 
-        //if(array_key_exists("nodeid", $data) && is_int($data["nodeid"]) && $data["nodeid"] > 0) $nodeid = $data["nodeid"];
-        //if(array_key_exists("nodetypes", $data) && (is_array($data["nodetypes"]) || is_string($data["nodetypes"])) $nodetypes = 
-
-        $sql = $this->db_api->execute("SELECT nus.id AS node_up_down_id, nss.id AS service_running_status_id, nt.nodeid, n.hostname, nus.onlinestatus, nus.firstreported AS node_firstreported, nus.lastreported AS node_lastreported, nta.description, nss.serviceid, nss.servicestate, nss.firstreported AS service_firstreported, nss.lastreported AS service_lastreported
-                                        FROM nodetype nt
-                                        INNER JOIN nodes n ON n.id = nt.nodeid
-                                        INNER JOIN LATERAL (
-                                          SELECT id, nodeid, onlinestatus, firstreported, lastreported FROM nodes_up_status WHERE nodeid = n.id ORDER BY firstreported DESC, lastreported DESC LIMIT 1
-                                        ) AS nus ON nus.nodeid = nt.nodeid
-                                        INNER JOIN LATERAL (
-                                          SELECT id, nodeid, serviceid, servicestate, firstreported, lastreported FROM nodes_services_status WHERE nodeid = n.id AND serviceid = nt.code ORDER BY firstreported DESC, lastreported DESC LIMIT 1
-                                        ) AS nss
-                                        INNER JOIN nodetypes_avail nta ON nta.code = nt.code
-                                        WHERE nt.code IN (3,4,5)", array());
-
-        $returndata = [];
-        foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $serviceinfo){
-          if(!array_key_exists($serviceinfo["nodeid"], $returndata)){
-            $returndata[$serviceinfo["nodeid"]] = [
-              "nodeinfo" => [
-                "nodeid" => $serviceinfo["nodeid"],
-                "hostname" => $serviceinfo["hostname"]
-              ],
-              "onlinestatus" => [
-                "entry_id" => $serviceinfo["node_up_down_id"],
-                "status" => $serviceinfo["onlinestatus"],
-                "node_firstreported" => $serviceinfo["node_firstreported"],
-                "node_lastreported" => $serviceinfo["node_lastreported"]
-              ],
-              "services" => []
+        $nodes_infos->then(function($nodes_infos_returned) use(&$resolve){
+          $returndata = [];
+          foreach($nodes_infos_returned->resultRows AS $arrkey => $serviceinfo){
+            if(!array_key_exists($serviceinfo["nodeid"], $returndata)){
+              $returndata[$serviceinfo["nodeid"]] = [
+                "nodeinfo" => [
+                  "nodeid" => $serviceinfo["nodeid"],
+                  "hostname" => $serviceinfo["hostname"]
+                ],
+                "onlinestatus" => [
+                  "entry_id" => $serviceinfo["node_up_down_id"],
+                  "status" => $serviceinfo["onlinestatus"],
+                  "node_firstreported" => $serviceinfo["node_firstreported"],
+                  "node_lastreported" => $serviceinfo["node_lastreported"]
+                ],
+                "services" => []
+              ];
+            }
+            $returndata[$serviceinfo["nodeid"]]["services"][$serviceinfo["serviceid"]] = [
+              "entry_id" => $serviceinfo["service_running_status_id"],
+              "servicestate" => $serviceinfo["servicestate"],
+              "service_desc" => $serviceinfo["description"],
+              "service_firstreported" => $serviceinfo["service_firstreported"],
+              "service_lastreported" => $serviceinfo["service_lastreported"]
             ];
           }
-          $returndata[$serviceinfo["nodeid"]]["services"][$serviceinfo["serviceid"]] = [
-            "entry_id" => $serviceinfo["service_running_status_id"],
-            "servicestate" => $serviceinfo["servicestate"],
-            "service_desc" => $serviceinfo["description"],
-            "service_firstreported" => $serviceinfo["service_firstreported"],
-            "service_lastreported" => $serviceinfo["service_lastreported"]
-          ];
-        }
+  
+          $resolve(array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => $returndata));
+        })->otherwise(function (\Exception $e) use(&$resolve){
+          $resolve($this->logging_api->getErrormessage("getCurrentChiaNodesUPAndServiceStatus", "001", $e));
+        });
+      };
 
-        return array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => $returndata);
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("001");
-      }
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
   }
 ?>

@@ -78,6 +78,7 @@ class ChiaWebSocketServer implements MessageComponentInterface {
     $this->login_api = new Login_Api();
     $this->sites_api = new Sites_Api();
     $this->logging = new Logging_Api($this, $this);
+    $this->sites_api->getSiteInfos(["siteid" => NULL]);
     $this->sites_data = $this->sites_api->getSiteInfos(["siteid" => NULL])["data"];
   }
 

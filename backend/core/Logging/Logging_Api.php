@@ -1,7 +1,8 @@
 <?php
   namespace ChiaMgmt\Logging;
+  use React\Promise;
+  use React\ChildProcess;
   use ChiaMgmt\WebSocketClient\WebSocketClient_Api;
-
 
   /**
    * The logging api is the core of the project's logging.
@@ -71,15 +72,33 @@
      * @param  string $text      The messagetext
      */
     public function logtofile(int $loglevel, string $errorcode, string $text){
-      $loggingfile = fopen($this->logpath, 'a') or die("Unable to open file!");
-      $text = str_replace(PHP_EOL, '', $text);
-      $errortext = date("Y/m/d H:i:s") . ";" . $loglevel . ";" . $errorcode . ";". $text;
-      fwrite($loggingfile, $errortext."\n");
-      fclose($loggingfile);
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($loglevel, $errorcode, $text){
+        $cmd = "php " . __DIR__ . "/Logging_Background.php '{$loglevel}' '{$errorcode}' '{$text}'";
+      
+        $process = new ChildProcess\Process($cmd);
+        $process->start();
+  
+        $process->stdout->on('data', function ($chunk) use($resolve){
+          $returned_message = (!is_null($chunk) ? json_decode($chunk, true) : array());
 
-      if(!is_null($this->server)){
-        $this->server->messageFrontendClients(array("siteID" => 11), array("logsChanged" => $this->getMessagesFromFile(["fromline" => 0, "toline" => 1])));
-      }
+          if(!is_null($returned_message) && array_key_exists("status", $returned_message) && $returned_message["status"] == 0){
+            $resolve(array("status" => 0, "message" => "Message has been logged on " . date("Y-m-d H:i:s") . "."));
+            if(!is_null($this->server)){
+              Promise\resolve($this->server->messageFrontendClients(array("siteID" => 11), array("logsChanged" => $this->getMessagesFromFile(["fromline" => 0, "toline" => 1]))));
+            }
+          }else if(!is_null($returned_message) && array_key_exists("data", $returned_message) && $returned_message["status"] != 0){
+            $resolve("Message could not be logged. Logging Error: " . $returned_message["data"] . ".");
+          }else{
+            $resolve("Message could not be logged. UNKNOWN Error.");
+          }
+        });
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -88,25 +107,66 @@
      * @param  string $additional   Additional Info which should only logged to the file (if it contains 'false' this message will not be logged)
      * @return array                {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function getErrormessage(string $functioncode, string $additional = "", bool $logtofile = true): array
+    public function getErrormessage(string $methodname, string $functioncode, string $additional = "", bool $logtofile = true): object
     {
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($methodname, $functioncode, $additional, $logtofile){
+        $sitecodefile = @file_get_contents($this->codefilepath);
+        $sitecoderarray = json_decode($sitecodefile, true);
+  
+        $errorfile = file_get_contents($this->errorfilepath . $this->callerClass . "_codes.json");
+        $errorarray = json_decode($errorfile, true);
+  
+        $sitecode = $sitecoderarray[$this->callerClass];
+  
+        if(isset($errorarray["functioncodes"]) && isset($errorarray["errormessages"]) &&
+           isset($errorarray["functioncodes"][$methodname]) && isset($errorarray["errormessages"][$methodname]) &&
+           isset($errorarray["errormessages"][$methodname][$functioncode])
+          ){
+          $functionID = $errorarray["functioncodes"][$methodname];
+          $errormessage = $errorarray["errormessages"][$methodname][$functioncode];
+          $errorcode = "$sitecode$functionID$functioncode";
+  
+          if(is_array($errormessage)){
+            $loglevel = $errormessage[0];
+            $messagetoshow = $errorcode . ": " . $this->getHReadableLoglevel($loglevel) . " " . $errormessage[1];
+            $messagetolog = (strlen($additional) > 0 ? $additional : $errormessage[1]);
+          }else{
+            $loglevel = 3;
+            $messagetoshow = $errorcode . ": " . $this->getHReadableLoglevel($loglevel) . " " . $errormessage;
+            $messagetolog = (strlen($additional) > 0 ? $additional : $errormessage);
+          }
+  
+          if($logtofile){
+            Promise\resolve($this->logtofile($loglevel,$errorcode,$messagetolog));
+          }
+  
+          $resolve(array("status" => $errorcode, "loglevel" => $loglevel, "message" => $messagetoshow));
+        }else{
+          $resolve(array("status" => "999999999", "message" => "No errormessage found. Please check the corresponding errorcodefile or caller method function parameters."));
+        }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
+      
       $sitecodefile = @file_get_contents($this->codefilepath);
       $sitecoderarray = json_decode($sitecodefile, true);
 
       $errorfile = file_get_contents($this->errorfilepath . $this->callerClass . "_codes.json");
       $errorarray = json_decode($errorfile, true);
 
-      $functionname = debug_backtrace()[1]["function"];
       $sitecode = $sitecoderarray[$this->callerClass];
 
       if(isset($errorarray["functioncodes"]) && isset($errorarray["errormessages"]) &&
-         isset($errorarray["functioncodes"][$functionname]) && isset($errorarray["errormessages"][$functionname]) &&
-         isset($errorarray["errormessages"][$functionname][$functioncode])
+         isset($errorarray["functioncodes"][$methodname]) && isset($errorarray["errormessages"][$methodname]) &&
+         isset($errorarray["errormessages"][$methodname][$functioncode])
         ){
-        $functionID = $errorarray["functioncodes"][$functionname];
-        $errormessage = $errorarray["errormessages"][$functionname][$functioncode];
+        $functionID = $errorarray["functioncodes"][$methodname];
+        $errormessage = $errorarray["errormessages"][$methodname][$functioncode];
         $errorcode = "$sitecode$functionID$functioncode";
-
 
         if(is_array($errormessage)){
           $loglevel = $errormessage[0];

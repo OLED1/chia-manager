@@ -1,6 +1,6 @@
 <?php
   function getServiceStates($nodes_states, $serviceid): array
-  {
+  {   
     if(is_null($nodes_states)){
       return array("statustext" => "Node not reachable.", "statusicon" => "badge-danger");
     }

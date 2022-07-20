@@ -15,7 +15,8 @@
   },
   "errormessages" : {
     "setSystemSettings" : {
-      "001" : [2, "An error occured."]
+      "001" : [2, "An error occured."],
+      "002" : [2, "An error occured."]
     },
     "getAllSystemSettings" : {
       "001" : [2, "An error occured."]
@@ -46,7 +47,8 @@
       "006" : [1, "Not allowed. Please enable developer mode first in config file."]
     },
     "getCronjobEnabled" : {
-      "001" : [0, "Cronjob does not exist."]
+      "001" : [0, "Cronjob does not exist."],
+      "002" : [2, "An error occured."]
     },
     "enableCronjob" : {
       "001" : [2, "An error occured. Could not create the systems cronjob."]

@@ -35,7 +35,11 @@ function reInitRefreshHarvesterInfo(){
 function reInitRefreshSystemInfo(){
   $("#refreshSystemInfo").off("click");
   $("#refreshSystemInfo").on("click", function(){
-    $("#card-system").load(frontend + "/sites/main_overview/templates/card-system.php");
+    var card_data = { "user_id" : userID, "sess_id" : sessID };
+    $.get(frontend + "/sites/main_overview/templates/card-system.php", card_data, function(response) {
+      $('#card-system').html(response);
+      reInitRefreshSystemInfo();
+    });
   });
 }
 
@@ -103,33 +107,32 @@ function messagesTrigger(data){
 
   if(data[key]["status"] == 0){
     if(key == "updateWalletData"){
-      var card_data = { "services_states" : services_states };
+      var card_data = { "services_states" : services_states, "user_id" : userID, "sess_id" : sessID };
       $.get(frontend + "/sites/main_overview/templates/card-wallet.php", card_data, function(response) {
         $('#card-wallet').html(response);
         reInitRefreshWalletInfo();
       });
     }else if(key == "updateFarmData"){
-      var card_data = { "services_states" : services_states };
+      var card_data = { "services_states" : services_states, "user_id" : userID, "sess_id" : sessID };
       $.get(frontend + "/sites/main_overview/templates/card-farm.php", card_data, function(response) {
         $('#card-farm').html(response);
         reInitRefreshFarmInfo();
       });
     }else if(key == "updateHarvesterData"){
-      var card_data = { "services_states" : services_states };
+      var card_data = { "services_states" : services_states, "user_id" : userID, "sess_id" : sessID };
       $.get(frontend + "/sites/main_overview/templates/card-harvester.php", card_data, function(response) {
         $('#card-harvester').html(response);
         reInitRefreshHarvesterInfo();
       });
     }else if(key == "queryOverallData"){
-      $.get(frontend + "/sites/main_overview/templates/card-overall.php", {}, function(response) {
+      var card_data = { "user_id" : userID, "sess_id" : sessID };
+      $.get(frontend + "/sites/main_overview/templates/card-overall.php", card_data, function(response) {
         $('#card-overall').html(response);
         reInitRefreshOverallInfo();
       });
-      /*$.get(frontend + "/sites/main_overview/templates/card-overall-luca.php", {}, function(response) {
-        $('#card-overall-luca').html(response);
-      });*/
     }else if(key == "checkUpdatesAndChannels"){
-      $.get(frontend + "/sites/main_overview/templates/card-system.php", {}, function(response) {
+      var card_data = { "user_id" : userID, "sess_id" : sessID };
+      $.get(frontend + "/sites/main_overview/templates/card-system.php", card_data, function(response) {
         $('#card-system').html(response);
         reInitRefreshSystemInfo();
       });

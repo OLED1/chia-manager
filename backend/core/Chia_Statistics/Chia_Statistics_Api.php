@@ -1,5 +1,6 @@
 <?php
   namespace ChiaMgmt\Chia_Statistics;
+  use React\Promise;
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\Logging\Logging_Api;
 
@@ -50,28 +51,37 @@
      * @param  array  $data       { "from" : [Timestamp YYYY-MM-DD H:i:s], "to" : [Timestamp YYYY-MM-DD H:i:s]}
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": { [DB stored and found values] } }
      */
-    public function getNetspaceHistory(array $data): array
+    public function getNetspaceHistory(array $data): object
     {
-      if(array_key_exists("from", $data) && array_key_exists("to", $data)){
-        if(strtotime($data["from"]) &&  strtotime($data["to"]) && new \DateTime($data["from"]) < new \DateTime($data["to"])){
-          try{
-            $sql = $this->db_api->execute("SELECT querydate, netspace FROM chia_overall WHERE querydate BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND id mod 3 = 0 ORDER BY querydate ASC", array($data["from"], $data["to"]));
-            $historynetspace = $sql->fetchAll(\PDO::FETCH_ASSOC);
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+        if(array_key_exists("from", $data) && array_key_exists("to", $data)){
+          if(strtotime($data["from"]) &&  strtotime($data["to"]) && new \DateTime($data["from"]) < new \DateTime($data["to"])){
+            $netspace_history = Promise\resolve((new DB_Api())->execute("SELECT querydate, netspace FROM chia_overall WHERE querydate BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND id mod 3 = 0 ORDER BY querydate ASC", array($data["from"], $data["to"])));
+            $netspace_history->then(function($netspace_history_returned) use($resolve, $data){
 
-            foreach($historynetspace AS $arrkey => $netspacedata){
-              $historynetspace[$arrkey]["netspace"] = explode(" ", $netspacedata["netspace"])[0];
-            }
+              $historynetspace = $netspace_history_returned->resultRows;
 
-            return array("status" => 0, "message" => "Successfully loaded data between {$data["from"]} and {$data["to"]}.", "data" => $historynetspace);
-          }catch(\Exception $e){
-            return $this->logging_api->getErrormessage("001", $e);
+              foreach($historynetspace AS $arrkey => $netspacedata){
+                $historynetspace[$arrkey]["netspace"] = explode(" ", $netspacedata["netspace"])[0];
+              }
+
+              $resolve(array("status" => 0, "message" => "Successfully loaded data between {$data["from"]} and {$data["to"]}.", "data" => $historynetspace));
+            })->otherwise(function(\Exception $e) use($resolve){
+              $resolve($this->logging_api->getErrormessage("getNetspaceHistory", "001", $e));
+            });
+          }else{
+            $resolve($this->logging_api->getErrormessage("getNetspaceHistory", "002"));
           }
         }else{
-          return $this->logging_api->getErrormessage("002");
+          $resolve($this->logging_api->getErrormessage("getNetspaceHistory", "003"));
         }
-      }else{
-        return $this->logging_api->getErrormessage("003");
-      }
+      };
+      
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -79,24 +89,30 @@
      * @param  array  $data       { "from" : [Timestamp YYYY-MM-DD H:i:s], "to" : [Timestamp YYYY-MM-DD H:i:s]}
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": { [DB stored and found values] } }
      */
-    public function getBlockheightHistory(array $data): array
+    public function getBlockheightHistory(array $data): object
     {
-      if(array_key_exists("from", $data) && array_key_exists("to", $data)){
-        if(strtotime($data["from"]) &&  strtotime($data["to"]) && new \DateTime($data["from"]) < new \DateTime($data["to"])){
-          try{
-            $sql = $this->db_api->execute("SELECT querydate, xch_blockheight FROM chia_overall WHERE querydate BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND id mod 3 = 0 ORDER BY querydate ASC", array($data["from"], $data["to"]));
-            $historyblockheight = $sql->fetchAll(\PDO::FETCH_ASSOC);
-
-            return array("status" => 0, "message" => "Successfully loaded data between {$data["from"]} and {$data["to"]}.", "data" => $historyblockheight);
-          }catch(\Exception $e){
-            return $this->logging_api->getErrormessage("001", $e);
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+        if(array_key_exists("from", $data) && array_key_exists("to", $data)){
+          if(strtotime($data["from"]) &&  strtotime($data["to"]) && new \DateTime($data["from"]) < new \DateTime($data["to"])){
+            $blockheight_history = Promise\resolve((new DB_Api())->execute("SELECT querydate, xch_blockheight FROM chia_overall WHERE querydate BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND id mod 3 = 0 ORDER BY querydate ASC", array($data["from"], $data["to"])));
+            $blockheight_history->then(function($blockheight_history_returned) use($resolve, $data){
+              $resolve(array("status" => 0, "message" => "Successfully loaded data between {$data["from"]} and {$data["to"]}.", "data" => $blockheight_history_returned->resultRows));
+            })->otherwise(function(\Exception $e) use($resolve){
+              $resolve($this->logging_api->getErrormessage("getBlockheightHistory", "001", $e));
+            });
+          }else{
+            $resolve($this->logging_api->getErrormessage("getBlockheightHistory", "002"));
           }
         }else{
-          return $this->logging_api->getErrormessage("002");
+          $resolve($this->logging_api->getErrormessage("getBlockheightHistory", "003"));
         }
-      }else{
-        return $this->logging_api->getErrormessage("003");
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -104,24 +120,30 @@
      * @param  array  $data       { "from" : [Timestamp YYYY-MM-DD H:i:s], "to" : [Timestamp YYYY-MM-DD H:i:s]}
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": { [DB stored and found values] } }
      */
-    public function getXCHValueHistory(array $data): array
+    public function getXCHValueHistory(array $data): object
     {
-      if(array_key_exists("from", $data) && array_key_exists("to", $data)){
-        if(strtotime($data["from"]) &&  strtotime($data["to"]) && new \DateTime($data["from"]) < new \DateTime($data["to"])){
-          try{
-            $sql = $this->db_api->execute("SELECT querydate, price_usd FROM chia_overall WHERE querydate BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND id mod 3 = 0 ORDER BY querydate ASC", array($data["from"], $data["to"]));
-            $historyxchvalue = $sql->fetchAll(\PDO::FETCH_ASSOC);
-
-            return array("status" => 0, "message" => "Successfully loaded data between {$data["from"]} and {$data["to"]}.", "data" => $historyxchvalue);
-          }catch(\Exception $e){
-            return $this->logging_api->getErrormessage("001", $e);
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+        if(array_key_exists("from", $data) && array_key_exists("to", $data)){
+          if(strtotime($data["from"]) &&  strtotime($data["to"]) && new \DateTime($data["from"]) < new \DateTime($data["to"])){
+            $xch_history = Promise\resolve((new DB_Api())->execute("SELECT querydate, price_usd FROM chia_overall WHERE querydate BETWEEN CAST(? AS DATETIME) AND CAST(? AS DATETIME) AND id mod 3 = 0 ORDER BY querydate ASC", array($data["from"], $data["to"])));
+            $xch_history->then(function($xch_history_returned) use($resolve, $data){
+              $resolve(array("status" => 0, "message" => "Successfully loaded data between {$data["from"]} and {$data["to"]}.", "data" => $xch_history_returned->resultRows));
+            })->otherwise(function(\Exception $e) use($resolve){
+              $resolve($this->logging_api->getErrormessage("getXCHValueHistory", "001", $e));
+            });
+          }else{
+            $resolve($this->logging_api->getErrormessage("getXCHValueHistory", "002"));
           }
         }else{
-          return $this->logging_api->getErrormessage("002");
+          $resolve($this->logging_api->getErrormessage("getXCHValueHistory", "003"));
         }
-      }else{
-        return $this->logging_api->getErrormessage("003");
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
   }
 ?>

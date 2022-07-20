@@ -20,10 +20,14 @@
     "checkForUpdates" : {
       "001" : [2, "External api returned no data."],
       "002" : [0, "There are no updates for this channel available. Please switch to another branch, preferred 'Stable'."],
-      "003" : [2, "An error occured."]
+      "003" : [2, "An error occured."],
+      "004" : [2, "An error occured."],
+      "005" : [2, "An error occured."],
+      "006" : [2, "An error occured."]
     },
     "checkUpdateRoutine" : {
-      "001" : [2, "An error occured."]
+      "001" : [2, "An error occured."],
+      "002" : [2, "An error occured."]
     },
     "checkFilesWritable" : {
       "001" : [2, "Some files are not fully accessable. Please adjust the file owner and group to the apache user and set 750 as file rights."]

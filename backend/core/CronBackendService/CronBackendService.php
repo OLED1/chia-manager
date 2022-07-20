@@ -1,6 +1,6 @@
 <?php
   namespace ChiaMgmt\CronBackendService;
-
+  use React\Promise;
   use ChiaMgmt\System_Update\System_Update_Api;
   use ChiaMgmt\WebSocket\WebSocket_Api;
   use ChiaMgmt\Logging\Logging_Api;
@@ -37,29 +37,63 @@
     /**
      * Queries information from all nodes by calling the websocket's command "queryCronData"
      */
-    public function queryData(){
-      $system_update_state = $this->system_update_api->checkUpdateRoutine();
-      if($system_update_state["data"]["maintenance_mode"] == 0 && $system_update_state["data"]["process_update"] == 0){
-        echo "{$this->getDate()}: {$this->logging_api->getErrormessage("001")["message"]}\n";
-        $wssstatus = $this->websocket_api->testConnection();
-        echo "{$this->getDate()}: {$wssstatus["message"]}\n";
-  
-        if($wssstatus["status"] == "016001002"){
-          echo "{$this->getDate()}: {$this->logging_api->getErrormessage("002")["message"]}\n";
-          $wssstatus = $this->websocket_api->startWSS();
-          echo "{$this->getDate()}: {$wssstatus["message"]}\n";
-        };
-  
-        if($wssstatus["status"] == 0){
-          echo "{$this->getDate()}: {$this->logging_api->getErrormessage("003")["message"]}\n";
-          $cronExec = $this->websocket_api->sendToWSS("queryCronData")["cronJobExecution"];
-          $loglevel = ($cronExec["status"] == 0 ? 0 : 2);
-          $this->logging_api->logtofile($loglevel, 0, $cronExec["message"]);
-          echo "{$this->getDate()}: {$this->logging_api->getErrormessage("004")["message"]}\n";
-        }
-      }else{
-        echo "{$this->getDate()}: {$this->logging_api->getErrormessage("005")["message"]}\n";
-      }
+    public function queryData(){      
+      $resolver = function (callable $resolve, callable $reject, callable $notify){
+        $system_update = Promise\resolve($this->system_update_api->checkUpdateRoutine());
+        $system_update->then(function($system_update_returned){
+          if($system_update_returned["data"]["maintenance_mode"] == 0 && $system_update_returned["data"]["process_update"] == 0){
+
+            $logging_message = Promise\resolve($this->logging_api->getErrormessage("queryData", "001"));
+            $logging_message->then(function($logging_message_returned){
+              echo "{$this->getDate()}: {$logging_message_returned["message"]}\n";
+            });
+
+            $wssstatus = Promise\resolve($this->websocket_api->testConnection());
+            $wssstatus->then(function($wssstatus_returned){
+              if($wssstatus_returned["status"] == "016001002"){
+                $logging_message = Promise\resolve($this->logging_api->getErrormessage("queryData", "002"));
+                $logging_message->then(function($logging_message_returned){
+                  echo "{$this->getDate()}: {$logging_message_returned["message"]}\n";
+                });
+
+                $wss_start = Promise\resolve($this->websocket_api->startWSS());
+                $wss_start->then(function($wss_start_returned){
+                  echo "{$this->getDate()}: {$wssstatus_returned["message"]}\n";
+                });
+              };
+
+              if($wssstatus_returned["status"] == 0){
+                $logging_message = Promise\resolve($this->logging_api->getErrormessage("queryData", "003"));
+                $logging_message->then(function($logging_message_returned){
+                  echo "{$this->getDate()}: {$logging_message_returned["message"]}\n";
+                });
+
+                $queryCron = Promise\resolve($this->websocket_api->sendToWSS("queryCronData"));
+                $queryCron->then(function($queryCron_returned){
+                  $cronExec = $queryCron_returned["cronJobExecution"];
+                  $loglevel = ($cronExec["status"] == 0 ? 0 : 2);
+                  Promise\resolve($this->logging_api->logtofile($loglevel, 0, $cronExec["message"]));
+                  $logging_message = Promise\resolve($this->logging_api->getErrormessage("queryData", "004"));
+                  $logging_message->then(function($logging_message_returned){
+                    echo "{$this->getDate()}: {$logging_message_returned["message"]}\n";
+                  });
+                });
+              }
+            });
+          }else{
+            $logging_message = Promise\resolve($this->logging_api->getErrormessage("queryData", "005"));
+            $logging_message->then(function($logging_message_returned){
+              echo "{$this->getDate()}: {$logging_message_returned["message"]}\n";
+            });
+          }
+        });
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -72,6 +106,5 @@
     }
   }
 
-  $cronBackendService = new CronBackendService();
-  $cronBackendService->queryData();
+  $cronBackendService = Promise\resolve((new CronBackendService())->queryData());
 ?>

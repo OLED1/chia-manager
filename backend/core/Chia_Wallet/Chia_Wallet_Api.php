@@ -1,5 +1,6 @@
 <?php
   namespace ChiaMgmt\Chia_Wallet;
+  use React\Promise;
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\Nodes\Nodes_Api;
@@ -67,12 +68,12 @@
     {
       try{
         $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
-        $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
+        $nodeid = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/[0]["id"];
 
         foreach($data AS $walletid => $walletdata){
           if(is_numeric($walletid) && is_array($walletdata)){
             $sql = $this->db_api->execute("SELECT Count(*) as count FROM chia_wallets WHERE walletid = ? AND nodeid = ?", array($walletid, $nodeid));
-            $count = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["count"];
+            $count = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/[0]["count"];
             $formatted_data = new Walletdata($walletdata);
 
             if($count == 0){
@@ -106,10 +107,10 @@
     {
         try{
           $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
-          $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
+          $nodeid = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/[0]["id"];
 
           $sql = $this->db_api->execute("SELECT name FROM chia_wallets_transactions WHERE nodeid = ?", array($nodeid));
-          $found_transactions = $sql->fetchAll(\PDO::FETCH_ASSOC);
+          $found_transactions = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/;
 
           foreach($found_transactions as $arrkey => $transactionname){
             $found_transactions[$arrkey] = $transactionname["name"];
@@ -149,7 +150,7 @@
       if(array_key_exists("wallet_ids", $data) && is_array($data["wallet_ids"]) && count($data["wallet_ids"]) > 0){
         try{
           $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
-          $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
+          $nodeid = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/[0]["id"];
 
           $statement = "";
           $statement_arr = [];
@@ -168,7 +169,7 @@
           $returnarray = [];
           if(count($statement_arr) > 0){
             $sql = $this->db_api->execute("SELECT wallet_id, created_at_time FROM chia_wallets_transactions WHERE nodeid = ? AND $statement", $statement_arr);
-            $returnarray = $sql->fetchAll(\PDO::FETCH_ASSOC);
+            $returnarray = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/;
           }
 
           return array("status" => 0, "message" => "Successfully queried latest transaction date for wallet with id " . json_decode($data["wallet_id"]) .".", "data" => $returnarray);
@@ -188,55 +189,64 @@
      * @param  int  $nodeid                    The node id to get only node specific data. Can be NULL if all data will be queried. Will be deprecated as soon as the method needs to be called outsite of the web gui.
      * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": [Found wallet data array]}
      */
-    public function getWalletData(array $data = NULL, array $loginData = NULL, $server = NULL, int $nodeid = NULL): array
+    public function getWalletData(array $data = NULL, array $loginData = NULL, $server = NULL, int $nodeid = NULL): object
     {
-      $return_transactions = true;
-      if(!is_null($data) && array_key_exists("nodeid", $data) && is_numeric($data["nodeid"])) $nodeid = $data["nodeid"];
-      if(!is_null($data) && array_key_exists("return_transactions", $data) && is_bool($data["return_transactions"])) $return_transactions = $data["return_transactions"];
-      try{
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $nodeid){
+        $return_transactions = true;
+        if(!is_null($data) && array_key_exists("nodeid", $data) && is_numeric($data["nodeid"])) $nodeid = $data["nodeid"];
+        if(!is_null($data) && array_key_exists("return_transactions", $data) && is_bool($data["return_transactions"])) $return_transactions = $data["return_transactions"];
+
         if(is_null($nodeid)){
-          $sql = $this->db_api->execute("SELECT cw.walletid, nt.nodeid, n.nodeauthhash, n.hostname, cw.walletaddress, cw.walletheight, cw.syncstatus, cw.wallettype, cw.totalbalance, cw.pendingtotalbalance, cw.spendable, cw.querydate
-                                         FROM nodetype nt
-                                         JOIN nodes n ON n.id = nt.nodeid
-                                         LEFT JOIN chia_wallets cw ON cw.nodeid = nt.nodeid
-                                         WHERE nt.code = 5"
-                                         , array());
+          $wallet_data = Promise\resolve((new DB_Api())->execute("SELECT cw.walletid, nt.nodeid, n.nodeauthhash, n.hostname, cw.walletaddress, cw.walletheight, cw.syncstatus, cw.wallettype, cw.totalbalance, cw.pendingtotalbalance, cw.spendable, cw.querydate
+                                                                  FROM nodetype nt
+                                                                  JOIN nodes n ON n.id = nt.nodeid
+                                                                  LEFT JOIN chia_wallets cw ON cw.nodeid = nt.nodeid
+                                                                  WHERE nt.code = 5"
+                                                                  , array()));
         }else{
-          $sql = $this->db_api->execute("SELECT cw.walletid, nt.nodeid, n.nodeauthhash, n.hostname, cw.walletaddress, cw.walletheight, cw.syncstatus, cw.wallettype, cw.totalbalance, cw.pendingtotalbalance, cw.spendable, cw.querydate
-                                         FROM nodetype nt
-                                         JOIN nodes n ON n.id = nt.nodeid
-                                         LEFT JOIN chia_wallets cw ON cw.nodeid = nt.nodeid
-                                         WHERE nt.code = 5 AND nt.nodeid = ?"
-                                         , array($nodeid));
+          $wallet_data = Promise\resolve((new DB_Api())->execute("SELECT cw.walletid, nt.nodeid, n.nodeauthhash, n.hostname, cw.walletaddress, cw.walletheight, cw.syncstatus, cw.wallettype, cw.totalbalance, cw.pendingtotalbalance, cw.spendable, cw.querydate
+                                                                  FROM nodetype nt
+                                                                  JOIN nodes n ON n.id = nt.nodeid
+                                                                  LEFT JOIN chia_wallets cw ON cw.nodeid = nt.nodeid
+                                                                  WHERE nt.code = 5 AND nt.nodeid = ?"
+                                                                  , array($nodeid)));
         }
 
-        $returndata = [];
-        foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $walletinfo){
-          $nodeid = $walletinfo["nodeid"];
-          $walletinfo["nodeauthhash"] = $this->encryption_api->decryptString($walletinfo["nodeauthhash"]);
-          if(!array_key_exists($nodeid, $returndata)) $returndata[$nodeid] = [];
-          if(!array_key_exists("hostinfo", $returndata[$nodeid])){
-            $returndata[$nodeid]["hostinfo"] = [
-              "hostname" => $walletinfo["hostname"],
-              "nodeauthhash" => $walletinfo["nodeauthhash"]
-            ];
-          }
-          unset($walletinfo["hostname"], $walletinfo["nodeauthhash"], $walletinfo["nodeid"]);
-          $returndata[$nodeid]["walletinfo"][(is_numeric($walletinfo["walletid"]) ? $walletinfo["walletid"] : 0)] = $walletinfo;
-          if($return_transactions && !array_key_exists("transactions", $returndata[$nodeid])){
-            $found_transactions = $this->getWalletTransactions(["nodeid" => $nodeid]);
-            if(array_key_exists("data", $found_transactions) && array_key_exists($nodeid, $found_transactions["data"])){
-              $returndata[$nodeid]["transactions"] = $found_transactions["data"][$nodeid];
-            }else{
-              $returndata[$nodeid]["transactions"] = [];
+        $wallet_data->then(function($wallet_data_returned) use(&$resolve, $return_transactions){
+          $returndata = [];
+          foreach($wallet_data_returned->resultRows AS $arrkey => $walletinfo){
+            $nodeid = $walletinfo["nodeid"];
+            $walletinfo["nodeauthhash"] = $this->encryption_api->decryptString($walletinfo["nodeauthhash"]);
+            if(!array_key_exists($nodeid, $returndata)) $returndata[$nodeid] = [];
+            if(!array_key_exists("hostinfo", $returndata[$nodeid])){
+              $returndata[$nodeid]["hostinfo"] = [
+                "hostname" => $walletinfo["hostname"],
+                "nodeauthhash" => $walletinfo["nodeauthhash"]
+              ];
+            }
+            unset($walletinfo["hostname"], $walletinfo["nodeauthhash"], $walletinfo["nodeid"]);
+            $returndata[$nodeid]["walletinfo"][(is_numeric($walletinfo["walletid"]) ? $walletinfo["walletid"] : 0)] = $walletinfo;
+            if($return_transactions && !array_key_exists("transactions", $returndata[$nodeid])){
+              $found_transactions = $this->getWalletTransactions(["nodeid" => $nodeid]);
+              if(array_key_exists("data", $found_transactions) && array_key_exists($nodeid, $found_transactions["data"])){
+                $returndata[$nodeid]["transactions"] = $found_transactions["data"][$nodeid];
+              }else{
+                $returndata[$nodeid]["transactions"] = [];
+              }
             }
           }
-        }
+  
+          $resolve(array("status" => 0, "message" => "Successfully loaded chia wallet information.", "data" => $returndata));
+        })->otherwise(function (\Exception $e) use(&$resolve){
+          $resolve($this->logging_api->getErrormessage("getWalletData", "001", $e));
+        });
+      };
 
-        return array("status" =>0, "message" => "Successfully loaded chia wallet information.", "data" => $returndata);
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("001", $e);
-      }
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -262,7 +272,7 @@
           return $this->logging_api->getErrormessage("001");
         }
 
-        foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $transactiondata){
+        foreach($sql/*->fetchAll(\PDO::FETCH_ASSOC)*/ AS $arrkey => $transactiondata){
           if(!array_key_exists($transactiondata["nodeid"], $returndata))
             $returndata[$transactiondata["nodeid"]] = [];
           if(!array_key_exists($transactiondata["wallet_id"], $returndata[$transactiondata["nodeid"]]))
@@ -362,7 +372,7 @@
     {
       try{
         $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
-        $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
+        $nodeid = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/[0]["id"];
 
         $data["data"] = $nodeid;
         return array("status" =>0, "message" => "Successfully queried wallet service restart for node $nodeid.", "data" => $data);

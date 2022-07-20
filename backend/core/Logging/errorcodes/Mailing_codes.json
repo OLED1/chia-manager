@@ -12,7 +12,8 @@
       "001" : [1, "Not all information stated."]
     },
     "sendMail" : {
-      "001" : [2, "Message could not be sent."]
+      "001" : [2, "Message could not be sent."],
+      "002" : [2, "Message could not be sent."]
     }
   }
 }

@@ -1,57 +1,37 @@
 <?php
   namespace ChiaMgmt\Login;
+
+  use React\Promise;
+  use React\Promise\Deferred;
+
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\Mailing\Mailing_Api;
   use ChiaMgmt\System\System_Api;
   use ChiaMgmt\Second_Factor\Second_Factor_Api;
-  use ChiaMgmt\Encryption\Encryption_Api;
   use ChiaMgmt\Users\Users_Api;
+  
+  require __DIR__ . '/../../../vendor/autoload.php';
 
   /**
    * The Login_Api is one of two restfull enabled api classes and handles all webapp login based actions.
    * This class is only used by the webclient to fullfill login/logout and session validation actions.
-   * @version 0.1.1
+   * @version 0.2.0
    * @author OLED1 - Oliver Edtmair
    * @since 0.1.0
    * @copyright Copyright (c) 2021, Oliver Edtmair (OLED1), Luca Austelat (lucaust)
    */
   class Login_Api{
     /**
-     * Holds an instance to the Database Class.
-     * @var DB_Api
-     */
-    private $db_api;
-    /**
      * Holds an instance to the Logging Class.
      * @var Logging_Api
      */
     private $logging_api;
     /**
-     * Holds an instance to the Mailing Class.
-     * @var Mailing_Api
-     */
-    private $mailing_api;
-    /**
-     * Holds an instance to the System Class.
-     * @var System_Api
-     */
-    private $system_api;
-    /**
      * Holds an instance to the Second Factor Class.
      * @var Second_Factor_Api
      */
     private $second_factor_api;
-    /**
-     * Holds an instance to the Encryption Class.
-     * @var Encryption_Api
-     */
-    private $encryption_api;
-    /**
-     * Holds an instance to the Users Class.
-     * @var Users_Api
-     */
-    private $users_api;
     /**
      * Holds a system config json array.
      * @var array
@@ -67,13 +47,8 @@
      * Initialises the needed and above stated private variables.
      */
     public function __construct(object $server = NULL){
-      $this->db_api = new DB_Api();
       $this->logging_api = new Logging_Api($this, $server);
-      $this->mailing_api = new Mailing_Api();
-      $this->system_api = new System_Api();
       $this->second_factor_api = new Second_Factor_Api();
-      $this->encryption_api = new Encryption_Api();
-      $this->users_api = new Users_Api();
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
       $this->server = $server;
     }
@@ -87,63 +62,86 @@
      * @param  bool $stayloggedin     If the user wants to stays logged in (max. 30 days). True = Stay logged in, False = Sessions ends after 30 minutes.
      * @return array                  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function login(string $username, string $password, bool $stayloggedin): array
-    {
-      $userdata = $this->getCurrentUserInfos($username);
-
-      if($userdata["status"] == 0){
-        $salted_hash=hash('sha256',$password.$userdata["data"]["salt"].$this->ini['serversalt']);
-      }else{
-        return $userdata;
-      }
-
-      if(isset($userdata["data"]["password"]) && $userdata["data"]["password"] == $salted_hash){
-        $session = $this->setSession($userdata["data"]["id"]);
-
-        $this->logging_api->logtofile(0, 0, "User with ID " . $userdata["data"]["id"] . " logged in from " . $_SERVER['REMOTE_ADDR'] . ".;");
-        if($session["status"] == 0){
-          try{
-            $security = $this->system_api->getSpecificSystemSetting("security");
-            $mailing = $this->system_api->getSpecificSystemSetting("mailing");
-            $authkeypassed = 1;
-            $totpmobilepassed = 1;
-            $sendauthkey = false;
-            $checktotpmobile = false;
-
-            if($security["status"] == 0 && array_key_exists("security", $security["data"]) &&
-                $security["data"]["security"]["TOTP"]["value"] == 1 && $mailing["status"] == 0 &&
-                array_key_exists("mailing", $mailing["data"]) && $mailing["data"]["mailing"]["confirmed"] == 1
-              ){
-                $authkeypassed = 0;
-                $sendauthkey = true;
-            }
-
-            if($this->second_factor_api->getTOTPEnabled(["userID" => $session["data"]["userid"]])["status"] == 0){
-              $totpmobilepassed = 0;
-              $checktotpmobile = true;
-            }
-
-            $sql = $this->db_api->execute("Insert INTO users_sessions (id, userid, sessid, authkeypassed, totpmobilepassed, deviceinfo, validuntil) VALUES (NULL, ?, ?, ?, ?, ?, " . ($stayloggedin ? "NULL" : "DATE_ADD(now(), INTERVAL 30 MINUTE)" ) . ")",
-                                          array($session["data"]["userid"], $session["data"]["sessid"], $authkeypassed, $totpmobilepassed, $_SERVER['HTTP_USER_AGENT']));
-            
-            if($sendauthkey && !$checktotpmobile){
-              $this->generateAndsendAuthKey($session["data"]["userid"], $session["data"]["sessid"]);
-              return $this->logging_api->getErrormessage("001");
-            }else if(!$sendauthkey && $checktotpmobile){
-              return $this->logging_api->getErrormessage("002");
-            }else if($sendauthkey && $checktotpmobile){
-              $this->generateAndsendAuthKey($session["data"]["userid"], $session["data"]["sessid"]);
-              return $this->logging_api->getErrormessage("003");
-            }
-
-            return array("status" => "0", "message" => "Logged in.");
-          }catch(\Exception $e){
-            return $this->logging_api->getErrormessage("004", $e);
+    public function login(string $username, string $password, bool $stayloggedin)
+    {     
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($username, $password, $stayloggedin){
+        $current_user_infos = Promise\resolve($this->getCurrentUserInfos($username));
+        $current_user_infos->then(function($userdata) use(&$resolve, &$reject, $password, $stayloggedin){
+          if($userdata["status"] == 0){
+            $salted_hash=hash('sha256',$password.$userdata["data"]["salt"].$this->ini['serversalt']);
+          }else{
+            $resolve($userdata);
           }
-        }
-      }else{
-        return $this->logging_api->getErrormessage("005","User with ID " . $userdata["data"]["id"] . " tried to log in from " . $_SERVER['REMOTE_ADDR'] . ".");
-      }
+
+          if(isset($userdata["data"]["password"]) && $userdata["data"]["password"] == $salted_hash){
+            $set_session = Promise\resolve($this->setSession($userdata["data"]["id"]));
+            $set_session->then(function($session_set) use(&$resolve, &$reject, $userdata, $stayloggedin){
+              $this->logging_api->logtofile(0, 0, "User with ID " . $userdata["data"]["id"] . " logged in from " . $_SERVER['REMOTE_ADDR'] . ".;");
+                         
+              if($session_set["status"] == 0){               
+                $security_promise = Promise\resolve((new System_Api())->getSpecificSystemSetting("security"));
+                $mailing_promise = Promise\resolve((new System_Api())->getSpecificSystemSetting("mailing"));
+
+                $security_promise->then(function($security_returned) use(&$resolve, &$reject, $mailing_promise, $session_set, $stayloggedin){   
+                  $mailing_promise->then(function($mailing_returned) use(&$resolve, &$reject, $security_returned, $session_set, $stayloggedin){
+                    $authkeypassed = 1;
+                    $totpmobilepassed = 1;
+                    $sendauthkey = false;
+                    $checktotpmobile = false;
+
+                    if($security_returned["status"] == 0 && array_key_exists("security", $security_returned["data"]) &&
+                      $security_returned["data"]["security"]["TOTP"]["value"] == 1 && $mailing_returned["status"] == 0 &&
+                      array_key_exists("mailing", $mailing_returned["data"]) && $mailing_returned["data"]["mailing"]["confirmed"] == 1
+                    ){
+                      $authkeypassed = 0;
+                      $sendauthkey = true;
+                    }
+
+                    $totp_enabled = Promise\resolve($this->second_factor_api->getTOTPEnabled(["userID" => $session_set["data"]["userid"]]));
+                    $totp_enabled->then(function($totpenabled_returned) use(&$resolve, $session_set, $stayloggedin, $authkeypassed, $totpmobilepassed, $sendauthkey, $checktotpmobile){
+                      if($totpenabled_returned["status"] == 0){
+                        $totpmobilepassed = 0;
+                        $checktotpmobile = true;
+                      }
+
+                      $user_sessions_promise = Promise\resolve((new DB_Api())->execute("Insert INTO users_sessions (id, userid, sessid, authkeypassed, totpmobilepassed, deviceinfo, validuntil) VALUES (NULL, ?, ?, ?, ?, ?, " . ($stayloggedin ? "NULL" : "DATE_ADD(now(), INTERVAL 30 MINUTE)" ) . ")", array($session_set["data"]["userid"], $session_set["data"]["sessid"], $authkeypassed, $totpmobilepassed, $_SERVER['HTTP_USER_AGENT'])));
+                      $user_sessions_promise->then(function($totpenabled_returned) use(&$resolve, $session_set, $totpmobilepassed, $sendauthkey, $checktotpmobile){                      
+                        if($sendauthkey && !$checktotpmobile){
+                          $generate_send_key = Promise\resolve($this->generateAndsendAuthKey($session_set["data"]["userid"], $session_set["data"]["sessid"]));
+                          $generate_send_key->then(function($generate_send_key_returned) use(&$resolve){
+                            $resolve($this->logging_api->getErrormessage("login", "001"));
+                          });
+                        }else if(!$sendauthkey && $checktotpmobile){
+                          $resolve($this->logging_api->getErrormessage("login", "002"));
+                        }else if($sendauthkey && $checktotpmobile){
+                          $generate_send_key = Promise\resolve($this->generateAndsendAuthKey($session_set["data"]["userid"], $session_set["data"]["sessid"]));
+                          $generate_send_key->then(function($generate_send_key_returned) use(&$resolve){
+                            $resolve($this->logging_api->getErrormessage("login", "003"));
+                          });
+                        }else{
+                          $resolve(array("status" => "0", "message" => "Logged in."));
+                        }
+                      })->otherwise(function (\Exception $e) use(&$resolve){
+                        $resolve($this->logging_api->getErrormessage("login", "004", $e));
+                      });
+                    });
+                  });
+                });
+              }else{
+                $resolve($session_set);
+              }
+            });
+          }else{
+            $resolve($this->logging_api->getErrormessage("login", "005","User with ID " . $userdata["data"]["id"] . " tried to log in from " . $_SERVER['REMOTE_ADDR'] . "."));
+          }
+        });
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -154,34 +152,47 @@
      * @param  string $authkey The stated outkey.
      * @return array           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function checkAuthKey(string $authkey): array
+    public function checkAuthKey(string $authkey): object
     {
-      if(array_key_exists('user_id', $_COOKIE) && array_key_exists('PHPSESSID', $_COOKIE)){
-        $userid = $_COOKIE['user_id'];
-        $sessionid = $_COOKIE['PHPSESSID'];
-        $currentdate = new \DateTime();
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($authkey){
+        if(array_key_exists('user_id', $_COOKIE) && array_key_exists('PHPSESSID', $_COOKIE)){
+          $userid = $_COOKIE['user_id'];
+          $sessionid = $_COOKIE['PHPSESSID'];
+          $currentdate = new \DateTime();
 
-        try{
-          $sql = $this->db_api->execute("SELECT validuntil FROM users_authkeys WHERE authkey = ? AND validuntil >= ? LIMIT 1",
-                  array($authkey, $currentdate->format("Y-m-d H:i:s")));
+          $get_current_authkey = Promise\resolve((new DB_Api())->execute("SELECT validuntil FROM users_authkeys WHERE authkey = ? AND validuntil >= ? LIMIT 1",
+                                                  array($authkey, $currentdate->format("Y-m-d H:i:s"))));
+          $get_current_authkey->then(function($get_current_authkey_returned) use(&$resolve, $userid, $sessionid){ 
+            $returned_rows = $get_current_authkey_returned->resultRows;
 
-          $sqreturn = $sql->fetchAll(\PDO::FETCH_ASSOC)[0];
+            if(count($returned_rows) == 1 && array_key_exists("validuntil", $returned_rows[0])){
+              $update_authkeys = Promise\resolve((new DB_Api())->execute("UPDATE users_authkeys SET valid = 0 WHERE userid = ?", array($userid)));
+              $update_sessions = Promise\resolve((new DB_Api())->execute("UPDATE users_sessions SET authkeypassed = 1 WHERE userid = ? AND sessid = ?", array($userid, $sessionid)));
 
-          if(array_key_exists("validuntil", $sqreturn)){
-            $sql = $this->db_api->execute("UPDATE users_authkeys SET valid = 0 WHERE userid = ?", array($userid));
-            $sql = $this->db_api->execute("UPDATE users_sessions SET authkeypassed = 1 WHERE userid = ? AND sessid = ?", array($userid, $sessionid));
-
-            //return array("status" => 0, "message" => "Successfully checked authkey.");
-            return $this->checklogin($sessid, $userid);
-          }else{
-            return $this->logging_api->getErrormessage("001");
-          }
-        }catch(\Exception $e){
-          return $this->logging_api->getErrormessage("002", $e);
+              Promise\all([$update_authkeys, $update_sessions])->then(function($updates_returned) use(&$resolve, $userid, $sessionid){
+                $check_login = Promise\resolve($this->checklogin($sessionid, $userid));
+                $check_login->then(function($check_login_returned) use(&$resolve){
+                  $resolve($check_login_returned);
+                });
+              })->otherwise(function (\Exception $e) use(&$resolve){
+                $resolve($this->logging_api->getErrormessage("checkAuthKey", "004", $e));
+              });
+            }else{
+              $resolve($this->logging_api->getErrormessage("checkAuthKey", "001"));
+            }
+          })->otherwise(function (\Exception $e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("checkAuthKey", "002", $e));
+          });
+        }else{
+          $resolve($this->logging_api->getErrormessage("checkAuthKey", "003"));
         }
-      }else{
-        return $this->logging_api->getErrormessage("003");
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -192,8 +203,42 @@
      * @param  string $authkey The stated outkey.
      * @return array           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function checkTOTPMobilePassed(string $key): array
+    public function checkTOTPMobilePassed(string $key): object
     {
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($key){
+        if(array_key_exists('user_id', $_COOKIE) && array_key_exists('PHPSESSID', $_COOKIE)){
+          $userid = $_COOKIE['user_id'];
+          $sessionid = $_COOKIE['PHPSESSID'];
+
+          $totp_proof = Promise\resolve($this->second_factor_api->totpProof(["userID" => $userid, "totpkey" => $key]));
+          $totp_proof->then(function($totp_proof_returned) use(&$resolve, $userid, $sessionid){
+            if($totp_proof_returned["status"] == 0){
+              $set_totp_mobile_passed = Promise\resolve((new DB_Api())->execute("UPDATE users_sessions SET totpmobilepassed = 1 WHERE userid = ? AND sessid = ?", array($userid, $sessionid)));
+              $set_totp_mobile_passed->then(function($totp_proof_returned) use(&$resolve, $userid, $sessionid){
+                $check_login = Promise\resolve($this->checklogin($sessionid, $userid));
+                $check_login->then(function($check_login_returned) use(&$resolve){
+                  $resolve($check_login_returned);
+                });
+              })->otherwise(function(\Exception $e) use(&$resolve){
+                $resolve($this->logging_api->getErrormessage("checkTOTPMobilePassed", "001", $e));
+              });
+            }else{
+              $resolve($totp_proof_returned);
+            }
+          });
+        }else{
+          $resolve($this->logging_api->getErrormessage("checkTOTPMobilePassed", "002"));
+        }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
+
+
+
       if(array_key_exists('user_id', $_COOKIE) && array_key_exists('PHPSESSID', $_COOKIE)){
         $userid = $_COOKIE['user_id'];
         $sessionid = $_COOKIE['PHPSESSID'];
@@ -224,45 +269,65 @@
      * @param  string $sessid   The user's current session id.
      * @return array            {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function generateAndsendAuthKey(int $userid = NULL, string $sessid = NULL): array
+    public function generateAndsendAuthKey(int $userid = NULL, string $sessid = NULL): object
     {
-      $loginstatus = $this->checklogin($sessid, $userid)["status"];
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($userid, $sessid){
+        $login_status = Promise\resolve($this->checklogin($sessid, $userid));
+        $login_status->then(function($login_status_returned) use(&$resolve, $userid){
+          $login_status_returned = $login_status_returned["status"];
 
-      if($loginstatus == 0){
-        return array("status" => 0, "message" => "You are currently logged in. No need to send authkey.");
+          if($login_status_returned == 0){
+            $resolve(array("status" => 0, "message" => "You are currently logged in. No need to send authkey."));
+          }else if($login_status_returned == "007009002"){
+            if(array_key_exists("user_id", $_COOKIE) || !is_null($userid)){
+              if(array_key_exists('user_id', $_COOKIE)) $userid = $_COOKIE['user_id'];
+              $authkey = bin2hex(random_bytes(25));
 
-      }else if($loginstatus == "007009002"){
+              $user_mail = Promise\resolve((new DB_Api())->execute("SELECT email FROM users WHERE id = ?", array($userid)));
+              $update_authkeys = Promise\resolve((new DB_Api())->execute("UPDATE users_authkeys SET valid = 0 WHERE userid = ?", array($userid)));
 
-        if(array_key_exists("user_id", $_COOKIE) || !is_null($userid)){
-          if(array_key_exists('user_id', $_COOKIE)) $userid = $_COOKIE['user_id'];
-          $authkey = bin2hex(random_bytes(25));
+              $user_mail->then(function($user_mail_returned) use(&$resolve, $update_authkeys, $authkey, $userid){
+                $email = $user_mail_returned->resultRows[0]["email"];
+                
+                $update_authkeys->then(function($update_authkeys_returned) use(&$resolve, $email, $authkey, $userid){
+                  $keyvaliduntil = new \DateTime();
+                  $keyvaliduntil->modify("+15 minutes");
 
-          try{
-            $sql = $this->db_api->execute("SELECT email FROM users WHERE id = ?", array($userid));
-            $email = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["email"];
+                  $insert_authkey = Promise\resolve((new DB_Api())->execute("Insert INTO users_authkeys (id, userid, authkey, validuntil) VALUES (NULL, ?, ?, ?)",
+                                                                            array($userid, $authkey, $keyvaliduntil->format("Y-m-d H:i:s"))));
 
-            $sql = $this->db_api->execute("UPDATE users_authkeys SET valid = 0 WHERE userid = ?", array($userid));
+                  $insert_authkey->then(function($insert_authkey_returned) use(&$resolve, $email, $authkey, $keyvaliduntil){
+                    $message = "<h1>Complete your login</h1><br>To complete your login enter this authkey when prompted:<br>$authkey<br><br>This key will be valid until {$keyvaliduntil->format("Y-m-d H:i:s")}.";
 
-            $keyvaliduntil = new \DateTime();
-            $keyvaliduntil->modify("+15 minutes");
-
-            $sql = $this->db_api->execute("Insert INTO users_authkeys (id, userid, authkey, validuntil) VALUES (NULL, ?, ?, ?)",
-                                          array($userid, $authkey, $keyvaliduntil->format("Y-m-d H:i:s")));
-
-            $message = "<h1>Complete your login</h1><br>To complete your login enter this authkey when prompted:<br>$authkey<br><br>This key will be valid until {$keyvaliduntil->format("Y-m-d H:i:s")}.";
-
-            $mailingstatus = $this->mailing_api->sendMail(array($email), "Chia Management Loginkey" , $message);
-
-            return array("status" => 0, "message" => "Successfully (re)sent authmail.");
-          }catch(\Exception $e){
-            return $this->logging_api->getErrormessage("001", $e);
+                    $send_mail_authkey = Promise\resolve((new Mailing_Api())->sendMail(array($email), "Chia Management Loginkey" , $message));
+                    $send_mail_authkey->then(function($send_mail_authkey_returned) use(&$resolve){
+                      $resolve(array("status" => 0, "message" => "Successfully (re)sent authmail."));
+                    });
+                  })->otherwise(function(\Exception $e) use(&$resolve){
+                    $resolve($this->logging_api->getErrormessage("generateAndsendAuthKey", "005", $e));
+                  });
+                })->otherwise(function(\Exception $e) use(&$resolve){
+                  $resolve($this->logging_api->getErrormessage("generateAndsendAuthKey", "004", $e));
+                });
+              })->otherwise(function(\Exception $e) use(&$resolve){
+                $resolve($this->logging_api->getErrormessage("generateAndsendAuthKey", "001", $e));
+              });
+              
+              $resolve($authkey);
+            }else{
+              $resolve($this->logging_api->getErrormessage("generateAndsendAuthKey", "002"));
+            }
+          }else{
+            $resolve($this->logging_api->getErrormessage("generateAndsendAuthKey", "003"));
           }
-        }else{
-          return $this->logging_api->getErrormessage("002");
-        }
-      }else{
-        return $this->logging_api->getErrormessage("003");
-      }
+        });
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -270,25 +335,32 @@
      * Function made for: WebGUI/App
      * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function invalidateLogin(): array
+    public function invalidateLogin(): object
     {
-      if(array_key_exists('user_id', $_COOKIE) && array_key_exists('PHPSESSID', $_COOKIE)){
-        $userid = $_COOKIE['user_id'];
-        $sessionid = $_COOKIE['PHPSESSID'];
+      $resolver = function (callable $resolve, callable $reject, callable $notify){
+        if(array_key_exists('user_id', $_COOKIE) && array_key_exists('PHPSESSID', $_COOKIE)){
+          $userid = $_COOKIE['user_id'];
+          $sessionid = $_COOKIE['PHPSESSID'];
 
-        try{
-          $sql = $this->db_api->execute("UPDATE users_sessions SET invalidated = 1 WHERE userid = ? AND sessid = ?", array($userid, $sessionid));
-          setcookie('user_id', null, -1, '/');
-          setcookie('PHPSESSID', null, -1, '/');
+          $invalidate_user = Promise\resolve((new DB_Api())->execute("UPDATE users_sessions SET invalidated = 1 WHERE userid = ? AND sessid = ?", array($userid, $sessionid)));
+          $invalidate_user->then(function($invalidate_user_returnded) use(&$resolve){
+            setcookie('user_id', null, -1, '/');
+            setcookie('PHPSESSID', null, -1, '/');
 
-          return array("status" => 0, "message" => "Successfully invalidated (pending) login.");
-        }catch(\Exception $e){
-          return $this->logging_api->getErrormessage("001", $e);
+            $resolve(array("status" => 0, "message" => "Successfully invalidated (pending) login."));
+          })->otherwise(function(\Exception $e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("invalidateLogin", "001", $e));
+          });
+        }else{
+          $resolve($this->logging_api->getErrormessage("invalidateLogin", "002"));
         }
+      };
 
-      }else{
-        return $this->logging_api->getErrormessage("002");
-      }
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -297,22 +369,30 @@
      * @param  string $username The username
      * @return array            {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" => {[Found db stored userdata]}}
      */
-    public function getCurrentUserInfos(string $username): array
+    public function getCurrentUserInfos(string $username): object
     {
-      try{
-        $sql = $this->db_api->execute("SELECT id,name,lastname,email,password,salt FROM users WHERE username = ? AND enabled = 1",
-                                      array($username));
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($username){  
+        $user_infos = Promise\resolve(
+          (new DB_Api())->execute("SELECT id,name,lastname,email,password,salt FROM users WHERE username = ? AND enabled = 1",
+                                  array($username))
+        );
 
-        if($sql->rowCount() == 0){
-          return $this->logging_api->getErrormessage("001","An unknown user tried to log in from " . $_SERVER['REMOTE_ADDR'] . ".");
-        }
+        $user_infos->then(function($user_infos_returned) use(&$resolve){
+          if(count($user_infos_returned->resultRows) == 0){
+            $resolve($this->logging_api->getErrormessage("001","An unknown user tried to log in from " . $_SERVER['REMOTE_ADDR'] . "."));
+          }
 
-        $data = $sql->fetch(\PDO::FETCH_ASSOC);
+          $resolve(array("status" => 0,"message" => "Data successfully loaded.","data" => $user_infos_returned->resultRows[0]));
+        })->otherwise(function(\Exception $e) use(&$resolve){
+          $resolve($this->logging_api->getErrormessage("getCurrentUserInfos","001",$e));
+        });
+      };
+      
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
 
-        return array("status" => 0,"message" => "Data successfully loaded.","data" => $data);
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("002", $e);
-      }
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -321,58 +401,46 @@
      * @param int $id The users id which logged in
      * @return array  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : { "userid" : "[userid]", "sessid" : [session ID]}}
      */
-    public function setSession(int $userid): array
+    public function setSession(int $userid): object
     {
-      try{
-        session_destroy();
-        $sessionID = session_create_id();
-        $currentCookieParams = session_get_cookie_params();
-
-        setcookie(
-          'PHPSESSID',//name
-          $sessionID,//value
-          strtotime('+30 days'),//expires at end of session
-          "/",//path
-          $currentCookieParams['domain'],//domain
-          true, //secure
-          true//httponly
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($userid){ 
+        try{
+          if (session_status() != PHP_SESSION_NONE) session_destroy();
+  
+          $sessionID = session_create_id();
+          $currentCookieParams = session_get_cookie_params();
+  
+          setcookie(
+            'PHPSESSID',//name
+            $sessionID,//value
+            strtotime('+30 days'),//expires at end of session
+            "/",//path
+            $currentCookieParams['domain'],//domain
+            true, //secure
+            true//httponly
+            );
+  
+          setcookie(
+            'user_id',//name
+            $userid,//value
+            strtotime('+30 days'),//expires at end of session
+            "/",//path
+            $currentCookieParams['domain'],//domain
+            true, //secure
+            true //httponly
           );
+  
+          $resolve(array("status" => 0, "message" => "Session successfully set!", "data" => array("userid" => $userid, "sessid" => $sessionID)));
+        }catch(\Exception $e){
+          $resolve($this->logging_api->getErrormessage("setSession", "001",$e));
+        }
+      };
 
-        setcookie(
-          'user_id',//name
-          $userid,//value
-          strtotime('+30 days'),//expires at end of session
-          "/",//path
-          $currentCookieParams['domain'],//domain
-          true, //secure
-          true //httponly
-        );
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
 
-
-
-        return array("status" => 0, "message" => "Session successfully set!", "data" => array("userid" => $userid, "sessid" => $sessionID));
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("001",$e);
-      }
-    }
-
-    /**
-     * Logs a user out and removes his session ID from db.
-     * Function made for: WebGUI/App
-     * @param  int $userid The user which should be logged out
-     * @return array       {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
-     */
-    public function logout(int $userid): array
-    {
-      try{
-        $sql = $this->db_api->execute("UPDATE users SET loginDate = NULL, sessionString = NULL, ipaddr = NULL WHERE id = ?",
-        array($userid));
-
-        session_destroy();
-        return $this->logging_api->getErrormessage("001","User with ID " . $userid . " logged out.");
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("002",$e);
-      }
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -382,57 +450,70 @@
      * @param  int $userid        Users's id from which the loginstatus should be checked.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function checklogin(string $sessionid = NULL, int $userid = NULL): array
+    public function checklogin(string $sessionid = NULL, int $userid = NULL): object
     {
-      if((isset($_COOKIE['user_id']) || !is_null($userid)) &&
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($sessionid, $userid){       
+        if((isset($_COOKIE['user_id']) || !is_null($userid)) &&
         (isset($_COOKIE['PHPSESSID']) || !is_null($sessionid))
-      ){
-        if(is_null($userid)) $userid = $_COOKIE['user_id'];
-        if(is_null($sessionid)) $sessionid = $_COOKIE['PHPSESSID'];
+        ){
+          if(is_null($userid)) $userid = $_COOKIE['user_id'];
+          if(is_null($sessionid)) $sessionid = $_COOKIE['PHPSESSID'];
 
-        $this->invalidateAllNotLoggedin();
+          $invaldite_logins = Promise\resolve($this->invalidateAllNotLoggedin());
+          $invaldite_logins->then(function($invalidate_returned) use(&$resolve){
+            if($invalidate_returned["status"] != 0) $resolve($invalidate_returned);
+          });
 
-        try{
-          $sql = $this->db_api->execute("SELECT authkeypassed, validuntil, totpmobilepassed FROM users_sessions WHERE userid = ? AND sessid = ? AND invalidated = 0",
-          array($userid, $sessionid));
+          $user_session = Promise\resolve((new DB_Api())->execute("SELECT authkeypassed, validuntil, totpmobilepassed FROM users_sessions WHERE userid = ? AND sessid = ? AND invalidated = 0",
+                                          array($userid, $sessionid)));
 
-          $returneddata = $sql->fetchAll(\PDO::FETCH_ASSOC);
+          $user_session->then(function($session_returned) use(&$resolve, $userid, $sessionid){
+            $session_returned = $session_returned->resultRows;
 
-          if(Count($returneddata) > 0){
-            $returneddata = $returneddata[0];
-
-
-            if($returneddata["authkeypassed"] == 1 && $returneddata["totpmobilepassed"] == 1){
-              if(is_null($returneddata["validuntil"])){
-                return array("status" => "0", "message" => "User with id {$userid} is logged in.");
-              }else{
-                $validuntil = new  \DateTime($returneddata["validuntil"]);
-                $currentdate = new \DateTime();
-
-                if($currentdate <= $validuntil){
-                  $currentdate->modify("+30 minutes");
-                  $sql = $this->db_api->execute("UPDATE users_sessions SET validuntil = ? WHERE userid = ? AND sessid = ?",
-                                                array($currentdate->format("Y-m-d H:i:s"), $userid, $sessionid));
-
-                  return array("status" => "0", "message" => "User with id {$userid} is logged in.");
+            if(Count($session_returned) > 0){
+              $session_returned = $session_returned[0];
+              
+              if($session_returned["authkeypassed"] == 1 && $session_returned["totpmobilepassed"] == 1){
+                if(is_null($session_returned["validuntil"])){
+                  $resolve(array("status" => "0", "message" => "User with id {$userid} is logged in."));
                 }else{
-                  return $this->logging_api->getErrormessage("001");
+                  $validuntil = new  \DateTime($session_returned["validuntil"]);
+                  $currentdate = new \DateTime();
+  
+                  if($currentdate <= $validuntil){
+                    $currentdate->modify("+30 minutes");
+
+                    $user_session_set = Promise\resolve((new DB_Api())->execute("UPDATE users_sessions SET validuntil = ? WHERE userid = ? AND sessid = ?", array($currentdate->format("Y-m-d H:i:s"), $userid, $sessionid)));
+                    $user_session_set->then(function($session_set_returnded) use(&$resolve, $userid){
+                      $resolve(array("status" => "0", "message" => "User with id {$userid} is logged in."));
+                    })->otherwise(function (\Exception $e) use(&$resolve){
+                      $resolve($this->logging_api->getErrormessage("checklogin","008", $e));
+                    });
+                  }else{
+                    $resolve($this->logging_api->getErrormessage("checklogin","001"));
+                  }
                 }
+              }else{
+                if($session_returned["authkeypassed"] == 0) $resolve($this->logging_api->getErrormessage("checklogin","002"));
+                if($session_returned["totpmobilepassed"] == 0) $resolve($this->logging_api->getErrormessage("checklogin","003"));
+                $resolve($this->logging_api->getErrormessage("checklogin","004"));
               }
             }else{
-              if($returneddata["authkeypassed"] == 0) return $this->logging_api->getErrormessage("002");
-              if($returneddata["totpmobilepassed"] == 0) return $this->logging_api->getErrormessage("003");
-              return $this->logging_api->getErrormessage("004");
+              $resolve($this->logging_api->getErrormessage("checklogin","005"));
             }
-          }else{
-              return $this->logging_api->getErrormessage("005");
-          }
-        }catch(\Exception $e){
-          return $this->logging_api->getErrormessage("006",$e);
+          })->otherwise(function (\Exception $e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("checklogin","006", $e));
+          });
+        }else{
+          $resolve($this->logging_api->getErrormessage("checklogin","007","", false));
         }
-      }else{
-        return $this->logging_api->getErrormessage("007","", false);
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -440,22 +521,32 @@
      * Function made for: Api/Backend
      * @return array                {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function invalidateAllNotLoggedin(): array
+    public function invalidateAllNotLoggedin(): object
     {
-      try{
-        $sql = $this->db_api->execute("UPDATE users_sessions SET invalidated =
-                                        CASE
-                                          WHEN (invalidated = 0 AND validuntil IS NOT NULL AND validuntil <= DATE_ADD(NOW(), INTERVAL 5 MINUTE)) OR
-                                                (authkeypassed = 0 AND NOW() >= DATE_ADD(logindate, INTERVAL 1 HOUR) AND invalidated = 0) OR
-                                                (NOW() >= DATE_ADD(logindate, INTERVAL 30 DAY))
-                                          THEN 1
-                                          ELSE invalidated
-                                        END", array());
+      $resolver = function (callable $resolve, callable $reject, callable $notify){
+        $invalidate_logins = Promise\resolve(
+          (new DB_Api())->execute("UPDATE users_sessions SET invalidated =
+                                    CASE
+                                      WHEN (invalidated = 0 AND validuntil IS NOT NULL AND validuntil <= DATE_ADD(NOW(), INTERVAL 5 MINUTE)) OR
+                                            (authkeypassed = 0 AND NOW() >= DATE_ADD(logindate, INTERVAL 1 HOUR) AND invalidated = 0) OR
+                                            (NOW() >= DATE_ADD(logindate, INTERVAL 30 DAY))
+                                      THEN 1
+                                      ELSE invalidated
+                                    END", array())
+        );
 
-        return array("status" => 0, "message" => "Successfully invalidated not logged in session.");
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("001",$e);
-      }
+        $invalidate_logins->then(function($session_returned) use(&$resolve){
+          $resolve(array("status" => 0, "message" => "Successfully invalidated not logged in session."));
+        })->otherwise(function(\Exception $e) use(&$resolve){
+          $resolve($this->logging_api->getErrormessage("invalidateAllNotLoggedin","001",$e));
+        });
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
   }
 ?>

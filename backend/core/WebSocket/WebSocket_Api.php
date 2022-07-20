@@ -1,5 +1,6 @@
 <?php
   namespace ChiaMgmt\WebSocket;
+  use React\Promise;
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\WebSocketClient\WebSocketClient_Api;
 
@@ -42,12 +43,9 @@
      * @throws Exception $e  Throws an exception websocket errors.
      * @return array         {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function testConnection(){
-      try{
-        return $this->wsclient->testConnection();
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("001", $e);
-      }
+    public function testConnection(): object
+    {
+      return $this->wsclient->testConnection();
     }
 
     /**
@@ -77,35 +75,56 @@
      * @param  array  $data      The data which should be sent to the websocket server.
      * @return array             {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function sendToWSS(string $command, array $data = []): array
+    public function sendToWSS(string $command, array $data = []): object
     {
-      $con_test = $this->testConnection();
-      if($con_test["status"] == 0){
-        return $this->wsclient->sendToWSS($command, $data);
-      }else{
-        return $con_test;
-      }
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($command, $data){
+        $test_wss_conn = Promise\resolve($this->wsclient->testConnection());
+        $test_wss_conn->then(function($test_wss_conn_returned) use(&$resolve, $command, $data){
+          if($test_wss_conn_returned["status"] == 0){
+            $resolve($this->wsclient->sendToWSS($command, $data));
+          }else{
+            $resolve($test_wss_conn_returned);
+          }
+        });
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
      * Starts the websocket server if not running.
      * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function startWSS(): array
+    public function startWSS(): object
     {
-      $wssstatus = $this->wsclient->testConnection();
-      if($wssstatus["status"] == "016001001" || $wssstatus["status"] == "016001002"){
-        exec("php " . __DIR__ . "/../WebSocketServer/websocket.php > /dev/null &");
-        sleep(1);
-        $wssstatus = $this->wsclient->testConnection();
-        if($wssstatus["status"] == 0){
-          return $wssstatus;
-        }else{
-          return $this->logging_api->getErrormessage("001");
-        }
-      }else{
-        return $this->logging_api->getErrormessage("002");
-      }
+      $resolver = function (callable $resolve, callable $reject, callable $notify){
+        $test_wss_conn = Promise\resolve($this->wsclient->testConnection());
+        $test_wss_conn->then(function($test_wss_conn_returned) use(&$resolve){
+          if($test_wss_conn_returned["status"] == "016001001" || $test_wss_conn_returned["status"] == "016001002"){
+            exec("php " . __DIR__ . "/../WebSocketServer/websocket.php > /dev/null &");
+            $test_wss_conn = Promise\resolve($this->wsclient->testConnection());
+            $test_wss_conn->then(function($test_wss_conn_returned) use(&$resolve){
+              if($test_wss_conn_returned["status"] == 0){
+                $resolve($test_wss_conn_returned);
+              }else{
+                $resolve($this->logging_api->getErrormessage("startWSS", "001"));
+              }
+            });
+          }else{
+            $resolve($this->logging_api->getErrormessage("startWSS", "002"));
+          }
+        });
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**

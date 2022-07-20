@@ -45,7 +45,8 @@
       "002" : [1, "Some data is missing"]
     },
     "getUserData" : {
-      "001" : [2, "An error occured."]
+      "001" : [2, "An error occured."],
+      "002" : [2, "An error occured."]
     },
     "checkUsernameExists" : {
       "001" : [1, "User exists."],

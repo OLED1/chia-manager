@@ -1,5 +1,9 @@
 <?php
   namespace ChiaMgmt\Second_Factor;
+
+  use React\Promise;
+  use React\Promise\Deferred;
+
   use OTPHP\TOTP;
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\Users\Users_Api;
@@ -72,24 +76,30 @@
      * @param array $data   { "userID" : [int] }
      * @return array        Returns a status code array.
      */
-    public function getTOTPEnabled(array $data): array
+    public function getTOTPEnabled(array $data): object
     {
-        if(array_key_exists("userID", $data) && is_numeric($data["userID"])){
-            try{
-                $sql = $this->db_api->execute("SELECT Count(*) AS count FROM users_settings WHERE userid = ? AND totp_proofen = 1 AND totp_enable = 1", array($data["userID"]));
-                $totpEnabled = $sql->fetchAll(\PDO::FETCH_ASSOC);
+        $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+            if(array_key_exists("userID", $data) && is_numeric($data["userID"])){
+                $totp_enabled_promise = Promise\resolve($this->db_api->execute("SELECT Count(*) AS count FROM users_settings WHERE userid = ? AND totp_proofen = 1 AND totp_enable = 1", array($data["userID"])));
+                $totp_enabled_promise->then(function($totpEnabled) use(&$resolve){
+                    if($totpEnabled->resultRows[0]["count"] == 1){
+                        $resolve(array("status" => 0, "message" => "Totp is currently enabled."));
+                    }else{
+                        $resolve($this->logging_api->getErrormessage("getTOTPEnabled", "001"));
+                    }
+                })->otherwise(function(\Exception $e) use(&$resolve){
+                    $resolve($this->logging_api->getErrormessage("getTOTPEnabled", "002", $e));
+                });
+            }else{
+                $resolve($this->logging_api->getErrormessage("getTOTPEnabled", "003"));
+            }    
+        };
     
-                if($totpEnabled[0]["count"] == 1){
-                    return array("status" => 0, "message" => "Totp is currently enabled.");
-                }else{
-                    return $this->logging_api->getErrormessage("001");
-                }
-            }catch(\Exception $e){
-                return $this->logging_api->getErrormessage("002", $e);
-            }
-        }else{
-            return $this->logging_api->getErrormessage("003");
-        }   
+        $canceller = function () {
+            throw new Exception('Promise cancelled');
+        };
+    
+        return new Promise\Promise($resolver, $canceller); 
     }
 
     /**
@@ -167,22 +177,31 @@
      * @param array $data   { "userID" : [int], "totpkey" : [string] }
      * @return array        Returns a status code array.
      */
-    public function totpProof(array $data): array
+    public function totpProof(array $data): object
     {
-        if(array_key_exists("userID", $data) && is_numeric($data["userID"]) && array_key_exists("totpkey", $data) && is_numeric($data["totpkey"])){
-            $statedkeyValid = $this->checkKeyValid($data);
-            if($statedkeyValid["status"] == 0){
-                try{
-                    $sql = $this->db_api->execute("UPDATE users_settings SET totp_proofen = 1 WHERE userid = ?", array($data["userID"]));
-
-                }catch(\Exception $e){
-                    return $this->logging_api->getErrormessage("001", $e);
-                }
+        $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+            if(array_key_exists("userID", $data) && is_numeric($data["userID"]) && array_key_exists("totpkey", $data) && is_numeric($data["totpkey"])){
+                $statedkeyValid = Promise\resolve($this->checkKeyValid($data));
+                $statedkeyValid->then(function($statedkeyValid_returned) use(&$resolve, $data){
+                    if($statedkeyValid_returned["status"] == 0){
+                        $update_totp_proof = Promise\resolve((new DB_Api())->execute("UPDATE users_settings SET totp_proofen = 1 WHERE userid = ?", array($data["userID"])));
+                        $update_totp_proof->otherwise(function(\Exception $e) use(&$resolve){
+                            $resolve($this->logging_api->getErrormessage("totpProof", "001", $e));
+                            return;
+                        });
+                    }
+                    $resolve($statedkeyValid_returned);
+                });
+            }else{
+                $resolve($this->logging_api->getErrormessage("totpProof", "002"));
             }
-            return $statedkeyValid;
-        }else{
-            return $this->logging_api->getErrormessage("002");
-        } 
+        };
+
+        $canceller = function () {
+            throw new Exception('Promise cancelled');
+        };
+    
+        return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -191,30 +210,35 @@
      * @param array $data   { "userID" : [int], "totpkey" : [string] }
      * @return array        Returns a status code array.
      */
-    public function checkKeyValid(array $data): array
+    public function checkKeyValid(array $data): object
     {
-        if(array_key_exists("userID", $data) && is_numeric($data["userID"]) && array_key_exists("totpkey", $data) && is_numeric($data["totpkey"])){
-            try{
-                $sql = $this->db_api->execute("SELECT totp_secret FROM users_settings WHERE userid = ? AND totp_enable = 1", array($data["userID"]));
-                $totpSecret = $sql->fetchAll(\PDO::FETCH_ASSOC);
+        $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+            if(array_key_exists("userID", $data) && is_numeric($data["userID"]) && array_key_exists("totpkey", $data) && is_numeric($data["totpkey"])){
+                $totp_secret = Promise\resolve((new DB_Api())->execute("SELECT totp_secret FROM users_settings WHERE userid = ? AND totp_enable = 1", array($data["userID"])));
+                $totp_secret->then(function($totp_secret_returned) use(&$resolve, $data){
+                    $totp_secret_returned = $totp_secret_returned->resultRows;
 
-                if(count($totpSecret) == 1){
-                    $decrypted_totp_secret = $this->encryption_api->decryptString($totpSecret[0]["totp_secret"]);
-                    $totp = TOTP::create($decrypted_totp_secret);
+                    if(count($totp_secret_returned) == 1){
+                        $totp = TOTP::create($this->encryption_api->decryptString($totp_secret_returned[0]["totp_secret"]));
 
-                    if($totp->verify($data["totpkey"])){
-                        return array("status" => 0, "message" => "Entered key matches current TOTP key."); 
+                        if($totp->verify($data["totpkey"])){
+                            $resolve(array("status" => 0, "message" => "Entered key matches current TOTP key."));
+                        }else{
+                            $resolve($this->logging_api->getErrormessage("checkKeyValid", "001"));
+                        }
                     }else{
-                        return $this->logging_api->getErrormessage("001");
-                    }
-                }else{
-                    return $this->logging_api->getErrormessage("002");
-                } 
-            }catch(\Exception $e){
-                return $this->logging_api->getErrormessage("003", $e);
-            }
-        }else{
-            return $this->logging_api->getErrormessage("004");
-        } 
+                        $resolve($this->logging_api->getErrormessage("checkKeyValid", "002"));
+                    } 
+                });
+            }else{
+                $resolve($this->logging_api->getErrormessage("checkKeyValid", "004"));
+            } 
+        };
+
+        $canceller = function () {
+            throw new Exception('Promise cancelled');
+        };
+    
+        return new Promise\Promise($resolver, $canceller);
     }
   }

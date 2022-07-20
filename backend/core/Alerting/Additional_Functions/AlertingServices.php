@@ -39,7 +39,7 @@
                                       GROUP BY n.id", $parameter_array);
 
         $returnarray = [];
-        foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $upstatus_infos){
+        foreach($sql/*->fetchAll(\PDO::FETCH_ASSOC)*/ AS $arrkey => $upstatus_infos){
           if(!array_key_exists($upstatus_infos["id"], $returnarray)) $returnarray[$upstatus_infos["id"]] = [];
           if(!array_key_exists("configurable_services", $returnarray[$upstatus_infos["id"]])) $returnarray[$upstatus_infos["id"]]["configurable_services"] = [];
           array_push($returnarray[$upstatus_infos["id"]]["configurable_services"], "total downtime");
@@ -78,7 +78,7 @@
                                       ) AND 2 NOT IN (SELECT rule_type FROM alerting_rules WHERE system_target = n.id AND rule_type = 2) AND nta.code = 3{$wherestatement}", $parameter_array);
 
         $returnarray = [];
-        foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $farmer_infos){
+        foreach($sql/*->fetchAll(\PDO::FETCH_ASSOC)*/ AS $arrkey => $farmer_infos){
           if(!array_key_exists($farmer_infos["id"], $returnarray)) $returnarray[$farmer_infos["id"]] = [];
           if(!array_key_exists("configurable_services", $returnarray[$farmer_infos["id"]])) $returnarray[$farmer_infos["id"]]["configurable_services"] = [];
           array_push($returnarray[$farmer_infos["id"]]["configurable_services"], "total downtime");
@@ -117,7 +117,7 @@
                                       ) AND 3 NOT IN (SELECT rule_type FROM alerting_rules WHERE system_target = n.id AND rule_type = 3) AND nta.code = 4{$wherestatement}", $parameter_array);
 
         $returnarray = [];
-        foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $harvester_infos){
+        foreach($sql/*->fetchAll(\PDO::FETCH_ASSOC)*/ AS $arrkey => $harvester_infos){
           if(!array_key_exists($harvester_infos["id"], $returnarray)) $returnarray[$harvester_infos["id"]] = [];
           if(!array_key_exists("configurable_services", $returnarray[$harvester_infos["id"]])) $returnarray[$harvester_infos["id"]]["configurable_services"] = [];
           array_push($returnarray[$harvester_infos["id"]]["configurable_services"], "total downtime");
@@ -156,7 +156,7 @@
                                       ) AND 4 NOT IN (SELECT rule_type FROM alerting_rules WHERE system_target = n.id AND rule_type = 4) AND nta.code = 5{$wherestatement}", $parameter_array);
 
         $returnarray = [];
-        foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $wallet_infos){
+        foreach($sql/*->fetchAll(\PDO::FETCH_ASSOC)*/ AS $arrkey => $wallet_infos){
           if(!array_key_exists($wallet_infos["id"], $returnarray)) $returnarray[$wallet_infos["id"]] = [];
           if(!array_key_exists("configurable_services", $returnarray[$wallet_infos["id"]])) $returnarray[$wallet_infos["id"]]["configurable_services"] = [];
           array_push($returnarray[$wallet_infos["id"]]["configurable_services"], "total downtime");

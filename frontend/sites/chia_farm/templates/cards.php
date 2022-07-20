@@ -2,23 +2,35 @@
   use ChiaMgmt\Login\Login_Api;
   use ChiaMgmt\Chia_Farm\Chia_Farm_Api;
   require __DIR__ . '/../../../../vendor/autoload.php';
-  include __DIR__ . "/functions.php";
-
-  $login_api = new Login_Api();
-  $ini = parse_ini_file(__DIR__.'/../../../../backend/config/config.ini.php');
-  $loggedin = $login_api->checklogin();
-
-  if($loggedin["status"] > 0){
-    header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/login.php");
+  
+  if(!array_key_exists("sess_id", $_GET) || !array_key_exists("user_id", $_GET) || !array_key_exists("nodeid", $_GET)){
+    echo "Incomplete Request.";
+    die();
   }
-
+  
   $chia_farm_api = new Chia_Farm_Api();
-  $farm_api_data = $chia_farm_api->getFarmData(["nodeid" => $_GET["nodeid"]]);
-  $challenges = $chia_farm_api->getChallenges(["limit" => 50, "nodeid" => $_GET["nodeid"]]);
+  
+  $site_data_to_load = [
+    React\Promise\resolve((new Login_Api())->checklogin($_GET["sess_id"], $_GET["user_id"])),
+    React\Promise\resolve($chia_farm_api->getFarmData(["nodeid" => $_GET["nodeid"]])),
+    React\Promise\resolve($chia_farm_api->getChallenges(["limit" => 50, "nodeid" => $_GET["nodeid"]]))
+  ];
+  
+  $ini = parse_ini_file(__DIR__.'/../../../../backend/config/config.ini.php');
+  React\Promise\all($site_data_to_load)->then(function($all_returned) use($ini){
+    include __DIR__ . "/functions.php";
+    
+    if($all_returned[0]["status"] > 0){
+      echo "NOT AUTHENTICATED.";
+      exit();
+    }
 
-  if(array_key_exists("data", $farm_api_data) && count($farm_api_data["data"]) > 0){
-    echo "<script nonce={$ini["nonce_key"]}> chiaFarmData[{$_GET["nodeid"]}] = " . json_encode($farm_api_data["data"][$_GET["nodeid"]]) . "; </script>";
-    foreach($farm_api_data["data"] AS $nodeid => $farmdata){
+    $farm_api_data = $all_returned[1];
+    $challenges = $all_returned[2];
+
+    if(array_key_exists("data", $farm_api_data) && count($farm_api_data["data"]) > 0){
+      echo "<script nonce={$ini["nonce_key"]}> chiaFarmData[{$_GET["nodeid"]}] = " . json_encode($farm_api_data["data"][$_GET["nodeid"]]) . "; </script>";
+      foreach($farm_api_data["data"] AS $nodeid => $farmdata){
 ?>
 <div class="row">
   <div class="col">
@@ -208,4 +220,7 @@
     </div>
   </div>
 </div>
-<?php } ?>
+<?php 
+  } 
+});
+?>

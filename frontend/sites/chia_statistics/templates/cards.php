@@ -4,15 +4,10 @@
   use ChiaMgmt\Exchangerates\Exchangerates_Api;
   require __DIR__ . '/../../../../vendor/autoload.php';
 
-  $login_api = new Login_Api();
-  $ini = parse_ini_file(__DIR__.'/../../../../backend/config/config.ini.php');
-  $loggedin = $login_api->checklogin();
-
-  if($loggedin["status"] > 0){
-    header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/login.php");
+  if(!array_key_exists("sess_id", $_GET) || !array_key_exists("user_id", $_GET)){
+    echo "Incomplete Request.";
+    die();
   }
-
-  $chia_statistics_api = new Chia_Statistics_Api();
 
   $days_past = 4;
   $to = new \DateTime("now");
@@ -20,47 +15,63 @@
   $from->modify("-{$days_past} day");
   $data = array("from" => $from->format("Y-m-d H:i:s"), "to" => $to->format("Y-m-d H:i:s"));
 
-  $historynetspace = $chia_statistics_api->getNetspaceHistory($data);
-  if(array_key_exists("data", $historynetspace)) $historynetspace = $historynetspace["data"];
-  else $historynetspace = [];
-
-  $historyblockheight = $chia_statistics_api->getBlockheightHistory($data);
-  if(array_key_exists("data", $historyblockheight)) $historyblockheight = $historyblockheight["data"];
-  else $historyblockheight = [];
-
-  $historyxchvalue = $chia_statistics_api->getXCHValueHistory($data);
-  if(array_key_exists("data", $historyxchvalue)) $historyxchvalue = $historyxchvalue["data"];
-  else $historyxchvalue = [];
-
+  $chia_statistics_api = new Chia_Statistics_Api();
   $exchangerates_api = new Exchangerates_Api();
 
-  $defaultCurrency = $exchangerates_api-> getUserDefaultCurrency($_COOKIE["user_id"]);
-  if($defaultCurrency["status"] == 0) $defaultCurrency = $defaultCurrency["data"]["currency_code"];
-  else $defaultCurrency = "usd";
+  $site_data_to_load = [
+    React\Promise\resolve((new Login_Api())->checklogin($_GET["sess_id"], $_GET["user_id"])),
+    React\Promise\resolve($chia_statistics_api->getNetspaceHistory($data)),
+    React\Promise\resolve($chia_statistics_api->getBlockheightHistory($data)),
+    React\Promise\resolve($chia_statistics_api->getXCHValueHistory($data)),
+    React\Promise\resolve($exchangerates_api->getUserExchangeData(["userid" => $_GET["user_id"]]))
+  ];
 
-  $exchangerate = $exchangerates_api->queryExchangeRatesData($defaultCurrency);
-  if($exchangerate["status"] == 0 && array_key_exists($defaultCurrency, $exchangerate["data"])){
-    $exchangerate = $exchangerate["data"][$defaultCurrency]["currency_rate"];
-  }else{
-    $defaultCurrency = "usd";
-    $exchangerate = 1;
-  }
+  $ini = parse_ini_file(__DIR__.'/../../../../backend/config/config.ini.php');
+  React\Promise\all($site_data_to_load)->then(function($all_returned) use($ini, $days_past, $to, $from){
 
-  if(count($historyxchvalue) > 0 && $defaultCurrency != "usd"){
-    foreach($historyxchvalue AS $arrkey => $historyvalue){
-      $historyxchvalue[$arrkey]["price_usd"] = number_format(floatval($historyvalue["price_usd"]) * floatval($exchangerate), 2);
+    if($all_returned[0]["status"] > 0){
+      echo "NOT AUTHENTICATED.";
+      exit();
     }
-  }
 
-  $hourspast = $days_past*24;
-  echo "<script nonce={$ini["nonce_key"]}>
-          var hourspast = {$hourspast};
-          var historynetspace = " . json_encode($historynetspace) . ";
-          var historyblockheight = " . json_encode($historyblockheight) . ";
-          var defaultCurrency = '{$defaultCurrency}';
-          var exchangerate = {$exchangerate};
-          var historyXCHValue = " . json_encode($historyxchvalue) . ";
-        </script>";
+    $historynetspace = $all_returned[1];
+    if(array_key_exists("data", $historynetspace)) $historynetspace = $historynetspace["data"];
+    else $historynetspace = [];
+
+    $historyblockheight = $all_returned[2];
+    if(array_key_exists("data", $historyblockheight)) $historyblockheight = $historyblockheight["data"];
+    else $historyblockheight = [];
+
+    $historyxchvalue = $all_returned[3];
+    if(array_key_exists("data", $historyxchvalue)) $historyxchvalue = $historyxchvalue["data"];
+    else $historyxchvalue = [];
+
+    $exchangerate = $all_returned[4];
+    if($exchangerate["status"] == 0 && array_key_exists("data", $exchangerate) && 
+      array_key_exists("defaultCurrency", $exchangerate["data"]) && array_key_exists("exchangerate", $exchangerate["data"]))
+    {
+      $defaultCurrency = $exchangerate["data"]["defaultCurrency"];
+      $exchangerate = $exchangerate["data"]["exchangerate"];
+    }else{
+      $defaultCurrency = "usd";
+      $exchangerate = 1;
+    }
+
+    if(count($historyxchvalue) > 0 && $defaultCurrency != "usd"){
+      foreach($historyxchvalue AS $arrkey => $historyvalue){
+        $historyxchvalue[$arrkey]["price_usd"] = number_format(floatval($historyvalue["price_usd"]) * floatval($exchangerate), 2);
+      }
+    }
+
+    $hourspast = $days_past*24;
+    echo "<script nonce={$ini["nonce_key"]}>
+            var hourspast = {$hourspast};
+            var historynetspace = " . json_encode($historynetspace) . ";
+            var historyblockheight = " . json_encode($historyblockheight) . ";
+            var defaultCurrency = '{$defaultCurrency}';
+            var exchangerate = {$exchangerate};
+            var historyXCHValue = " . json_encode($historyxchvalue) . ";
+          </script>";
 ?>
 <div class="row">
   <div class="col">
@@ -76,7 +87,7 @@
               </div>
               <input id="filter-to" type="text" class="form-control datepicker" value="<?php echo $to->format("Y-m-d H:i:s"); ?>" aria-label="todate" aria-describedby="basic-addon1">
               <div class="input-group-prepend">
-                <button id="filter-apply" class="btn btn-secondary" type="button">Apply</button>
+                <button id="filter-apply" class="btn btn-secondary wsbutton" type="button">Apply</button>
               </div>
             </div>
           </div>
@@ -206,3 +217,4 @@
   </div>
 </div>
 <script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_statistics/js/chia_statistics.js"?>></script>
+<?php }); ?>

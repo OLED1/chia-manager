@@ -1,6 +1,6 @@
 <?php
   namespace ChiaMgmt\Users;
-
+  use React\Promise;
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\Mailing\Mailing_Api;
@@ -112,7 +112,7 @@
               array($data["username"], $data["name"], $data["lastname"], $new_salted_pw, $salt, $data["email"]));
 
               $sql = $this->db_api->execute("SELECT id, username, name, lastname, email, enabled FROM users WHERE username = ?", array($data["username"]));
-              foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $key => $value){
+              foreach($sql AS $key => $value){
                 $newData[$value["id"]] = $value;
               }
 
@@ -218,7 +218,7 @@
         if($loginData["userid"] != $data["userID"] && $data["userID"] > 1){
           try{
             $sql = $this->db_api->execute("SELECT count(*) AS count FROM users WHERE id = ? AND enabled = ?", array($data["userID"], 0));
-            $count = $sql->fetchAll(\PDO::FETCH_ASSOC);
+            $count = $sql;
 
             if(array_key_exists("0", $count) && array_key_exists("count", $count[0])){
               $sql = $this->db_api->execute("DELETE FROM users WHERE id = ? AND enabled = ? AND id > 1", array($data["userID"], 0));
@@ -288,17 +288,44 @@
      * @param  array $loginData   No logindata needed to use this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The found on the db stored data.]} }
      */
-    public function getUserData(int $userID = NULL): array
+    public function getUserData(int $userID = NULL): object
     {
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($userID){
+        if(is_Null($userID)){
+          $all_userdata = Promise\resolve((new DB_Api())->execute("SELECT id, username, name, lastname, email, enabled FROM users", array()));
+          $all_userdata->then(function($all_userdata_returned) use(&$resolve){
+            foreach($all_userdata_returned->resultRows AS $key => $value){
+              $returndata[$value["id"]] = $value;
+            }
+            $resolve(array("status" => 0, "message" => "Successfully loaded user information.", "data" => $returndata));
+          })->otherwise(function(\Exception $e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("getUserData", "001", $e));
+          });
+        }else{
+          $some_userdata = Promise\resolve((new DB_Api())->execute("SELECT id, username, name, lastname, email, enabled FROM users", array()));
+          $some_userdata->then(function($some_userdata_returned) use(&$resolve){
+            $resolve(array("status" => 0, "message" => "Successfully loaded user information.", "data" => $some_userdata_returned->resultRows[0]));
+          })->otherwise(function(\Exception $e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("getUserData", "002", $e));
+          });
+        }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
+      
       try{
         if(is_Null($userID)){
           $sql = $this->db_api->execute("SELECT id, username, name, lastname, email, enabled FROM users", array());
-          foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $key => $value){
+          foreach($sql AS $key => $value){
             $returndata[$value["id"]] = $value;
           }
         }else{
           $sql = $this->db_api->execute("SELECT username, name, lastname, email FROM users WHERE id = ?", array($userID));
-          $returndata = $sql->fetchAll(\PDO::FETCH_ASSOC)[0];
+          $returndata = $sql[0];
         }
         return array("status" => 0, "message" => "Successfully loaded user information.", "data" => $returndata);
       }catch(\Exception $e){
@@ -345,7 +372,7 @@
      * @param  int    $userID   The userid for which the data should be returned for.
      * @return array            {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The found on the db stored data.]} }
      */
-    public function getOwnUserData(int $userID): array
+    public function getOwnUserData(int $userID): object
     {
       return $this->getUserData($userID);
     }
@@ -388,21 +415,31 @@
      * @param  array $backendInfo   No backendInfo needed to query this function.
      * @return array                {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The currently used backup key.]} }
      */
-    public function getBackupKey(int $userID): array
+    public function getBackupKey(int $userID): object
     {
-      try{
-        $sql = $this->db_api->execute("SELECT backupkey FROM users_backupkeys WHERE userid = ? AND valid = 1", array($userID));
-        $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
-        if($sqdata > 0 && array_key_exists(0, $sqdata) && array_key_exists("backupkey", $sqdata[0])){
-          $decryptedkey = $this->encryption_api->decryptString($sqdata[0]["backupkey"]);
-        }else{
-          $decryptedkey = "";
-        }
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($userID){
+        $backup_key = Promise\resolve((new DB_Api())->execute("SELECT backupkey FROM users_backupkeys WHERE userid = ? AND valid = 1", array($userID)));
+        $backup_key->then(function($backup_key_returned) use(&$resolve){
 
-        return array("status" => 0, "message" => "Successfully loaded user information.", "data" => $decryptedkey);
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("001", $e);
-      }
+          $backup_key_returned = $backup_key_returned->resultRows;
+
+          if($backup_key_returned > 0 && array_key_exists(0, $backup_key_returned) && array_key_exists("backupkey", $backup_key_returned[0])){
+            $decryptedkey = $this->encryption_api->decryptString($backup_key_returned[0]["backupkey"]);
+          }else{
+            $decryptedkey = "";
+          }
+
+          $resolve(array("status" => 0, "message" => "Successfully loaded user information.", "data" => $decryptedkey));
+        })->otherwise(function (\Exception $e) use(&$resolve){
+          $resolve($this->logging_api->getErrormessage("getBackupKey", "001", $e));
+        });
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -514,26 +551,27 @@
      * @param  int    $userID   The userid for which the data should be returned for.
      * @return array            {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The found on the db stored data.]} }
      */
-    public function getLoggedInDevices(int $userID = NULL): array
+    public function getLoggedInDevices(int $userID = NULL): object
     {
-      try{
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($userID){
         if(is_null($userID)){
-          $sql = $this->db_api->execute("SELECT id, userid, logindate, deviceinfo from users_sessions WHERE invalidated = 0", array());
+          $logged_in_devices = Promise\resolve((new DB_Api())->execute("SELECT id, userid, logindate, deviceinfo from users_sessions WHERE invalidated = 0", array()));
         }else{
-          $sql = $this->db_api->execute("SELECT id, userid, logindate, deviceinfo from users_sessions WHERE userid = ? AND invalidated = 0", array($userID));
+          $logged_in_devices = Promise\resolve((new DB_Api())->execute("SELECT id, userid, logindate, deviceinfo from users_sessions WHERE userid = ? AND invalidated = 0", array($userID)));
         }
 
-        $sqreturndata = array();
-        $sqreturn = $sql->fetchAll(\PDO::FETCH_ASSOC);
+        $logged_in_devices->then(function($logged_in_devices_returned) use(&$resolve){
+          $resolve(array("status" => 0, "message" => "Successfully loaded all logged in devices.", "data" => $logged_in_devices_returned->resultRows));
+        })->otherwise(function(\Exception $e) use(&$resolve){
+          $resolve($this->logging_api->getErrormessage("getLoggedInDevices", "001", $e));
+        });
+      };
 
-        if(count($sqreturn) > 0){
-          $sqreturndata = $sqreturn;
-        }
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
 
-        return array("status" => 0, "message" => "Successfully loaded all logged in devices.", "data" => $sqreturndata);
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("001", $e);
-      }
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -617,7 +655,7 @@
     {
       try{
         $sql = $this->db_api->execute("SELECT id, name, lastname, email FROM users WHERE username = ? AND enabled = 1", array($username));
-        $userdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
+        $userdata = $sql;
 
         if(count($userdata) == 1){
           $userdata = $userdata[0];
@@ -658,7 +696,7 @@
         $encryptedResetKey = $this->encryption_api->encryptString($resetLink);
         $sql = $this->db_api->execute("SELECT Count(*) as count FROM users_pwresets WHERE linkkey = ? AND expired = 0 AND expiration >= NOW()", array($encryptedResetKey));
 
-        if($sql->fetchAll(\PDO::FETCH_ASSOC)[0]["count"] == 1){
+        if($sql[0]["count"] == 1){
           return array("status" => 0, "message" => "Reset link valid.");
         }else{
           return $this->logging_api->getErrormessage("001");
@@ -682,7 +720,7 @@
       try{
         $encryptedResetKey = $this->encryption_api->encryptString($resetKey);
         $sql = $this->db_api->execute("SELECT userid FROM users_pwresets WHERE linkkey = ? AND expired = 0 AND expiration >= NOW()", array($encryptedResetKey));
-        $sqreturn = $sql->fetchAll(\PDO::FETCH_ASSOC);
+        $sqreturn = $sql;
 
         if(count($sqreturn) == 1){
           $userid = $sqreturn[0]["userid"];

@@ -19,6 +19,13 @@
     </div>
   </div>
 </div>
-<div id="walletcontainer">
-<?php include("templates/cards.php"); ?>
-</div>
+<?php 
+  $browser = new React\Http\Browser();
+
+  $templates_path = "{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}/sites/chia_statistics/templates/";
+  $default_get_params = "?user_id={$_COOKIE['user_id']}&sess_id={$_COOKIE['PHPSESSID']}";
+
+  $browser->get("{$templates_path}cards.php{$default_get_params}")->then(function($site_returned){
+    echo "<div id='walletcontainer'>{$site_returned->getBody()}</div>";
+  });
+?>

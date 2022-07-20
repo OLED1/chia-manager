@@ -1,27 +1,39 @@
 <?php
+  use React\Promise;
+  use ChiaMgmt\Nodes\Nodes_Api;
+  require __DIR__ . '/../../../vendor/autoload.php';
   include("../standard_headers.php");
 
-  use ChiaMgmt\Nodes\Nodes_Api;
   $nodes_api = new Nodes_Api();
-  $configuredNodes = $nodes_api->getConfiguredNodes();
-  $activeSubscriptions = $nodes_api->getActiveSubscriptions();
-  $activeRequests = $nodes_api->getActiveRequests();
-  $nodetypes = $nodes_api->getNodeTypes();
-  $scriptupdatesavail = $nodes_api->checkUpdatesAndChannels();
 
-  if(array_key_exists("data", $configuredNodes)) $configuredNodes = $configuredNodes["data"];
-  if(array_key_exists("data", $activeSubscriptions)) $activeSubscriptions = $activeSubscriptions["data"];
-  if(array_key_exists("data", $activeRequests)) $activeRequests = $activeRequests["data"];
-  if(array_key_exists("data", $nodetypes)) $nodetypes = $nodetypes["data"];
-  if(array_key_exists("data", $scriptupdatesavail)) $scriptupdatesavail = $scriptupdatesavail["data"];
+  $nodes_promises = [
+    Promise\resolve($nodes_api->getConfiguredNodes()),
+    Promise\resolve($nodes_api->getActiveSubscriptions()),
+    Promise\resolve($nodes_api->getActiveRequests()),
+    Promise\resolve($nodes_api->getNodeTypes()),
+    Promise\resolve($nodes_api->checkUpdatesAndChannels())
+  ];
 
-  echo "<script nonce={$ini["nonce_key"]}> var configuredNodes = " . json_encode($configuredNodes) . ";
-          var siteID = 2;
-          var activeSubscriptions = " . json_encode($activeSubscriptions) . ";
-          var activeRequests = " . json_encode($activeRequests) . ";
-          var nodetypes = " . json_encode($nodetypes) . ";
-          var scriptupdatesavail = " . json_encode($scriptupdatesavail) . ";
-        </script>";
+  Promise\all($nodes_promises)->then(function($all_returned) use($ini){
+    $configuredNodes = $all_returned[0];
+    $activeSubscriptions = (is_Null($all_returned[1]) ? [] : $all_returned[1]);
+    $activeRequests = (is_Null($all_returned[1]) ? [] : $all_returned[2]);
+    $nodetypes = $all_returned[3];
+    $scriptupdatesavail = $all_returned[4];
+
+    if(array_key_exists("data", $configuredNodes)) $configuredNodes = $configuredNodes["data"];
+    if(array_key_exists("data", $activeSubscriptions)) $activeSubscriptions = $activeSubscriptions["data"];
+    if(array_key_exists("data", $activeRequests)) $activeRequests = $activeRequests["data"];
+    if(array_key_exists("data", $nodetypes)) $nodetypes = $nodetypes["data"];
+    if(array_key_exists("data", $scriptupdatesavail)) $scriptupdatesavail = $scriptupdatesavail["data"];
+  
+    echo "<script nonce={$ini["nonce_key"]}> var configuredNodes = " . json_encode($configuredNodes) . ";
+            var siteID = 2;
+            var activeSubscriptions = " . json_encode($activeSubscriptions) . ";
+            var activeRequests = " . json_encode($activeRequests) . ";
+            var nodetypes = " . json_encode($nodetypes) . ";
+            var scriptupdatesavail = " . json_encode($scriptupdatesavail) . ";
+          </script>";
 ?>
 <link href="<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/nodes/css/nodes.css"?>" rel="stylesheet">
 
@@ -426,3 +438,4 @@
   </div>
 </div>
 <script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/nodes/js/nodes.js"?>></script>
+<?php }); ?>

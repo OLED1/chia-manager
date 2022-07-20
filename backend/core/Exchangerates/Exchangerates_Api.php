@@ -20,11 +20,6 @@
      */
     private $ini;
     /**
-     * Holds an instance to the Database Class.
-     * @var DB_Api
-     */
-    private $db_api;
-    /**
      * Holds an instance to the Logging Class.
      * @var Logging_Api
      */
@@ -40,7 +35,6 @@
      */
     public function __construct(object $server = NULL){
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
-      $this->db_api = new DB_Api();
       $this->logging_api = new Logging_Api($this, $server);
       $this->server = $server;
     }
@@ -58,12 +52,12 @@
      * @param  string $currency_code The currency code in which the exchangerate should be converted. E.g. eur, to get the exchangerates in Euro.
      * @return array                 {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB found exchangerates]}}
      */
-    public function queryExchangeRatesData(string $currency_code): object
+    public function queryExchangeRatesData(): object
     {
-      $resolver = function (callable $resolve, callable $reject, callable $notify) use($currency_code){
+      $resolver = function (callable $resolve, callable $reject, callable $notify){
         if(array_key_exists("exchangerate_api_codes", $this->ini) && array_key_exists("exchangerate_api_rates", $this->ini)){
           $last_updated = Promise\resolve((new DB_Api())->execute("SELECT updatedate FROM exchangerates LIMIT 1", array()));
-          $last_updated->then(function($last_updated_returned) use(&$resolve, $currency_code){
+          $last_updated->then(function($last_updated_returned) use(&$resolve){
             $last_updated_returned = $last_updated_returned->resultRows;
             $now_date = new \DateTime();
             if(array_key_exists("0", $last_updated_returned)){
@@ -83,7 +77,6 @@
                   return $exchangerate_api_codes;
                 },
                 function (\Exception $e) use(&$resolve){
-                  print_r("HIER");
                   return $resolve($this->logging_api->getErrormessage("queryExchangeRatesData", "003", $e));
                 }
               );
@@ -96,7 +89,7 @@
                 }
               );
 
-              $codes_rates_promise = Promise\all([$api_codes_promise, $api_rates_promise])->then(function($all_returned) use(&$resolve, $currency_code){
+              $codes_rates_promise = Promise\all([$api_codes_promise, $api_rates_promise])->then(function($all_returned) use(&$resolve){
                 $codes_result = $all_returned[0];
                 $rates_result = $all_returned[1];
 
@@ -110,18 +103,19 @@
                   }
                 }
 
-                return $currency_code;
+                //return $currency_code;
               });
-            }else{
+            }/*else{
               $codes_rates_promise = Promise\resolve($currency_code);
-            }
+            }*/
 
-            $codes_rates_promise->then(function($currency_code) use(&$resolve){
+            /*$codes_rates_promise->then(function($currency_code) use(&$resolve){
               $new_exchangerates = Promise\resolve($this->getExchangerate($currency_code));
               $new_exchangerates->then(function($new_exchangerates_returned) use(&$resolve){
                 $resolve($new_exchangerates_returned);
               });
-            });
+            });*/
+            $resolve(array("status" => 0, "message" => "Successfully queried new exchangerates from external api."));
           })->otherwise(function (\Exception $e) use(&$resolve){
             print_r($e);
             $resolve($this->logging_api->getErrormessage("queryExchangeRatesData", "001", $e));
@@ -145,11 +139,12 @@
      * @throws Exception $e Throws an exception on db errors.
      * @return array        {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB found currencies]}}
      */
-    public function getAllCurrencies(): array
+    public function getAllCurrencies(): object
     {
       $resolver = function (callable $resolve, callable $reject, callable $notify){
         $all_currencies = Promise\resolve((new DB_Api())->execute("SELECT currency_code, currency_desc FROM exchangerates  ORDER BY currency_code ASC", array()));
-        $all_currencies->then(function($all_currencies_returned){
+        
+        $all_currencies->then(function($all_currencies_returned) use(&$resolve){
         $resolve(array("status" => 0, "message" => "Successfully loaded all available currencies.", "data" => $all_currencies_returned->resultRows));
         })->otherwise(function (\Exception $e) use(&$resolve){
           $resolve($this->logging_api->getErrormessage("getAllCurrencies", "001", $e));
@@ -174,7 +169,7 @@
     public function getUserDefaultCurrency(int $userid): object
     {
       $resolver = function (callable $resolve, callable $reject, callable $notify) use($userid){
-        if($userid > 0 && array_key_exists("user_id", $_COOKIE) && $_COOKIE["user_id"] == $userid){
+        if($userid > 0){
           $currency_code = Promise\resolve((new DB_Api())->execute("SELECT currency_code FROM users_settings WHERE userid = ?", array($userid)));
           $currency_code->then(function($currency_code_returned) use(&$resolve, $currency_code){
 
@@ -289,21 +284,15 @@
       $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
         if(array_key_exists("userid", $data)){
           $defaultCurrency = Promise\resolve($this->getUserDefaultCurrency($data["userid"]));
-          
           $defaultCurrency->then(function($defaultCurrency_returned) use(&$resolve){
             if($defaultCurrency_returned["status"] == 0) $defaultCurrency = $defaultCurrency_returned["data"]["currency_code"];
             else $defaultCurrency = "usd";
-            
-            $queryExchangeRates = Promise\resolve($this->queryExchangeRatesData($defaultCurrency));
-            $queryExchangeRates->then(function($queryExchangeRates_returned) use(&$resolve, $defaultCurrency){
-              if($queryExchangeRates_returned["status"] == 0 && array_key_exists($defaultCurrency, $queryExchangeRates_returned["data"])){
-                $exchangerate = $queryExchangeRates_returned["data"][$defaultCurrency]["currency_rate"];
-              }else{
-                $defaultCurrency = "usd";
-                $exchangerate = 1;
-              }
-      
-              $resolve(array("defaultCurrency" => $defaultCurrency, "exchangerate" => $exchangerate));
+
+
+            $currentExchangeRate = Promise\resolve($this->getExchangerate($defaultCurrency));
+            $currentExchangeRate->then(function($currentExchangeRate_returned) use(&$resolve, $defaultCurrency){
+              $exchangerate = $currentExchangeRate_returned["data"][$defaultCurrency]["currency_rate"];
+              $resolve(array("status" => 0, "message" => "Successfully loaded exchange data for user.", "data" => array("defaultCurrency" => $defaultCurrency, "exchangerate" => $exchangerate)));
             });
           });
         }else{

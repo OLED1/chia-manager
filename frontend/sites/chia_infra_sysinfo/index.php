@@ -1,20 +1,21 @@
 <?php
+  use React\Promise;
   use ChiaMgmt\Nodes\Nodes_Api;
   include("../standard_headers.php");
 
-  $nodes_api = new Nodes_Api();
-  $services_states = $nodes_api->getCurrentChiaNodesUPAndServiceStatus();
-  if(array_key_exists("data", $services_states)){
-    $services_states = $services_states["data"];
-  }else{
-    $services_states = [];
-  }
-
-  echo "<script nonce={$ini["nonce_key"]}>
-          var siteID = 8;
-          var frontend_url = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}';
-          var services_states = " . json_encode($services_states) . ";
-        </script>";
+  $services_states = Promise\resolve((new Nodes_Api())->getCurrentChiaNodesUPAndServiceStatus());
+  $services_states->then(function($services_states_returned) use($ini){
+    if(array_key_exists("data", $services_states_returned)){
+      $services_states = $services_states_returned["data"];
+    }else{
+      $services_states = [];
+    }
+ 
+    echo "<script nonce={$ini["nonce_key"]}>
+            var siteID = 8;
+            var frontend_url = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}';
+            var services_states = " . json_encode($services_states) . ";
+          </script>";
 ?>
 <link href="<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_infra_sysinfo/css/chia_infra_sysinfo.css"?>" rel="stylesheet">
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -74,7 +75,13 @@
 </div>
 <div id="all_node_sysinfo_container">
 <?php
-  include("templates/cards.php"); 
+  $templates_path = "{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}/sites/chia_infra_sysinfo/templates";
+  $default_get_params = "?user_id={$_COOKIE['user_id']}&sess_id={$_COOKIE['PHPSESSID']}";
+
+  $browser = new React\Http\Browser();
+  $browser->get("{$templates_path}/cards.php{$default_get_params}")->then(function(Psr\Http\Message\ResponseInterface $card_returned){
+    echo (string)$card_returned->getBody();
+  });
 ?>
 </div>
 <div class="modal fade" id="setDownTimeModal" data-node-id="" tabindex="-1" role="dialog" aria-hidden="true" data-keyboard="false" data-backdrop="static">
@@ -336,3 +343,4 @@
   </div>
 </div>
 <script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/chia_infra_sysinfo/js/chia_infra_sysinfo.js"?>></script>
+<?php }); ?>

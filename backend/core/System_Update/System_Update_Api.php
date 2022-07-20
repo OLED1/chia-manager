@@ -1,10 +1,21 @@
 <?php
   namespace ChiaMgmt\System_Update;
+
+  use React\Promise;
+  use React\Promise\Deferred;
+  use React\Http\Browser;
+
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\WebSocket\WebSocket_Api;
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\Encryption\Encryption_Api;
   use ChiaMgmt\System\System_Api;
+
+  /*ini_set('display_errors', 1);
+  ini_set('display_startup_errors', 1);
+  error_reporting(E_ALL);*/
+
+  require __DIR__ . '/../../../vendor/autoload.php';
 
   /**
    * The System_Update_Api class handles the webgui update tasks.
@@ -88,8 +99,110 @@
      * @param  array $loginData   { NULL } No logindata is needed query this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [Available updateinformation]}
      */
-    public function checkForUpdates(array $data = [], array $loginData = NULL): array
-    {
+    public function checkForUpdates(array $data = [], array $loginData = NULL): object
+    {         
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData){
+        if(!array_key_exists("updatechannel", $data)){
+          $updatechannel = Promise\resolve((new System_Api())->getSpecificSystemSetting("updatechannel"));
+          $updatechannel->then(function($updatechannel_returned) use(&$resolve, $data){ 
+            if(array_key_exists("updatechannel", $updatechannel_returned["data"])){
+              $updatechannel_returned = $updatechannel_returned["data"]["updatechannel"]["branch"]["value"];
+            }else{ 
+              $updatechannel_returned = "main"; 
+            }
+
+            $updatedata = Promise\resolve((new DB_Api())->execute("SELECT id, channel, remoteversion, releasenotes, last_querytime as last_querytime, zipball FROM system_updates WHERE channel = ? AND last_querytime = (SELECT max(last_querytime) FROM system_updates) LIMIT 1", array($updatechannel_returned)));
+            $updatedata->then(function($updatedata_returned) use(&$resolve, $updatechannel_returned, $data){
+              $found_data = $updatedata_returned->resultRows;
+              $query_every_minutes = 1;
+              $now = new \DateTime("now");
+              $last_query = $now;
+
+              if(array_key_exists(0, $found_data) && array_key_exists("last_querytime", $found_data[0])){
+                $found_data = $found_data[0];
+                $last_query = new \DateTime($found_data["last_querytime"]);
+                $last_query->modify("+" . $query_every_minutes . " minutes");
+              }
+              
+              $updatedata_changed = false;
+              if($now >= $last_query){
+                $chia_manager_versionspath = "https://api.github.com/repos/OLED1/chia-manager/releases";
+
+                $browser = new Browser();
+                $browser_promise = $browser->get($chia_manager_versionspath)->then(
+                  function ($chia_manager_version_result) use(&$resolve, $updatechannel_returned, $data, $updatedata_changed, $found_data){
+
+                    $chia_manager_version_result = json_decode($chia_manager_version_result->getBody(), true);
+
+                    $updatefile_arraykey = array_search($updatechannel_returned, array_column($chia_manager_version_result, 'target_commitish'));
+                    if(!is_null($updatechannel_returned) && array_key_exists("0", $chia_manager_version_result) && is_numeric($updatefile_arraykey) && $updatefile_arraykey >= 0 && !array_key_exists("update_data", $data)){
+                      if(array_key_exists("name", $chia_manager_version_result[$updatefile_arraykey]) && array_key_exists("update_data_db", $data)){
+                        $remoteversion = $chia_manager_version_result[$updatefile_arraykey]["name"];
+                        $myversion = $this->ini["versnummer"];
+                        $releasenotes = $chia_manager_version_result[$updatefile_arraykey]["body"];
+                        $zipball = $chia_manager_version_result[$updatefile_arraykey]["zipball_url"];
+                        $querytime = new \DateTime("now");
+
+                        if((array_key_exists("remoteversion", $found_data) && version_compare($found_data["remoteversion"], $remoteversion) > 0) || !array_key_exists(0, $found_data)){
+                          $set_update_info = Promise\resolve((new DB_Api())->execute("INSERT INTO system_updates (id, channel, remoteversion, releasenotes, zipball, available_since, last_querytime) VALUES (NULL, ?, ?, ?, ?, NOW(), NOW())", array($updatechannel_returned, trim($remoteversion), $releasenotes, $zipball)));
+                        }else{
+                          $set_update_info = Promise\resolve((new DB_Api())->execute("UPDATE system_updates SET last_querytime = NOW(), releasenotes = ?, zipball = ? WHERE id = ?", array($releasenotes, $zipball, $found_data["id"])));
+                        }
+
+                        $set_update_info->otherwise(function (\Exception $e) use(&$resolve){
+                          return $resolve($this->logging_api->getErrormessage("checkForUpdates", "005", $e));
+                        });
+                      }
+                      $updatedata_changed = true;
+                    }else{
+                      $this->logging_api->getErrormessage("checkForUpdates", "004", "There are no releases with your selected updatechannel {$updatechannel} found.");
+                    }
+
+                    return $updatedata_changed;
+                  },
+                  function (\Exception $e) use(&$resolve, $chia_manager_versionspath, $updatedata_changed){
+                    $this->logging_api->getErrormessage("checkForUpdates", "001", "The Chia-Manager github version file ({$chia_manager_versionspath}) could not be loaded. Message: " . json_encode($e->getMessage()));
+                    return $updatedata_changed;
+                  }
+                );
+              }else{
+                $browser_promise = Promise\resolve($updatedata_changed);
+              }
+
+              $browser_promise->then(function($updatedata_changed) use(&$resolve, $found_data, $updatechannel_returned){
+                if($updatedata_changed){
+                  $new_updatedata = Promise\resolve((new DB_Api())->execute("SELECT id, channel, remoteversion, releasenotes, last_querytime as last_querytime, zipball FROM system_updates WHERE channel = ? AND last_querytime = (SELECT max(last_querytime) FROM system_updates) LIMIT 1", array($updatechannel_returned)));
+                  $current_update_data = $new_updatedata->then(function($new_updatedata_returned){
+                    return $new_updatedata_returned->resultRows[0];
+                  })->otherwise(function (\Exception $e) use(&$resolve){
+                    return $resolve($this->logging_api->getErrormessage("checkForUpdates", "006", $e));
+                  });
+                }else{
+                  $current_update_data = Promise\resolve($found_data);
+                }
+
+                $current_update_data->then(function($current_update_data_returned) use(&$resolve){
+                  $found_data = $current_update_data_returned;
+                  $found_data["localversion"] = $this->ini["versnummer"];
+                  if(version_compare($found_data["localversion"], trim($found_data["remoteversion"])) < 0) $found_data["updateavail"] = true;
+                  else $found_data["updateavail"] = false;
+          
+                  $resolve(array("status" => 0, "message" => "Successfully queried last update data.", "data" => $found_data));
+                });
+              });
+            })->otherwise(function (\Exception $e) use(&$resolve){
+              return $resolve($this->logging_api->getErrormessage("checkForUpdates", "003", $e));
+            });
+          });
+        }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
+      
       try{
         if(!array_key_exists("updatechannel", $data)){
           $system_api = new System_Api();
@@ -101,7 +214,7 @@
         }
 
         $sql = $this->db_api->execute("SELECT id, channel, remoteversion, releasenotes, last_querytime as last_querytime, zipball FROM system_updates WHERE channel = ? AND last_querytime = (SELECT max(last_querytime) FROM system_updates) LIMIT 1", array($updatechannel));
-        $found_data = $sql->fetchAll(\PDO::FETCH_ASSOC);
+        $found_data = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/;
         $query_every_minutes = 1;
         $now = new \DateTime("now");
         $last_query = $now;
@@ -154,7 +267,7 @@
 
         if($updatedata_changed){
           $sql = $this->db_api->execute("SELECT id, channel, remoteversion, releasenotes, last_querytime as last_querytime, zipball FROM system_updates WHERE channel = ? AND last_querytime = (SELECT max(last_querytime) FROM system_updates) LIMIT 1", array($updatechannel));
-          $found_data = $sql->fetchAll(\PDO::FETCH_ASSOC)[0];
+          $found_data = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/[0];
         }
 
         $found_data["localversion"] = $this->ini["versnummer"];
@@ -175,19 +288,53 @@
      * @throws Exception $e       Throws an exception on db errors.
      * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : { "db_install_needed" : 1 / "process_update" : 1 // NULL }}
      */
-    public function checkUpdateRoutine(): array
+    public function checkUpdateRoutine(): object
     {
+      $resolver = function (callable $resolve, callable $reject, callable $notify){
+        if(is_null($this->ini)) $resolve(array("status" => 0, "message" => "Successfully queried system update state.", "data" => array("db_install_needed" => true)));
+      
+        $check_table = Promise\resolve((new DB_Api())->execute("SHOW TABLES LIKE 'system_infos'", array()));
+        $check_table->then(function($check_table_returned) use(&$resolve){
+          if(count($check_table_returned->resultRows) == 0){
+            $returndata["db_install_needed"] = true;
+            $resolve($returndata);
+          }else{
+            $update_executing = Promise\resolve((new DB_Api())->execute("SELECT dbversion, userid_updating, process_update, lastsucupdate, maintenance_mode FROM system_infos", array()));
+            $update_executing->then(function($update_executing_returned) use(&$resolve){
+              $returndata = $update_executing_returned->resultRows[0];
+
+              if(version_compare($returndata["dbversion"], $this->ini["versnummer"]) < 0 || $returndata["process_update"] == 1){
+                $returndata["process_update"] = true;
+              }
+
+              $resolve(array("status" => 0, "message" => "Successfully loaded update data.", "data" => $returndata));
+            })->otherwise(function (\Exception $e) use(&$resolve){
+              $resolve($this->logging_api->getErrormessage("checkUpdateRoutine", "001", $e));
+            });
+          }
+        })->otherwise(function (\Exception $e) use(&$resolve){
+          $resolve($this->logging_api->getErrormessage("checkUpdateRoutine", "002", $e));
+        });
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
+
       try{
         if(is_null($this->ini)) return array("status" => 0, "message" => "Successfully queried system update state.", "data" => array("db_install_needed" => true));
 
         $sql = $this->db_api->execute("SHOW TABLES LIKE 'system_infos'", array());
-        $tablefound = $sql->fetchAll(\PDO::FETCH_ASSOC);
+        $tablefound = $sql;
 
         if(count($tablefound) == 0){
           $returndata["db_install_needed"] = true;
         }else{
           $sql = $this->db_api->execute("SELECT dbversion, userid_updating, process_update, lastsucupdate, maintenance_mode FROM system_infos", array());
-          $returndata = $sql->fetchAll(\PDO::FETCH_ASSOC)[0];
+          $returndata = $sql[0];
+
           if(version_compare($returndata["dbversion"], $this->ini["versnummer"]) < 0 || $returndata["process_update"] == 1){
             $returndata["process_update"] = true;
           }
@@ -449,7 +596,7 @@
 
         foreach($check_array AS $arrkey => $db_check){
           $sql = $this->db_api->execute($db_check["statement"],[]);
-          $count = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["count"];
+          $count = $sql[0]["count"];
           if($count ==  $db_check["count"]){
             array_push($this->returnarray["data"]["db_config"]["data"], array("status" => 0, "message" => "Table {$db_check["table"]} seems to be correct."));
           }else{

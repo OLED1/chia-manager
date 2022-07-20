@@ -1,29 +1,39 @@
 <?php
+  use React\Promise;
   include("../standard_headers.php");
   use ChiaMgmt\System\System_Api;
 
   $system_api = new System_Api();
-  $all_settings = $system_api->getAllSystemSettings()["data"];
-  $mailsettings = $all_settings["mailing"];
-  $security = $all_settings["security"];
-  if(array_key_exists("TOTP", $security) && array_key_exists("value", $security["TOTP"])) $security = filter_var($security["TOTP"]["value"], FILTER_VALIDATE_BOOLEAN);
-  else $security = false;
+  $system_promises = [
+    Promise\resolve($system_api->getAllSystemSettings()),
+    Promise\resolve($system_api->checkForUpdates(["update_data_db" => true])),
+    Promise\resolve($system_api->testConnection())
+  ];
 
-  $updates = $system_api->checkForUpdates(["update_data_db" => true]);
+  $system_settings = Promise\resolve((new System_Api())->getAllSystemSettings());
+  Promise\all($system_promises)->then(function($system_settings_returned) use($ini){
+    $all_settings = $system_settings_returned[0]["data"];
+    $updates = $system_settings_returned[1];
+    $connection = $system_settings_returned[2];
 
-  if($updates["data"]["channel"] == "dev"){
-    $updatechannelname = "Development";
-  }else if($updates["data"]["channel"] == "staging"){
-    $updatechannelname = "Staging";
-  }else{
-    $updatechannelname = "Stable";
-  }
+    $mailsettings = $all_settings["mailing"];
+    $security = $all_settings["security"];
+    if(array_key_exists("TOTP", $security) && array_key_exists("value", $security["TOTP"])) $security = filter_var($security["TOTP"]["value"], FILTER_VALIDATE_BOOLEAN);
+    else $security = false;
 
-  echo "<script nonce={$ini["nonce_key"]}>
-          var siteID = 3;
-          var frontend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}';
-          var updatedata =  " . json_encode($updates["data"]) . ";
-        </script>";
+    if($updates["data"]["channel"] == "dev"){
+      $updatechannelname = "Development";
+    }else if($updates["data"]["channel"] == "staging"){
+      $updatechannelname = "Staging";
+    }else{
+      $updatechannelname = "Stable";
+    }
+  
+    echo "<script nonce={$ini["nonce_key"]}>
+            var siteID = 3;
+            var frontend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}';
+            var updatedata =  " . json_encode($updates["data"]) . ";
+          </script>";
 ?>
 <!-- Page Heading -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -43,7 +53,6 @@
             <h6>Server Status</h6>
             <div id="wssstatus" class="col-lg-6 mb-4">
             <?php
-              $connection = $system_api->testConnection();
               if($connection["status"] == 0){
                 echo "<div class='card bg-success text-white shadow'>
                           <div class='card-body'>
@@ -393,3 +402,4 @@
 </div>
 
 <script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/system/js/system.js"?>></script>
+<?php }); ?>

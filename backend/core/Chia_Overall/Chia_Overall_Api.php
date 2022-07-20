@@ -1,5 +1,7 @@
 <?php
   namespace ChiaMgmt\Chia_Overall;
+  use React\Promise;
+  use React\Http\Browser;
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\Logging\Logging_Api;
 
@@ -58,64 +60,85 @@
      * @param  DateTime $fromtime           { NULL } On NULL only the last queryied data is returned. If a DateTime is given it will return historical data newer than. (Currently not implemented)
      * @return array                        Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}} from the subfunction calls.
      */
-    public function queryOverallData(array $data = NULL, array $loginData = NULL, $server = NULL, DateTime $fromtime = NULL): array
+    public function queryOverallData(array $data = NULL, array $loginData = NULL, $server = NULL, DateTime $fromtime = NULL): object
     {
-      if(array_key_exists("xchscan_api", $this->ini)){
-        $sql = $this->db_api->execute("SELECT querydate FROM chia_overall WHERE querydate = (SELECT MAX(querydate) FROM chia_overall)", array());
-        $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $fromtime){
+        if(array_key_exists("xchscan_api", $this->ini)){
+          $last_querydate = Promise\resolve((new DB_Api())->execute("SELECT querydate FROM chia_overall WHERE querydate = (SELECT MAX(querydate) FROM chia_overall)", array()));
+          $last_querydate->then(function($last_querydate_returned) use(&$resolve, $fromtime){
+            $now = new \DateTime("now");
+            $lastquerytime = new \DateTime($last_querydate_returned->resultRows[0]["querydate"]);
+            $lastquerytime->modify("+2 minutes");
 
-        $now = new \DateTime("now");
-        $lastquerytime = new \DateTime($sqdata[0]["querydate"]);
-        $lastquerytime->modify("+2 minutes");
+            if(count($last_querydate_returned->resultRows) == 0 || $lastquerytime <= $now){
+              $extapidata = Promise\resolve($this->getDataFromExtApi());
+              $extapidata->then(function($extapidata_returned) use(&$resolve, $fromtime){
+                if(!is_null($extapidata_returned) && array_key_exists("data", $extapidata_returned) && 
+                    array_key_exists("netspace", $extapidata_returned["data"]) && array_key_exists("chia_price", $extapidata_returned["data"]) && 
+                    array_key_exists("xch_blockheight", $extapidata_returned["data"]) && array_key_exists("blockchain_version", $extapidata_returned["data"]))
+                {
+                  $netspacedata = $extapidata_returned["data"]["netspace"];
+                  $chia_price_usd = $extapidata_returned["data"]["chia_price"]["usd"];
+                  $blockheightdata = $extapidata_returned["data"]["xch_blockheight"];
+                  $blockchainversion = $extapidata_returned["data"]["blockchain_version"];
+                  
+                  if($extapidata_returned["status"] == 0){
+                    $historynetspace = Promise\resolve((new DB_Api())->execute("SELECT netspace FROM chia_overall WHERE querydate > DATE_SUB(NOW(), INTERVAL 24 HOUR) ORDER BY querydate ASC LIMIT 1", array()));
+                    $historyprice = Promise\resolve((new DB_Api())->execute("SELECT MIN(price_usd) AS daymin_24h_usd, MAX(price_usd) AS daymax_24h_usd FROM chia_overall WHERE querydate > DATE_SUB(NOW(), INTERVAL 24 HOUR)", array()));
 
-        try{
-          if(count($sqdata) == 0 || $lastquerytime <= $now){
-            $extapidata = $this->getDataFromExtApi();
+                    Promise\all([$historynetspace, $historyprice])->then(function($all_returned) use(&$resolve, $extapidata_returned, $fromtime, $blockchainversion, $netspacedata, $blockheightdata, $chia_price_usd){
+                      $historynetspace = $all_returned[0]->resultRows;
+                      $historyprice = $all_returned[1]->resultRows;
 
-            if(!is_null($extapidata) && array_key_exists("data", $extapidata) && array_key_exists("netspace", $extapidata["data"]) && array_key_exists("chia_price", $extapidata["data"]) && array_key_exists("xch_blockheight", $extapidata["data"]) && array_key_exists("blockchain_version", $extapidata["data"])){
-              $netspacedata = $extapidata["data"]["netspace"];
-              $chia_price_usd = $extapidata["data"]["chia_price"]["usd"];
-              $blockheightdata = $extapidata["data"]["xch_blockheight"];
-              $blockchainversion = $extapidata["data"]["blockchain_version"];
+                      if(count($historynetspace) == 1 && count($historyprice) == 1){
+                        $daychange_percent = explode(" ",$extapidata_returned["data"]["netspace"])[0] / explode(" ",$historynetspace[0]["netspace"])[0] * 100 - 100;
+                        $daymin_24h_usd = $historyprice[0]["daymin_24h_usd"];
+                        $daymax_24h_usd = $historyprice[0]["daymax_24h_usd"];
+                        $daychange_24h_percent = $chia_price_usd / $historyprice[0]["daymax_24h_usd"] * 100 - 100;
+                      }else{
+                        $daychange_percent = 0;
+                        $daymin_24h_usd = $chia_price_usd;
+                        $daymax_24h_usd = $chia_price_usd;
+                        $daychange_24h_percent = 0;
+                      }
 
-              if($extapidata["status"] == 0){
-                $sql = $this->db_api->execute("SELECT netspace FROM chia_overall WHERE querydate > DATE_SUB(NOW(), INTERVAL 24 HOUR) ORDER BY querydate ASC LIMIT 1", array());
-                $historynetspace = $sql->fetchAll(\PDO::FETCH_ASSOC);
+                      $set_new_overall = Promise\resolve((new DB_Api())->execute("INSERT INTO chia_overall (id, blockchain_version, daychange_percent, netspace, xch_blockheight, netspace_timestamp, price_usd, daymin_24h_usd, daymax_24h_usd, daychange_24h_percent, market_timestamp, querydate) VALUES(NULL, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, NOW(), NOW())",
+                                                                                  array($blockchainversion, number_format($daychange_percent,4), $netspacedata, $blockheightdata,
+                                                                                        $chia_price_usd, $daymin_24h_usd, $daymax_24h_usd, $daychange_24h_percent)));
 
-                $sql = $this->db_api->execute("SELECT MIN(price_usd) AS daymin_24h_usd, MAX(price_usd) AS daymax_24h_usd FROM chia_overall WHERE querydate > DATE_SUB(NOW(), INTERVAL 24 HOUR)", array());
-                $historyprice = $sql->fetchAll(\PDO::FETCH_ASSOC);
+                      $set_new_overall->otherwise(function (\Exception $e) use(&$resolve){
+                        return $resolve($this->logging_api->getErrormessage("queryOverallData", "006", $e));
+                      });
 
-                if(count($historynetspace) == 1 && count($historyprice) == 1){
-                  $daychange_percent = explode(" ",$extapidata["data"]["netspace"])[0] / explode(" ",$historynetspace[0]["netspace"])[0] * 100 - 100;
-                  $daymin_24h_usd = $historyprice[0]["daymin_24h_usd"];
-                  $daymax_24h_usd = $historyprice[0]["daymax_24h_usd"];
-                  $daychange_24h_percent = $chia_price_usd / $historyprice[0]["daymax_24h_usd"] * 100 - 100;
+                      $resolve($this->getOverallChiaData($fromtime));
+                    })->otherwise(function (\Exception $e) use(&$resolve){
+                      return $resolve($this->logging_api->getErrormessage("queryOverallData", "005", $e));
+                    });
+                  }else{
+                    return $resolve($this->logging_api->getErrormessage("queryOverallData", "001"));
+                  }
+
                 }else{
-                  $daychange_percent = 0;
-                  $daymin_24h_usd = $chia_price_usd;
-                  $daymax_24h_usd = $chia_price_usd;
-                  $daychange_24h_percent = 0;
+                  return $resolve($extapidata_returned);
                 }
-
-                $sql = $this->db_api->execute("INSERT INTO chia_overall (id, blockchain_version, daychange_percent, netspace, xch_blockheight, netspace_timestamp, price_usd, daymin_24h_usd, daymax_24h_usd, daychange_24h_percent, market_timestamp, querydate) VALUES(NULL, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, NOW(), NOW())",
-                                                array($blockchainversion, number_format($daychange_percent,4), $netspacedata, $blockheightdata,
-                                                $chia_price_usd, $daymin_24h_usd, $daymax_24h_usd, $daychange_24h_percent)
-                                              );
-              }else{
-                return $this->logging_api->getErrormessage("001");
-              }
+              });
             }else{
-              return $extapidata;
-            }
-          }
-
-          return $this->getOverallChiaData($fromtime);
-        }catch(\Exception $e){
-          return $this->logging_api->getErrormessage("002", $e);
+              $resolve($this->getOverallChiaData($fromtime));
+            } 
+          })->otherwise(function (\Exception $e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("queryOverallData", "004", $e));
+          });
+          
+        }else{
+          $resolve($this->logging_api->getErrormessage("queryOverallData", "003"));
         }
-      }else{
-        return $this->logging_api->getErrormessage("003");
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -125,24 +148,30 @@
      * @param  DateTime $fromtime  { NULL } On NULL only the last queryied data is returned. If a DateTime is given it will return historical data newer than. (Currently not implemented)
      * @return array               Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}.
      */
-    public function getOverallChiaData(DateTime $fromtime = NULL): array
+    public function getOverallChiaData(DateTime $fromtime = NULL): object
     {
-      try{
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($fromtime){
         if(is_null($fromtime)){
-          $sql = $this->db_api->execute("SELECT blockchain_version, daychange_percent, netspace, xch_blockheight, netspace_timestamp, price_usd, daymin_24h_usd, daymax_24h_usd, daychange_24h_percent, market_timestamp, querydate FROM chia_overall WHERE querydate = (SELECT MAX(querydate) FROM chia_overall)", array());
-          $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
-
-          if(array_key_exists("0", $sqdata)){
-            return array("status" => 0, "message" => "Successfully queried chia overall data.", "data" => $sqdata[0]);
-          }else{
-            return $this->logging_api->getErrormessage("001");
-          }
+          $chia_overall = Promise\resolve((new DB_Api())->execute("SELECT blockchain_version, daychange_percent, netspace, xch_blockheight, netspace_timestamp, price_usd, daymin_24h_usd, daymax_24h_usd, daychange_24h_percent, market_timestamp, querydate FROM chia_overall WHERE querydate = (SELECT MAX(querydate) FROM chia_overall)", array()));
+          $chia_overall->then(function($chia_overall_returned) use(&$resolve){
+            if(array_key_exists("0", $chia_overall_returned->resultRows)){
+              $resolve(array("status" => 0, "message" => "Successfully queried chia overall data.", "data" => $chia_overall_returned->resultRows[0]));
+            }else{
+              return $resolve($this->logging_api->getErrormessage("getOverallChiaData", "001"));
+            }
+          })->otherwise(function (\Exception $e) use(&$resolve){
+            return $resolve($this->logging_api->getErrormessage("getOverallChiaData", "002", $e));
+          });
         }else{
           //Return historical data
         }
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("002", $e);
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -152,77 +181,69 @@
      * @see https://xchscan.com/api/blocks?limit=10&offset=0
      * @return array Returns {"status": [0|>0], "message": [Status message], "data": {[Found queried external data]}}.
      */
-    private function getDataFromExtApi(): array
-    {
-      $overall = true;
+    private function getDataFromExtApi(): object
+    {     
+      $resolver = function (callable $resolve, callable $reject, callable $notify){
+        $browser = new Browser();
+        $netspace_promise = $browser->get("{$this->ini["xchscan_api"]}/netspace")->then(
+          function($netspace_returned){
+            return json_decode($netspace_returned->getBody(), true);
+          },
+          function (\Exception $e) use(&$resolve){
+            return $resolve($this->logging_api->getErrormessage("getDataFromExtApi", "001", "The external api {$this->ini["xchscan_api"]} returned an error on netspace query. Message: " . json_encode($e->getMessage())));
+          }
+        );
 
-      //XCHSCAN API Netspace
-      $curl = curl_init();
-      curl_setopt($curl, CURLOPT_POST, 1);
-      curl_setopt($curl, CURLOPT_URL, "{$this->ini["xchscan_api"]}/netspace");
-      curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-      curl_setopt($curl, CURLOPT_TIMEOUT_MS, 2000);
-      $xch_netspace_result = json_decode(curl_exec($curl), true);
-      curl_close($curl);
-      //XCHSCAN API Chia Price
-      $curl = curl_init();
-      curl_setopt($curl, CURLOPT_POST, 1);
-      curl_setopt($curl, CURLOPT_URL, "{$this->ini["xchscan_api"]}/chia-price");
-      curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-      curl_setopt($curl, CURLOPT_TIMEOUT_MS, 2000);
-      $xch_chiaprice_result = json_decode(curl_exec($curl), true);
-      curl_close($curl);
-      //XCHSCAN API Blockheight
-      $curl = curl_init();
-      curl_setopt($curl, CURLOPT_POST, 1);
-      curl_setopt($curl, CURLOPT_URL, "{$this->ini["xchscan_api"]}/blocks?limit=10&offset=0");
-      curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-      curl_setopt($curl, CURLOPT_TIMEOUT_MS, 2000);
-      $xch_height_result = json_decode(curl_exec($curl), true);
-      curl_close($curl);
-      //Chia Github Versionfile
-      $curl = curl_init();
-      $chiaversionspath = "https://api.github.com/repos/Chia-Network/chia-blockchain/releases";
-      curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-      curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-      curl_setopt($curl, CURLOPT_URL, $chiaversionspath);
-      //We need to use curl, because Amazon AWS wants a user Agent set to be able to download the chia release file
-      curl_setopt($curl, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 6.2; WOW64; rv:17.0) Gecko/20100101 Firefox/17.0');
-      $chia_version_result = json_decode(curl_exec($curl), true);
-      curl_close($curl);
+        $price_promise = $browser->get("{$this->ini["xchscan_api"]}/chia-price")->then(
+          function($price_returned){
+            return json_decode($price_returned->getBody(), true);
+          },
+          function (\Exception $e) use(&$resolve){
+            return $resolve($this->logging_api->getErrormessage("002", "The external api {$this->ini["xchscan_api"]} returned an error on price query. Message: " . json_encode($e->getMessage())));
+          }
+        );
 
-      if(is_null($xch_netspace_result) || !array_key_exists("netspace", $xch_netspace_result)){
-        $overall = false;
-        $this->logging_api->getErrormessage("001", "The external api {$this->ini["xchscan_api"]} returned an error on netspace query. Message: " . json_encode($xch_netspace_result));
-      }
+        $blocks_promise = $browser->get("{$this->ini["xchscan_api"]}/blocks?limit=10&offset=0")->then(
+          function($blocks_returned){
+            return json_decode($blocks_returned->getBody(), true);
+          },
+          function (\Exception $e) use(&$resolve){
+            return $resolve($this->logging_api->getErrormessage("003", "The external api {$this->ini["xchscan_api"]} returned an empty output on block query. Message: " . json_encode($e->getMessage())));
+          }
+        );
 
-      if(is_null($xch_chiaprice_result) || !array_key_exists("usd", $xch_chiaprice_result)){
-        $overall = false;
-        $this->logging_api->getErrormessage("002", "The external api {$this->ini["xchscan_api"]} returned an error on price query. Message: " . json_encode($xch_chiaprice_result));
-      }
+        $chiaversionspath = "https://api.github.com/repos/Chia-Network/chia-blockchain/releases";
+        $version_promise = $browser->get($chiaversionspath)->then(
+          function($version_returned){
+            return json_decode($version_returned->getBody(), true);
+          },
+          function (\Exception $e) use(&$resolve, $chiaversionspath){
+            return $resolve($this->logging_api->getErrormessage("004", "The chia github version file ({$chiaversionspath}) could not be loaded. Message: " . json_encode($e->getMessage())));
+          }
+        );
 
-      if(is_null($xch_height_result) || !array_key_exists("blocks", $xch_height_result) && is_null($xch_height_result[0]) || !array_key_exists(0, $xch_height_result["blocks"])){
-        $overall = false;
-        $this->logging_api->getErrormessage("003", "The external api {$this->ini["xchscan_api"]} returned an empty output on block query. Message: " . json_encode($xch_height_result));
-      }
+        $codes_rates_promise = Promise\all([$netspace_promise, $price_promise, $blocks_promise, $version_promise])->then(function($all_returned) use(&$resolve){
+          $xch_netspace_result = $all_returned[0];
+          $xch_chiaprice_result = $all_returned[1];
+          $xch_height_result = $all_returned[2];
+          $chia_version_result = $all_returned[3];
 
-      if(is_null($chia_version_result) || !array_key_exists(0, $chia_version_result) || !array_key_exists("name", $chia_version_result[0])){
-        $overall = false;
-        $this->logging_api->getErrormessage("004", "The chia github version file ({$chiaversionspath}) could not be loaded. Message: " . json_encode($chia_version_result));
-      }
+          $base = log($xch_netspace_result["netspace"]) / log(1024);
+          $suffix = array("", " kiB", " MiB", " GiB", " TiB", " PiB", " EiB")[floor($base)];
+          $xch_netspace_result["netspace"] = number_format(pow(1024, $base - floor($base)),2) . $suffix;
+          $xch_height_result = $xch_height_result["blocks"][0]["height"];
+          $chia_blockchain_version = $chia_version_result[0]["name"];
+          $nowdate = new \DateTime("now");
 
-      if($overall){
-        $base = log($xch_netspace_result["netspace"]) / log(1024);
-        $suffix = array("", " kiB", " MiB", " GiB", " TiB", " PiB", " EiB")[floor($base)];
-        $xch_netspace_result["netspace"] = number_format(pow(1024, $base - floor($base)),2) . $suffix;
-        $xch_height_result = $xch_height_result["blocks"][0]["height"];
-        $chia_blockchain_version = $chia_version_result[0]["name"];
-        $nowdate = new \DateTime("now");
+          $resolve(array("status" => 0, "message" => "Data from external api queried successfully.", "data" => array("netspace" => $xch_netspace_result["netspace"], "chia_price" => $xch_chiaprice_result, "xch_blockheight" => $xch_height_result, "blockchain_version" => $chia_blockchain_version, "timestamp" => $nowdate->format("Y-m-d H:i:s"))));  
+        });
+      };
 
-        return array("status" => 0, "message" => "Data from external api queried successfully.", "data" => array("netspace" => $xch_netspace_result["netspace"], "chia_price" => $xch_chiaprice_result, "xch_blockheight" => $xch_height_result, "blockchain_version" => $chia_blockchain_version, "timestamp" => $nowdate->format("Y-m-d H:i:s")));
-      }else{
-        return $this->logging_api->getErrormessage("005");
-      }
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
   }
 

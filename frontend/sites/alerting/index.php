@@ -1,14 +1,16 @@
 <?php
-  include("../standard_headers.php");
+  use React\Promise;
   use ChiaMgmt\Alerting\Alerting_Api;
+  include("../standard_headers.php");
 
-  $alerting_api = new Alerting_Api();
-  $alerting_services = $alerting_api->getAvailableServices()["data"];
+  $available_services = Promise\resolve((new Alerting_Api())->getAvailableServices());
+  $available_services->then(function($available_services_returned) use($ini){
+    $alerting_services = $available_services_returned["data"];
 
-  echo "<script nonce={$ini["nonce_key"]}>
-          var siteID = 14;
-          var frontend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}';
-        </script>";
+    echo "<script nonce={$ini["nonce_key"]}>
+            var siteID = 14;
+            var frontend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}';
+          </script>";
 ?>
 <link href="<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/alerting/css/alerting.css"?>" rel="stylesheet">
 
@@ -37,18 +39,31 @@
     </li>
     <?php } ?>
   </ul>
-  <div id="configure-alerting-services-pane" class="tab-content">
-    <?php foreach($alerting_services AS $service_id => $alerting_service){ ?>
-    <div class="tab-pane fade" id="<?php echo $alerting_service["service_id"]; ?>" role="tabpanel" aria-labelledby="<?php echo $alerting_service["service_id"]; ?>-tab">
-      <?php
-        $_GET[$alerting_service["service_id"]] = $alerting_service; 
-        include("templates/alerting_services/" . strtolower($alerting_service["service_id"]) . "_card.php"); 
-      ?>
-    </div>
-    <?php } ?>
-  </div>
-</div>
+<?php 
+  $alerting_cards = [];
+  $browser = new React\Http\Browser();
+  $templates_path = "{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}/sites/alerting/templates/";
 
+  foreach($alerting_services AS $service_id => $alerting_service){ 
+    $default_get_params = "?user_id={$_COOKIE['user_id']}&sess_id={$_COOKIE['PHPSESSID']}&{$alerting_service["service_id"]}=" . json_encode($alerting_service);
+    $alerting_cards[$alerting_service["service_id"]] = $browser->get("{$templates_path}alerting_services/" . strtolower($alerting_service["service_id"]) . "_card.php{$default_get_params}");
+  }
+
+  $alerting_promise_done = Promise\all($alerting_cards)->then(function($alerting_cards_returned){
+    ?><div id="configure-alerting-services-pane" class="tab-content"><?php
+    foreach($alerting_cards_returned AS $service_id => $this_alerting_service_card){
+      ?><div class="tab-pane fade" id="<?php echo $service_id; ?>" role="tabpanel" aria-labelledby="<?php echo $service_id; ?>-tab"><?php
+      echo $this_alerting_service_card->getBody();
+      ?></div><?php
+    }
+    ?>
+    </div>
+</div>
+<?php
+  });
+
+  $alerting_promise_done->then(function() use($browser, $templates_path){
+?>
 <h5>Setup node alerting</h5>
 <div class="card shadow mb-4">
   <ul class="nav nav-tabs" id="setup-alerting-tabs" role="tablist">
@@ -62,17 +77,33 @@
       <a class="nav-link" id="alerting-history-tab" data-toggle="tab" href="#alerting-history" role="tab" aria-controls="rules" aria-selected="true">Alerting history</a>
     </li>
   </ul>
+  <?php
+    $default_get_params = "?user_id={$_COOKIE['user_id']}&sess_id={$_COOKIE['PHPSESSID']}";
+
+    $configure_alerting_cards = [
+      $browser->get("{$templates_path}configure_rules_card.php{$default_get_params}"),
+      $browser->get("{$templates_path}setup_alerting_card.php{$default_get_params}")
+    ];
+
+    Promise\all($configure_alerting_cards)->then(function($all_returned){
+  ?>
   <div id="setup-node-alerting-pane" class="tab-content">
     <div class="tab-pane fade" id="configure-rules" role="tabpanel" aria-labelledby="configure-rules-tab">
-      <?php include("templates/configure_rules_card.php"); ?>
+    <?php echo $all_returned[0]->getBody(); ?>
     </div>
     <div class="tab-pane fade" id="setup-alerting" role="tabpanel" aria-labelledby="setup-alerting-tab">
-    <?php include("templates/setup_alerting_card.php"); ?>
+    <?php echo $all_returned[1]->getBody(); ?>
     </div>
     <div class="tab-pane fade" id="alerting-history" role="tabpanel" aria-labelledby="alerting-history-tab">
       ...
     </div>
   </div>
 </div>
+  <?php
+    });
+  ?>
+
+<?php }); ?>
 
 <script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/alerting/js/alerting.js"?>></script>
+<?php }); ?>

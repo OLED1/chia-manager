@@ -1,5 +1,6 @@
 <?php
   namespace ChiaMgmt\Chia_Infra_Sysinfo;
+  use React\Promise;
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\Alerting\Alerting_Api;
@@ -74,7 +75,7 @@
       if(array_key_exists("system", $data)){
         try{
           $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
-          $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
+          $nodeid = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/[0]["id"];
 
           if(array_key_exists("load", $data["system"])){
             //Client version < 0.3, TODO Cleanup in some versions 
@@ -210,7 +211,7 @@
           }
 
           $sql = $this->db_api->execute("SELECT id, mountpoint, size, used FROM chia_infra_sysinfo_filesystems WHERE sysinfo_id = ?", array($last_insert_id));
-          foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $curr_fs_data){
+          foreach($sql/*->fetchAll(\PDO::FETCH_ASSOC)*/ AS $arrkey => $curr_fs_data){
             $updateData = [
               "node_id" => $nodeid,
               "service_insert_id" => $curr_fs_data["id"],
@@ -242,141 +243,99 @@
      * @param  int $nodeid                  The node id to get only node specific data. Can be NULL if all data will be queried. Will be deprecated as soon as the method needs to be called outsite of the web gui.
      * @return array                        {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": [Found system information data array]}
      */
-    public function getSystemInfo(array $data = NULL, array $loginData = NULL, $server = NULL, int $nodeid = NULL): array
+    public function getSystemInfo(array $data = NULL, array $loginData = NULL, $server = NULL, int $nodeid = NULL): object
     {
-      $statement_string = "WHERE n.id = (
-        SELECT nt.nodeid FROM nodetype nt WHERE nt.code >= 3 AND nt.code <= 5 AND nt.nodeid = n.id LIMIT 1
-      )";
-      $statement_array = [];
-      if(!is_null($data) && array_key_exists("nodeid", $data) && is_numeric($data["nodeid"])){
-        $statement_string = "WHERE n.id = ?";
-        array_push($statement_array, $data["nodeid"]);
-      }
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData, $server, $nodeid){
+        $statement_string = "WHERE n.id = (
+          SELECT nt.nodeid FROM nodetype nt WHERE nt.code >= 3 AND nt.code <= 5 AND nt.nodeid = n.id LIMIT 1
+        )";
+        $statement_array = [];
+        if(!is_null($data) && array_key_exists("nodeid", $data) && is_numeric($data["nodeid"])){
+          $statement_string = "WHERE n.id = ?";
+          array_push($statement_array, $data["nodeid"]);
+        }
 
-      try{
-          $sql = $this->db_api->execute("SELECT n.id, cias.id AS service_id, n.hostname, n.nodeauthhash, cias.service_type,
-                                                cis.os_type, cis.os_name,
-                                                cis.cpu_count, cis.cpu_cores, cis.cpu_model,
-                                                ciscl.load_1_min,ciscl.load_5_min ,ciscl.load_15_min,
-                                                cicu.cpu_number, cicu.cpu_usage,
-                                                cimu.memory_total, cimu.memory_free, cimu.memory_buffers, cimu.memory_shared, cimu.memory_cached,
-                                                cisu.swap_total, cisu.swap_free,
-                                                cisf.device, cisf.size, cisf.used, cisf.avail, cisf.mountpoint,
-                                                cias.curr_service_insert_id, cias.service_state, cias.time_or_usage, cias.service_state_first_reported, cias.service_state_last_reported,
-                                                cist.service_desc, ar.monitor,
-                                                (CASE WHEN ad.downtime_comment IS NOT NULL THEN 1
-                                                 	  ELSE 0
-                                                 END) AS downtime_active
-                                        FROM nodes n
-                                        LEFT JOIN chia_infra_available_services cias ON cias.id = (SELECT cias1.id
-                                                                                                    FROM chia_infra_available_services cias1
-                                                                                                    WHERE cias1.service_target = cias.service_target AND cias1.service_type = cias.service_type AND cias1.node_id = n.id       
-                                                                                                    ORDER BY cias1.service_state_first_reported DESC
-                                                                                                    LIMIT 1)
-                                        LEFT JOIN chia_infra_sysinfo cis ON (cias.service_type = 5 OR cias.service_type = 6) AND cis.id = (SELECT cis1.id 
-                                                                                      FROM chia_infra_sysinfo cis1 
-                                                                                      WHERE cis1.nodeid = n.id
-                                                                                      ORDER BY cis1.timestamp DESC
-                                                                                      LIMIT 1)
-                                        LEFT JOIN chia_infra_sysinfo_cpu_load ciscl ON ciscl.id = cias.curr_service_insert_id AND cias.service_type = 5
-                                        LEFT JOIN chia_infra_cpu_usage cicu ON cias.service_type = 6 AND cicu.sysinfo_id = ( SELECT sysinfo_id FROM chia_infra_cpu_usage WHERE id = cias.curr_service_insert_id )
-                                        LEFT JOIN chia_infra_memory_usage cimu ON cimu.id = cias.curr_service_insert_id AND cias.service_type = 7
-                                        LEFT JOIN chia_infra_swap_usage cisu ON cisu.id = cias.curr_service_insert_id AND cias.service_type = 8
-                                        LEFT JOIN chia_infra_sysinfo_filesystems cisf ON cisf.id = cias.curr_service_insert_id AND cias.service_type = 9
-                                        LEFT JOIN alerting_rules ar on ar.id = cias.refers_to_rule_id
-                                        LEFT JOIN alerting_downtimes ad ON ad.node_id = n.id AND (ad.downtime_type = 0 OR (ad.downtime_type = 1 AND ad.downtime_service_type = cias.service_type AND ad.downtime_service_target = cias.service_target)) AND NOW() BETWEEN ad.downtime_from AND ad.downtime_to
-                                        LEFT JOIN chia_infra_service_types cist ON cist.id = cias.service_type
-                                        $statement_string AND ar.monitor = 1
-                                        ORDER BY n.id ASC, cias.service_type ASC, cisf.mountpoint ASC", 
-                                        $statement_array);
-        
-        $found_sysinfo_data = $sql->fetchAll(\PDO::FETCH_ASSOC);
+        $systemInfos = Promise\resolve((new DB_Api())->execute("SELECT n.id, cias.id AS service_id, n.hostname, n.nodeauthhash, cias.service_type,
+                                                                        cis.os_type, cis.os_name,
+                                                                        cis.cpu_count, cis.cpu_cores, cis.cpu_model,
+                                                                        ciscl.load_1_min,ciscl.load_5_min ,ciscl.load_15_min,
+                                                                        cicu.cpu_number, cicu.cpu_usage,
+                                                                        cimu.memory_total, cimu.memory_free, cimu.memory_buffers, cimu.memory_shared, cimu.memory_cached,
+                                                                        cisu.swap_total, cisu.swap_free,
+                                                                        cisf.device, cisf.size, cisf.used, cisf.avail, cisf.mountpoint,
+                                                                        cias.curr_service_insert_id, cias.service_state, cias.time_or_usage, cias.service_state_first_reported, cias.service_state_last_reported,
+                                                                        cist.service_desc, ar.monitor,
+                                                                        (CASE WHEN ad.downtime_comment IS NOT NULL THEN 1
+                                                                            ELSE 0
+                                                                        END) AS downtime_active
+                                                                FROM nodes n
+                                                                LEFT JOIN chia_infra_available_services cias ON cias.id = (SELECT cias1.id
+                                                                                                                            FROM chia_infra_available_services cias1
+                                                                                                                            WHERE cias1.service_target = cias.service_target AND cias1.service_type = cias.service_type AND cias1.node_id = n.id       
+                                                                                                                            ORDER BY cias1.service_state_first_reported DESC
+                                                                                                                            LIMIT 1)
+                                                                LEFT JOIN chia_infra_sysinfo cis ON (cias.service_type = 5 OR cias.service_type = 6) AND cis.id = (SELECT cis1.id 
+                                                                                                              FROM chia_infra_sysinfo cis1 
+                                                                                                              WHERE cis1.nodeid = n.id
+                                                                                                              ORDER BY cis1.timestamp DESC
+                                                                                                              LIMIT 1)
+                                                                LEFT JOIN chia_infra_sysinfo_cpu_load ciscl ON ciscl.id = cias.curr_service_insert_id AND cias.service_type = 5
+                                                                LEFT JOIN chia_infra_cpu_usage cicu ON cias.service_type = 6 AND cicu.sysinfo_id = ( SELECT sysinfo_id FROM chia_infra_cpu_usage WHERE id = cias.curr_service_insert_id )
+                                                                LEFT JOIN chia_infra_memory_usage cimu ON cimu.id = cias.curr_service_insert_id AND cias.service_type = 7
+                                                                LEFT JOIN chia_infra_swap_usage cisu ON cisu.id = cias.curr_service_insert_id AND cias.service_type = 8
+                                                                LEFT JOIN chia_infra_sysinfo_filesystems cisf ON cisf.id = cias.curr_service_insert_id AND cias.service_type = 9
+                                                                LEFT JOIN alerting_rules ar on ar.id = cias.refers_to_rule_id
+                                                                LEFT JOIN alerting_downtimes ad ON ad.node_id = n.id AND (ad.downtime_type = 0 OR (ad.downtime_type = 1 AND ad.downtime_service_type = cias.service_type AND ad.downtime_service_target = cias.service_target)) AND NOW() BETWEEN ad.downtime_from AND ad.downtime_to
+                                                                LEFT JOIN chia_infra_service_types cist ON cist.id = cias.service_type
+                                                                $statement_string AND ar.monitor = 1
+                                                                ORDER BY n.id ASC, cias.service_type ASC, cisf.mountpoint ASC", 
+                                          $statement_array));
 
-        $returnarray = [];
-        foreach($found_sysinfo_data AS $arrkey => $sysinfodata){
-          $data_current = (strtotime("now") - strtotime($sysinfodata["service_state_last_reported"]) <= 120 ? true : false );
+        $systemInfos->then(function($systemInfos_returned) use(&$resolve){
+          $returnarray = [];
+          foreach($systemInfos_returned->resultRows AS $arrkey => $sysinfodata){
+            $data_current = (strtotime("now") - strtotime($sysinfodata["service_state_last_reported"]) <= 120 ? true : false );
 
 
-          if(!array_key_exists($sysinfodata["id"], $returnarray)) $returnarray[$sysinfodata["id"]] = [];
-          if($sysinfodata["service_type"] == 1){
-            $returnarray[$sysinfodata["id"]]["node"] = [
-              "service_id" => $sysinfodata["service_id"],
-              "service_type" => $sysinfodata["service_type"],
-              "hostname" => $sysinfodata["hostname"],
-              "nodeauthhash" => $this->encryption_api->decryptString($sysinfodata["nodeauthhash"]),
-              "upstatus" => $sysinfodata["service_state"],
-              "status_since" => $sysinfodata["time_or_usage"],
-              "monitor_service" => $sysinfodata["monitor"],
-              "downtime_active" => $sysinfodata["downtime_active"],
-              "state_first_reported" => $sysinfodata["service_state_first_reported"],
-              "state_last_reported" => $sysinfodata["service_state_last_reported"],
-              "data_current" => $data_current,
-              "service_desc" => $sysinfodata["service_desc"]
-            ];
-          }else if($sysinfodata["service_type"] == 2){
-            $returnarray[$sysinfodata["id"]]["farmer"] = [
-              "service_id" => $sysinfodata["service_id"],
-              "service_type" => $sysinfodata["service_type"],
-              "service_state" => $sysinfodata["service_state"],
-              "status_since" => $sysinfodata["time_or_usage"],
-              "monitor_service" => $sysinfodata["monitor"],
-              "downtime_active" => $sysinfodata["downtime_active"],
-              "state_first_reported" => $sysinfodata["service_state_first_reported"],
-              "state_last_reported" => $sysinfodata["service_state_last_reported"],
-              "data_current" => $data_current,
-              "service_desc" => $sysinfodata["service_desc"]
-            ];
-          }else if($sysinfodata["service_type"] == 3){
-            $returnarray[$sysinfodata["id"]]["harvester"] = [
-              "service_id" => $sysinfodata["service_id"],
-              "service_type" => $sysinfodata["service_type"],
-              "service_state" => $sysinfodata["service_state"],
-              "status_since" => $sysinfodata["time_or_usage"],
-              "monitor_service" => $sysinfodata["monitor"],
-              "downtime_active" => $sysinfodata["downtime_active"],
-              "state_first_reported" => $sysinfodata["service_state_first_reported"],
-              "state_last_reported" => $sysinfodata["service_state_last_reported"],
-              "data_current" => $data_current,
-              "service_desc" => $sysinfodata["service_desc"]
-            ];
-          }else if($sysinfodata["service_type"] == 4){
-            $returnarray[$sysinfodata["id"]]["wallet"] = [
-              "service_id" => $sysinfodata["service_id"],
-              "service_type" => $sysinfodata["service_type"],
-              "service_state" => $sysinfodata["service_state"],
-              "status_since" => $sysinfodata["time_or_usage"],
-              "monitor_service" => $sysinfodata["monitor"],
-              "downtime_active" => $sysinfodata["downtime_active"],
-              "state_first_reported" => $sysinfodata["service_state_first_reported"],
-              "state_last_reported" => $sysinfodata["service_state_last_reported"],
-              "data_current" => $data_current,
-              "service_desc" => $sysinfodata["service_desc"]
-            ];
-          }else if($sysinfodata["service_type"] == 5){
-            if(!array_key_exists("cpu", $returnarray[$sysinfodata["id"]])) $returnarray[$sysinfodata["id"]]["cpu"] = [];
-            $returnarray[$sysinfodata["id"]]["cpu"]["load"] = [
-              "service_id" => $sysinfodata["service_id"],
-              "service_type" => $sysinfodata["service_type"],
-              "load_1_min" => $sysinfodata["load_1_min"],
-              "load_5_min" => $sysinfodata["load_5_min"],
-              "load_15_min" => $sysinfodata["load_15_min"],
-              "usage_15_min" => $sysinfodata["time_or_usage"],
-              "service_state" => $sysinfodata["service_state"],
-              "monitor_service" => $sysinfodata["monitor"],
-              "downtime_active" => $sysinfodata["downtime_active"],
-              "state_first_reported" => $sysinfodata["service_state_first_reported"],
-              "state_last_reported" => $sysinfodata["service_state_last_reported"],
-              "data_current" => $data_current,
-              "service_desc" => $sysinfodata["service_desc"]
-            ];
-          }else if($sysinfodata["service_type"] == 6){
-            if(!array_key_exists("cpu", $returnarray[$sysinfodata["id"]])) $returnarray[$sysinfodata["id"]]["cpu"] = [];
-            if(!array_key_exists("usage", $returnarray[$sysinfodata["id"]]["cpu"]) || !array_key_exists("overall", $returnarray[$sysinfodata["id"]]["cpu"]["usage"])){
-              $returnarray[$sysinfodata["id"]]["cpu"]["usage"]["overall"] = [
+            if(!array_key_exists($sysinfodata["id"], $returnarray)) $returnarray[$sysinfodata["id"]] = [];
+            if($sysinfodata["service_type"] == 1){
+              $returnarray[$sysinfodata["id"]]["node"] = [
                 "service_id" => $sysinfodata["service_id"],
                 "service_type" => $sysinfodata["service_type"],
-                "service_target" => "None",
-                "total_usage" => $sysinfodata["time_or_usage"],
+                "hostname" => $sysinfodata["hostname"],
+                "nodeauthhash" => $this->encryption_api->decryptString($sysinfodata["nodeauthhash"]),
+                "upstatus" => $sysinfodata["service_state"],
+                "status_since" => $sysinfodata["time_or_usage"],
+                "monitor_service" => $sysinfodata["monitor"],
+                "downtime_active" => $sysinfodata["downtime_active"],
+                "state_first_reported" => $sysinfodata["service_state_first_reported"],
+                "state_last_reported" => $sysinfodata["service_state_last_reported"],
+                "data_current" => $data_current,
+                "service_desc" => $sysinfodata["service_desc"]
+              ];
+            }else if(in_array($sysinfodata["service_type"], [2,3,4])){
+              $node_types = [2 => "farmer", 3 => "harvester", 4 => "wallet"];
+              $returnarray[$sysinfodata["id"]][$node_types[$sysinfodata["service_type"]]] = [
+                "service_id" => $sysinfodata["service_id"],
+                "service_type" => $sysinfodata["service_type"],
+                "service_state" => $sysinfodata["service_state"],
+                "status_since" => $sysinfodata["time_or_usage"],
+                "monitor_service" => $sysinfodata["monitor"],
+                "downtime_active" => $sysinfodata["downtime_active"],
+                "state_first_reported" => $sysinfodata["service_state_first_reported"],
+                "state_last_reported" => $sysinfodata["service_state_last_reported"],
+                "data_current" => $data_current,
+                "service_desc" => $sysinfodata["service_desc"]
+              ];
+            }else if($sysinfodata["service_type"] == 5){
+              if(!array_key_exists("cpu", $returnarray[$sysinfodata["id"]])) $returnarray[$sysinfodata["id"]]["cpu"] = [];
+              $returnarray[$sysinfodata["id"]]["cpu"]["load"] = [
+                "service_id" => $sysinfodata["service_id"],
+                "service_type" => $sysinfodata["service_type"],
+                "load_1_min" => $sysinfodata["load_1_min"],
+                "load_5_min" => $sysinfodata["load_5_min"],
+                "load_15_min" => $sysinfodata["load_15_min"],
+                "usage_15_min" => $sysinfodata["time_or_usage"],
                 "service_state" => $sysinfodata["service_state"],
                 "monitor_service" => $sysinfodata["monitor"],
                 "downtime_active" => $sysinfodata["downtime_active"],
@@ -385,79 +344,102 @@
                 "data_current" => $data_current,
                 "service_desc" => $sysinfodata["service_desc"]
               ];
+            }else if($sysinfodata["service_type"] == 6){
+              if(!array_key_exists("cpu", $returnarray[$sysinfodata["id"]])) $returnarray[$sysinfodata["id"]]["cpu"] = [];
+              if(!array_key_exists("usage", $returnarray[$sysinfodata["id"]]["cpu"]) || !array_key_exists("overall", $returnarray[$sysinfodata["id"]]["cpu"]["usage"])){
+                $returnarray[$sysinfodata["id"]]["cpu"]["usage"]["overall"] = [
+                  "service_id" => $sysinfodata["service_id"],
+                  "service_type" => $sysinfodata["service_type"],
+                  "service_target" => "None",
+                  "total_usage" => $sysinfodata["time_or_usage"],
+                  "service_state" => $sysinfodata["service_state"],
+                  "monitor_service" => $sysinfodata["monitor"],
+                  "downtime_active" => $sysinfodata["downtime_active"],
+                  "state_first_reported" => $sysinfodata["service_state_first_reported"],
+                  "state_last_reported" => $sysinfodata["service_state_last_reported"],
+                  "data_current" => $data_current,
+                  "service_desc" => $sysinfodata["service_desc"]
+                ];
+              }
+              $returnarray[$sysinfodata["id"]]["cpu"]["usage"]["usages"][$sysinfodata["cpu_number"]] = $sysinfodata["cpu_usage"];
+            }else if($sysinfodata["service_type"] == 7){
+              $returnarray[$sysinfodata["id"]]["memory"]["ram"] = [
+                "service_id" => $sysinfodata["service_id"],
+                "service_type" => $sysinfodata["service_type"],
+                "memory_total" => $sysinfodata["memory_total"],
+                "memory_free" => $sysinfodata["memory_free"],
+                "memory_buffers" => $sysinfodata["memory_buffers"],
+                "memory_shared" => $sysinfodata["memory_shared"],
+                "memory_cached" => $sysinfodata["memory_cached"],
+                "service_status" => $sysinfodata["service_state"],
+                "total_usage" => $sysinfodata["time_or_usage"],
+                "monitor_service" => $sysinfodata["monitor"],
+                "downtime_active" => $sysinfodata["downtime_active"],
+                "state_first_reported" => $sysinfodata["service_state_first_reported"],
+                "state_last_reported" => $sysinfodata["service_state_last_reported"],
+                "data_current" => $data_current,
+                "service_desc" => $sysinfodata["service_desc"]
+              ];
+            }else if($sysinfodata["service_type"] == 8){
+              $returnarray[$sysinfodata["id"]]["memory"]["swap"] = [
+                "service_id" => $sysinfodata["service_id"],
+                "service_type" => $sysinfodata["service_type"],
+                "swap_total" => $sysinfodata["swap_total"],
+                "swap_free" => $sysinfodata["swap_free"],
+                "service_status" => $sysinfodata["service_state"],
+                "total_usage" => $sysinfodata["time_or_usage"],
+                "monitor_service" => $sysinfodata["monitor"],
+                "downtime_active" => $sysinfodata["downtime_active"],
+                "state_first_reported" => $sysinfodata["service_state_first_reported"],
+                "state_last_reported" => $sysinfodata["service_state_last_reported"],
+                "data_current" => $data_current,
+                "service_desc" => $sysinfodata["service_desc"]
+              ];
+            }else if($sysinfodata["service_type"] == 9){
+              $returnarray[$sysinfodata["id"]]["filesystems"][$sysinfodata["mountpoint"]] = [
+                "service_id" => $sysinfodata["service_id"],
+                "service_type" => $sysinfodata["service_type"],
+                "device" => html_entity_decode(stripslashes($sysinfodata["device"]),ENT_QUOTES,'UTF-8'),
+                "mountpoint" => html_entity_decode(stripslashes($sysinfodata["mountpoint"]),ENT_QUOTES,'UTF-8'),
+                "size" => $sysinfodata["size"],
+                "used" => $sysinfodata["used"],
+                "avail" => $sysinfodata["avail"],
+                "service_status" => $sysinfodata["service_state"],
+                "total_usage" => $sysinfodata["time_or_usage"],
+                "monitor_service" => $sysinfodata["monitor"],
+                "downtime_active" => $sysinfodata["downtime_active"],
+                "state_first_reported" => $sysinfodata["service_state_first_reported"],
+                "state_last_reported" => $sysinfodata["service_state_last_reported"],
+                "data_current" => $data_current,
+                "service_desc" => $sysinfodata["service_desc"]
+              ];
             }
-            $returnarray[$sysinfodata["id"]]["cpu"]["usage"]["usages"][$sysinfodata["cpu_number"]] = $sysinfodata["cpu_usage"];
-          }else if($sysinfodata["service_type"] == 7){
-            $returnarray[$sysinfodata["id"]]["memory"]["ram"] = [
-              "service_id" => $sysinfodata["service_id"],
-              "service_type" => $sysinfodata["service_type"],
-              "memory_total" => $sysinfodata["memory_total"],
-              "memory_free" => $sysinfodata["memory_free"],
-              "memory_buffers" => $sysinfodata["memory_buffers"],
-              "memory_shared" => $sysinfodata["memory_shared"],
-              "memory_cached" => $sysinfodata["memory_cached"],
-              "service_status" => $sysinfodata["service_state"],
-              "total_usage" => $sysinfodata["time_or_usage"],
-              "monitor_service" => $sysinfodata["monitor"],
-              "downtime_active" => $sysinfodata["downtime_active"],
-              "state_first_reported" => $sysinfodata["service_state_first_reported"],
-              "state_last_reported" => $sysinfodata["service_state_last_reported"],
-              "data_current" => $data_current,
-              "service_desc" => $sysinfodata["service_desc"]
-            ];
-          }else if($sysinfodata["service_type"] == 8){
-            $returnarray[$sysinfodata["id"]]["memory"]["swap"] = [
-              "service_id" => $sysinfodata["service_id"],
-              "service_type" => $sysinfodata["service_type"],
-              "swap_total" => $sysinfodata["swap_total"],
-              "swap_free" => $sysinfodata["swap_free"],
-              "service_status" => $sysinfodata["service_state"],
-              "total_usage" => $sysinfodata["time_or_usage"],
-              "monitor_service" => $sysinfodata["monitor"],
-              "downtime_active" => $sysinfodata["downtime_active"],
-              "state_first_reported" => $sysinfodata["service_state_first_reported"],
-              "state_last_reported" => $sysinfodata["service_state_last_reported"],
-              "data_current" => $data_current,
-              "service_desc" => $sysinfodata["service_desc"]
-            ];
-          }else if($sysinfodata["service_type"] == 9){
-            $returnarray[$sysinfodata["id"]]["filesystems"][$sysinfodata["mountpoint"]] = [
-              "service_id" => $sysinfodata["service_id"],
-              "service_type" => $sysinfodata["service_type"],
-              "device" => html_entity_decode(stripslashes($sysinfodata["device"]),ENT_QUOTES,'UTF-8'),
-              "mountpoint" => html_entity_decode(stripslashes($sysinfodata["mountpoint"]),ENT_QUOTES,'UTF-8'),
-              "size" => $sysinfodata["size"],
-              "used" => $sysinfodata["used"],
-              "avail" => $sysinfodata["avail"],
-              "service_status" => $sysinfodata["service_state"],
-              "total_usage" => $sysinfodata["time_or_usage"],
-              "monitor_service" => $sysinfodata["monitor"],
-              "downtime_active" => $sysinfodata["downtime_active"],
-              "state_first_reported" => $sysinfodata["service_state_first_reported"],
-              "state_last_reported" => $sysinfodata["service_state_last_reported"],
-              "data_current" => $data_current,
-              "service_desc" => $sysinfodata["service_desc"]
-            ];
-          }
-          if(($sysinfodata["service_type"] == 5 || $sysinfodata["service_type"] == 6) && 
-            (!array_key_exists("os", $returnarray[$sysinfodata["id"]]) || !array_key_exists("info", $returnarray[$sysinfodata["id"]]["cpu"]))){
-              $returnarray[$sysinfodata["id"]]["os"] = [
-                "os_type" => $sysinfodata["os_type"],
-                "os_name" => $sysinfodata["os_name"]
-              ];
+            if(($sysinfodata["service_type"] == 5 || $sysinfodata["service_type"] == 6) && 
+              (!array_key_exists("os", $returnarray[$sysinfodata["id"]]) || !array_key_exists("info", $returnarray[$sysinfodata["id"]]["cpu"]))){
+                $returnarray[$sysinfodata["id"]]["os"] = [
+                  "os_type" => $sysinfodata["os_type"],
+                  "os_name" => $sysinfodata["os_name"]
+                ];
 
-              $returnarray[$sysinfodata["id"]]["cpu"]["info"] = [
-                "cpu_count" => $sysinfodata["cpu_count"],
-                "cpu_cores" => $sysinfodata["cpu_cores"],
-                "cpu_model" => $sysinfodata["cpu_model"]
-              ];
+                $returnarray[$sysinfodata["id"]]["cpu"]["info"] = [
+                  "cpu_count" => $sysinfodata["cpu_count"],
+                  "cpu_cores" => $sysinfodata["cpu_cores"],
+                  "cpu_model" => $sysinfodata["cpu_model"]
+                ];
+            }
           }
-        }
 
-        return array("status" => 0, "message" => "Successfully loaded latest system information.", "data" => $returnarray);
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("001", $e);
-      }
+          $resolve(array("status" => 0, "message" => "Successfully loaded latest system information.", "data" => $returnarray));
+        })->otherwise(function(\Exception $e) use(&$resolve){
+          $resolve($this->logging_api->getErrormessage("getSystemInfo", "001", $e));
+        });    
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -477,6 +459,8 @@
         "message" => "Query systeminfo data.",
         "data"=> array()
       );
+
+      return array();
 
       $callfunction = "messageAllNodes";
       if(array_key_exists("nodeinfo", $data) && array_key_exists("authhash", $data["nodeinfo"])){
@@ -498,9 +482,9 @@
      * @param array $data
      * @return array
      */
-    public function getAvailableServices(array $data = []): array
+    public function getAvailableServices(array $data = []): object
     {     
-      try{
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
         $where_statement = "";
         $statement_array = [];
         if(array_key_exists("node_id", $data)){
@@ -522,34 +506,41 @@
           }
         }
 
-        $sql = $this->db_api->execute("SELECT cias.id, cias.curr_service_insert_id, cias.service_target ,cias.service_type, cias.refers_to_rule_id, ar.rule_target, ar.warn_at_after, ar.crit_at_after, cias.service_state, cias.time_or_usage, cias.node_id, ar.monitor, cias.service_state_first_reported, cias.service_state_last_reported
-                                        FROM chia_infra_available_services cias 
-                                        JOIN alerting_rules ar ON ar.id = cias.refers_to_rule_id
-                                        WHERE $where_statement service_state_first_reported = (SELECT max(cias1.service_state_first_reported) FROM chia_infra_available_services cias1 WHERE cias1.node_id = cias.node_id AND cias1.service_type = cias.service_type AND cias1.service_target = cias.service_target)", $statement_array);
-        $found_available_services = $sql->fetchAll(\PDO::FETCH_ASSOC);
+        $available_services = Promise\resolve((new DB_Api())->execute("SELECT cias.id, cias.curr_service_insert_id, cias.service_target ,cias.service_type, cias.refers_to_rule_id, ar.rule_target, ar.warn_at_after, ar.crit_at_after, cias.service_state, cias.time_or_usage, cias.node_id, ar.monitor, cias.service_state_first_reported, cias.service_state_last_reported
+                                                                        FROM chia_infra_available_services cias 
+                                                                        JOIN alerting_rules ar ON ar.id = cias.refers_to_rule_id
+                                                                        WHERE $where_statement service_state_first_reported = (SELECT max(cias1.service_state_first_reported) FROM chia_infra_available_services cias1 WHERE cias1.node_id = cias.node_id AND cias1.service_type = cias.service_type AND cias1.service_target = cias.service_target)", $statement_array));
+        $available_services->then(function($available_services_returned) use(&$resolve){
+          $available_services_returned = $available_services_returned->resultRows;
 
-        $found_data = [
-          "by-avail-serv-id" => [],
-          "by-avail-serv-target" => []
-        ];
-        foreach($found_available_services AS $arrkey => $found_service){
-          if(!array_key_exists($found_service["node_id"], $found_data["by-avail-serv-id"])) $found_data["by-avail-serv-id"][$found_service["node_id"]] = [];
-          if(!array_key_exists($found_service["service_type"], $found_data["by-avail-serv-id"][$found_service["node_id"]])) $found_data["by-avail-serv-id"][$found_service["node_id"]][$found_service["service_type"]] = [];
-          $found_data["by-avail-serv-id"][$found_service["node_id"]][$found_service["service_type"]][$found_service["id"]] = $found_service;
-          
-          $rule_node_target = (is_null($found_service["rule_target"]) ? "All" : $found_service["rule_target"]);
-          if(!array_key_exists($found_service["node_id"], $found_data["by-avail-serv-target"])) $found_data["by-avail-serv-target"][$found_service["node_id"]] = [];
-          if(!array_key_exists($found_service["service_type"], $found_data["by-avail-serv-target"][$found_service["node_id"]])) $found_data["by-avail-serv-target"][$found_service["node_id"]][$found_service["service_type"]] = [];
-          if(!array_key_exists($rule_node_target, $found_data["by-avail-serv-target"][$found_service["node_id"]][$found_service["service_type"]])) $found_data["by-avail-serv-target"][$found_service["node_id"]][$found_service["service_type"]][$rule_node_target] = [];
-          $found_data["by-avail-serv-target"][$found_service["node_id"]][$found_service["service_type"]][$rule_node_target][$found_service["id"]] = $found_service;
-        }
+          $found_data = [
+            "by-avail-serv-id" => [],
+            "by-avail-serv-target" => []
+          ];
+          foreach($available_services_returned AS $arrkey => $found_service){
+            if(!array_key_exists($found_service["node_id"], $found_data["by-avail-serv-id"])) $found_data["by-avail-serv-id"][$found_service["node_id"]] = [];
+            if(!array_key_exists($found_service["service_type"], $found_data["by-avail-serv-id"][$found_service["node_id"]])) $found_data["by-avail-serv-id"][$found_service["node_id"]][$found_service["service_type"]] = [];
+            $found_data["by-avail-serv-id"][$found_service["node_id"]][$found_service["service_type"]][$found_service["id"]] = $found_service;
+            
+            $rule_node_target = (is_null($found_service["rule_target"]) ? "All" : $found_service["rule_target"]);
+            if(!array_key_exists($found_service["node_id"], $found_data["by-avail-serv-target"])) $found_data["by-avail-serv-target"][$found_service["node_id"]] = [];
+            if(!array_key_exists($found_service["service_type"], $found_data["by-avail-serv-target"][$found_service["node_id"]])) $found_data["by-avail-serv-target"][$found_service["node_id"]][$found_service["service_type"]] = [];
+            if(!array_key_exists($rule_node_target, $found_data["by-avail-serv-target"][$found_service["node_id"]][$found_service["service_type"]])) $found_data["by-avail-serv-target"][$found_service["node_id"]][$found_service["service_type"]][$rule_node_target] = [];
+            $found_data["by-avail-serv-target"][$found_service["node_id"]][$found_service["service_type"]][$rule_node_target][$found_service["id"]] = $found_service;
+          }
 
-        return array("status" => 0, "message" => "Successfully loaded available services.", "data" => $found_data);
-      }catch(\Exception $e){
-        //TODO Implement correct status codes
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
-      }
+          $resolve(array("status" => 0, "message" => "Successfully loaded available services.", "data" => $found_data));
+        })->otherwise(function(\Exception $e) use(&$resolve){
+          //TODO Implement correct status codes
+          $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+        });
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -558,8 +549,88 @@
      * @param array $data
      * @return array
      */
-    public function updateAvailableServices(array $data): array
+    public function updateAvailableServices(array $data): object
     {
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+        if(array_key_exists("node_id", $data) && array_key_exists("service_type_id", $data) && array_key_exists("service_insert_id", $data) && 
+        array_key_exists("defined_maximum", $data) && array_key_exists("current_service_level", $data) && 
+        ($data["service_type_id"] == 9 && array_key_exists("service_target", $data)) || $data["service_type_id"] < 9){
+                    
+          $nodeid = $data["node_id"];
+          $this_service_type_id = $data["service_type_id"];
+          $this_service_target = (array_key_exists("service_target", $data) && !is_null($data["service_target"]) ? $data["service_target"] : NULL);
+          
+          $this_service_alerting_infos = Promise\resolve($this->alerting_api->getRuleInformationOfService(["service_type_id" => $this_service_type_id, "node_id" => $nodeid, "service_target" => $this_service_target]));
+          $this_service_alerting_infos->then(function($this_service_alerting_infos_returned) use($data, $nodeid, $this_service_type_id, $this_service_target){
+            $this_service_alerting_infos_returned = $this_service_alerting_infos_returned["data"];
+
+            $service_insert_id = $data["service_insert_id"];
+            $defined_maximum = $data["defined_maximum"];
+            $current_service_level = $data["current_service_level"];
+            $perc_or_min_value = $this_service_alerting_infos_returned["perc_or_min_value"];
+            $warn_level_at_after = $this_service_alerting_infos_returned["warn_at_after"];
+            $crit_level_at_after = $this_service_alerting_infos_returned["crit_at_after"];
+            $current_service_minutes = (array_key_exists("current_service_minutes", $data) && !is_null($data["current_service_minutes"]) ? $data["current_service_minutes"] : NULL);
+            
+            $promises = [
+              Promise\resolve($this->getAvailableServices(["node_id" => $nodeid, "service_type_id" => $this_service_type_id, "service_target" => $this_service_target])),
+              Promise\resolve($this->alerting_api->calculateAlertingLevel(["defined_maximum" => $defined_maximum, "current_service_level" => $current_service_level, "perc_or_min_value" => $perc_or_min_value, "warn_level_at_after" => $warn_level_at_after, "crit_level_at_after" => $crit_level_at_after, "current_service_minutes" => $current_service_minutes]))
+            ];
+            
+            Promise\all($promises)->then(function($all_returned) use($nodeid, $this_service_type_id, $this_service_target, $this_service_alerting_infos_returned, $service_insert_id){
+              $found_node_available_services = $all_returned[0]["data"];
+              $current_service_alerting_level = $all_returned[1]["data"];
+
+              $insert_new = false;
+              if(array_key_exists($nodeid, $found_node_available_services["by-avail-serv-id"]) &&
+                array_key_exists($this_service_type_id ,$found_node_available_services["by-avail-serv-id"][$nodeid]) && 
+                count($found_node_available_services["by-avail-serv-id"][$nodeid][$this_service_type_id]) > 0)
+              {
+                $found_avail_service = $found_node_available_services["by-avail-serv-id"][$nodeid][$this_service_type_id];
+                $target_avail_serv_id = array_key_first($found_avail_service);
+                $target_avail_service = $found_avail_service[$target_avail_serv_id];
+
+                $update_service = Promise\resolve((new DB_Api())->execute("UPDATE chia_infra_available_services SET curr_service_insert_id = ?, time_or_usage = ?, service_state_last_reported = NOW() WHERE id = ?",
+                                                  array($service_insert_id, intval($current_service_alerting_level["time_or_usage"]), $target_avail_serv_id)));
+                
+                $update_service->otherwise(function(\Exception $e) use(&$resolve){
+                  //TODO Implement correct status code
+                  return $resolve(array("status" => 1, "messages" => "An error occured {$e->getMessage()}."));
+                });
+                
+                if($target_avail_service["service_state"] != $current_service_alerting_level["level"]){
+                  $insert_new = true;
+                } 
+              }else{
+                $insert_new = true;
+              }
+
+              if($insert_new){
+                $insert_new = Promise\resolve((new DB_Api())->execute("INSERT INTO chia_infra_available_services (id, curr_service_insert_id, service_target, service_type, refers_to_rule_id, service_state, time_or_usage, node_id, service_state_first_reported, service_state_last_reported) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())", 
+                                              array($service_insert_id, $this_service_target, $this_service_type_id, $this_service_alerting_infos_returned["id"], $current_service_alerting_level["level"], $current_service_alerting_level["time_or_usage"], $nodeid)));
+                                              
+                $insert_new->otherwise(function(\Exception $e) use(&$resolve){
+                  //TODO Implement correct status code
+                  return $resolve(array("status" => 1, "messages" => "An error occured {$e->getMessage()}."));
+                });
+              }
+
+              $resolve(array("status" => 0, "message" => "Successfully updated available services with new information."));
+            });
+          });
+
+        }else{
+          //TODO Implement correct status code
+          $resolve(array("status" => 1, "messages" => "Not all data stated."));
+        }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
+      
       if(array_key_exists("node_id", $data) && array_key_exists("service_type_id", $data) && array_key_exists("service_insert_id", $data) && 
         array_key_exists("defined_maximum", $data) && array_key_exists("current_service_level", $data) && 
         ($data["service_type_id"] == 9 && array_key_exists("service_target", $data)) || $data["service_type_id"] < 9){
@@ -627,8 +698,60 @@
      *
      * @return array
      */
-    public function setAllNodesSystemAndServicesUpStatus(array $data = []): array
+    public function setAllNodesSystemAndServicesUpStatus(array $data = []): object
     {     
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+        if(array_key_exists("node_and_service_up_status", $data)){
+          $available_nodes = Promise\resolve($data["node_and_service_up_status"]);
+        }else{
+          $available_nodes = Promise\resolve($this->nodes_api->getCurrentChiaNodesUPAndServiceStatus());
+        }
+
+        $available_nodes->then(function($available_nodes_returned) use(&$resolve){
+          if(array_key_exists("data", $available_nodes_returned)) $available_nodes_returned = $available_nodes_returned["data"];
+
+          foreach($available_nodes_returned AS $nodeid => $services_data){
+            $this_service_type_id = 1;
+            $node_up_down_since = (strtotime($services_data["onlinestatus"]["node_lastreported"]) - strtotime($services_data["onlinestatus"]["node_firstreported"])) / 60;
+            $updateData = [
+              "node_id" => $nodeid,
+              "service_insert_id" => $services_data["onlinestatus"]["entry_id"],
+              "service_type_id" => $this_service_type_id,
+              "service_target" => NULL,
+              "defined_maximum" => NULL,
+              "current_service_level" => $services_data["onlinestatus"]["status"],
+              "current_service_minutes" => $node_up_down_since
+            ];
+
+            Promise\resolve($this->updateAvailableServices($updateData));
+
+            foreach($services_data["services"] AS $service_id => $node_service_state){
+              $service_up_down_since = (strtotime($node_service_state["service_lastreported"]) - strtotime($node_service_state["service_firstreported"])) / 60;
+              
+              $updateData = [
+                "node_id" => $nodeid,
+                "service_insert_id" => $node_service_state["entry_id"],
+                "service_type_id" => ($service_id - 1),
+                "service_target" => NULL,
+                "defined_maximum" => NULL,
+                "current_service_level" => $node_service_state["servicestate"],
+                "current_service_minutes" => $service_up_down_since
+              ];
+    
+              $this->updateAvailableServices($updateData);
+            }
+          }
+
+          $resolve(array("status" => 0, "message" => "Successfully set all nodes system and service status."));
+        });
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
+      
       if(array_key_exists("node_and_service_up_status", $data)){
         $available_nodes = $data["node_and_service_up_status"];
       }else{
@@ -700,7 +823,7 @@
                                         WHERE cias.id = ? AND cias.node_id = ?", 
                                         array($data["service_id"], $data["node_id"]));
 
-          $found_service = $sql->fetchAll(\PDO::FETCH_ASSOC);
+          $found_service = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/;
 
           if(array_key_exists(0, $found_service) && array_key_exists("rule_default", $found_service[0])){
             $found_service = $found_service[0];

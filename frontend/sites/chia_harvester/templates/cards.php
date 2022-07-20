@@ -4,29 +4,40 @@
   require __DIR__ . '/../../../../vendor/autoload.php';
   include_once(__DIR__ . '/functions.php');
 
-  $login_api = new Login_Api();
-  $ini = parse_ini_file(__DIR__.'/../../../../backend/config/config.ini.php');
-  $loggedin = $login_api->checklogin();
-
-  if($loggedin["status"] > 0){
-    header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/login.php");
+  if(!array_key_exists("sess_id", $_GET) || !array_key_exists("user_id", $_GET) || !array_key_exists("nodeid", $_GET)){
+    echo "Incomplete Request.";
+    die();
   }
 
   $chia_harvester_api = new Chia_Harvester_Api();
-  $harvesterdata = $chia_harvester_api->getHarvesterData(["nodeid" => $_GET["nodeid"]]);
+  
+  $site_data_to_load = [
+    React\Promise\resolve((new Login_Api())->checklogin($_GET["sess_id"], $_GET["user_id"])),
+    React\Promise\resolve((new Chia_Harvester_Api())->getHarvesterData(["nodeid" => $_GET["nodeid"]]))
+  ];
+  
+  $ini = parse_ini_file(__DIR__.'/../../../../backend/config/config.ini.php');
+  React\Promise\all($site_data_to_load)->then(function($all_returned) use($ini){
+    include_once(__DIR__ . '/functions.php');
 
-  if(array_key_exists("data", $harvesterdata) && count($harvesterdata["data"]) > 0 && array_key_exists($_GET["nodeid"], $harvesterdata["data"])){
-    $harvesterdata = $harvesterdata["data"][$_GET["nodeid"]];
-  }else{
-    $harvesterdata = [];
-  }
+    if($all_returned[0]["status"] > 0){
+      echo "NOT AUTHENTICATED.";
+      exit();
+    }
 
-  $nodeid = $_GET["nodeid"];
-
-  echo "<script nonce={$ini["nonce_key"]}> 
-          var siteID = 7;
-          chiaHarvesterData[{$_GET["nodeid"]}] = " .  json_encode((array_key_exists($_GET["nodeid"], $harvesterdata) ? $harvesterdata[$_GET["nodeid"]] : [])) . "; 
-        </script>";
+    $harvesterdata = $all_returned[1];
+    if(array_key_exists("data", $harvesterdata) && count($harvesterdata["data"]) > 0 && array_key_exists($_GET["nodeid"], $harvesterdata["data"])){
+      $harvesterdata = $harvesterdata["data"][$_GET["nodeid"]];
+    }else{
+      $harvesterdata = [];
+    }
+  
+    $nodeid = $_GET["nodeid"];
+  
+    echo "<script nonce={$ini["nonce_key"]}> 
+            var siteID = 7;
+            chiaHarvesterData[{$_GET["nodeid"]}] = " .  json_encode((array_key_exists($_GET["nodeid"], $harvesterdata) ? $harvesterdata[$_GET["nodeid"]] : [])) . "; 
+          </script>";
 ?>
 <div class="row">
   <div class="col">
@@ -138,3 +149,4 @@
     </div>
   </div>
 </div>
+<?php }); ?>

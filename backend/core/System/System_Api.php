@@ -1,5 +1,6 @@
 <?php
   namespace ChiaMgmt\System;
+  use React\Promise;
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\WebSocket\WebSocket_Api;
   use ChiaMgmt\System_Update\System_Update_Api;
@@ -88,31 +89,47 @@
      * @param array $loginData    { NULL } No logindata is needed to use this method.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB stored node information]}
      */
-    public function setSystemSettings(array $data, array $loginData = NULL): array
+    public function setSystemSettings(array $data): object
     {
-      $settingtype = array_key_first($data);
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+        $settingtype = array_key_first($data);
 
-      if(!is_Null($settingtype)){
-        foreach($data[$settingtype] AS $settingkey => $settingvalue){
-          if(is_array($settingvalue) && array_key_exists("type", $settingvalue) && $settingvalue["type"] == "password")
-            $data[$settingtype][$settingkey]["value"] = $this->encryption_api->encryptString($settingvalue["value"]);
-        }
-
-        try{
-          $sql = $this->db_api->execute("SELECT Count(*) AS Count FROM system_settings WHERE settingtype = ?", array($settingtype));
-
-          if($sql->fetchAll(\PDO::FETCH_ASSOC)[0]["Count"] == 0){
-            $sql = $this->db_api->execute("Insert INTO system_settings (id, settingtype, settingvalue) VALUES (NULL, ?, ?)",
-                                            array($settingtype, json_encode($data[$settingtype])));
-          }else{
-            $sql = $this->db_api->execute("UPDATE system_settings SET settingvalue = ?, confirmed = ? WHERE settingtype = ?", array(json_encode($data[$settingtype]), 0, $settingtype));
+        if(!is_Null($settingtype)){
+          foreach($data[$settingtype] AS $settingkey => $settingvalue){
+            if(is_array($settingvalue) && array_key_exists("type", $settingvalue) && $settingvalue["type"] == "password")
+              $data[$settingtype][$settingkey]["value"] = $this->encryption_api->encryptString($settingvalue["value"]);
           }
 
-          return array("status" => 0, "message" => "Successfully updated system settings for settingtype $settingtype.", "data" => $this->getSpecificSystemSetting($settingtype)["data"]);
-        }catch(\Exception $e){
-          return $this->logging_api->getErrormessage("001", $e);
+          $settings_count = Promise\resolve((new DB_Api())->execute("SELECT Count(*) AS Count FROM system_settings WHERE settingtype = ?", array($settingtype)));
+          $settings_count->then(function($settings_count_returned) use(&$resolve, $data, $settingtype){
+            if($settings_count_returned->resultRows[0]["Count"] == 0){
+              $set_setting = Promise\resolve((new DB_Api())->execute("Insert INTO system_settings (id, settingtype, settingvalue) VALUES (NULL, ?, ?)",
+                                              array($settingtype, json_encode($data[$settingtype]))));
+            }else{
+              $set_setting = Promise\resolve((new DB_Api())->execute("UPDATE system_settings SET settingvalue = ?, confirmed = ? WHERE settingtype = ?", 
+                                                                        array(json_encode($data[$settingtype]), 0, $settingtype)));
+            }
+
+            $set_setting->then(function($set_setting_returned) use(&$resolve, $settingtype){
+              $saved_setting = Promise\resolve($this->getSpecificSystemSetting($settingtype));
+              $saved_setting->then(function($saved_setting_returned) use(&$resolve, $settingtype){
+                $resolve(array("status" => 0, "message" => "Successfully updated system settings for settingtype $settingtype.", "data" => $saved_setting_returned["data"]));
+              });
+            })->otherwise(function(\Exception $e) use(&$resolve){
+              $resolve($this->logging_api->getErrormessage("setSystemSettings", "001", $e));
+            });
+
+          })->otherwise(function(\Exception $e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("setSystemSettings", "002", $e));
+          });
         }
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -121,15 +138,22 @@
      * @throws Exception $e       Throws an exception on db errors.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB stored node information]}
      */
-    public function getAllSystemSettings(): array
+    public function getAllSystemSettings(): object
     {
-      try{
-        $sql = $this->db_api->execute("SELECT settingtype, settingvalue, confirmed FROM system_settings", array());
+      $resolver = function (callable $resolve, callable $reject, callable $notify){
+        $all_settings = Promise\resolve((new DB_Api())->execute("SELECT settingtype, settingvalue, confirmed FROM system_settings", array()));
+        $all_settings->then(function($all_settings_returned) use(&$resolve){
+          $resolve(array("status" => 0, "message" => "Successfully loaded all system settings.", "data" => $this->formatSetting($all_settings_returned->resultRows)));
+        })->otherwise(function(\Exception $e) use(&$resolve){
+          $resolve($this->logging_api->getErrormessage("getAllSystemSettings", "001", $e));
+        });
+      };
 
-        return array("status" => 0, "message" => "Successfully loaded all system settings.", "data" => $this->formatSetting($sql->fetchAll(\PDO::FETCH_ASSOC)));
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("001", $e);
-      }
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -164,15 +188,22 @@
      * @param  string $settingtype  The settingtype as string.
      * @return array                {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[DB stored node information]}}
      */
-    public function getSpecificSystemSetting(string $settingtype): array
+    public function getSpecificSystemSetting(string $settingtype): object
     {
-      try{
-        $sql = $this->db_api->execute("SELECT settingtype, settingvalue, confirmed FROM system_settings WHERE settingtype = ?", array($settingtype));
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($settingtype){
+        $settings_promise = Promise\resolve((new DB_Api())->execute("SELECT settingtype, settingvalue, confirmed FROM system_settings WHERE settingtype = ?", array($settingtype)));
+        $settings_promise->then(function($returned_setting) use(&$resolve){
+          $resolve(array("status" => 0, "message" => "Successfully loaded all system settings.", "data" => $this->formatSetting($returned_setting->resultRows)));
+        })->otherwise(function(\Exception $e) use(&$resolve){
+          $resolve($this->logging_api->getErrormessage("getSpecificSystemSetting", "001", $e));
+        });
+      };
 
-        return array("status" => 0, "message" => "Successfully loaded all system settings.", "data" => $this->formatSetting($sql->fetchAll(\PDO::FETCH_ASSOC)));
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("001", $e);
-      }
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -180,10 +211,9 @@
      * Function made for: Web(App)client
      * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function testConnection(): array
+    public function testConnection(): object
     {
-      $this->websocket_api = new WebSocket_Api();
-      return $this->websocket_api->testConnection();
+      return (new WebSocket_Api())->testConnection();
     }
 
     /**
@@ -193,7 +223,7 @@
      * @param  array $loginData   { NULL } No logindata is needed query this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [Available updateinformation]}
      */
-    public function checkForUpdates(array $data = [], array $loginData = NULL): array
+    public function checkForUpdates(array $data = [], array $loginData = NULL): object
     {
       return $this->system_update_api->checkForUpdates($data, $loginData);
     }
@@ -235,89 +265,100 @@
      * @param  ChiaWebSocketServer $server    An instance to the Webscoket server to be able to communicate with the node
      * @return array                          {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : "[Found system messages]"}
      */
-    public function getSystemMessages(array $data = [], array $loginData = NULL, $server = NULL): array
+    public function getSystemMessages(array $data = [], array $loginData = NULL, $server = NULL): object
     {
-      $returndata = [];
-      $returndata["found"] = [];
-      $returndata["count"] = 0;
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData){
 
-      //Checking if updates are available
-      $systemupdate = $this->checkForUpdates(["update_data_db" => true])["data"];
-      if($systemupdate["updateavail"]){
-        $returndata["found"]["updateavail"] = "There is an system update to version {$systemupdate["remoteversion"]} available.";
-        $returndata["count"] = $returndata["count"] + 1;
-      }
-      $nodeupdates = $this->nodes_api->checkUpdatesAndChannels()["data"];
-      $nodesupdatesavail = [];
-      $chiaupdatesavail = [];
+        $systemupdate = Promise\resolve($this->checkForUpdates(["update_data_db" => true]));
+        $nodeupdates = Promise\resolve($this->nodes_api->checkUpdatesAndChannels());
+        $wssrunning = Promise\resolve($this->testConnection());
+        $cronjobenabled = Promise\resolve($this->getCronjobEnabled());
+        $second_factor_enabled = Promise\resolve((new Second_Factor_Api())->getTOTPEnabled(["userID" => $data["userID"]]));
+        $security_featres_enabled = Promise\resolve((new DB_Api())->execute("SELECT settingtype, settingvalue, confirmed FROM system_settings", array()));
+        
+        Promise\all([$systemupdate, $nodeupdates, $wssrunning, $cronjobenabled, $second_factor_enabled, $security_featres_enabled])->then(function($all_returned) use(&$resolve){
+          $returndata = [];
+          $returndata["found"] = [];
+          $returndata["count"] = 0;
 
-      foreach($nodeupdates["updateinfos"] AS $arrkey => $nodeupdatedata){
-        if($nodeupdatedata["updateavailable"] < 0) array_push($nodesupdatesavail, $nodeupdatedata["hostname"]);
-        if($nodeupdatedata["chiaupdateavail"] < 0) array_push($chiaupdatesavail, $nodeupdatedata["hostname"]);
-      }
-
-      if(count($nodesupdatesavail) > 0){
-        $returndata["found"]["updateavail"] = "There are node script updates available for the following nodes: " . implode(", ", $nodesupdatesavail) . ". Please update soon.";
-        $returndata["count"] = $returndata["count"] + 1;
-      }
-
-      if(count($chiaupdatesavail) > 0){
-        $returndata["found"]["updateavail"] = "There are chia blockchian updates available for the following nodes: " . implode(", ", $chiaupdatesavail) . ". Please update soon.";
-        $returndata["count"] = $returndata["count"] + 1;
-      }
-
-      //Checking if websocket server is running
-      if($this->testConnection()["status"] != 0){
-        $returndata["found"]["websocket"] = "Websocket Server not running. Please start it otherwise you cannot use this system proberly.";
-        $returndata["count"] = $returndata["count"] + 1;
-      }
-
-      //Checking if systems cronjob is enabled
-      $cronjobEnabled = $this->getCronjobEnabled();
-      if($cronjobEnabled["status"] == "012009001"){
-        $returndata["found"]["websocket"] = "The system's automated background task is not enabled. No data can be queried automatically in backbround.";
-        $returndata["count"] = $returndata["count"] + 1;
-      }else if($cronjobEnabled["status"] == 0){
-        $now = new \DateTime("now");
-        $lastexecdate = new \DateTime($cronjobEnabled["data"]);
-        $interval = $now->diff($lastexecdate);
-        $seconds = $interval->s;
-
-        if($seconds > 60){
-          $returndata["found"]["websocket"] = "Last background task run more than 1 minute ago. Something seems to be wrong.";
-          $returndata["count"] = $returndata["count"] + 1;
-        }
-      }
-
-      //Checking if TOTP is enabled
-      if(array_key_exists("userID", $data)){
-        $second_factor_api = new Second_Factor_Api();
-        $second_factor_enabled = $second_factor_api->getTOTPEnabled(["userID" => $data["userID"]]);
-        if($second_factor_enabled["status"] != 0){
-          $returndata["found"]["totpenabled"] = "Second factor via mobile app seems not to be enabled. This is a really important security feature. Please enable it in usersettings.";
-          $returndata["count"] = $returndata["count"] + 1;
-        }
-      }else{
-        $returndata["found"]["totpenabled"] = "UserID not set, cannot query TOTP user status.";
-        $returndata["count"] = $returndata["count"] + 1;
-      }
-
-      //Checking if all system relevant security features are activated
-      try{
-        $sql = $this->db_api->execute("SELECT settingtype, settingvalue, confirmed FROM system_settings", array());
-        $sqdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
-
-        foreach($sqdata AS $arrkey => $setting){
-          if($setting["confirmed"] == 0){
-            $returndata["found"][$setting["settingtype"]] = "Setting {$setting["settingtype"]} is not set or not confirmed.";
+          //Checking if system updates are available
+          $systemupdate = $all_returned[0]["data"];
+          if($systemupdate["updateavail"]){
+            $returndata["found"]["updateavail"] = "There is an system update to version {$systemupdate["remoteversion"]} available.";
             $returndata["count"] = $returndata["count"] + 1;
           }
-        }
-      }catch(\Exception $e){
-        $returndata = $this->logging_api->getErrormessage("001", $e);
-      }
-      
-      return array("status" => 0, "message" => "Successfully queried system messages.", "data" => $returndata);
+
+          //Checking if node updates are available
+          $nodeupdates = $all_returned[1]["data"];
+          $nodesupdatesavail = [];
+          $chiaupdatesavail = [];
+
+          foreach($nodeupdates["updateinfos"] AS $arrkey => $nodeupdatedata){
+            if($nodeupdatedata["updateavailable"] < 0) array_push($nodesupdatesavail, $nodeupdatedata["hostname"]);
+            if($nodeupdatedata["chiaupdateavail"] < 0) array_push($chiaupdatesavail, $nodeupdatedata["hostname"]);
+          }
+
+          if(count($nodesupdatesavail) > 0){
+            $returndata["found"]["updateavail"] = "There are node script updates available for the following nodes: " . implode(", ", $nodesupdatesavail) . ". Please update soon.";
+            $returndata["count"] = $returndata["count"] + 1;
+          }
+    
+          if(count($chiaupdatesavail) > 0){
+            $returndata["found"]["updateavail"] = "There are chia blockchian updates available for the following nodes: " . implode(", ", $chiaupdatesavail) . ". Please update soon.";
+            $returndata["count"] = $returndata["count"] + 1;
+          }
+
+          //Checking if websocket server is running
+          $wssrunning = $all_returned[2];
+          if($wssrunning["status"] != 0){
+            $returndata["found"]["websocket"] = "Websocket Server not running. Please start it otherwise you cannot use this system proberly.";
+            $returndata["count"] = $returndata["count"] + 1;
+          }
+
+          //Checking if systems cronjob is enabled
+          $cronjobEnabled = $all_returned[3];
+          if($cronjobEnabled["status"] == "012009001"){
+            $returndata["found"]["cronjob"] = "The system's automated background task is not enabled. No data can be queried automatically in backbround.";
+            $returndata["count"] = $returndata["count"] + 1;
+          }else if($cronjobEnabled["status"] == 0){
+            $now = new \DateTime("now");
+            $lastexecdate = new \DateTime($cronjobEnabled["data"]);
+            $interval = $now->diff($lastexecdate);
+            $seconds = $interval->s;
+    
+            if($seconds > 60){
+              $returndata["found"]["cronjob"] = "Last background task run more than 1 minute ago. Something seems to be wrong.";
+              $returndata["count"] = $returndata["count"] + 1;
+            }
+          }
+
+          //Checking if TOTP is enabled
+          $second_factor_enabled = $all_returned[4];
+          if($second_factor_enabled["status"] != 0){
+            $returndata["found"]["totpenabled"] = "Second factor via mobile app seems not to be enabled. This is a really important security feature. Please enable it in usersettings.";
+            $returndata["count"] = $returndata["count"] + 1;
+          }
+
+          //Checking if all system relevant security features are activated
+          $security_featres_enabled = $all_returned[5]->resultRows;
+          foreach($security_featres_enabled AS $arrkey => $setting){
+            if($setting["confirmed"] == 0){
+              $returndata["found"][$setting["settingtype"]] = "Setting {$setting["settingtype"]} is not set or not confirmed.";
+              $returndata["count"] = $returndata["count"] + 1;
+            }
+          }
+
+          $resolve(array("status" => 0, "message" => "Successfully queried system messages.", "data" => $returndata));
+        })->otherwise(function(\Exception $e) use(&$resolve){
+          $resolve($this->logging_api->getErrormessage("getSystemMessages", "001", $e));
+        });
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -376,16 +417,27 @@
      * Function made for: Web(App)client
      * @return array  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function getCronjobEnabled(): array
+    public function getCronjobEnabled(): object
     {
-      $enabledCronjobs = $this->crontabRepository->findJobByRegex("/ChiaMgmt\ cronjob\ -\ Do\ not\ remove\ this\ comment\ -\ {$this->ini["serversalt"]}/");
-      if(count($enabledCronjobs) > 0){
-        $sql = $this->db_api->execute("SELECT lastcronrun FROM system_infos", array());
-        $lastcronrun = $sql->fetchAll(\PDO::FETCH_ASSOC);
-        return array("status" => 0, "message" => "Cronjob exists.", "data" => $lastcronrun[0]["lastcronrun"]);
-      }else{
-        return $this->logging_api->getErrormessage("001");
-      }
+      $resolver = function (callable $resolve, callable $reject, callable $notify){
+        $enabledCronjobs = $this->crontabRepository->findJobByRegex("/ChiaMgmt\ cronjob\ -\ Do\ not\ remove\ this\ comment\ -\ {$this->ini["serversalt"]}/");
+        if(count($enabledCronjobs) > 0){
+          $last_cron_run = Promise\resolve((new DB_Api())->execute("SELECT lastcronrun FROM system_infos", array()));
+          $last_cron_run->then(function($last_cron_run_returned) use(&$resolve){
+            $resolve(array("status" => 0, "message" => "Cronjob exists.", "data" => $last_cron_run_returned->resultRows[0]["lastcronrun"]));
+          })->otherwise(function (\Exception $e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("getCronjobEnabled", "002", $e));
+          });
+        }else{
+          $resolve($this->logging_api->getErrormessage("getCronjobEnabled", "001"));
+        }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -453,14 +505,22 @@
      * @throws Exception $e  Throws an exception on db errors.
      * @return array         "status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function setCurrentCronjobRunTimestamp(): array
+    public function setCurrentCronjobRunTimestamp(): object
     {
-      try{
-        $sql = $this->db_api->execute("UPDATE system_infos SET lastcronrun = NOW()", array());
-        return array("status" => 0, "message" => "Successfully set new cronjob last run timestamp.");
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("001", $e);
-      }
+      $resolver = function (callable $resolve, callable $reject, callable $notify){       
+        $set_timestamp = Promise\resolve((new DB_Api())->execute("UPDATE system_infos SET lastcronrun = NOW()", array()));
+        $set_timestamp->then(function($set_timestamp_returned) use(&$resolve){
+          $resolve(array("status" => 0, "message" => "Successfully set new cronjob last run timestamp."));
+        })->otherwise(function (\Exception $e) use(&$resolve){
+          $resolve($this->logging_api->getErrormessage("setCurrentCronjobRunTimestamp", "001", $e));
+        });
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**

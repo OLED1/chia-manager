@@ -1,5 +1,6 @@
 <?php
   namespace ChiaMgmt\Chia_Harvester;
+  use React\Promise;
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\Chia_Infra_Sysinfo\Chia_Infra_Sysinfo_Api;
   use ChiaMgmt\Logging\Logging_Api;
@@ -73,10 +74,10 @@
     {
       try{
         $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
-        $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
+        $nodeid = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/[0]["id"];
         
         $sql = $this->db_api->execute("SELECT id, nodeid, mountpoint, plotcount FROM chia_plots_directories WHERE nodeid = ?", array($nodeid));
-        $foundplottingdirectories = $sql->fetchAll(\PDO::FETCH_ASSOC);
+        $foundplottingdirectories = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/;
 
         $stated_diff_array = [];
         $db_saved_diff_array = [];
@@ -132,7 +133,7 @@
       try{
         foreach($plotdata AS $mountpoint => $plotdata){
           $sql = $this->db_api->execute("SELECT id FROM chia_plots_directories WHERE nodeid = ? AND mountpoint = ?", array($nodeid, $mountpoint));
-          $cpd_id = $sql->fetchAll(\PDO::FETCH_ASSOC);
+          $cpd_id = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/;
 
           if(count($cpd_id) == 1){
             $cpd_id = $cpd_id[0]["id"];
@@ -167,71 +168,80 @@
      * @param  ChiaWebSocketServer  $server    An instance to websocket server class to be able to send data directly to nodes.
      * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": [Found harvester data array]}
      */
-    public function getHarvesterData(array $data = NULL, array $loginData = NULL, $server = NULL): array
+    public function getHarvesterData(array $data = NULL): object
     {
-      $nodeid = NULL;
-      $getPlots = true;
-      $getPlots_statement = "";
-      $getPlots_join = "";
-      $nodeid_statement = "";
-      $statement_array = [];
-      if(!is_null($data) && array_key_exists("nodeid", $data) && is_numeric($data["nodeid"]) && $data["nodeid"] > 0) $nodeid = $data["nodeid"];
-      if(!is_null($data) && array_key_exists("getPlots", $data) && is_bool($data["getPlots"])) $getPlots = $data["getPlots"];
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+        $nodeid = NULL;
+        $getPlots = true;
+        $getPlots_statement = "";
+        $getPlots_join = "";
+        $nodeid_statement = "";
+        $statement_array = [];
+        if(!is_null($data) && array_key_exists("nodeid", $data) && is_numeric($data["nodeid"]) && $data["nodeid"] > 0) $nodeid = $data["nodeid"];
+        if(!is_null($data) && array_key_exists("getPlots", $data) && is_bool($data["getPlots"])) $getPlots = $data["getPlots"];
 
-      if($getPlots){
-        $getPlots_join = "LEFT JOIN chia_plots cp ON cp.cpd_id = cpd.id";
-        $getPlots_statement = ", cp.file_size AS plot_file_size, cp.filename AS plot_filename, cp.plot_id, cp.size AS plot_size, cp.time_modified AS plot_time_modified, cp.last_reported AS plot_last_reported, cp.plot_public_key, cp.pool_public_key AS plot_pool_public_key";
-      }
-      if(is_numeric($nodeid)){
-        $nodeid_statement = "AND nt.nodeid = {$nodeid}";
-        $statement_array[0] = $nodeid;
-      }
-
-      $returndata = [];
-      try{
-        $sql = $this->db_api->execute("SELECT nt.nodeid AS nodeid, n.nodeauthhash, n.hostname, cpd.mountpoint, cpd.plotcount, cpd.firstreported AS mount_firstrepoted, cpd.lastupdated AS mount_lastupdated,  cisf.device AS mount_device, cisf.size AS mount_size, cisf.used AS mount_used, cisf.avail AS mount_avail {$getPlots_statement}
-                                      FROM nodetype nt
-                                      INNER JOIN nodes n ON n.id = nt.nodeid
-                                      LEFT JOIN chia_plots_directories cpd ON cpd.nodeid = n.id
-                                      LEFT JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id AND cis.timestamp = (SELECT max(cis1.timestamp) FROM chia_infra_sysinfo cis1 WHERE cis1.nodeid = n.id)
-                                      LEFT JOIN chia_infra_sysinfo_filesystems cisf ON cisf.sysinfo_id = cis.id AND cisf.mountpoint = cpd.mountpoint
-                                      {$getPlots_join}
-                                      WHERE nt.code = 4 {$nodeid_statement}"
-                                    , $statement_array);
-
-        $harvesterdata = $sql->fetchAll(\PDO::FETCH_ASSOC);
-        foreach($harvesterdata AS $arrkey => $harvesterinfo){
-          $nodeid = $harvesterinfo["nodeid"];
-          if(!array_key_exists($nodeid, $returndata)){
-            $returndata[$nodeid] = ["nodeauthhash" => $harvesterinfo["nodeauthhash"], "hostname" => $harvesterinfo["hostname"]];
-            $returndata[$nodeid]["plotdirs"] = [];
-          }
-          unset($harvesterinfo["nodeid"], $harvesterinfo["nodeauthhash"], $harvesterinfo["hostname"]);
-          
-          if(!is_null($harvesterinfo) && array_key_exists("mountpoint", $harvesterinfo) && !is_null($harvesterinfo["mountpoint"])){
-            if(!array_key_exists($harvesterinfo["mountpoint"], $returndata[$nodeid]["plotdirs"])){
-              $returndata[$nodeid]["plotdirs"][$harvesterinfo["mountpoint"]] = [
-                "plotcount" => $harvesterinfo["plotcount"],
-                "mount_device" => $harvesterinfo["mount_device"],
-                "mount_size" => $harvesterinfo["mount_size"],
-                "mount_used" => $harvesterinfo["mount_used"],
-                "mount_avail" => $harvesterinfo["mount_avail"],
-                "mount_firstrepoted" => $harvesterinfo["mount_firstrepoted"], 
-                "mount_lastupdated" => $harvesterinfo["mount_lastupdated"],
-                "plots" => []
-              ];
-            }
-            if($harvesterinfo["plotcount"] > 0){
-              unset($harvesterinfo["plotcount"], $harvesterinfo["mount_firstrepoted"], $harvesterinfo["mount_lastupdated"], $harvesterinfo["mount_device"], $harvesterinfo["mount_size"], $harvesterinfo["mount_used"], $harvesterinfo["mount_avail"]);
-              array_push($returndata[$nodeid]["plotdirs"][$harvesterinfo["mountpoint"]]["plots"], $harvesterinfo);
-            }
-          }
+        if($getPlots){
+          $getPlots_join = "LEFT JOIN chia_plots cp ON cp.cpd_id = cpd.id";
+          $getPlots_statement = ", cp.file_size AS plot_file_size, cp.filename AS plot_filename, cp.plot_id, cp.size AS plot_size, cp.time_modified AS plot_time_modified, cp.last_reported AS plot_last_reported, cp.plot_public_key, cp.pool_public_key AS plot_pool_public_key";
         }
-       
-        return array("status" =>0, "message" => "Successfully loaded chia harvester information.", "data" => $returndata);
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("001", $e);
-      }    
+        if(is_numeric($nodeid)){
+          $nodeid_statement = "AND nt.nodeid = ?";
+          $statement_array[0] = $nodeid;
+        }
+
+        $harvester_data = Promise\resolve((new DB_Api())->execute("SELECT nt.nodeid AS nodeid, n.nodeauthhash, n.hostname, cpd.mountpoint, cpd.plotcount, cpd.firstreported AS mount_firstrepoted, cpd.lastupdated AS mount_lastupdated,  cisf.device AS mount_device, cisf.size AS mount_size, cisf.used AS mount_used, cisf.avail AS mount_avail {$getPlots_statement}
+                                                                    FROM nodetype nt
+                                                                    INNER JOIN nodes n ON n.id = nt.nodeid
+                                                                    LEFT JOIN chia_plots_directories cpd ON cpd.nodeid = n.id
+                                                                    LEFT JOIN chia_infra_sysinfo cis ON cis.nodeid = n.id AND cis.timestamp = (SELECT max(cis1.timestamp) FROM chia_infra_sysinfo cis1 WHERE cis1.nodeid = n.id)
+                                                                    LEFT JOIN chia_infra_sysinfo_filesystems cisf ON cisf.sysinfo_id = cis.id AND cisf.mountpoint = cpd.mountpoint
+                                                                    {$getPlots_join}
+                                                                    WHERE nt.code = 4 {$nodeid_statement}"
+                                                                  , $statement_array));
+
+        $harvester_data->then(function($harvester_data_returned) use(&$resolve){
+          $returndata = [];
+
+          foreach($harvester_data_returned->resultRows AS $arrkey => $harvesterinfo){
+            $nodeid = $harvesterinfo["nodeid"];
+            if(!array_key_exists($nodeid, $returndata)){
+              $returndata[$nodeid] = ["nodeauthhash" => $harvesterinfo["nodeauthhash"], "hostname" => $harvesterinfo["hostname"]];
+              $returndata[$nodeid]["plotdirs"] = [];
+            }
+            unset($harvesterinfo["nodeid"], $harvesterinfo["nodeauthhash"], $harvesterinfo["hostname"]);
+            
+            if(!is_null($harvesterinfo) && array_key_exists("mountpoint", $harvesterinfo) && !is_null($harvesterinfo["mountpoint"])){
+              if(!array_key_exists($harvesterinfo["mountpoint"], $returndata[$nodeid]["plotdirs"])){
+                $returndata[$nodeid]["plotdirs"][$harvesterinfo["mountpoint"]] = [
+                  "plotcount" => $harvesterinfo["plotcount"],
+                  "mount_device" => $harvesterinfo["mount_device"],
+                  "mount_size" => $harvesterinfo["mount_size"],
+                  "mount_used" => $harvesterinfo["mount_used"],
+                  "mount_avail" => $harvesterinfo["mount_avail"],
+                  "mount_firstrepoted" => $harvesterinfo["mount_firstrepoted"], 
+                  "mount_lastupdated" => $harvesterinfo["mount_lastupdated"],
+                  "plots" => []
+                ];
+              }
+              if($harvesterinfo["plotcount"] > 0){
+                unset($harvesterinfo["plotcount"], $harvesterinfo["mount_firstrepoted"], $harvesterinfo["mount_lastupdated"], $harvesterinfo["mount_device"], $harvesterinfo["mount_size"], $harvesterinfo["mount_used"], $harvesterinfo["mount_avail"]);
+                array_push($returndata[$nodeid]["plotdirs"][$harvesterinfo["mountpoint"]]["plots"], $harvesterinfo);
+              }
+            }
+          }
+
+          $resolve(array("status" =>0, "message" => "Successfully loaded chia harvester information.", "data" => $returndata));
+        })->otherwise(function (\Exception $e) use(&$resolve){
+          print_r($e);
+          $resolve($this->logging_api->getErrormessage("getHarvesterData", "001", $e));
+        });
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);    
     }
 
     /**
@@ -311,7 +321,7 @@
     {
       try{
         $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
-        $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
+        $nodeid = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/[0]["id"];
 
         $data["data"] = $nodeid;
         return array("status" =>0, "message" => "Successfully queried harvester service restart for node $nodeid.", "data" => $data);

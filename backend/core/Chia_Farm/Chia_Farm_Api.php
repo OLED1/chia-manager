@@ -1,5 +1,6 @@
 <?php
   namespace ChiaMgmt\Chia_Farm;
+  use React\Promise;
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\Nodes\Nodes_Api;
@@ -69,10 +70,10 @@
         $formatted_data = new Farmdata($data);
 
         $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
-        $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
+        $nodeid = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/[0]["id"];
 
         $sql = $this->db_api->execute("SELECT Count(*) as count FROM chia_farm WHERE nodeid = ?", array($nodeid));
-        $count = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["count"];
+        $count = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/[0]["count"];
 
         if($count == 0){
           $sql = $this->db_api->execute("INSERT INTO chia_farm (id, nodeid, syncstatus, total_chia_farmed, user_transaction_fees, block_rewards, last_height_farmed, plot_count, total_size_of_plots, estimated_network_space, expected_time_to_win, querydate) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, current_timestamp())",
@@ -104,36 +105,44 @@
      * @param  int $nodeid                    The node id to get only node specific data. Can be NULL if all data will be queried. Will be deprecated as soon as the method needs to be called outsite of the web gui.
      * @return array                          Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
      */
-    public function getFarmData(array $data = [], array $loginData = NULL, $server = NULL, int $nodeid = NULL): array
+    public function getFarmData(array $data = [], array $loginData = NULL, $server = NULL, int $nodeid = NULL): object
     {
-      if(!is_null($data) && array_key_exists("nodeid", $data) && is_numeric($data["nodeid"]) && $data["nodeid"] > 0) $nodeid = $data["nodeid"];
-      try{
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $nodeid){
+        if(!is_null($data) && array_key_exists("nodeid", $data) && is_numeric($data["nodeid"]) && $data["nodeid"] > 0) $nodeid = $data["nodeid"];
+
         if(is_null($nodeid)){
-          $sql = $this->db_api->execute("SELECT nt.nodeid, cf.syncstatus, n.hostname, n.nodeauthhash, cf.total_chia_farmed, cf.user_transaction_fees, cf.block_rewards, cf.last_height_farmed, cf.plot_count, cf.total_size_of_plots, cf.estimated_network_space, cf.expected_time_to_win, cf.querydate
-                                          FROM nodetype nt
-                                          JOIN nodes n ON n.id = nt.nodeid
-                                          LEFT JOIN chia_farm cf ON cf.nodeid = nt.nodeid
-                                          WHERE nt.code = 3"
-                                          , array());
+          $farm_data = Promise\resolve((new DB_Api())->execute("SELECT nt.nodeid, cf.syncstatus, n.hostname, n.nodeauthhash, cf.total_chia_farmed, cf.user_transaction_fees, cf.block_rewards, cf.last_height_farmed, cf.plot_count, cf.total_size_of_plots, cf.estimated_network_space, cf.expected_time_to_win, cf.querydate
+                                                                FROM nodetype nt
+                                                                JOIN nodes n ON n.id = nt.nodeid
+                                                                LEFT JOIN chia_farm cf ON cf.nodeid = nt.nodeid
+                                                                WHERE nt.code = 3"
+                                                                , array()));
         }else{
-          $sql = $this->db_api->execute("SELECT nt.nodeid, cf.syncstatus, n.hostname, n.nodeauthhash, cf.total_chia_farmed, cf.user_transaction_fees, cf.block_rewards, cf.last_height_farmed, cf.plot_count, cf.total_size_of_plots, cf.estimated_network_space, cf.expected_time_to_win, cf.querydate
-                                          FROM nodetype nt
-                                          JOIN nodes n ON n.id = nt.nodeid
-                                          LEFT JOIN chia_farm cf ON cf.nodeid = nt.nodeid
-                                          WHERE nt.code = 3 AND nt.nodeid = ?"
-                                          , array($nodeid));
+          $farm_data = Promise\resolve((new DB_Api())->execute("SELECT nt.nodeid, cf.syncstatus, n.hostname, n.nodeauthhash, cf.total_chia_farmed, cf.user_transaction_fees, cf.block_rewards, cf.last_height_farmed, cf.plot_count, cf.total_size_of_plots, cf.estimated_network_space, cf.expected_time_to_win, cf.querydate
+                                                                FROM nodetype nt
+                                                                JOIN nodes n ON n.id = nt.nodeid
+                                                                LEFT JOIN chia_farm cf ON cf.nodeid = nt.nodeid
+                                                                WHERE nt.code = 3 AND nt.nodeid = ?"
+                                                                , array($nodeid)));
         }
 
-        $returndata = [];
-        foreach($sql->fetchAll(\PDO::FETCH_ASSOC) AS $arrkey => $farminfo){
-          $farminfo["nodeauthhash"] = $this->encryption_api->decryptString($farminfo["nodeauthhash"]);
-          $returndata[$farminfo["nodeid"]] = $farminfo;
-        }
+        $farm_data->then(function($chia_farm_returned) use(&$resolve){
+          foreach($chia_farm_returned->resultRows AS $arrkey => $farminfo){
+            $farminfo["nodeauthhash"] = $this->encryption_api->decryptString($farminfo["nodeauthhash"]);
+            $returndata[$farminfo["nodeid"]] = $farminfo;
+          }
+  
+          $resolve(array("status" =>0, "message" => "Successfully loaded chia farm information.", "data" => $returndata));
+        })->otherwise(function (\Exception $e) use(&$resolve){
+          $resolve($this->logging_api->getErrormessage("getFarmData", "001", $e));
+        });
+      };
 
-        return array("status" =>0, "message" => "Successfully loaded chia farm information.", "data" => $returndata);
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("001", $e);
-      }
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -213,7 +222,7 @@
     {
       try{
         $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
-        $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
+        $nodeid = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/[0]["id"];
 
         $data["data"] = $nodeid;
         return array("status" =>0, "message" => "Successfully queried farmer service restart for node $nodeid.", "data" => $data);
@@ -233,7 +242,7 @@
     {
       try{
         $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
-        $nodeid = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["id"];
+        $nodeid = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/[0]["id"];
 
         if(is_numeric($nodeid) && $nodeid > 0){
           $valuesstring = "";
@@ -260,33 +269,40 @@
      * @param  array $loginData { NULL } No logindata needed to query this function.
      * @return array            Returns {"status": [0|>0], "message": [Status message], "data" => [DB fond data] }
      */
-    public function getChallenges(array $data = NULL, array $loginData = NULL): array
+    public function getChallenges(array $data = NULL): object
     {
-      $limit = "";
-      $nodeid = "";
-      if(array_key_exists("limit", $data) && is_numeric($data["limit"]) && $data["limit"] > 0) $limit = "LIMIT {$data["limit"]}";
-      if(array_key_exists("nodeid", $data) && is_numeric($data["nodeid"]) && $data["nodeid"] > 0) $nodeid = "AND n.id = {$data["nodeid"]}";
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+        $limit = "";
+        $nodeid = "";
+        if(array_key_exists("limit", $data) && is_numeric($data["limit"]) && $data["limit"] > 0) $limit = "LIMIT {$data["limit"]}";
+        if(array_key_exists("nodeid", $data) && is_numeric($data["nodeid"]) && $data["nodeid"] > 0) $nodeid = "AND n.id = {$data["nodeid"]}";
 
-      try{
-        $sql = $this->db_api->execute("SELECT cfc.id, n.id AS nodeid, cfc.date, cfc.challenge_chain_sp, cfc.challenge_hash, cfc.difficulty, cfc.reward_chain_sp, cfc.signage_point_index, cfc.sub_slot_iters
-                                        FROM nodes n
-                                        LEFT JOIN LATERAL (
-                                            SELECT * FROM chia_farm_challenges WHERE nodeid = n.id ORDER BY date DESC {$limit}
-                                        ) as cfc
-                                        ON cfc.nodeid = n.id
-                                        WHERE n.authtype = 2 {$nodeid}", array());
-        $foundchallenges = $sql->fetchAll(\PDO::FETCH_ASSOC);
-        
-        $returndata = [];
-        foreach($foundchallenges AS $arrkey => $thischallenge){
-          if(!array_key_exists($thischallenge["nodeid"], $returndata)) $returndata[$thischallenge["nodeid"]] = [];
-          array_push($returndata[$thischallenge["nodeid"]], $thischallenge);
-        }
+        $challenges = Promise\resolve((new DB_Api())->execute("SELECT cfc.id, n.id AS nodeid, cfc.date, cfc.challenge_chain_sp, cfc.challenge_hash, cfc.difficulty, cfc.reward_chain_sp, cfc.signage_point_index, cfc.sub_slot_iters
+                                                                FROM nodes n
+                                                                LEFT JOIN LATERAL (
+                                                                    SELECT * FROM chia_farm_challenges WHERE nodeid = n.id ORDER BY date DESC {$limit}
+                                                                ) as cfc
+                                                                ON cfc.nodeid = n.id
+                                                                WHERE n.authtype = 2 {$nodeid}", array()));
 
-        return array("status" => 0, "message" => "Successfully queried all challenges.", "data" => $returndata);
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("001", $e);
-      }
+        $challenges->then(function($challenges_returned) use(&$resolve){
+          $returndata = [];
+          foreach($challenges_returned->resultRows AS $arrkey => $thischallenge){
+            if(!array_key_exists($thischallenge["nodeid"], $returndata)) $returndata[$thischallenge["nodeid"]] = [];
+            array_push($returndata[$thischallenge["nodeid"]], $thischallenge);
+          }
+  
+          $resolve(array("status" => 0, "message" => "Successfully queried all challenges.", "data" => $returndata));
+        })->otherwise(function(\Exception $e) use(&$resolve){
+          $resolve($this->logging_api->getErrormessage("getChallenges", "001", $e));
+        });
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
   }
 ?>

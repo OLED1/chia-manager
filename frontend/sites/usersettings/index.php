@@ -1,26 +1,39 @@
 <?php
-  include("../standard_headers.php");
-
+  use React\Promise;
   use ChiaMgmt\Users\Users_Api;
   use ChiaMgmt\UserSettings\UserSettings_Api;
   use ChiaMgmt\Exchangerates\Exchangerates_Api;
   use ChiaMgmt\Second_Factor\Second_Factor_Api;
+  include("../standard_headers.php");
 
   $users_api = new Users_Api();
   $user_settings_api = new UserSettings_Api();
-  $exchangerates_api = new Exchangerates_Api();
-  $second_factor_api = new Second_Factor_Api();
 
-  $userData = array();
-  if(array_key_exists("user_id", $_COOKIE)) $userData = $users_api->getOwnUserData($_COOKIE["user_id"]);
-  if(array_key_exists("data", $userData)) $userData = $userData["data"];
+  $data_promises = [
+    Promise\resolve($users_api->getOwnUserData($_COOKIE["user_id"])),
+    Promise\resolve($user_settings_api->getGuiMode($_COOKIE["user_id"])),
+    Promise\resolve((new Exchangerates_Api())->getAllCurrencies()),
+    Promise\resolve($user_settings_api->getUserDefaultCurrency($_COOKIE["user_id"])),
+    Promise\resolve((new Second_Factor_Api())->getTOTPEnabled(["userID" => $_COOKIE["user_id"]])),
+    Promise\resolve($users_api->getLoggedInDevices($_COOKIE["user_id"])),
+    Promise\resolve($users_api->getBackupKey($_COOKIE["user_id"]))
+  ];
 
-  echo "<script nonce={$ini["nonce_key"]}>
-              var siteID = 5;
-              var userid = '{$_COOKIE["user_id"]}';
-              var sessid = '{$_COOKIE["PHPSESSID"]}';
-              var userdata = " . json_encode($userData) . ";" .
-     "</script>";
+  Promise\all($data_promises)->then(function($all_returned) use($ini){
+    $userData = $all_returned[0]["data"];
+    $gui_mode = $all_returned[1]["data"]["gui_mode"];
+    $currencies = $all_returned[2];
+    $defaultCurrency = $all_returned[3];
+    $totp_enabled = $all_returned[4];
+    $devices = $all_returned[5];
+    $backupkey = $all_returned[6]["data"];
+
+    echo "<script nonce={$ini["nonce_key"]}>
+      var siteID = 5;
+      var userid = '{$_COOKIE["user_id"]}';
+      var sessid = '{$_COOKIE["PHPSESSID"]}';
+      var userdata = " . json_encode($userData) . ";" .
+    "</script>";
 ?>
 <link href="<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/usersettings/css/usersettings.css"?>" rel="stylesheet">
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -105,7 +118,6 @@
             <h6 class="m-0 font-weight-bold text-primary">Gui Color Scheme</h6>
           </div>
           <div class="card-body">
-            <?php $gui_mode = $user_settings_api->getGuiMode($_COOKIE["user_id"])["data"]["gui_mode"]; ?>
             <div class="form-group">
               <select class="form-control wsbutton" id="gui-color-scheme_select">
                 <option value=1 <?php echo ($gui_mode == 1 ? "selected" : ""); ?>>Light</option>
@@ -125,9 +137,7 @@
               <label for="currency_select">Currency</label>
               <select class="form-control wsbutton" id="currency_select">
                 <?php
-                  $currencies = $exchangerates_api->getAllCurrencies();
                   if($currencies["status"] == 0 && count($currencies["data"]) > 0){
-                    $defaultCurrency = $user_settings_api->getUserDefaultCurrency($_COOKIE["user_id"]);
                     if($defaultCurrency["status"] == 0) $defaultCurrency = $defaultCurrency["data"]["currency_code"];
                     else $defaultCurrency = "usd";
 
@@ -153,9 +163,7 @@
           <div class="card-body">
             <p>To ensure your account is as safe as possible you are able to enable a second login factor via a mobile app.<br>
             This random key will only be questioned when a new browser or device wants to login.</p>
-            <?php $gui_mode = $user_settings_api->getGuiMode($_COOKIE["user_id"])["data"]["gui_mode"]; ?>
             <div class="custom-control custom-checkbox">
-              <?php $totp_enabled = $second_factor_api->getTOTPEnabled(["userID" => $_COOKIE["user_id"]]); ?>
               <input type="checkbox" class="custom-control-input" id="enableTOTPmobile" <?php echo( $totp_enabled["status"] == 0 ? "checked" : ""); ?> >
               <label class="custom-control-label" for="enableTOTPmobile">Enable and enforce second factor (TOTP via mobile app)</label>
             </div>
@@ -171,7 +179,7 @@
           </div>
           <div class="card-body" id="personinfo">
             <div class="input-group mb-3">
-              <input type="text" id="backupkey" name="name" class="form-control personinput" value="<?php echo $users_api->getBackupKey($_COOKIE["user_id"])["data"]; ?>" readonly>
+              <input type="text" id="backupkey" name="name" class="form-control personinput" value="<?php echo $backupkey; ?>" readonly>
             </div>
             <button id="generateNewBackupKey" class="btn btn-primary btn-block wsbutton" href="#">Generate New</button>
           </div>
@@ -188,7 +196,6 @@
           </div>
           <div class="card-body" id="devices">
           <?php
-            $devices = $users_api->getLoggedInDevices($_COOKIE["user_id"]);
             if(array_key_exists("data", $devices)){
           ?>
             <div class="table-responsive">
@@ -308,3 +315,4 @@
 </div>
 
 <script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/usersettings/js/usersettings.js"?>></script>
+<?php }); ?>

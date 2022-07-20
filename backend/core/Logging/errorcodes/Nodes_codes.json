@@ -60,7 +60,8 @@
       "001" : [2, "An error occured."]
     },
     "checkUpdatesAndChannels" : {
-      "001" : [2, "An error occured."]
+      "001" : [2, "An error occured."],
+      "002" : [2, "An error occured."]
     },
     "updateNodeBranch" : {
       "001" : [2, "An error occured."],
@@ -69,13 +70,18 @@
     },
     "setNodeUpDown" : {
       "001" : [2, "An error occured."],
-      "002" : [1, "Not all data stated."]
+      "002" : [1, "Not all data stated."],
+      "003" : [2, "An error occured."],
+      "004" : [2, "An error occured."]
     },
     "updateChiaStatus" : {
       "001" : [1, "This node has no chia services registered."],
       "002" : [1, "No valid nodeids found."],
       "003" : [1, "Not all data stated."],
-      "004" : [2, "An error occured."]
+      "004" : [2, "An error occured."],
+      "005" : [2, "An error occured."],
+      "006" : [2, "An error occured."],
+      "007" : [2, "An error occured."]
     },
     "getCurrentChiaNodesUPAndServiceStatus" : {
       "001" : [2, "An error occured."]

@@ -1,42 +1,38 @@
 <?php
-  use ChiaMgmt\Login\Login_Api;
-  use ChiaMgmt\System_Statistics\System_Statistics_Api;
-  require __DIR__ . '/../../../../vendor/autoload.php';
-  include_once(__DIR__ . "/../../standard_headers.php");
+    use React\Promise;  
+    use ChiaMgmt\Login\Login_Api;
+    use ChiaMgmt\System_Statistics\System_Statistics_Api;
+    require __DIR__ . '/../../../../vendor/autoload.php';
+    
+    if(!array_key_exists("sess_id", $_GET) || !array_key_exists("user_id", $_GET) || !array_key_exists("nodeid", $_GET) || !array_key_exists("from", $_GET) || !array_key_exists("to", $_GET)){
+        echo "Incomplete Request.";
+        die();
+    }
 
-  $login_api = new Login_Api();
-  $ini = parse_ini_file(__DIR__.'/../../../../backend/config/config.ini.php');
-  $loggedin = $login_api->checklogin();
+    $site_data_to_load = [
+        React\Promise\resolve((new Login_Api())->checklogin($_GET["sess_id"], $_GET["user_id"])),
+        React\Promise\resolve((new System_Statistics_Api())->getRAMSwapHistory(["from" => $_GET["from"], "to" => $_GET["to"], "node_ids" => [$_GET["nodeid"]]]))
+    ];
+    
+    $ini = parse_ini_file(__DIR__.'/../../../../backend/config/config.ini.php');
+    React\Promise\all($site_data_to_load)->then(function($all_returned) use($ini){
+        if($all_returned[0]["status"] > 0){
+            echo "NOT AUTHENTICATED.";
+            exit();
+        }
 
-  if($loggedin["status"] > 0){
-    header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/login.php");
-  }
+        $historyMemoryData = $all_returned[1];
+        if(array_key_exists("data", $historyMemoryData) && array_key_exists($_GET["nodeid"], $historyMemoryData["data"])){
+          $historyMemoryData = $historyMemoryData["data"][$_GET["nodeid"]];
+        }else{
+          $historyMemoryData = [];
+        }
 
-  $alldatastated = true;
-  if(!array_key_exists("nodeid", $_GET) || !array_key_exists("from", $_GET) || !array_key_exists("to", $_GET)){
-    $alldatastated = false;
-  }
-
-  $data = [
-      "from" => $_GET["from"],
-      "to" => $_GET["to"],
-      "node_ids" => [$_GET["nodeid"]]
-  ];
-
-  $system_statistics_api = new System_Statistics_Api();
-  $historyMemoryData = $system_statistics_api->getRAMSwapHistory($data);
-  if(array_key_exists("data", $historyMemoryData) && array_key_exists($_GET["nodeid"], $historyMemoryData["data"])){
-    $historyMemoryData = $historyMemoryData["data"][$_GET["nodeid"]];
-  }else{
-    $historyMemoryData = [];
-  }
-
-  echo "<script nonce={$ini["nonce_key"]}>
+        echo "<script nonce={$ini["nonce_key"]}>
             historyMemoryData[" . $_GET["nodeid"] . "] = " . json_encode($historyMemoryData) . ";
         </script>";
 ?>
 <div class="card shadow mb-4">
-<?php if($alldatastated ){ ?>
     <?php if(count($historyMemoryData) > 0){ ?>
     <ul class="list-group list-group-flush">
         <li class="list-group-item">
@@ -171,9 +167,5 @@
         If you think there should be data and this is a system fault, please open a ticket on github.
     </div>
         <?php } ?>
-    <?php }else{ ?>
-    <div class="card-body">
-        Some parameters are missing. You need to state "nodeid", "from"-date and "to"-date. Could not load systems load data.
-    </div>
-<?php } ?>
 </div>
+<?php }); ?>

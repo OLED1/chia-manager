@@ -1,13 +1,11 @@
 <?php
     namespace ChiaMgmt\WebSocketClient;
+    use React\Promise;
     use ChiaMgmt\Logging\Logging_Api;
-    use Amp\Delayed;
-    use Amp\Websocket\Client\Connection;
-    use Amp\Websocket\Client\Handshake;
-    use Amp\Websocket\Message;
-    use React\Promise\Deferred;
     use React\Promise\RejectedPromise;
     use function Amp\Websocket\Client\connect;
+
+    require __DIR__ . '/../../../vendor/autoload.php';
 
     /**
      * The WebSocketClient_Api class handles the webgui update tasks.
@@ -42,16 +40,13 @@
        * Function made for: Web(App)client, Backendclient.
        * @param array $loginData   {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
        */
-      public function testConnection(): array
-      {
-        if (is_resource(@fsockopen("localhost", $this->ini["socket_local_port"]))){
-          $result = $this->sendToWSS("wssonlinestatus", array("command" => "onlineStatus"));
-
-          if(array_key_exists("wssonlinestatus", $result) && $result["wssonlinestatus"]["status"] == 0) return $result["wssonlinestatus"];
-          else return $this->logging_api->getErrormessage("001");
-        }else{
-          return $this->logging_api->getErrormessage("002");
-        }
+      public function testConnection(): object
+      {    
+        $wss_online_status = Promise\resolve($this->sendToWSS("wssonlinestatus", array("command" => "onlineStatus")));
+        return $wss_online_status->then(function($wss_online_status_returned){
+          if(array_key_exists("wssonlinestatus", $wss_online_status_returned) && $wss_online_status_returned["wssonlinestatus"]["status"] == 0) return $wss_online_status_returned["wssonlinestatus"];
+          else return $this->logging_api->getErrormessage("testConnection", "001");
+        });
       }
 
       /**
@@ -62,36 +57,29 @@
        * @param  array  $data           The data which should be send to the websocket server.
        * @return array                  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The returned data if stated.] }
        */
-      public function sendToWSS(string $socketaction, array $data): array
+      public function sendToWSS(string $socketaction, array $data): object
       {
-        try{
-          $returndata = new \Amp\Deferred;
+        $resolver = function (callable $resolve, callable $reject, callable $notify) use($socketaction, $data){
           $data = $this->buildCompleteRequest($socketaction, $data);
 
-
-          \Amp\Loop::run(function () use ($returndata, $data) {
-            $handshake = (new Handshake("ws://localhost:{$this->ini['socket_local_port']}"))
-            ->withHeader('Origin', "{$this->ini['app_protocol']}://{$this->ini['app_domain']}");
-
-            $connection = yield connect($handshake);
-            yield $connection->send(json_encode($data));
-
-            while ($message = yield $connection->receive()) {
-              $returnmessage = json_decode(yield $message->buffer(), true);
-              $returndata->resolve($returnmessage);
-              break;
-            }
-
-            \Amp\Loop::stop();
+          \Ratchet\Client\connect("ws://localhost:{$this->ini["socket_local_port"]}")->then(function($conn) use($data, &$resolve){
+            $conn->send(json_encode($data));
+            
+            $conn->on('message', function($msg) use (&$resolve, $conn) {
+                //echo "Received: {$msg}\n";
+                $resolve(json_decode($msg, true));
+                $conn->close();
+            });
+          }, function ($e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("sendToWSS", "001", $e));
           });
-          $promise = \Amp\Promise\wait($returndata->promise());
-          if(is_null(\Amp\Promise\wait($returndata->promise()))){
-              $promise = array();
-          }
-          return $promise;
-        }catch(\Exception $e){
-          return $this->logging_api->getErrormessage("001", $e);
-        }
+        };
+        
+        $canceller = function () {
+          throw new Exception('Promise cancelled');
+        };
+  
+        return new Promise\Promise($resolver, $canceller);
       }
 
       /**
