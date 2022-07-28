@@ -7,27 +7,31 @@
 
   require __DIR__ . '/../../vendor/autoload.php';
 
+  
+  $ini = parse_ini_file(__DIR__.'/../../backend/config/config.ini.php');
+  $frontendurl = $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"];
+  
   $check_login = React\Promise\resolve((new Login_Api())->checklogin());
+  $check_login->then(function($check_login_returned) use($frontendurl){
+    $loggedin = $check_login_returned;
+    if($loggedin["status"] > 0 || !array_key_exists("user_id", $_COOKIE) || is_null($_COOKIE["user_id"])){
+      header("Location: {$frontendurl}/login.php");
+    }
+  });
+
   $update_running = React\Promise\resolve((new System_Update_Api())->checkUpdateRoutine());
   $all_system_settings = React\Promise\resolve((new System_Api())->getAllSystemSettings());
   $setup_gui_mod = React\Promise\resolve((new UserSettings_Api())->getGuiMode($_COOKIE["user_id"]));
   $own_userdata = React\Promise\resolve((new Users_Api())->getOwnUserData($_COOKIE["user_id"]));
 
-  $ini = parse_ini_file(__DIR__.'/../../backend/config/config.ini.php');
-  $frontendurl = $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"];
 
-  React\Promise\all([$check_login, $update_running, $all_system_settings, $setup_gui_mod, $own_userdata])->then(function($all_returned) use($ini, $frontendurl){
-    $loggedin = $all_returned[0];
-    if($loggedin["status"] > 0 || !array_key_exists("user_id", $_COOKIE) || is_null($_COOKIE["user_id"])){
-      header("Location: {$frontendurl}/login.php");
-    }
-
-    $system_update_state = $all_returned[1];
+  React\Promise\all([$update_running, $all_system_settings, $setup_gui_mod, $own_userdata])->then(function($all_returned) use($ini, $frontendurl){
+    $system_update_state = $all_returned[0];
     if((array_key_exists("process_update", $system_update_state["data"]) && $system_update_state["data"]["process_update"]) || array_key_exists("db_install_needed", $system_update_state["data"])){
       header("Location: http://{$_SERVER['SERVER_NAME']}/frontend/sites/installer_updater/");
     }
 
-    $all_settings = $all_returned[2];
+    $all_settings = $all_returned[1];
     if(array_key_exists("alerting", $all_settings)){
       $alerting = $all_settings["alerting"];
     }else{
@@ -38,7 +42,7 @@
       });
     }
 
-    $setup_gui_mod = $all_returned[3];
+    $setup_gui_mod = $all_returned[2];
     if(array_key_exists("data", $setup_gui_mod) || array_key_exists("gui_mode", $setup_gui_mod["data"])){
       $gui_mode = $setup_gui_mod["data"]["gui_mode"];
     }else{
@@ -54,7 +58,7 @@
         var frontend = '{$ini["app_protocol"]}://{$ini["app_domain"]}{$ini["frontend_url"]}';
         var websocket = '{$ini["socket_protocol"]}://{$ini["socket_domain"]}{$ini["socket_listener"]}';
         var authhash = '{$ini["web_client_auth_hash"]}';
-        var userdata = " . json_encode($all_returned[4]["data"]) . ";
+        var userdata = " . json_encode($all_returned[3]["data"]) . ";
         var userID = {$_COOKIE["user_id"]};
         var sessid = '{$_COOKIE["PHPSESSID"]}';
         var darkmode = {$gui_mode};

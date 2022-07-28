@@ -1,6 +1,7 @@
 <?php
   namespace ChiaMgmt\WebSocket;
   use React\Promise;
+  use React\ChildProcess;
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\WebSocketClient\WebSocketClient_Api;
 
@@ -105,13 +106,13 @@
         $test_wss_conn = Promise\resolve($this->wsclient->testConnection());
         $test_wss_conn->then(function($test_wss_conn_returned) use(&$resolve){
           if($test_wss_conn_returned["status"] == "016001001" || $test_wss_conn_returned["status"] == "016001002"){
-            exec("php " . __DIR__ . "/../WebSocketServer/websocket.php > /dev/null &");
-            $test_wss_conn = Promise\resolve($this->wsclient->testConnection());
-            $test_wss_conn->then(function($test_wss_conn_returned) use(&$resolve){
-              if($test_wss_conn_returned["status"] == 0){
-                $resolve($test_wss_conn_returned);
+            $stop_wss = new ChildProcess\Process("php " . __DIR__ . "/../WebSocketServer/websocket.php >/dev/null 2>/dev/null &");
+            $stop_wss->start();
+            $stop_wss->on('exit', function($exitCode, $termSignal) use(&$resolve){
+              if($exitCode == 0){
+                $resolve(array("status" => 0, "message" => "Websocket server started."));
               }else{
-                $resolve($this->logging_api->getErrormessage("startWSS", "001"));
+                $resolve($this->logging_api->getErrormessage("startWSS", "001", "Process exited with code {$exitCode}."));
               }
             });
           }else{
@@ -131,38 +132,59 @@
      * Stops the websocket server if not stopped.
      * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function stopWSS(): array
+    public function stopWSS(): object
     {
-      $wssstatus = $this->wsclient->testConnection();
-      if($wssstatus["status"] == 0){
-        exec("kill -9 {$wssstatus["data"]}");
-        sleep(1);
+      $resolver = function (callable $resolve, callable $reject, callable $notify){
+        $wssstatus = Promise\resolve($this->wsclient->testConnection());
+        $wssstatus->then(function($wssstatus_returned) use(&$resolve){
+          if($wssstatus_returned["status"] == 0){
+            $stop_wss = new ChildProcess\Process("kill -9 {$wssstatus_returned["data"]}");
+            $stop_wss->start();
+            $stop_wss->on('exit', function($exitCode, $termSignal) use(&$resolve){
+              $wssstatus = Promise\resolve($this->wsclient->testConnection());
+              $wssstatus->then(function($wssstatus_returned) use(&$resolve){
+                if($wssstatus_returned["status"] == "016001001" || $wssstatus_returned["status"] == "016001002"){
+                  $resolve(array("status" => 0, "message" => "Websocket server stopped."));
+                }else{
+                  $resolve($this->logging_api->getErrormessage("stopWSS", "001", "Process exited with code {$exitCode}."));
+                }
+              });
+            });
+          }else{
+            $resolve($this->logging_api->getErrormessage("stopWSS", "002"));
+          }
+        });
+      };
 
-        $wssstatus = $this->wsclient->testConnection();
-        
-        if($wssstatus["status"] == "016001001" || $wssstatus["status"] == "016001002"){
-          return array("status" => 0, "message" => "Websocket server stopped.");
-        }else{
-          return $this->logging_api->getErrormessage("001");
-        }
-      }else{
-        return $this->logging_api->getErrormessage("002");
-      }
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
      * Restarts the websocket server if running.
      * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function restartWSS(): array
+    public function restartWSS(): object
     {
-      $stop = $this->stopWSS();
-      if($stop["status"] == 0){
-        $start = $this->startWSS();
-        return $start;
-      }else{
-        return $stop;
-      }
+      $resolver = function (callable $resolve, callable $reject, callable $notify){
+        $stop_wss = Promise\resolve($this->stopWSS());
+        $stop_wss->then(function($stop_wss_returned) use(&$resolve){
+          if($stop_wss_returned["status"] == 0){
+            $resolve(Promise\resolve($this->startWSS()));
+          }else{
+            $resolve($stop_wss_returned);
+          }
+        });
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
   }
 ?>

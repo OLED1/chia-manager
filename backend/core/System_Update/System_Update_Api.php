@@ -74,21 +74,28 @@
      * Function made for: Web(App)client
      * @throws Exception $e       Throws an exception on db errors.
      * @param array  $data       { userid: [userid], updatestate: [1 = Updating, 0 = Not updating]}
-     * @param array $loginData   {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
+     * @return array             {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function setInstanceUpdating(array $data = [], array $loginData = NULL): array
+    public function setInstanceUpdating(array $data): object
     {
-      if(array_key_exists("userid", $data) && array_key_exists("updatestate", $data) && is_numeric($data["userid"]) && $data["userid"] > 0){
-        try{
-          $this->db_api->execute("UPDATE system_infos SET userid_updating = ?, process_update = ?", array($data["userid"],$data["updatestate"]));
-
-          return array("status" => 0, "message" => "Successfully set updater mode.");
-        }catch(\Exception $e){
-          $this->logging_api->getErrormessage("001", $e);
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+        if(array_key_exists("userid", $data) && array_key_exists("updatestate", $data) && is_numeric($data["userid"]) && $data["userid"] > 0){
+          $set_instance_updating = Promise\resolve((new DB_Api())->execute("UPDATE system_infos SET userid_updating = ?, process_update = ?", array($data["userid"],$data["updatestate"])));
+          $set_instance_updating->then(function($set_instance_updating_returned) use(&$resolve, $data){
+            $resolve(array("status" => 0, "message" => "Successfully set updater mode."));
+          })->otherwise(function(\Exception $e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("setInstanceUpdating", "001", $e));
+          });
+        }else{
+          $resolve($this->logging_api->getErrormessage("setInstanceUpdating", "002"));
         }
-      }else{
-        $this->logging_api->getErrormessage("002");
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**

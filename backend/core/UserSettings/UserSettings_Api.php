@@ -64,20 +64,18 @@
         if(array_key_exists("gui_mode", $data) && array_key_exists("userid", $loginData)){
           if($data["gui_mode"] >= 1 && $data["gui_mode"] <= 2){
             $gui_mode = Promise\resolve((new DB_Api())->execute("SELECT gui_mode FROM users_settings WHERE userid = ?", array($loginData["userid"])));
-            $gui_mode->then(function($gui_mode_returned) use(&$resolve, $loginData){
+            $gui_mode->then(function($gui_mode_returned) use(&$resolve, $data, $loginData){
               if(count($gui_mode_returned->resultRows) == 0){
-                $set_new_mode = Promise\resolve((new DB_Api())->execute("SELECT gui_mode FROM users_settings WHERE userid = ?", array($loginData["userid"])));
-                $set_new_mode->othwerwise(function(\Exception $e) use(&$resolve){
-                  return $resolve($this->logging_api->getErrormessage("setGuiMode", "004", $e));
-                });
+                $set_new_mode = Promise\resolve((new DB_Api())->execute("INSERT INTO users_settings (id, userid, gui_mode) VALUES (NULL, ?, ?)", array($loginData["userid"], $data["gui_mode"])));
               }else{
-                $update_mode = Promise\resolve((new DB_Api())->execute("SELECT gui_mode FROM users_settings WHERE userid = ?", array($loginData["userid"])));
-                $update_mode->othwerwise(function(\Exception $e) use(&$resolve){
-                  return $resolve($this->logging_api->getErrormessage("setGuiMode", "005", $e));
-                });
+                $set_new_mode = Promise\resolve((new DB_Api())->execute("UPDATE users_settings SET gui_mode = ? WHERE userid = ?", array($data["gui_mode"], $loginData["userid"])));
               }
 
-              $resolve(array("status" => 0, "message" => "Successfully set gui mode to {$data["gui_mode"]}.", "data" => $data["gui_mode"]));
+              $set_new_mode->then(function($set_new_mode_returned) use(&$resolve, $data){
+                $resolve(array("status" => 0, "message" => "Successfully set gui mode to {$data["gui_mode"]}.", "data" => $data["gui_mode"]));
+              })->othwerwise(function(\Exception $e) use(&$resolve){
+                $resolve($this->logging_api->getErrormessage("setGuiMode", "005", $e));
+              });
             })->otherwise(function(\Exception $e) use(&$resolve){
               $resolve($this->logging_api->getErrormessage("setGuiMode", "001", $e));
             });

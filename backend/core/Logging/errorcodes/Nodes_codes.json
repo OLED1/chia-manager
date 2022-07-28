@@ -25,12 +25,14 @@
       "001" : [2, "An error occured."]
     },
     "acceptIPChange" : {
-      "001" : [1, "An error occured."]
+      "001" : [2, "An error occured."],
+      "002" : [1, "Not all data stated."]
     },
     "acceptNodeRequest" : {
       "001" : [1, "The configured nodetypes are not compatible to each other."],
       "002" : [2, "An error occured."],
-      "003" : [1, "Not all data stated."]
+      "003" : [1, "Not all data stated."],
+      "004" : [2, "An error occured."]
     },
     "declineNodeRequest" : {
       "001" : [2, "An error occured."],
@@ -39,7 +41,9 @@
     "removeNodeAndData" : {
       "001" : [1, "This node cannot be deleted."],
       "002" : [2, "Error! More than one rows returned. Aborting node deletion."],
-      "003" : [2, "An error occured."]
+      "003" : [2, "An error occured."],
+      "004" : [1, "Not all data stated."],
+      "005" : [2, "An error occured."]
     },
     "loginStatus" : {
       "001" : [2, "An error occured."],

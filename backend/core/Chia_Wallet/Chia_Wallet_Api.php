@@ -297,35 +297,51 @@
      * @param  ChiaWebSocketServer $server  An instance to the websocket server to be able to send data to the connected clients.
      * @return array                        Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}} from the subfunction calls.
      */
-    public function queryWalletData(array $data = NULL, array $loginData = NULL, $server = NULL): array
-    {
-      $querydata = [];
-      $querydata_0["data"]["queryWalletData"] = array(
-        "status" => 0,
-        "message" => "Query wallet data.",
-        "data"=> array()
-      );
-      $querydata_1["data"]["queryWalletTransactions"] = array(
-        "status" => 0,
-        "message" => "Query wallet transaction data.",
-        "data"=> array()
-      );
+    public function queryWalletData(array $data = NULL, array $loginData = NULL, $server = NULL): object
+    {      
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData, $server){
+        $querydata = [];
+        $querydata_0["data"]["queryWalletData"] = array(
+          "status" => 0,
+          "message" => "Query wallet data.",
+          "data"=> array()
+        );
+        $querydata_1["data"]["queryWalletTransactions"] = array(
+          "status" => 0,
+          "message" => "Query wallet transaction data.",
+          "data"=> array()
+        );
+ 
+        $callfunction = "messageAllNodes";
+        if(array_key_exists("nodeinfo", $data) && array_key_exists("authhash", $data["nodeinfo"])){
+          $querydata_0["nodeinfo"]["authhash"] = $data["nodeinfo"]["authhash"];
+          $querydata_1["nodeinfo"]["authhash"] = $data["nodeinfo"]["authhash"];
+          $callfunction = "messageSpecificNode";
+        }
+  
+        if(!is_null($server)){
+          $function_calls = [
+            Promise\resolve($server->$callfunction($querydata_0)),
+            Promise\resolve($server->$callfunction($querydata_1))
+          ];
+        }else{
+          $websocket_api = new WebSocket_Api();
+          $function_calls = [
+            Promise\resolve($websocket_api->sendToWSS($callfunction, $querydata_0)),
+            Promise\resolve($websocket_api->sendToWSS($callfunction, $querydata_1))
+          ];
+        }
 
-      $callfunction = "messageAllNodes";
-      if(array_key_exists("nodeinfo", $data) && array_key_exists("authhash", $data["nodeinfo"])){
-        $querydata_0["nodeinfo"]["authhash"] = $data["nodeinfo"]["authhash"];
-        $querydata_1["nodeinfo"]["authhash"] = $data["nodeinfo"]["authhash"];
-        $callfunction = "messageSpecificNode";
-      }
+        Promise\all($function_calls)->then(function($function_calls_returned) use(&$resolve){
+          $resolve($function_calls_returned[1]);
+        });
+      };
 
-      if(!is_null($server)){
-        $server->$callfunction($querydata_0);
-        return $server->$callfunction($querydata_1);
-      }else{
-        $this->websocket_api = new WebSocket_Api();
-        $this->websocket_api->sendToWSS($callfunction, $querydata_0);
-        return $this->websocket_api->sendToWSS($callfunction, $querydata_1);
-      }
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -337,26 +353,37 @@
      * @param  ChiaWebSocketServer $server    An instance to the websocket server to be able to send data to the connected clients.
      * @return array                          Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}} from the subfunction call.
      */
-    public function restartWalletService(array $data = NULL, array $loginData = NULL, $server = NULL): array
+    public function restartWalletService(array $data = NULL, array $loginData = NULL, $server = NULL): object
     {
-      if(array_key_exists("authhash", $data)){
-        $querydata = [];
-        $querydata["data"]["restartWalletService"] = array(
-          "status" => 0,
-          "message" => "Restart wallet service.",
-          "data"=> array()
-        );
-        $querydata["nodeinfo"]["authhash"] = $data["authhash"];
-  
-        if(!is_null($server)){
-          return $server->messageSpecificNode($querydata);
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData, $server){
+        if(array_key_exists("authhash", $data)){
+          $querydata = [];
+          $querydata["data"]["restartWalletService"] = array(
+            "status" => 0,
+            "message" => "Restart wallet service.",
+            "data"=> array()
+          );
+          $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+
+          if(!is_null($server)){
+            $function_call = Promise\resolve($server->messageSpecificNode($querydata));
+          }else{
+            $function_call = Pormise\resolve((new WebSocket_Api())->sendToWSS("messageSpecificNode", $querydata));
+          }
+
+          $function_call->then(function($function_calls_returned) use(&$resolve){
+            $resolve($function_calls_returned);
+          });
         }else{
-          $this->websocket_api = new WebSocket_Api();
-          return $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
+          $resolve($this->logging_api->getErrormessage("restartWalletService", "001"));
         }
-      }else{
-        return $this->logging_api->getErrormessage("001");
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**

@@ -127,6 +127,7 @@
         }
 
         $farm_data->then(function($chia_farm_returned) use(&$resolve){
+          $returndata = [];
           foreach($chia_farm_returned->resultRows AS $arrkey => $farminfo){
             $farminfo["nodeauthhash"] = $this->encryption_api->decryptString($farminfo["nodeauthhash"]);
             $returndata[$farminfo["nodeid"]] = $farminfo;
@@ -155,27 +156,39 @@
      * @param  ChiaWebSocketServer $server  An instance to the websocket server to be able to send data to the connected clients.
      * @return array                        Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}} from the subfunction calls.
      */
-    public function queryFarmData(array $data = NULL, array $loginData = NULL, $server = NULL): array
+    public function queryFarmData(array $data = NULL, array $loginData = NULL, $server = NULL): object
     {
-      $querydata = [];
-      $querydata["data"]["queryFarmData"] = array(
-        "status" => 0,
-        "message" => "Query Farm data.",
-        "data"=> array()
-      );
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData, $server){
+        $querydata = [];
+        $querydata["data"]["queryFarmData"] = array(
+          "status" => 0,
+          "message" => "Query Farm data.",
+          "data"=> array()
+        );
 
-      $callfunction = "messageAllNodes";
-      if(array_key_exists("nodeinfo", $data) && array_key_exists("authhash", $data["nodeinfo"])){
-        $querydata["nodeinfo"]["authhash"] = $data["nodeinfo"]["authhash"];
-        $callfunction = "messageSpecificNode";
-      }
+        $callfunction = "messageAllNodes";
+        if(array_key_exists("nodeinfo", $data) && array_key_exists("authhash", $data["nodeinfo"])){
+          $querydata["nodeinfo"]["authhash"] = $data["nodeinfo"]["authhash"];
+          $callfunction = "messageSpecificNode";
+        }
 
-      if(!is_null($server)){
-        return $server->$callfunction($querydata);
-      }else{
-        $this->websocket_api = new WebSocket_Api();
-        return $this->websocket_api->sendToWSS($callfunction, $querydata);
-      }
+        if(!is_null($server)){
+          $function_call = Promise\resolve($server->$callfunction($querydata));
+        }else{
+          $websocket_api = new WebSocket_Api();
+          $function_call = Promise\resolve((new WebSocket_Api())->sendToWSS($callfunction, $querydata));
+        }
+
+        $function_call->then(function($function_call_returned) use(&$resolve){
+          $resolve($function_call_returned);
+        });
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -187,26 +200,37 @@
      * @param  ChiaWebSocketServer $server    An instance to the websocket server to be able to send data to the connected clients.
      * @return array                          Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}} from the subfunction call.
      */
-    public function restartFarmerService(array $data = NULL, array $loginData = NULL, $server = NULL): array
+    public function restartFarmerService(array $data = NULL, array $loginData = NULL, $server = NULL): object
     {
-      if(array_key_exists("authhash", $data)){
-        $querydata = [];
-        $querydata["data"]["restartFarmerService"] = array(
-          "status" => 0,
-          "message" => "Restart farmer service.",
-          "data"=> array()
-        );
-        $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData, $server){
+        if(array_key_exists("authhash", $data)){
+          $querydata = [];
+          $querydata["data"]["restartFarmerService"] = array(
+            "status" => 0,
+            "message" => "Restart farmer service.",
+            "data"=> array()
+          );
+          $querydata["nodeinfo"]["authhash"] = $data["authhash"];
 
-        if(!is_null($server)){
-          return $server->messageSpecificNode($querydata);
+          if(!is_null($server)){
+            $function_call = Promise\resolve($server->messageSpecificNode($querydata));
+          }else{
+            $function_call = Pormise\resolve((new WebSocket_Api())->sendToWSS("messageSpecificNode", $querydata));
+          }
+
+          $function_call->then(function($function_calls_returned) use(&$resolve){
+            $resolve($function_calls_returned);
+          });
         }else{
-          $this->websocket_api = new WebSocket_Api();
-          return $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
+          $resolve($this->logging_api->getErrormessage("restartFarmerService", "001"));
         }
-      }else{
-        return $this->logging_api->getErrormessage("001");
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**

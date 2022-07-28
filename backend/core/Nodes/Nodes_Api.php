@@ -161,7 +161,13 @@
       $resolver = function (callable $resolve, callable $reject, callable $notify){
         $node_types = Promise\resolve((new DB_Api())->execute("SELECT id, description, code, allowed_authtype, nodetype FROM nodetypes_avail WHERE selectable = 1", array()));
         $node_types->then(function($node_types_returned) use(&$resolve){
-          $resolve(array("status" => 0, "message" => "Sucessfully loaded all available nodetypes.", "data" => $node_types_returned->resultRows));
+          $returndata = array();
+          foreach($node_types_returned->resultRows AS $arrkey => $info){
+            $returndata["by-id"][$info["id"]] = $info;
+            $returndata["by-desc"][$info["description"]] = $info;
+          }
+
+          $resolve(array("status" => 0, "message" => "Sucessfully loaded all available nodetypes.", "data" => $returndata));
         })->otherwise(function(\Exception $e) use(&$resolve){
           $resolve($this->logging_api->getErrormessage("getNodeTypes", "001", $e));
         });
@@ -183,32 +189,40 @@
      * @param  ChiaWebSocketServer $server    An instance to the Webscoket server to be able to communicate with the node
      * @return array                          {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function acceptIPChange(array $data, array $loginData = NULL, $server = NULL): array
+    public function acceptIPChange(array $data, array $loginData = NULL, $server = NULL): object
     {
-      if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data)){
-        try{
-          $sql = $this->db_api->execute("UPDATE nodes SET ipaddress = changedIP, changedIP = ? WHERE id = ?", array("", $data["nodeid"]));
-
-          $querydata = [];
-          $querydata["data"]["acceptIPChange"] = array(
-            "status" => 0,
-            "message" => "IP Change saved accepted.",
-            "data"=> array()
-          );
-
-          $querydata["nodeinfo"]["authhash"] = $data["authhash"];
-          if(!is_null($server)){
-            $server->messageSpecificNode($querydata);
-          }else{
-            $this->websocket_api = new WebSocket_Api();
-            $activeSubscriptions = $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
-          }
-
-          return array("status" => 0, "message" => "IP change saved for node {$data["nodeid"]}.");
-        }catch(\Exception $e){
-          return $this->logging_api->getErrormessage("001", $e);
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData, $server){
+        if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data)){
+          $set_node_ip = Promise\resolve((new DB_Api())->execute("UPDATE nodes SET ipaddress = changedIP, changedIP = ? WHERE id = ?", array("", $data["nodeid"])));
+          $set_node_ip->then(function($set_node_ip_returned) use(&$resolve, $data){
+            $querydata = [];
+            $querydata["data"]["acceptIPChange"] = array(
+              "status" => 0,
+              "message" => "IP Change saved accepted.",
+              "data"=> array()
+            );
+  
+            $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+            if(!is_null($server)){
+              Promise\resolve($server->messageSpecificNode($querydata));
+            }else{
+              Promise\resolve((new WebSocket_Api())->sendToWSS("messageSpecificNode", $querydata));
+            }
+  
+            $resolve(array("status" => 0, "message" => "IP change saved for node {$data["nodeid"]}."));
+          })->otherwise(function(\Exception $e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("acceptIPChange", "001", $e));
+          });
+        }else{
+          $resolve($this->logging_api->getErrormessage("acceptIPChange", "002"));
         }
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -220,54 +234,65 @@
      * @param  ChiaWebSocketServer $server     An instance to the Webscoket server to be able to communicate with the node
      * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function acceptNodeRequest(array $data, array $loginData = NULL, $server = NULL): array
+    public function acceptNodeRequest(array $data, array $loginData = NULL, $server = NULL): object
     {
-      if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data) && array_key_exists("nodetypes", $data)){
-        try{
-          $sql = $this->db_api->execute("SELECT id, allowed_authtype, nodetype FROM nodetypes_avail WHERE selectable = 1 AND id IN ({$data["nodetypes"]})", array());
-          $sqreturn = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/;
-
-          $types = [];
-          $allowed_authtype = [];
-          foreach ($sqreturn as $arrkey => $nodetypes) {
-            $types[$nodetypes["nodetype"]] = 1;
-            $allowed_authtype[$nodetypes["allowed_authtype"]] = 1;
-          }
-
-          if(count($types) == 1 && count($allowed_authtype) == 1){
-            $authtype = $sqreturn[0]["allowed_authtype"];
-            $nodeid = $data["nodeid"];
-            $authhash = $data["authhash"];
-
-            $sql = $this->db_api->execute("UPDATE nodes SET conallow = 1, authtype = ? WHERE id = ?", array($authtype, $nodeid));
-            $sql = $this->db_api->execute("DELETE FROM nodetype WHERE nodeid = ?", array($nodeid));
-
-            foreach(explode(",", $data["nodetypes"]) AS $arrkey => $nodetype){
-              $sql = $this->db_api->execute("INSERT INTO nodetype (id, nodeid, code) VALUES(NULL, ?, ?)", array($nodeid, $nodetype));
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData, $server){
+        if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data) && array_key_exists("nodetypes", $data)){
+          $nodetypes = Promise\resolve((new DB_Api())->execute("SELECT id, allowed_authtype, nodetype FROM nodetypes_avail WHERE selectable = 1 AND id IN ({$data["nodetypes"]})", array()));
+          $nodetypes->then(function($nodetypes_returned) use(&$resolve, $data, $server){
+            $types = [];
+            $allowed_authtype = [];
+            foreach ($nodetypes_returned->resultRows as $arrkey => $nodetypes) {
+              $types[$nodetypes["nodetype"]] = 1;
+              $allowed_authtype[$nodetypes["allowed_authtype"]] = 1;
             }
 
-            $returnmessage = array("status" => 0, "message" => "Successfully allowed connection for node with ID {$data["nodeid"]}.");
-            $querydata = [];
-            $querydata["data"]["acceptNodeRequest"] = $returnmessage;
-            $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+            if(count($types) == 1 && count($allowed_authtype) == 1){
+              $authtype = $nodetypes_returned->resultRows[0]["allowed_authtype"];
+              $nodeid = $data["nodeid"];
+              $authhash = $data["authhash"];
 
-            if(!is_null($server)){
-              $server->messageSpecificNode($querydata);
+              $statements_to_resolve = [
+                Promise\resolve((new DB_Api())->execute("UPDATE nodes SET conallow = 1, authtype = ? WHERE id = ?", array($authtype, $nodeid))),
+                Promise\resolve((new DB_Api())->execute("DELETE FROM nodetype WHERE nodeid = ?", array($nodeid)))
+              ];
+
+              foreach(explode(",", $data["nodetypes"]) AS $arrkey => $nodetype){
+                $statements_to_resolve[] = Promise\resolve((new DB_Api())->execute("INSERT INTO nodetype (id, nodeid, code) VALUES(NULL, ?, ?)", array($nodeid, $nodetype)));
+              }
+
+              Promise\all($statements_to_resolve)->then(function($all_returned) use(&$resolve, $data, $server){
+                $returnmessage = array("status" => 0, "message" => "Successfully allowed connection for node with ID {$data["nodeid"]}.");
+                $querydata = [];
+                $querydata["data"]["acceptNodeRequest"] = $returnmessage;
+                $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+    
+                if(!is_null($server)){
+                  Promise\resolve($server->messageSpecificNode($querydata));
+                }else{
+                  Promise\resolve((new WebSocket_Api())->sendToWSS("messageSpecificNode", $querydata));
+                }
+    
+                $resolve($returnmessage);
+              })->otherwise(function(\Exception $e) use(&$resolve){
+                $resolve($this->logging_api->getErrormessage("acceptNodeRequest", "002", $e));
+              });
             }else{
-              $this->websocket_api = new WebSocket_Api();
-              $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
+              $resolve($this->logging_api->getErrormessage("acceptNodeRequest", "001"));
             }
-
-            return $returnmessage;
-          }else{
-            return $this->logging_api->getErrormessage("001");
-          }
-        }catch(\Exception $e){
-          return $this->logging_api->getErrormessage("002", $e);
+          })->otherwise(function(\Exception $e)  use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("acceptNodeRequest", "004", $e));
+          });
+        }else{
+          $resolve($this->logging_api->getErrormessage("acceptNodeRequest", "003"));
         }
-      }else{
-        return $this->logging_api->getErrormessage("003");
-      }
+      };  
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -279,31 +304,37 @@
      * @param  ChiaWebSocketServer $server     An instance to the Webscoket server to be able to communicate with the node.
      * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function declineNodeRequest(array $data, array $loginData = NULL, $server = NULL): array
+    public function declineNodeRequest(array $data, array $loginData = NULL, $server = NULL): object
     {
-      if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data)){
-        try{
-          $sql = $this->db_api->execute("UPDATE nodes SET conallow = 0 WHERE id = ? AND changeable = 1 AND (conallow = 1 OR conallow = 2)", array($data["nodeid"]));
-
-          $returnmessage = array("status" => 0, "message" => "Successfully declined connection for id {$data["nodeid"]}.");
-          $querydata = [];
-          $querydata["data"]["declineNodeRequest"] = $returnmessage;
-          $querydata["nodeinfo"]["authhash"] = $data["authhash"];
-
-          if(!is_null($server)){
-            $server->messageSpecificNode($querydata);
-          }else{
-            $this->websocket_api = new WebSocket_Api();
-            $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
-          }
-
-          return $returnmessage;
-        }catch(\Exception $e){
-          return $this->logging_api->getErrormessage("001", $e);
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData, $server){
+        if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data)){
+          $decline_node = Promise\resolve((new DB_Api())->execute("UPDATE nodes SET conallow = 0 WHERE id = ? AND changeable = 1 AND (conallow = 1 OR conallow = 2)", array($data["nodeid"])));
+          $decline_node->then(function($decline_node_returned) use(&$resolve, $data, $server){
+            $returnmessage = array("status" => 0, "message" => "Successfully declined connection for id {$data["nodeid"]}.");
+            $querydata = [];
+            $querydata["data"]["declineNodeRequest"] = $returnmessage;
+            $querydata["nodeinfo"]["authhash"] = $data["authhash"];
+  
+            if(!is_null($server)){
+              Promise\resolve($server->messageSpecificNode($querydata));
+            }else{
+              Promise\resolve((new WebSocket_Api())->sendToWSS("messageSpecificNode", $querydata));
+            }
+  
+            $resolve($returnmessage);
+          })->otherwise(function(\Exception $e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("declineNodeRequest", "001", $e));
+          });
+        }else{
+          $resolve($this->logging_api->getErrormessage("declineNodeRequest", "002"));
         }
-      }else{
-        return $this->logging_api->getErrormessage("002");
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -315,42 +346,52 @@
      * @param  ChiaWebSocketServer $server    An instance to the Webscoket server to be able to communicate with the node
      * @return array                          {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function removeNodeAndData(array $data, array $loginData = NULL, $server = NULL): array
+    public function removeNodeAndData(array $data, array $loginData = NULL, $server = NULL): object
     {
-      if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data)){
-        try{
-          $sql = $this->db_api->execute("SELECT changeable FROM nodes WHERE id = ?", array($data["nodeid"]));
-          $sqldata = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/;
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData, $server){
+        if(array_key_exists("nodeid", $data) && array_key_exists("authhash", $data)){
+          $node_changeable = Promise\resolve((new DB_Api())->execute("SELECT changeable FROM nodes WHERE id = ?", array($data["nodeid"])));
+          $node_changeable->then(function($node_changeable_returned) use(&$resolve, $data){
+            if(count($node_changeable_returned->resultRows) == 1){
+              $changeable = $node_changeable_returned->resultRows[0]["changeable"];
 
-          if(count($sqldata) == 1){
-            $changeable = $sqldata[0]["changeable"];
+              if($changeable){
+                $remove_node = Promise\resolve((new DB_Api())->execute("DELETE FROM nodes WHERE id = ?", array($data["nodeid"])));
+                $remove_node->then(function($remove_node_returned) use(&$resolve, $data){
+                  $returnmessage = array("status" => 0, "message" => "Successfully removed node {$data["nodeid"]}.", "data" => $data["nodeid"]);
+                  $querydata = [];
+                  $querydata["data"]["removeNodeAndData"] = $returnmessage;
+                  $querydata["nodeinfo"]["authhash"] = $data["authhash"];
 
-            if($changeable){
-              $this->db_api->execute("DELETE FROM nodes WHERE id = ?", array($data["nodeid"]));
+                  if(!is_null($server)){
+                    Promise\resolve($server->messageSpecificNode($querydata));
+                  }else{
+                    Promise\resolve((new WebSocket_Api())->sendToWSS("messageSpecificNode", $querydata));
+                  }
 
-              $returnmessage = array("status" => 0, "message" => "Successfully removed node {$data["nodeid"]}.", "data" => $data["nodeid"]);
-              $querydata = [];
-              $querydata["data"]["removeNodeAndData"] = $returnmessage;
-              $querydata["nodeinfo"]["authhash"] = $data["authhash"];
-
-              if(!is_null($server)){
-                $server->messageSpecificNode($querydata);
+                  $resolve($returnmessage);
+                })->otherwise(function(\Exception $e) use(&$resolve){
+                  $resolve($this->logging_api->getErrormessage("removeNodeAndData", "005", $e));
+                });
               }else{
-                $this->websocket_api = new WebSocket_Api();
-                $this->websocket_api->sendToWSS("messageSpecificNode", $querydata);
+                $resolve($this->logging_api->getErrormessage("removeNodeAndData", "001"));
               }
-
-              return $returnmessage;
             }else{
-              return $this->logging_api->getErrormessage("001");
+              $resolve($this->logging_api->getErrormessage("removeNodeAndData", "002"));
             }
-          }else{
-            return $this->logging_api->getErrormessage("002");
-          }
-        }catch(\Exception $e){
-          return $this->logging_api->getErrormessage("003", $e);
+          })->otherwise(function(\Exception $e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("removeNodeAndData", "003", $e));
+          });
+        }else{
+          $resolve($this->logging_api->getErrormessage("removeNodeAndData", "004"));
         }
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -523,24 +564,31 @@
      * @param  array $loginData { NULL } No $loginData needed to query this function.
      * @return array            {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : ["branch" => [branchname], "nodeid" => [nodeid]]}
      */
-    public function updateNodeBranch(array $data, array $loginData = NULL): array
+    public function updateNodeBranch(array $data): object
     {
-      if(array_key_exists("branch", $data) && array_key_exists("nodeid", $data)){
-        $allowedbranches = array("dev","staging","main");
-        if(in_array($data["branch"], $allowedbranches)){
-          try{
-            $sql = $this->db_api->execute("UPDATE nodes SET updatechannel = ? WHERE id = ?", array($data["branch"],$data["nodeid"]));
-
-            return array("status" => 0, "message" => "Successfully updated branch for node {$data["nodeid"]} to {$data["branch"]}.", "data" => ["branch" => $data["branch"], "nodeid" => $data["nodeid"]]);
-          }catch(Exception $e){
-            return $this->logging_api->getErrormessage("001", $e);
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+        if(array_key_exists("branch", $data) && array_key_exists("nodeid", $data)){
+          $allowedbranches = array("dev","staging","main");
+          if(in_array($data["branch"], $allowedbranches)){
+            $set_updatechannel = Promise\resole((new DB_Api())->execute("UPDATE nodes SET updatechannel = ? WHERE id = ?", array($data["branch"],$data["nodeid"])));
+            $set_updatechannel->then(function($set_updatechannel_returned) use(&$resolve, $data){
+              $resolve(array("status" => 0, "message" => "Successfully updated branch for node {$data["nodeid"]} to {$data["branch"]}.", "data" => ["branch" => $data["branch"], "nodeid" => $data["nodeid"]]));
+            })->otherwise(function(\Exception $e) use(&$resolve){
+              $resolve($this->logging_api->getErrormessage("updateNodeBranch", "001", $e));
+            });
+          }else{
+            $resolve($this->logging_api->getErrormessage("updateNodeBranch", "002", "Branch {$data["branch"]} not allowed."));
           }
         }else{
-          return $this->logging_api->getErrormessage("002", "Branch {$data["branch"]} not allowed.");
+          $resolve($this->logging_api->getErrormessage("updateNodeBranch", "003"));
         }
-      }else{
-        return $this->logging_api->getErrormessage("003");
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**

@@ -147,14 +147,6 @@ $(function(){
     }
   });
 
-  $("#confirm-update-process").on("click", function(e){
-    e.preventDefault();
-    $(".update-close-button").hide();
-    $("#confirm-update-process").attr("disabled","disabled").find("i").show();
-    $("#updatelogcontainer").children().hide("slow").remove();
-    window.sendToWSS("backendRequest", "ChiaMgmt\\System\\System_Api", "System_Api", "processUpdate", {});
-  });
-
   $("#proceed-update-routine").on("click", function(e){
     location.reload();
   });
@@ -240,12 +232,13 @@ $(function(){
   }
 
   function setWSSRunning(pid){
+    console.log("HIER");
     $("#wssstatus").children().remove();
     $("#wssstatus").append(
-      "<div class='card bg-success text-white shadow'>" +
+      "<div class='card bg-warning text-white shadow'>" +
           "<div class='card-body'>" +
-            "Status: Running (PID: " + pid + ")" +
-            "<div class='text-white-50 small'>All websocket services are good</div>" +
+            "Status: Launching" +
+            "<div class='text-white-50 small'>Please wait until server is started</div>" +
           "</div>" +
       "</div>"
     );
@@ -280,6 +273,8 @@ function settingConfirmHandler(){
 }
 
 function reloadCronJobExecTimer(){
+  console.log("HIER");
+
   if("system" in intervals && "cron" in intervals["system"]){
     clearTimeout(intervals["system"]["cron"]);
   }

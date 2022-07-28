@@ -7,14 +7,15 @@
   $system_promises = [
     Promise\resolve($system_api->getAllSystemSettings()),
     Promise\resolve($system_api->checkForUpdates(["update_data_db" => true])),
-    Promise\resolve($system_api->testConnection())
+    Promise\resolve($system_api->testConnection()),
+    Promise\resolve($system_api->getCronjobEnabled())
   ];
 
-  $system_settings = Promise\resolve((new System_Api())->getAllSystemSettings());
   Promise\all($system_promises)->then(function($system_settings_returned) use($ini){
     $all_settings = $system_settings_returned[0]["data"];
     $updates = $system_settings_returned[1];
     $connection = $system_settings_returned[2];
+    $cronjobEnabled = $system_settings_returned[3];
 
     $mailsettings = $all_settings["mailing"];
     $security = $all_settings["security"];
@@ -28,6 +29,7 @@
     }else{
       $updatechannelname = "Stable";
     }
+
   
     echo "<script nonce={$ini["nonce_key"]}>
             var siteID = 3;
@@ -292,7 +294,6 @@
             <div class="row">
               <div class="col mb-4">
                 <?php
-                  $cronjobEnabled = $system_api->getCronjobEnabled();
                   if($cronjobEnabled["status"] == 0){
                     $now = new \DateTime("now");
                     $lastexecdate = new \DateTime($cronjobEnabled["data"]);
@@ -311,7 +312,7 @@
                   <h5><span id="cronjobbadge" class="badge badge-danger">Last Cronjob run more than 1 minutes ago.</span></h5>
                 <?php } ?>
                 <div class="custom-control custom-checkbox">
-                  <input type="checkbox" class="custom-control-input" id="enableSystemCronjob" <?php echo( $cronjobEnabled["status"] == 0 ? "checked" : ""); ?> >
+                  <input type="checkbox" class="custom-control-input wsbutton" id="enableSystemCronjob" <?php echo( $cronjobEnabled["status"] == 0 ? "checked" : ""); ?> >
                   <label class="custom-control-label" for="enableSystemCronjob">Enable automated background tasks</label>
                 </div>
               </div>

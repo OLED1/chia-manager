@@ -50,7 +50,7 @@
 
             $wssstatus = Promise\resolve($this->websocket_api->testConnection());
             $wssstatus->then(function($wssstatus_returned){
-              if($wssstatus_returned["status"] == "016001002"){
+              if($wssstatus_returned["status"] == "016001001"){
                 $logging_message = Promise\resolve($this->logging_api->getErrormessage("queryData", "002"));
                 $logging_message->then(function($logging_message_returned){
                   echo "{$this->getDate()}: {$logging_message_returned["message"]}\n";
@@ -58,7 +58,8 @@
 
                 $wss_start = Promise\resolve($this->websocket_api->startWSS());
                 $wss_start->then(function($wss_start_returned){
-                  echo "{$this->getDate()}: {$wssstatus_returned["message"]}\n";
+                  echo "{$this->getDate()}: {$wss_start_returned["message"]}\n";
+                  return $this->queryData();
                 });
               };
 

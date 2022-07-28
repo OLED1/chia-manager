@@ -38,7 +38,7 @@
       <div class="card-body">
         <h5>Setup</h5>
         System mailing enabled: <span class="badge <?php echo ($mailing_confirmed ? "badge-success" : "badge-danger"); ?>"><?php echo ($mailing_confirmed ? "Enabled and confirmed" : "Not enabled. Please enable and configure on the settings page.") ?></span><br>
-        Enable alerting service: <input id="enable_mailing" class="wsbutton" data-service-id="<?php echo $_GET["Mail"]["id"]; ?>" type="checkbox" aria-label="Checkbox for following text input" <?php echo ($mailing_confirmed ? "disabled" : ""); echo ($service_enabled == 1 ? " checked" : ""); ?>>
+        Enable alerting service: <input id="enable_mailing" class="wsbutton" data-service-id="<?php echo $mail_parameters["id"]; ?>" type="checkbox" aria-label="Checkbox for following text input" <?php echo ($mailing_confirmed ? "disabled" : ""); echo ($service_enabled == 1 ? " checked" : ""); ?>>
       </div>
     </div>
   </div>

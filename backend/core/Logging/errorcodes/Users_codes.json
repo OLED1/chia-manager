@@ -72,7 +72,8 @@
       "001" : [1, "Password did not change."],
       "002" : [1, "No or too much data returned."],
       "003" : [2, "An error occured."],
-      "004" : [1, "Not all data stated."]
+      "004" : [1, "Not all data stated."],
+      "005" : [2, "An error occured."]
     },
     "getLoggedInDevices" : {
       "001" : [1, "An error occured."]
@@ -82,7 +83,8 @@
       "002" : [1, "Device ID not stated."]
     },
     "sendInvitationMail" : {
-      "001" : [1, "It makes no sense to send an invitation to yourself :)."]
+      "001" : [1, "It makes no sense to send an invitation to yourself :)."],
+      "002" : [1, "Not all data stated."]
     },
     "requestUserPasswordReset" : {
       "001" : [2, "An error occured during e-mail sending. Please contact this instance administrator."],

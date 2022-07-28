@@ -65,25 +65,35 @@
      * @param  array $loginData   No logindata needed to use this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The changed data]} }
      */
-    public function savePersonalInfo(array $data, array $loginData = NULL): array
+    public function savePersonalInfo(array $data): object
     {
-      if(isset($data["userID"]) && isset($data["name"]) && isset($data["lastname"]) && isset($data["email"]) && isset($data["username"])){
-        $checkUserExists = $this->checkUsernameExists($data["username"], $data["userID"]);
-        if($checkUserExists["status"] == "0"){
-          try{
-            $sql = $this->db_api->execute("UPDATE users SET name = ?, lastname = ?, email = ?, username = ? WHERE id = ?",
-                    array($data["name"], $data["lastname"], $data["email"], $data["username"], $data["userID"]));
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+        if(isset($data["userID"]) && isset($data["name"]) && isset($data["lastname"]) && isset($data["email"]) && isset($data["username"])){
+          $checkUserExists = Promise\resolve($this->checkUsernameExists($data["username"], $data["userID"]));
+          $checkUserExists->then(function($checkUserExists_returned) use(&$resolve, $data){
+            if($checkUserExists_returned["status"] == "0"){
+              $update_personal_info = Promise\resolve((new DB_Api())->execute("UPDATE users SET name = ?, lastname = ?, email = ?, username = ? WHERE id = ?",
+                                                      array($data["name"], $data["lastname"], $data["email"], $data["username"], $data["userID"])));
 
-            return array("status" => 0, "message" => "Updated userdata successfully.", "data" => $data);
-          }catch(\Exception $e){
-            return $this->logging_api->getErrormessage("001", $e);
-          }
+              $update_personal_info->then(function($update_personal_info_returned) use(&$resolve, $data){
+                $resolve(array("status" => 0, "message" => "Updated userdata successfully.", "data" => $data));
+              })->otherwise(function(\Exception $e) use(&$resolve){
+                $resolve($this->logging_api->getErrormessage("savePersonalInfo", "001", $e));
+              });
+            }else{
+              $resolve($checkUserExists_returned);
+            }
+          });
         }else{
-          return $checkUserExists;
+          $resolve($this->logging_api->getErrormessage("savePersonalInfo", "002"));
         }
-      }else{
-        return $this->logging_api->getErrormessage("002");
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -91,46 +101,58 @@
      * Function made for: Web(App)client
      * @throws Exception $e       Throws an exception on db errors.
      * @param  array  $data       { "name" : "The user's forename", "lastname" : "The user's lastname", "email" : "The user's email address", "username" : "The user's username", "password" : "The user's password in cleartext" }
-     * @param  array $loginData   No logindata needed to use this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The newly added data]} }
      */
-    public function addUser(array $data, array $loginData = NULL): array
+    public function addUser(array $data): object
     {
-      if(array_key_exists("name", $data) && array_key_exists("lastname", $data) &&
-          array_key_exists("email", $data) && array_key_exists("username", $data) && array_key_exists("password", $data)){
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+        if(array_key_exists("name", $data) && array_key_exists("lastname", $data) &&
+          array_key_exists("email", $data) && array_key_exists("username", $data) && array_key_exists("password", $data)
+        ){        
+          $data["id"] = 0;
+          if($this->userInfoNotEmpty($data)["status"] == 0){
+            $data_to_check = [
+              Promise\resolve($this->checkUsernameExists($data["username"])),
+              Promise\resolve($this->checkPasswordStrength($data["password"]))
+            ];
 
-        if($this->userInfoNotEmpty($data)){
-          $userexists = $this->checkUsernameExists($data["username"]);
-          $pwcheck = $this->checkPasswordStrength($data["password"]);
+            Promise\all($data_to_check)->then(function($data_to_check_returned) use(&$resolve, $data){
+              print_r($data_to_check_returned);
+              $userexists = $data_to_check_returned[0];
+              $pwcheck = $data_to_check_returned[1];
 
-          if($userexists["status"] == 0 && $pwcheck["status"] == 0){
-            $salt = bin2hex(random_bytes(30));
-            $new_salted_pw = $salted_hash=hash('sha256',$data["password"].$salt.$this->ini['serversalt']);
+              if($userexists["status"] == 0 && $pwcheck["status"] == 0){
+                $salt = bin2hex(random_bytes(30));
+                $new_salted_pw = $salted_hash=hash('sha256',$data["password"].$salt.$this->ini['serversalt']);
 
-            try{
-              $sql = $this->db_api->execute("INSERT INTO users (id, username, name, lastname, password, salt, email) VALUES (NULL, ?, ?, ?, ?, ?, ?)",
-              array($data["username"], $data["name"], $data["lastname"], $new_salted_pw, $salt, $data["email"]));
+                $insert_new_user = Promise\resolve((new DB_Api())->execute("INSERT INTO users (id, username, name, lastname, password, salt, email) VALUES (NULL, ?, ?, ?, ?, ?, ?)",
+                                                    array($data["username"], $data["name"], $data["lastname"], $new_salted_pw, $salt, $data["email"])));
 
-              $sql = $this->db_api->execute("SELECT id, username, name, lastname, email, enabled FROM users WHERE username = ?", array($data["username"]));
-              foreach($sql AS $key => $value){
-                $newData[$value["id"]] = $value;
+                $insert_new_user->then(function($insert_new_user_returned) use(&$resolve, $data){
+                  unset($data["password"]);
+                  $data["id"] = $insert_new_user_returned->insertId;
+                  $resolve(array("status" => 0, "message" => "Updated userdata successfully.", "data" => [$data["id"] => $data]));
+                })->otherwise(function(\Exception $e) use (&$resolve){
+                  $resolve($this->logging_api->getErrormessage("addUser", "001", $e));
+                });
+              }else{
+                if($userexists["status"] == 1) return $resolve($userexists);
+                if($pwcheck["status"] == 1) return $resolve($pwcheck);
               }
-
-              unset($data["password"]);
-              return array("status" => 0, "message" => "Updated userdata successfully.", "data" => $newData);
-            }catch(\Exception $e){
-              return $this->logging_api->getErrormessage("001", $e);
-            }
+            });
           }else{
-            if($userexists["status"] == 1) return $userexists;
-            if($pwcheck["status"] == 1) return $pwcheck;
+            $resolve($this->logging_api->getErrormessage("addUser", "002"));
           }
         }else{
-          return $this->logging_api->getErrormessage("002");
+          $resolve($this->logging_api->getErrormessage("addUser", "003"));
         }
-      }else{
-        return $this->logging_api->getErrormessage("003");
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -141,38 +163,55 @@
      * @param  array $loginData   No logindata needed to use this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The newly added data]} }
      */
-    public function editUserInfo(array $data, array $loginData = NULL): array
+    public function editUserInfo(array $data): object
     {
-      if(array_key_exists("id", $data) && array_key_exists("name", $data) && array_key_exists("lastname", $data) &&
-          array_key_exists("email", $data) && array_key_exists("username", $data)){
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+        if(array_key_exists("id", $data) && array_key_exists("name", $data) && array_key_exists("lastname", $data) &&
+          array_key_exists("email", $data) && array_key_exists("username", $data)
+        ){
+          $data["userID"] = $data["id"];
+          if($this->userInfoNotEmpty($data)["status"] == 0){
+            $infos_to_load[] = Promise\resolve($this->savePersonalInfo($data));
+            if(array_key_exists("password", $data)) $infos_to_load[] = Promise\resolve($this->checkPasswordStrength($data["password"]));
 
-        $data["userID"] = $data["id"];
-        if($this->userInfoNotEmpty($data)["status"] == 0){
-          $savePersInfo = $this->savePersonalInfo($data);
-          $pwreset = NULL;
-          if(array_key_exists("password", $data)){
-            $pwcheck = $this->checkPasswordStrength($data["password"]);
-            if($pwcheck["status"] == 0){
-              $pwreset = $this->resetUserPassword($data);
-            }else{
-              return $pwcheck;
-            }
-          }
+            Promise\all($infos_to_load)->then(function($all_returned) use(&$resolve, $data){
+              $pwreset = Promise\resolve(NULL);
+              if(array_key_exists("password", $data)){
+                $pwcheck = $all_returned[1];
+                if($pwcheck["status"] == 0){
+                  $pwreset_set = Promise\resolve($this->resetUserPassword($data));
+                  $pwreset = $pwreset_set->then(function($pwreset_returned){
+                    if($pwreset_returned["status"] != 0){
+                      return $pwreset_returned;
+                    }
+                  });
+                }else{
+                  $resolve($pwcheck);
+                }
+              }
 
-          if(($savePersInfo["status"] == 0 && is_null($pwreset)) || ($savePersInfo["status"] == 0 && !is_null($pwreset) && $pwreset["status"] == 0)){
-            unset($data["password"]);
-            return array("status" => 0, "message" => "Updated userdata successfully.", "data" => $data);
+              $pwreset->then(function($pwreset_returned) use(&$resolve, $all_returned, $data){
+                if(($all_returned[0]["status"] == 0 && is_null($pwreset_returned)) || ($all_returned[0]["status"] == 0 && !is_null($pwreset_returned) && $pwreset_returned["status"] == 0)){
+                  unset($data["password"]);
+                  $resolve(array("status" => 0, "message" => "Updated userdata successfully.", "data" => $data));
+                }else{
+                  $resolve($this->logging_api->getErrormessage("editUserInfo", "001"));
+                }
+              });
+            });
           }else{
-            return $this->logging_api->getErrormessage("001");
+            $resolve($this->logging_api->getErrormessage("editUserInfo", "002"));
           }
-
         }else{
-          return $this->logging_api->getErrormessage("002");
+          $resolve($this->logging_api->getErrormessage("editUserInfo", "003"));
         }
-        unset($data["password"]);
-      }else{
-        return $this->logging_api->getErrormessage("003");
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -183,24 +222,30 @@
      * @param  array $loginData   No logindata needed to use this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The id which was disabled.]} }
      */
-    public function disableUser(array $data, array $loginData = NULL): array
+    public function disableUser(array $data, array $loginData = NULL): object
     {
-      if(array_key_exists("userID", $data)){
-        if($loginData["userid"] != $data["userID"] && $data["userID"] > 1){
-          try{
-            $sql = $this->db_api->execute("UPDATE users SET enabled = 0 WHERE id = ?", array($data["userID"]));
-            $sql = $this->db_api->execute("UPDATE users_sessions SET invalidated = 1 WHERE id = ?", array($data["userID"]));
-
-            return array("status" => 0, "message" => "Successfully disabled user with ID {$data["userID"]}.", "data" => $data);
-          }catch(\Exception $e){
-            return $this->logging_api->getErrormessage("001", $e);
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData){
+        if(array_key_exists("userID", $data)){
+          if($loginData["userid"] != $data["userID"] && $data["userID"] > 1){
+            $disable_user = Promise\resolve((new DB_Api())->execute("UPDATE users SET enabled = 0 WHERE id = ?", array($data["userID"])));
+            $disable_user->then(function($disable_user_returned) use(&$resolve, $data){
+              $resolve(array("status" => 0, "message" => "Successfully disabled user with ID {$data["userID"]}.", "data" => $data));
+            })->otherwise(function(\Exception $e) use(&$resolve){
+              $resolve($this->logging_api->getErrormessage("disableUser", "001", $e));
+            });
+          }else{
+            $resolve($this->logging_api->getErrormessage("disableUser", "002"));
           }
         }else{
-          return $this->logging_api->getErrormessage("002");
+          $resolve($this->logging_api->getErrormessage("disableUser", "003"));
         }
-      }else{
-        return $this->logging_api->getErrormessage("003");
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -212,32 +257,35 @@
      * @param array $loginData    No logindata needed to use this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The id which was disabled.]} }
      */
-    public function removeDisabledUser(array $data, array $loginData = NULL): array
+    public function removeDisabledUser(array $data, array $loginData = NULL): object
     {
-      if(array_key_exists("userID", $data)){
-        if($loginData["userid"] != $data["userID"] && $data["userID"] > 1){
-          try{
-            $sql = $this->db_api->execute("SELECT count(*) AS count FROM users WHERE id = ? AND enabled = ?", array($data["userID"], 0));
-            $count = $sql;
-
-            if(array_key_exists("0", $count) && array_key_exists("count", $count[0])){
-              $sql = $this->db_api->execute("DELETE FROM users WHERE id = ? AND enabled = ? AND id > 1", array($data["userID"], 0));
-              
-              return array("status" => 0, "message" => "Successfully removed user with id {$data["userID"]}.", "data" => ["id" => $data["userID"]]);
-            }else{
-              return $this->logging_api->getErrormessage("001");
-            }
-          }catch(\Exception $e){
-            return $this->logging_api->getErrormessage("002", $e);
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData){
+        if(array_key_exists("userID", $data)){
+          if($loginData["userid"] != $data["userID"] && $data["userID"] > 1){
+            $delete_user = Promise\resolve((new DB_Api)->execute("DELETE FROM users WHERE id = ? AND enabled = ? AND id > 1", array($data["userID"], 0)));
+            $delete_user->then(function($delete_user_returned) use(&$resolve, $data){
+              if($delete_user_returned->affectedRows == 1){
+                $resolve(array("status" => 0, "message" => "Successfully removed user with id {$data["userID"]}.", "data" => ["id" => $data["userID"]]));
+              }else{
+                $resolve($this->logging_api->getErrormessage("removeDisabledUser", "001"));
+              }
+            })->otherwise(function(\Exception $e) use(&$resolve){
+              $resolve($this->logging_api->getErrormessage("removeDisabledUser", "002", $e));
+            });
+          }else{
+            if($loginData["userid"] != $data["userID"]) return $resolve($this->logging_api->getErrormessage("removeDisabledUser", "003"));
+            if($$data["userID"] == 1) return $resolve($this->logging_api->getErrormessage("removeDisabledUser", "004"));
           }
-
         }else{
-          if($loginData["userid"] != $data["userID"]) return $this->logging_api->getErrormessage("003");
-          if($$data["userID"] == 1) return $this->logging_api->getErrormessage("004");
+          $resolve($this->logging_api->getErrormessage("removeDisabledUser", "005"));
         }
-      }else{
-        return $this->logging_api->getErrormessage("005");
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -248,19 +296,26 @@
      * @param  array $loginData   No logindata needed to use this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The id which was enabled.] } }
      */
-    public function enableUser(array $data, array $loginData = NULL): array
+    public function enableUser(array $data, array $loginData = NULL): object
     {
-      if(array_key_exists("userID", $data)){
-        try{
-          $sql = $this->db_api->execute("UPDATE users SET enabled = 1 WHERE id = ?", array($data["userID"]));
-
-          return array("status" => 0, "message" => "Successfully enabled user with ID {$data["userID"]}.", "data" => $data);
-        }catch(\Exception $e){
-          return $this->logging_api->getErrormessage("001", $e);
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData){
+        if(array_key_exists("userID", $data)){
+          $disable_user = Promise\resolve((new DB_Api())->execute("UPDATE users SET enabled = 1 WHERE id = ?", array($data["userID"])));
+          $disable_user->then(function($disable_user_returned) use(&$resolve, $data){
+            $resolve(array("status" => 0, "message" => "Successfully enabled user with ID {$data["userID"]}.", "data" => $data));
+          })->otherwise(function(\Exception $e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("enableUser", "001", $e));
+          });
+        }else{
+          $resolve($this->logging_api->getErrormessage("enableUser", "002"));
         }
-      }else{
-        return $this->logging_api->getErrormessage("002");
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -316,21 +371,6 @@
       };
 
       return new Promise\Promise($resolver, $canceller);
-      
-      try{
-        if(is_Null($userID)){
-          $sql = $this->db_api->execute("SELECT id, username, name, lastname, email, enabled FROM users", array());
-          foreach($sql AS $key => $value){
-            $returndata[$value["id"]] = $value;
-          }
-        }else{
-          $sql = $this->db_api->execute("SELECT username, name, lastname, email FROM users WHERE id = ?", array($userID));
-          $returndata = $sql[0];
-        }
-        return array("status" => 0, "message" => "Successfully loaded user information.", "data" => $returndata);
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("001", $e);
-      }
     }
 
     /**
@@ -342,27 +382,31 @@
      * @param  int    $userID     The userid for which the username should be checked for.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function checkUsernameExists(string $username, int $userID = NULL): array
+    public function checkUsernameExists(string $username, int $userID = NULL): object
     {
-      try{
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($username, $userID){
         if(is_null($userID)){
-          $sql = $this->db_api->execute("SELECT count(*) AS usercount from users where username = ?",
-                                        array($username));
+          $usercount = Promise\resolve((new DB_Api)->execute("SELECT count(*) AS usercount from users where username = ?", array($username)));
         }else{
-          $sql = $this->db_api->execute("SELECT count(*) AS usercount from users where username = ? AND id <> ?",
-                                        array($username, $userID));
+          $usercount = Promise\resolve((new DB_Api)->execute("SELECT count(*) AS usercount from users where username = ? AND id <> ?", array($username, $userID)));
         }
 
-        $usercount = $sql->fetch()["usercount"];
+        $usercount->then(function($usercount_returned) use(&$resolve){
+          if($usercount_returned->resultRows[0]["usercount"] == 0){
+            $resolve(array("status" => 0, "message" => "User does not exist!"));
+          }else{
+            $resolve($this->logging_api->getErrormessage("checkUsernameExists", "001"));
+          }
+        })->otherwise(function(\Exception $e) use(&$resolve){
+          $resolve($this->logging_api->getErrormessage("checkUsernameExists", "002",$e));
+        });
+      };
 
-        if($usercount == 0){
-          return array("status" => 0, "message" => "User does not exist!");
-        }else{
-          return $this->logging_api->getErrormessage("001");
-        }
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("002",$e);
-      }
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -382,28 +426,34 @@
      * Function made for: Web(App)client.
      * @throws Exception $e         Throws an exception on db errors.
      * @param  array  $data         { "userID" : "The user's id." }
-     * @param  array $backendInfo   No backendInfo needed to query this function.
      * @return array                {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[The newly created backup key.]} }
      */
-    public function generateNewBackupKey(array $data, array $backendInfo = NULL): array
+    public function generateNewBackupKey(array $data): object
     {
-      if(array_key_exists("userID", $data)){
-        $backupkey = bin2hex(random_bytes(25));
-        $encryptedbackupkey = $this->encryption_api->encryptString($backupkey);
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+        if(array_key_exists("userID", $data)){
+          $backupkey = bin2hex(random_bytes(25));
+          $encryptedbackupkey = $this->encryption_api->encryptString($backupkey);
+          $backup_key_tasks = [
+            Promise\resolve((new DB_Api)->execute("UPDATE users_backupkeys SET valid = 0 where userid = ?", array($data["userID"]))),
+            Promise\resolve((new DB_Api)->execute("INSERT INTO users_backupkeys (id, userid, backupkey) VALUES (NULL, ?, ?)", array($data["userID"], $encryptedbackupkey)))
+          ];
 
-        try{
-          $sql = $this->db_api->execute("UPDATE users_backupkeys SET valid = 0 where userid = ?", array($data["userID"]));
-          $sql = $this->db_api->execute("INSERT INTO users_backupkeys (id, userid, backupkey) VALUES (NULL, ?, ?)",
-                                        array($data["userID"], $encryptedbackupkey));
-
-          return array("status" => 0, "message" => "Generated new backup key for User {$data["userID"]}.", "data" => $backupkey);
-        }catch(\Exception $e){
-          return $this->logging_api->getErrormessage("001", $e);
+          Promise\all($backup_key_tasks)->then(function($backup_key_tasks_returned) use(&$resolve, $data, $backupkey){
+            $resolve(array("status" => 0, "message" => "Generated new backup key for User {$data["userID"]}.", "data" => $backupkey));
+          })->otherwise(function(\Exception $e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("generateNewBackupKey", "001", $e));
+          });
+        }else{
+          $resolve($this->logging_api->getErrormessage("generateNewBackupKey", "002"));
         }
+      };
 
-      }else{
-        return $this->logging_api->getErrormessage("002");
-      }
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -447,11 +497,43 @@
      * Function made for: Web(App)client.
      * @throws Exception $e         Throws an exception on db errors.
      * @param  array $data          { "userID" : "The user's id.", "password" : "The password which should be checked." }
-     * @param  array $loginData     No logindata needed to query this function.
      * @return array                {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function checkCurrentPassword(array $data, array $loginData = NULL): array
+    public function checkCurrentPassword(array $data): object
     {
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+        if(isset($data["userID"]) && isset($data["password"])){
+          $current_pw = Promise\resolve((new DB_Api)->execute("SELECT password, salt from users where id = ?", array($data["userID"])));
+          $current_pw->then(function($current_pw_returned) use(&$resolve, $data){
+            if(count($current_pw_returned->resultRows) == 1){
+              $current_pw_returned = $current_pw_returned->resultRows[0];
+              $salt = $current_pw_returned["salt"];
+
+              $current_salted_pw = $current_pw_returned["password"];
+              $stated_salted_password = hash('sha256',$data["password"].$salt.$this->ini["serversalt"]);
+
+              if($stated_salted_password == $current_salted_pw){
+                $resolve(array("status" => 0, "message" => "Stated password matches current password."));
+              }else{
+                $resolve($this->logging_api->getErrormessage("checkCurrentPassword", "001"));
+              }
+            }else{
+              $resolve($this->logging_api->getErrormessage("checkCurrentPassword", "002"));
+            }
+          })->otherwise(function(\Exception $e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("checkCurrentPassword", "003",$e));
+          });
+        }else{
+          $resolve($this->logging_api->getErrormessage("checkCurrentPassword", "004"));
+        }
+      };
+      
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
+      
       if(isset($data["userID"]) && isset($data["password"])){
         try{
           $sql = $this->db_api->execute("SELECT password, salt from users where id = ?",
@@ -484,18 +566,26 @@
      * @param  string $password   The password which should be checked.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    private function checkPasswordStrength(string $password): array
+    private function checkPasswordStrength(string $password): object
     {
-      $uppercase = preg_match('@[A-Z]@', $password);
-      $lowercase = preg_match('@[a-z]@', $password);
-      $number    = preg_match('@[0-9]@', $password);
-      $specialChars = preg_match('@[^\w]@', $password);
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($password){
+        $uppercase = preg_match('@[A-Z]@', $password);
+        $lowercase = preg_match('@[a-z]@', $password);
+        $number    = preg_match('@[0-9]@', $password);
+        $specialChars = preg_match('@[^\w]@', $password);
+  
+        if(!$uppercase || !$lowercase || !$number || !$specialChars || strlen($password) < 8) {
+          $resolve($this->logging_api->getErrormessage("checkPasswordStrength", "001"));
+        }else{
+          $resolve(array("status" => 0, "message" => "Password strong enough."));
+        }
+      };
 
-      if(!$uppercase || !$lowercase || !$number || !$specialChars || strlen($password) < 8) {
-        return $this->logging_api->getErrormessage("001");
-      }else{
-        return array("status" => 0, "message" => "Password strong enough.");
-      }
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -506,41 +596,51 @@
      * @param  array $loginData     No logindata needed to query this function.
      * @return array                {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function resetUserPassword(array $data, array $loginData = NULL): array
+    public function resetUserPassword(array $data): object
     {
-      if(isset($data["userID"]) && isset($data["password"])){
-        $pwcheck = $this->checkPasswordStrength($data["password"]);
-        if($pwcheck["status"] == 0){
-          try{
-            $sql = $this->db_api->execute("SELECT password, salt from users where id = ?",
-            array($data["userID"]));
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+        if(isset($data["userID"]) && isset($data["password"])){
+          $pwcheck = Promise\resolve($this->checkPasswordStrength($data["password"]));
+          $pwcheck->then(function($pwcheck_returned) use(&$resolve, $data){
+            if($pwcheck_returned["status"] == 0){
+              $get_password = Promise\resolve((new DB_Api)->execute("SELECT password, salt from users where id = ?", array($data["userID"])));
+              $get_password->then(function($get_password_returned) use(&$resolve, $data){ 
+                if(count($get_password_returned->resultRows) == 1){
+                  $get_password_returned = $get_password_returned->resultRows[0];
+                  $salt = $get_password_returned["salt"];
+                  $current_salted_pw = $get_password_returned["password"];
+                  $new_salted_pw = hash('sha256',$data["password"].$salt.$this->ini['serversalt']);
 
-            if($sql->rowCount() == 1){
-              $sqData = $sql->fetch();
-              $salt = $sqData["salt"];
-              $current_salted_pw = $sqData["password"];
-              $new_salted_pw = hash('sha256',$data["password"].$salt.$this->ini['serversalt']);
-
-              if($new_salted_pw != $current_salted_pw){
-                $sql = $this->db_api->execute("UPDATE users SET password = ? where id = ?",
-                array($new_salted_pw, $data["userID"]));
-
-                return array("status" => 0, "message" => "Password successfully updated.");
-              }else{
-                return $this->logging_api->getErrormessage("001");
-              }
+                  if($new_salted_pw != $current_salted_pw){
+                    $update_password = Promise\resolve((new DB_Api)->execute("UPDATE users SET password = ? where id = ?", array($new_salted_pw, $data["userID"])));
+                    $update_password->then(function($update_password_returned) use(&$resolve){
+                      $resolve(array("status" => 0, "message" => "Password successfully updated."));
+                    })->otherwise(function(\Exception $e) use(&$resolve){
+                      $resolve($this->logging_api->getErrormessage("resetUserPassword", "005",$e));
+                    });
+                  }else{
+                    $resolve($this->logging_api->getErrormessage("resetUserPassword", "001"));
+                  }
+                }else{
+                  $resolve($this->logging_api->getErrormessage("resetUserPassword", "002"));
+                }
+              })->otherwise(function(\Exception $e) use(&$resolve){
+                $resolve($this->logging_api->getErrormessage("resetUserPassword", "003",$e));
+              });
             }else{
-              return $this->logging_api->getErrormessage("002");
+              $resolve($pwcheck_returned);
             }
-          }catch(\Exception $e){
-            return $this->logging_api->getErrormessage("003",$e);
-          }
+          });
         }else{
-          return $pwcheck;
+          $resolve($this->logging_api->getErrormessage("resetUserPassword", "004"));
         }
-      }else{
-        return $this->logging_api->getErrormessage("004");
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -579,25 +679,29 @@
      * Function made for: Web(App)client.
      * @throws Exception $e       Throws an exception on db errors.
      * @param  array  $data       { "deviceid" : "The db device id.", "userid" : "The user's id to where the device belongs to."}
-     * @param  array $loginData   No logindata needed to query this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": { "deviceid" : [A list of logged out device id's.]} }
      */
-    public function logoutDevice(array $data, array $loginData = NULL): array
+    public function logoutDevice(array $data): object
     {
-      if(array_key_exists("deviceid", $data) && array_key_exists("userid", $data)){
-        $deviceID = $data["deviceid"];
-
-        try{
-          $sql = $this->db_api->execute("UPDATE users_sessions SET invalidated = ? WHERE userid = ? AND id = ?",
-                                        array(1, $data["userid"], $deviceID));
-
-          return array("status" => 0, "message" => "Successfully logged out device.", "data" => array("deviceid" => $deviceID));
-        }catch(\Exception $e){
-          return $this->logging_api->getErrormessage("001", $e);
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+        if(array_key_exists("deviceid", $data) && array_key_exists("userid", $data)){
+          $deviceID = $data["deviceid"];
+          $logout_device = Promise\resolve((new DB_Api)->execute("UPDATE users_sessions SET invalidated = ? WHERE userid = ? AND id = ?", array(1, $data["userid"], $deviceID)));
+          $logout_device->then(function($logout_device_returned) use(&$resolve, $deviceID){
+            $resolve(array("status" => 0, "message" => "Successfully logged out device.", "data" => array("deviceid" => $deviceID)));
+          })->otherwise(function(\Exception $e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("logoutDevice", "001", $e));
+          });
+        }else{
+          $resolve($this->logging_api->getErrormessage("logoutDevice", "002"));
         }
-      }else{
-        return $this->logging_api->getErrormessage("002");
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -608,39 +712,50 @@
      * @param  array $loginData   No logindata needed to query this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function sendInvitationMail(array $data, array $loginData = NULL): array
+    public function sendInvitationMail(array $data, array $loginData = NULL): object
     {
-      if(array_key_exists("userID", $data)){
-        if($loginData["userid"] != $data["userID"]){
-          $this->users = new Users_Api();
-          $userdata = $this->users->getUserData($data["userID"]);
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData){
+        if(array_key_exists("userID", $data)){
+          if($loginData["userid"] != $data["userID"]){
+            $userdata = Promise\resolve($this->getUserData($data["userID"]));
+            $userdata->then(function($userdata_returned) use(&$resolve, $data){
+              if($userdata_returned["status"] == 0){
+                $userdata = $userdata_returned["data"];
+                $subject = "Invitation Mail for Chia Management with love";
+                $message = "If you got this message your mail settings are working correctly.<br>Congrats!<br><strong>Note: Please do not reply to this e-mail.</strong>";
+    
+                $message = "<h1>Invitation Mail for Chia Management</h1><br>
+                Hello {$userdata["name"]} {$userdata["lastname"]},<br><br>
+                You were invited to join the Chia Management Software.<br>
+                An account was already created for you. See the details below:<br>
+                Username: <b>{$userdata["username"]}</b><br>
+                E-Mail: <b>{$userdata["email"]}</b><br>
+                Login link: <a href='{$this->ini["app_protocol"]}://{$this->ini["app_domain"]}{$this->ini["frontend_url"]}'><b>Click Here</b></a><br>
+                To get your login password ask the user who invited you or click <b>'Forgot password'</b> in the login window.<br><br>
+                Have fun :)<br>
+                ";
 
-          if($userdata["status"] == 0){
-            $userdata = $userdata["data"];
-            $subject = "Invitation Mail for Chia Management with love";
-            $message = "If you got this message your mail settings are working correctly.<br>Congrats!<br><strong>Note: Please do not reply to this e-mail.</strong>";
-
-            $message = "<h1>Invitation Mail for Chia Management</h1><br>
-            Hello {$userdata["name"]} {$userdata["lastname"]},<br><br>
-            You were invited to join the Chia Management Software.<br>
-            An account was already created for you. See the details below:<br>
-            Username: <b>{$userdata["username"]}</b><br>
-            E-Mail: <b>{$userdata["email"]}</b><br>
-            Login link: <a href='{$this->ini["app_protocol"]}://{$this->ini["app_domain"]}{$this->ini["frontend_url"]}'><b>Click Here</b></a><br>
-            To get your login password ask the user who invited you or click <b>'Forgot password'</b> in the login window.<br><br>
-            Have fun :)<br>
-            ";
-
-            $mailingstatus = $this->mailing_api->sendMail(array($userdata["email"]), "Chia Management invitation" , $message);
-
-            return array("status" => 0, "message" => "Successfully sent invitation mail to user with ID {$data["userID"]}.");
+                $mailingstatus = Promise\resolve($this->mailing_api->sendMail(array($userdata["email"]), "Chia Management invitation" , $message));
+                $mailingstatus->then(function($mailingstatus_returned) use(&$resolve, $data){
+                  $resolve(array("status" => 0, "message" => "Successfully sent invitation mail to user with ID {$data["userID"]}."));
+                });
+              }else{
+                $resolve($userdata);
+              }
+            });
           }else{
-            return $userdata;
+            $resolve($this->logging_api->getErrormessage("sendInvitationMail", "001"));
           }
         }else{
-          return $this->logging_api->getErrormessage("001");
+          $resolve($this->logging_api->getErrormessage("sendInvitationMail", "002"));
         }
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**

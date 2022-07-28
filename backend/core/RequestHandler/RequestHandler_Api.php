@@ -230,7 +230,7 @@
               }
             }
 
-            if($found) $resolve(array("updateFrontendViewingSite" => array("status" => 0, "message" => "Sucessfully updated siteID.", "data" => $subscriptions)));
+            if($found) return $resolve(array("updateFrontendViewingSite" => array("status" => 0, "message" => "Sucessfully updated siteID.", "data" => $subscriptions)));
           }
           $resolve($this->logging->getErrormessage("processUpdateFrontendViewingSite", "001"));
       }else{

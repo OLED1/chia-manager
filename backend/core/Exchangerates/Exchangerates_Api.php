@@ -210,12 +210,12 @@
      * @param  array    $loginData  { "userid" : [userid] }
      * @return array                { "status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[Newly set default currency]}}
      */
-    public function setUserDefaultCurrency(array $data, array $loginData = NULL): object
+    public function setUserDefaultCurrency(array $data, array $loginData): object
     {
       $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData){
         if(array_key_exists("currency_code", $data) && array_key_exists("userid", $loginData)){
-          $currency_code = Promise\resolve((new DB_Api())->execute("SELECT currency_code FROM users_settings WHERE userid = ?", array($userid)));
-          $currency_code->then(function($currency_code_returned) use(&$resolve, $currency_code){
+          $currency_code = Promise\resolve((new DB_Api())->execute("SELECT currency_code FROM users_settings WHERE userid = ?", array($loginData["userid"])));
+          $currency_code->then(function($currency_code_returned) use(&$resolve, $currency_code, $loginData, $data){
 
             if(count($currency_code_returned->resultRows) == 0){
               $set_currency_code = Promise\resolve((new DB_Api())->execute("INSERT INTO users_settings (id, userid, currency_code) VALUES (NULL, ?, ?)", array($loginData["userid"], $data["currency_code"])));

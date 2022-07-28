@@ -22,11 +22,6 @@
    */
   class Second_Factor_Api{
     /**
-     * Holds an instance to the Database Class.
-     * @var DB_Api
-     */
-    private $db_api;
-    /**
      * Holds an instance to the Users Class.
      * @var Users_Api
      */
@@ -61,7 +56,6 @@
      * Initialises the needed and above stated private variables.
      */
     public function __construct(object $server = NULL){
-        $this->db_api = new DB_Api();
         $this->users_api = new Users_Api();
         $this->user_settings_api = new UserSettings_Api();
         $this->logging_api = new Logging_Api($this, $server);
@@ -80,7 +74,7 @@
     {
         $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
             if(array_key_exists("userID", $data) && is_numeric($data["userID"])){
-                $totp_enabled_promise = Promise\resolve($this->db_api->execute("SELECT Count(*) AS count FROM users_settings WHERE userid = ? AND totp_proofen = 1 AND totp_enable = 1", array($data["userID"])));
+                $totp_enabled_promise = Promise\resolve((new DB_Api)->execute("SELECT Count(*) AS count FROM users_settings WHERE userid = ? AND totp_proofen = 1 AND totp_enable = 1", array($data["userID"])));
                 $totp_enabled_promise->then(function($totpEnabled) use(&$resolve){
                     if($totpEnabled->resultRows[0]["count"] == 1){
                         $resolve(array("status" => 0, "message" => "Totp is currently enabled."));
@@ -109,40 +103,49 @@
      * @param array  $data        { userID: [userid] } The user's ID for which the second factor should be enabled.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function enableTOTPmobile(array $data): array
+    public function enableTOTPmobile(array $data): object
     {
-        if(array_key_exists("userID", $data) && is_numeric($data["userID"])){
-            $userID = $data["userID"];
-            try{
-                $userdata = $this->users_api->getUserData($userID);
-                if($userdata["status"] == 0){
-                    $username = $userdata["data"]["username"];
-                    $app_domain = $this->ini["app_domain"];
-                    
-                    $totp = TOTP::create();
-                    $secret = $totp->getSecret();
-                    $secret_encrypted = $this->encryption_api->encryptString($totp->getSecret());
+        $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+            if(array_key_exists("userID", $data) && is_numeric($data["userID"])){
+                $userID = $data["userID"];
+                $userdata = Promise\resolve($this->users_api->getUserData($userID));
+                $userdata->then(function($userdata_returned) use(&$resolve, $userID){
+                    if($userdata_returned["status"] == 0){
+                        $username = $userdata_returned["data"]["username"];
+                        $app_domain = $this->ini["app_domain"];
 
-                    $totp->setIssuer("Chia Manager - " . $this->ini["app_domain"]);
-                    $totp->setLabel("{$username}@{$app_domain}");
-                    
-                    $qrCodeUri = $totp->getQrCodeUri(
-                        'https://api.qrserver.com/v1/create-qr-code/?data=[DATA]&size=300x300&ecc=M',
-                        '[DATA]'
-                    );
+                        $totp = TOTP::create();
+                        $secret = $totp->getSecret();
+                        $secret_encrypted = $this->encryption_api->encryptString($totp->getSecret());
 
-                    $sql = $this->db_api->execute("UPDATE users_settings SET totp_enable = 1, totp_secret = ? WHERE userid = ?", array($secret_encrypted, $userID));
+                        $totp->setIssuer("Chia Manager - " . $this->ini["app_domain"]);
+                        $totp->setLabel("{$username}@{$app_domain}");
 
-                    return array("status" => 0, "message" => "Successfully enabled TOTP mobile for user with ID: {$userID}", "data" => array("secret" => $secret, "qrCodeUri" => $qrCodeUri));
-                }else{
-                    return $userdata;
-                }
-            }catch(\Exception $e){
-                return $this->logging_api->getErrormessage("001", $e);
+                        $qrCodeUri = $totp->getQrCodeUri(
+                            'https://api.qrserver.com/v1/create-qr-code/?data=[DATA]&size=300x300&ecc=M',
+                            '[DATA]'
+                        );
+
+                        $enable_totp_mobile = Promise\resolve((new DB_Api())->execute("UPDATE users_settings SET totp_enable = 1, totp_secret = ? WHERE userid = ?", array($secret_encrypted, $userID)));
+                        $enable_totp_mobile->then(function($enable_totp_mobile_returned) use(&$resolve, $userID, $secret, $qrCodeUri){
+                            $resolve(array("status" => 0, "message" => "Successfully enabled TOTP mobile for user with ID: {$userID}", "data" => array("secret" => $secret, "qrCodeUri" => $qrCodeUri)));
+                        })->otherwise(function(\Exception $e) use(&$resolve){
+                            $resolve($this->logging_api->getErrormessage("enableTOTPmobile", "001", $e));
+                        });
+                    }else{
+                        $resolve($userdata_returned);
+                    }
+                });
+            }else{
+                $resolve($this->logging_api->getErrormessage("enableTOTPmobile", "002"));
             }
-        }else{
-            return $this->logging_api->getErrormessage("002");
-        }
+        };
+    
+        $canceller = function () {
+            throw new Exception('Promise cancelled');
+        };
+    
+        return new Promise\Promise($resolver, $canceller); 
     }
 
     /**
@@ -151,24 +154,33 @@
      * @param array $data   { "userID" : [int] }
      * @return array        Returns a status code array.
      */
-    public function disableTOTPmobile(array $data): array
+    public function disableTOTPmobile(array $data): object
     {
-        if(array_key_exists("userID", $data) && is_numeric($data["userID"])){
-            $totp_enabled = $this->getTOTPEnabled($data);
-            if($totp_enabled["status"] == 0){
-                try{
-                    $sql = $this->db_api->execute("UPDATE users_settings SET totp_enable = 0, totp_secret = NULL, totp_proofen = 0 WHERE userid = ?", array($data["userID"]));
-        
-                    return array("status" => 0, "message" => "Successfully disabled TOTP mobile for user with ID: {$data["userID"]}");
-                }catch(\Exception $e){
-                    return $this->logging_api->getErrormessage("001", $e);
-                }
+        $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+            if(array_key_exists("userID", $data) && is_numeric($data["userID"])){
+                $totp_enabled = Promise\resolve($this->getTOTPEnabled($data));
+                $totp_enabled->then(function($totp_enabled_returned) use(&$resolve, $data){
+                    if($totp_enabled_returned["status"] == 0){
+                        $disable_totp = Promise\resolve((new DB_Api)->execute("UPDATE users_settings SET totp_enable = 0, totp_secret = NULL, totp_proofen = 0 WHERE userid = ?", array($data["userID"])));
+                        $disable_totp->then(function($disable_totp_returned) use(&$resolve, $data){
+                            $resolve(array("status" => 0, "message" => "Successfully disabled TOTP mobile for user with ID: {$data["userID"]}"));
+                        })->otherwise(function(\Exception $e) use(&$resolve){
+                            $resolve($this->logging_api->getErrormessage("disableTOTPmobile", "001", $e));
+                        });
+                    }else{
+                        $resolve($totp_enabled_returned);
+                    }
+                });
             }else{
-                return $totp_enabled;
+                $resolve($this->logging_api->getErrormessage("disableTOTPmobile", "002"));
             }
-        }else{
-            return $this->logging_api->getErrormessage("002");
-        }
+        };
+
+        $canceller = function () {
+            throw new Exception('Promise cancelled');
+        };
+    
+        return new Promise\Promise($resolver, $canceller);
     }
 
     /**

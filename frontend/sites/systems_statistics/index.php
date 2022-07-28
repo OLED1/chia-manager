@@ -168,6 +168,8 @@
 </div>
 <?php 
     } 
-  });
 ?>
 <script nonce=<?php echo $ini["nonce_key"]; ?> src=<?php echo $ini["app_protocol"]."://".$ini["app_domain"]."".$ini["frontend_url"]."/sites/systems_statistics/js/systems_statistics.js"?>></script>
+<?php
+  });
+?>

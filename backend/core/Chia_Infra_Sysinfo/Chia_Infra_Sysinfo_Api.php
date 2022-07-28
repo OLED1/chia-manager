@@ -451,29 +451,38 @@
      * @param  ChiaWebSocketServer $server    An instance to the websocket server to be able to send data to the connected clients.
      * @return array                          Returns {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}} from the subfunction calls.
      */
-    public function querySystemInfo(array $data = NULL, array $loginData = NULL, $server = NULL): array
+    public function querySystemInfo(array $data = NULL, array $loginData = NULL, $server = NULL): object
     {
-      $querydata = [];
-      $querydata["data"]["querySystemInfo"] = array(
-        "status" => 0,
-        "message" => "Query systeminfo data.",
-        "data"=> array()
-      );
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData, $server){
+        $querydata = [];
+        $querydata["data"]["querySystemInfo"] = array(
+          "status" => 0,
+          "message" => "Query systeminfo data.",
+          "data"=> array()
+        );
 
-      return array();
+        $callfunction = "messageAllNodes";
+        if(array_key_exists("nodeinfo", $data) && array_key_exists("authhash", $data["nodeinfo"])){
+          $querydata["nodeinfo"]["authhash"] = $data["nodeinfo"]["authhash"];
+          $callfunction = "messageSpecificNode";
+        }
 
-      $callfunction = "messageAllNodes";
-      if(array_key_exists("nodeinfo", $data) && array_key_exists("authhash", $data["nodeinfo"])){
-        $querydata["nodeinfo"]["authhash"] = $data["nodeinfo"]["authhash"];
-        $callfunction = "messageSpecificNode";
-      }
+        if(!is_null($server)){
+          $function_call = Promise\resolve($server->$callfunction($querydata));
+        }else{
+          $function_call = Promise\resolve((new WebSocket_Api())->sendToWSS($callfunction, $querydata));
+        }
 
-      if(!is_null($server)){
-        return $server->$callfunction($querydata);
-      }else{
-        $this->websocket_api = new WebSocket_Api();
-        return $this->websocket_api->sendToWSS($callfunction, $querydata);
-      }
+        $function_call->then(function($function_call_returned) use(&$resolve){
+          $resolve($function_call_returned);
+        });
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -630,67 +639,6 @@
       };
 
       return new Promise\Promise($resolver, $canceller);
-      
-      if(array_key_exists("node_id", $data) && array_key_exists("service_type_id", $data) && array_key_exists("service_insert_id", $data) && 
-        array_key_exists("defined_maximum", $data) && array_key_exists("current_service_level", $data) && 
-        ($data["service_type_id"] == 9 && array_key_exists("service_target", $data)) || $data["service_type_id"] < 9){
-
-        $nodeid = $data["node_id"];
-        $this_service_type_id = $data["service_type_id"];
-        $this_service_target = (array_key_exists("service_target", $data) && !is_null($data["service_target"]) ? $data["service_target"] : NULL);
-
-        
-        $this_service_alerting_infos = $this->alerting_api->getRuleInformationOfService(["service_type_id" => $this_service_type_id, "node_id" => $nodeid, "service_target" => $this_service_target])["data"];
-
-        $service_insert_id = $data["service_insert_id"];
-        $defined_maximum = $data["defined_maximum"];
-        $current_service_level = $data["current_service_level"];
-        $perc_or_min_value = $this_service_alerting_infos["perc_or_min_value"];
-        $warn_level_at_after = $this_service_alerting_infos["warn_at_after"];
-        $crit_level_at_after = $this_service_alerting_infos["crit_at_after"];
-        $current_service_minutes = (array_key_exists("current_service_minutes", $data) && !is_null($data["current_service_minutes"]) ? $data["current_service_minutes"] : NULL);
-
-        $found_node_available_services = $this->getAvailableServices(["node_id" => $nodeid, "service_type_id" => $this_service_type_id, "service_target" => $this_service_target])["data"];
-        $current_service_alerting_level = $this->alerting_api->calculateAlertingLevel(["defined_maximum" => $defined_maximum, "current_service_level" => $current_service_level, "perc_or_min_value" => $perc_or_min_value, "warn_level_at_after" => $warn_level_at_after, "crit_level_at_after" => $crit_level_at_after, "current_service_minutes" => $current_service_minutes])["data"];
-        
-        try{
-          $insert_new = false;
-          if(array_key_exists($nodeid, $found_node_available_services["by-avail-serv-id"]) &&
-            array_key_exists($this_service_type_id ,$found_node_available_services["by-avail-serv-id"][$nodeid]) && 
-            count($found_node_available_services["by-avail-serv-id"][$nodeid][$this_service_type_id]) > 0){
-            
-            $found_avail_service = $found_node_available_services["by-avail-serv-id"][$nodeid][$this_service_type_id];
-            $target_avail_serv_id = array_key_first($found_avail_service);
-            $target_avail_service = $found_avail_service[$target_avail_serv_id];
-
-            $sql = $this->db_api->execute("UPDATE chia_infra_available_services SET curr_service_insert_id = ?, time_or_usage = ?, service_state_last_reported = NOW() WHERE id = ?",
-                                            array($service_insert_id, intval($current_service_alerting_level["time_or_usage"]), $target_avail_serv_id));
-            
-            if($target_avail_service["service_state"] != $current_service_alerting_level["level"]){
-              $insert_new = true;
-            }
-          }else{
-            $insert_new = true;
-          }
-  
-          if($insert_new){
-            $sql = $this->db_api->execute("INSERT INTO chia_infra_available_services (id, curr_service_insert_id, service_target, service_type, refers_to_rule_id, service_state, time_or_usage, node_id, service_state_first_reported, service_state_last_reported) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())", 
-                                          array($service_insert_id, $this_service_target, $this_service_type_id, $this_service_alerting_infos["id"], $current_service_alerting_level["level"], $current_service_alerting_level["time_or_usage"], $nodeid));
-          }
-
-          $this->alerting_api->alertAllFoundWARNandCRIT();
-
-          return array("status" => 0, "message" => "Successfully updated available services with new information.");
-        }catch(\Exeption $e){
-          //TODO Implement correct status codes
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
-        }
-      }else{
-        //TODO Implement correct status code
-        return array("status" => 1, "messages" => "Not all data stated.");
-      }
-
     }
 
     /**
@@ -751,46 +699,6 @@
       };
 
       return new Promise\Promise($resolver, $canceller);
-      
-      if(array_key_exists("node_and_service_up_status", $data)){
-        $available_nodes = $data["node_and_service_up_status"];
-      }else{
-        $available_nodes = $this->nodes_api->getCurrentChiaNodesUPAndServiceStatus()["data"];
-      }
-
-      foreach($available_nodes AS $nodeid => $services_data){
-        $this_service_type_id = 1;
-        $node_up_down_since = (strtotime($services_data["onlinestatus"]["node_lastreported"]) - strtotime($services_data["onlinestatus"]["node_firstreported"])) / 60;
-        $updateData = [
-          "node_id" => $nodeid,
-          "service_insert_id" => $services_data["onlinestatus"]["entry_id"],
-          "service_type_id" => $this_service_type_id,
-          "service_target" => NULL,
-          "defined_maximum" => NULL,
-          "current_service_level" => $services_data["onlinestatus"]["status"],
-          "current_service_minutes" => $node_up_down_since
-        ];
-
-        $this->updateAvailableServices($updateData);
-       
-        foreach($services_data["services"] AS $service_id => $node_service_state){
-          $service_up_down_since = (strtotime($node_service_state["service_lastreported"]) - strtotime($node_service_state["service_firstreported"])) / 60;
-          
-          $updateData = [
-            "node_id" => $nodeid,
-            "service_insert_id" => $node_service_state["entry_id"],
-            "service_type_id" => ($service_id - 1),
-            "service_target" => NULL,
-            "defined_maximum" => NULL,
-            "current_service_level" => $node_service_state["servicestate"],
-            "current_service_minutes" => $service_up_down_since
-          ];
-
-          $this->updateAvailableServices($updateData);
-        }
-      }
-
-      return array("status" => 0, "message" => "Successfully set all nodes system and service status.");
     }
 
     /**
@@ -799,84 +707,102 @@
      * @param array $data
      * @return array
      */
-    public function editMonitoredServices(array $data): array
+    public function editMonitoredServices(array $data): object
     {
-      if(array_key_exists("node_id", $data) && is_numeric($data["node_id"]) && $data["node_id"] > 2 && 
-        array_key_exists("service_id", $data) && is_numeric($data["service_id"]) &&
-        array_key_exists("monitor", $data) && is_bool($data["monitor"])){
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+        if(array_key_exists("node_id", $data) && is_numeric($data["node_id"]) && $data["node_id"] > 2 && 
+          array_key_exists("service_id", $data) && is_numeric($data["service_id"]) &&
+          array_key_exists("monitor", $data) && is_bool($data["monitor"])
+        ){
+          $available_services = Promise\resolve((new DB_Api())->execute("SELECT cias.id AS service_id, cias.service_type, ar.id AS alerting_id, 
+                                                                          (CASE WHEN (cias.service_target IS NULL OR cias.service_target = '') AND cist.perc_or_min= 1 THEN 'total downtime'
+                                                                                WHEN (cias.service_target IS NULL OR cias.service_target = '') AND cist.perc_or_min = 0 THEN 'total usage'
+                                                                                ELSE cias.service_target
+                                                                          END) AS service_target, 
+                                                                          (CASE WHEN ar.warn_at_after = -1 AND ar.crit_at_after = -1 AND ar.rule_default = 0 THEN 0 #Revert entry to default rule
+                                                                                WHEN (ar.warn_at_after > -1 OR ar.crit_at_after > -1) AND ar.rule_default = 0 THEN 1 #Update found rule to monitor = 1
+                                                                                WHEN ar.rule_default = 1 THEN 2 #Do nothing (it's a default rule)
+                                                                                ELSE 2 #Do nothing (it's a default rule)
+                                                                          END) AS update_replace_delete, ar.rule_default, 
+                                                                          (SELECT id from alerting_rules WHERE system_target = 1 AND rule_type = cias.service_type AND rule_default = 1) AS default_rule_id, ar.monitor 
+                                                                        FROM chia_infra_available_services cias
+                                                                        JOIN alerting_rules ar ON ar.id = cias.refers_to_rule_id 
+                                                                        JOIN chia_infra_service_types cist on cist.id = cias.service_type
+                                                                        WHERE cias.id = ? AND cias.node_id = ?", 
+                                                                        array($data["service_id"], $data["node_id"])));
 
-        try{
-          $sql = $this->db_api->execute("SELECT cias.id AS service_id, cias.service_type, ar.id AS alerting_id, 
-                                          (CASE WHEN (cias.service_target IS NULL OR cias.service_target = '') AND cist.perc_or_min= 1 THEN 'total downtime'
-                                                WHEN (cias.service_target IS NULL OR cias.service_target = '') AND cist.perc_or_min = 0 THEN 'total usage'
-                                                ELSE cias.service_target
-                                          END) AS service_target, 
-                                          (CASE WHEN ar.warn_at_after = -1 AND ar.crit_at_after = -1 AND ar.rule_default = 0 THEN 0 #Revert entry to default rule
-                                                WHEN (ar.warn_at_after > -1 OR ar.crit_at_after > -1) AND ar.rule_default = 0 THEN 1 #Update found rule to monitor = 1
-                                           		  WHEN ar.rule_default = 1 THEN 2 #Do nothing (it's a default rule)
-                                                ELSE 2 #Do nothing (it's a default rule)
-                                          END) AS update_replace_delete, ar.rule_default, 
-                                          (SELECT id from alerting_rules WHERE system_target = 1 AND rule_type = cias.service_type AND rule_default = 1) AS default_rule_id, ar.monitor 
-                                        FROM chia_infra_available_services cias
-                                        JOIN alerting_rules ar ON ar.id = cias.refers_to_rule_id 
-                                        JOIN chia_infra_service_types cist on cist.id = cias.service_type
-                                        WHERE cias.id = ? AND cias.node_id = ?", 
-                                        array($data["service_id"], $data["node_id"]));
+          $available_services->then(function($available_services_returned) use(&$resolve, $data){
+            $found_service = $available_services_returned->resultRows;
 
-          $found_service = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/;
+            if(array_key_exists(0, $found_service) && array_key_exists("rule_default", $found_service[0])){
+              $found_service = $found_service[0];
+              $default_rule = boolval($found_service["rule_default"]);
+              $service_type = $found_service["service_type"];
+              $rule_target = $found_service["service_target"];
 
-          if(array_key_exists(0, $found_service) && array_key_exists("rule_default", $found_service[0])){
-            $found_service = $found_service[0];
-            $default_rule = boolval($found_service["rule_default"]);
-            $service_type = $found_service["service_type"];
-            $rule_target = $found_service["service_target"];
-
-            if($default_rule){
-              $add_custom_rule_callback = $this->alerting_api->addCustomRule(["nodeid" => $data["node_id"], "service_type" => $service_type, "monitor" => boolval($data["monitor"]), "service_name" => $rule_target, "warn_at_after" => -1, "crit_at_after" => -1]);
-            }else{
-              $statement_data_array = [];
-              $statement = "";
-              if($found_service["monitor"] == 0){
-                if($found_service["update_replace_delete"] == 0){ //0 = Revert to default rule, which is per default an enabled monitoring rule
-                  $statement = "UPDATE chia_infra_available_services SET refers_to_rule_id = ? WHERE id = ?;
-                                DELETE FROM alerting_rules WHERE id = ?;"; 
-                  array_push($statement_data_array, $found_service["default_rule_id"], $found_service["service_id"], $found_service["alerting_id"]);
-                }else if($found_service["update_replace_delete"] == 1){ // 1 = Disable the existing service by disable it's custom rule.
-                  $statement = "UPDATE alerting_rules SET monitor = 1 WHERE id = ?";
-                  array_push($statement_data_array, $found_service["alerting_id"]);
+              if($default_rule){
+                $statements_to_resolve = [
+                  Promise\resolve($this->alerting_api->addCustomRule(["nodeid" => $data["node_id"], "service_type" => $service_type, "monitor" => boolval($data["monitor"]), "service_name" => $rule_target, "warn_at_after" => -1, "crit_at_after" => -1]))
+                ];
+              }else{
+                $statements_to_resolve = [];
+                if($found_service["monitor"] == 0){
+                  if($found_service["update_replace_delete"] == 0){ //0 = Revert to default rule, which is per default an enabled monitoring rule
+                    $statements_to_resolve = [
+                      Promise\resolve((new DB_Api())->execute("UPDATE chia_infra_available_services SET refers_to_rule_id = ? WHERE id = ?", array($found_service["default_rule_id"], $found_service["service_id"]))),
+                      Promise\resolve((new DB_Api())->execute("DELETE FROM alerting_rules WHERE id = ?", array($found_service["alerting_id"])))
+                    ];
+                  }else if($found_service["update_replace_delete"] == 1){ // 1 = Disable the existing service by disable it's custom rule.
+                    $statements_to_resolve = [
+                      Promise\resolve((new DB_Api())->execute("UPDATE alerting_rules SET monitor = 1 WHERE id = ?", array($found_service["alerting_id"])))
+                    ];
+                  }else{
+                    //TODO Implement correct status code
+                    return $resolve(array("status" => 1, "message" => "A default rule cannot be edited."));
+                  }
+                }else if($found_service["monitor"] == 1){
+                  $statements_to_resolve = [
+                    Promise\resolve((new DB_Api())->execute("UPDATE alerting_rules SET monitor = 0 WHERE id = ?", $found_service["alerting_id"]))
+                  ];
                 }else{
                   //TODO Implement correct status code
-                  return array("status" => 1, "message" => "A default rule cannot be edited.");
-                }
-
-              }else if($found_service["monitor"] == 1){
-                $statement = "UPDATE alerting_rules SET monitor = 0 WHERE id = ?";
-                array_push($statement_data_array, $found_service["alerting_id"]);
+                  return $resolve(array("status" => 1, "message" => "Monitor value '{$found_service["monitor"]}' not valid."));
+                }                
               }
 
-              $sql = $this->db_api->execute($statement, $statement_data_array);
+              Promise\all($statements_to_resolve)->then(function($all_returned) use(&$resolve, $data){
+                if(array_key_exists("status", $all_returned) && $all_returned["status"] != 0) return $resolve($all_returned[0]);
+                
+                $new_monitored_services = Promise\resolve($this->alerting_api->getConfigurableDowntimeServices(["node_id" => $data["node_id"]]));
+                $new_monitored_services->then(function($new_monitored_services_returned) use(&$resolve, $data){
+                  if(array_key_exists("data", $new_monitored_services_returned)) $new_monitored_services = $new_monitored_services_returned["data"];
+                  else $new_monitored_services = [];
+      
+                  $resolve(array("status" => 0, "message" => "Successfully set monitor to {$data["monitor"]} for service with ID {$data["service_id"]}.", "data" => $new_monitored_services));  
+                });
+              })->otherwise(function(\Exception $e) use(&$resolve){
+                //TODO Implement correct status code
+                return $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+              });
+            }else{
+              //TODO Implement correct status code
+              $resolve(array("status" => 1, "message" => "This service has no valid alerting rule. Please report this error to the dev team."));
             }
-
-            $new_monitored_services = $this->alerting_api->getConfigurableDowntimeServices(["node_id" => $data["node_id"]]);
-            if(array_key_exists("data", $new_monitored_services)) $new_monitored_services = $new_monitored_services["data"];
-            else $new_monitored_services = [];
-
-            return array("status" => 0, "message" => "Successfully set monitor to {$data["monitor"]} for service with ID {$data["service_id"]}.", "data" => $new_monitored_services);
-          }else{
+          })->otherwise(function(\Exception $e) use(&$resolve){
             //TODO Implement correct status code
-            return array("status" => 1, "message" => "This service has no valid alerting rule. Please report this error to the dev team.");
-          }
-
-        }catch(\Exception $e){
-          //TODO Implement correct status codes
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
+            $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+          });
+        }else{
+          //TODO Implement correct status code
+          $resolve(array("status" => 1, "message" => "Not all data stated."));
         }
+      };
 
-      }else{
-        //TODO Implement correct status code
-        return array("status" => 1, "message" => "Not all data stated.");
-      }
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
   }
 ?>

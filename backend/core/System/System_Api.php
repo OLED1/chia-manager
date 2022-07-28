@@ -162,23 +162,29 @@
      * Function made for: Web(App)client
      * @throws Exception $e       Throws an exception on db errors.
      * @param  array  $data       { "settingtype" : "settingtype" }
-     * @param  array $loginData   { NULL } No logindata needed to use this function.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": { "settingtype" : "The settingtype that has been changed" }}
      */
-    public function confirmSetting(array $data, array $loginData = NULL): array
+    public function confirmSetting(array $data): object
     {
-      if(array_key_exists("settingtype", $data)){
-        $settingtype = $data["settingtype"];
-        try{
-          $sql = $this->db_api->execute("UPDATE system_settings SET confirmed = ? WHERE settingtype = ?", array(1, $settingtype));
-
-          return array("status" => 0, "message" => "Successfully confirmed settingtype $settingtype.", "data" => array("settingtype" => $settingtype));
-        }catch(\Exception $e){
-          return $this->logging_api->getErrormessage("001", $e);
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+        if(array_key_exists("settingtype", $data)){
+          $settingtype = $data["settingtype"];
+          $confirm_setting = Promise\resolve((new DB_Api)->execute("UPDATE system_settings SET confirmed = ? WHERE settingtype = ?", array(1, $settingtype)));
+          $confirm_setting->then(function($confirm_setting_returned) use(&$resolve, $settingtype){
+            $resolve(array("status" => 0, "message" => "Successfully confirmed settingtype $settingtype.", "data" => array("settingtype" => $settingtype)));
+          })->otherwise(function(\Exception $e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("confirmSetting", "001", $e));
+          });
+        }else{
+          $resolve($this->logging_api->getErrormessage("confirmSetting", "002"));
         }
-      }else{
-        return $this->logging_api->getErrormessage("002");
-      }
+      };
+
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -235,26 +241,9 @@
      * @param array $loginData   { NULL }
      * @return array             {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function setInstanceUpdating(array $data = [], array $loginData = NULL): array
+    public function setInstanceUpdating(array $data = [], array $loginData = NULL): object
     {
       return $this->system_update_api->setInstanceUpdating($data, $loginData);
-    }
-
-    /**
-     * Starts the updateprocess if a update is available.
-     * Function made for: Web(App)client
-     * @param  array  $data                   { NULL } No data is needed query this function.
-     * @param  array $loginData               { NULL } No logindata is needed query this function.
-     * @param  ChiaWebSocketServer $server    An instance to the Webscoket server to be able to communicate with the node
-     * @return array                          {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
-     */
-    public function processUpdate(array $data, array $loginData = NULL, $server = NULL): array
-    {
-      if($this->checkForUpdates()["data"]["updateavail"]){
-        return $this->system_update_api->processUpdate($data, $loginData, $server);
-      }else{
-        return $this->logging_api->getErrormessage("001");
-      }
     }
 
     /**
@@ -268,7 +257,6 @@
     public function getSystemMessages(array $data = [], array $loginData = NULL, $server = NULL): object
     {
       $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData){
-
         $systemupdate = Promise\resolve($this->checkForUpdates(["update_data_db" => true]));
         $nodeupdates = Promise\resolve($this->nodes_api->checkUpdatesAndChannels());
         $wssrunning = Promise\resolve($this->testConnection());
@@ -445,33 +433,45 @@
      * Function made for: Web(App)client
      * @return array  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function enableCronjob(): array
+    public function enableCronjob(): object
     {
-      $cronjobEnbled = $this->getCronjobEnabled();
-      if($cronjobEnbled["status"] != 0){
-        $pathtocronjob = realpath(__DIR__."/../CronBackendService/CronBackendService.php");
-        $crontabJob = new CrontabJob();
-        $crontabJob
-        ->setMinutes('*')
-        ->setHours('*')
-        ->setDayOfMonth('*')
-        ->setMonths('*')
-        ->setDayOfWeek('*')
-        ->setTaskCommandLine("php {$pathtocronjob}")
-        ->setComments("ChiaMgmt cronjob - Do not remove this comment - {$this->ini["serversalt"]}"); // Comments are persisted in the crontab
+      $resolver = function (callable $resolve, callable $reject, callable $notify){
+        $cronjobEnabled = Promise\resolve($this->getCronjobEnabled());
+        $cronjobEnabled->then(function($cronjobEnabled_returned) use(&$resolve){
+          if($cronjobEnabled_returned["status"] != 0){
+            $pathtocronjob = realpath(__DIR__."/../CronBackendService/CronBackendService.php");
+            $crontabJob = new CrontabJob();
+            $crontabJob
+            ->setMinutes('*')
+            ->setHours('*')
+            ->setDayOfMonth('*')
+            ->setMonths('*')
+            ->setDayOfWeek('*')
+            ->setTaskCommandLine("php {$pathtocronjob}")
+            ->setComments("ChiaMgmt cronjob - Do not remove this comment - {$this->ini["serversalt"]}"); // Comments are persisted in the crontab
+    
+            $this->crontabRepository->addJob($crontabJob);
+            $this->crontabRepository->persist();
+    
+            $cronjobEnabled = Promise\resolve($this->getCronjobEnabled());
+            $cronjobEnabled->then(function($cronjobEnabled_returned) use(&$resolve){ 
+              if($cronjobEnabled_returned["status"] == 0){
+                $resolve(array("status" => 0, "message" => "Cronjob Successfully enabled."));
+              }else{
+                $resolve($this->logging_api->getErrormessage("enableCronjob", "001"));
+              }
+            });
+          }else{
+            $resolve($cronjobEnabled_returned);
+          }
+        });
+      };
 
-        $this->crontabRepository->addJob($crontabJob);
-        $this->crontabRepository->persist();
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
 
-        $cronjobEnbled = $this->getCronjobEnabled();
-        if($cronjobEnbled["status"] == 0){
-          return array("status" => 0, "message" => "Cronjob Successfully enabled.");
-        }else{
-          return $this->logging_api->getErrormessage("001");
-        }
-      }
-
-      return $cronjobEnbled;
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -479,24 +479,36 @@
      * Function made for: Web(App)client
      * @return array  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function disableCronjob(): array
+    public function disableCronjob(): object
     {
-      $cronjobEnbled = $this->getCronjobEnabled();
-      if($cronjobEnbled["status"] == 0){
-        $enabledCronjobs = $this->crontabRepository->findJobByRegex("/ChiaMgmt\ cronjob\ -\ Do\ not\ remove\ this\ comment\ -\ {$this->ini["serversalt"]}/");
-        $crontabJob = $enabledCronjobs[0];
-        $this->crontabRepository->removeJob($crontabJob);
-        $this->crontabRepository->persist();
+      $resolver = function (callable $resolve, callable $reject, callable $notify){
+        $cronjobEnabled = Promise\resolve($this->getCronjobEnabled());
+        $cronjobEnabled->then(function($cronjobEnabled_returned)  use(&$resolve){
+          if($cronjobEnabled_returned["status"] == 0){
+            $enabledCronjobs = $this->crontabRepository->findJobByRegex("/ChiaMgmt\ cronjob\ -\ Do\ not\ remove\ this\ comment\ -\ {$this->ini["serversalt"]}/");
+            $crontabJob = $enabledCronjobs[0];
+            $this->crontabRepository->removeJob($crontabJob);
+            $this->crontabRepository->persist();
 
-        $cronjobEnbled = $this->getCronjobEnabled();
-        if($cronjobEnbled["status"] != 0){
-          return array("status" => 0, "message" => "Cronjob Successfully disbled.");
-        }else{
-          return $this->logging_api->getErrormessage("001");
-        }
-      }
+            $cronjobEnabled = Promise\resolve($this->getCronjobEnabled());
+            $cronjobEnabled->then(function($cronjobEnabled_returned)  use(&$resolve){
+              if($cronjobEnabled_returned["status"] != 0){
+                $resolve(array("status" => 0, "message" => "Cronjob Successfully disbled."));
+              }else{
+                $resolve($this->logging_api->getErrormessage("disableCronjob", "001"));
+              }
+            });
+          }else{
+            $resolve($cronjobEnabled_returned);
+          }
+        });
+      };
 
-      return $cronjobEnbled;
+      $canceller = function () {
+        throw new Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
