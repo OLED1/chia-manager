@@ -488,6 +488,7 @@
       $config = str_replace("[version]", $version, $config);
       $config = str_replace("[web_client_auth_hash]", $web_client_auth_hash, $config);
       $config = str_replace("[backend_client_auth_hash]", $backend_client_auth_hash, $config);
+      $config = str_replace("[socket_protocol]", "wss", $config);
       $config = str_replace("[socket_listener]", $websocket_config["socket_protocol"], $config);
       $config = str_replace("[socket_local_port]", $websocket_config["socket_local_port"], $config);
 

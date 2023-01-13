@@ -41,12 +41,13 @@
     /**
      * [testConnection description]
      * Function made for: Web(App)client
+     * @param  string $host   Override the websocket host.
      * @throws Exception $e  Throws an exception websocket errors.
      * @return array         {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function testConnection(): object
+    public function testConnection(string $host = "localhost"): object
     {
-      return $this->wsclient->testConnection();
+      return $this->wsclient->testConnection($host);
     }
 
     /**
