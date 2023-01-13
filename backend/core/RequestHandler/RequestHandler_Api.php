@@ -56,6 +56,11 @@
      * @var WebSocketServer
      */
     private $server;
+    /**
+     * Holds an instance to the System Update Api Class.
+     * @var System_Update_Api
+     */
+    private $system_update_api;
 
     /**
      * The constructur sets the needed above stated private variables except $subscriptions and $requests.
