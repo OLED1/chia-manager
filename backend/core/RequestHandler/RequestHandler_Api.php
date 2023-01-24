@@ -133,20 +133,33 @@
         ];
         
         
-        Promise\all($cronjob_promises)->then(function($all_returned) use(&$resolve, $server){ 
-          Promise\resolve($server->messageFrontendClients(array("siteID" => 9), array("queryOverallData" => $all_returned[1])));
-          Promise\resolve($server->messageFrontendClients(array("siteID" => 8), array("getSystemInfo" => $all_returned[3])));
-          Promise\resolve($server->messageAllNodes(array("data" => ["querySystemInfo" => [ "status" => 0, "message" => "Query systeminfo data.", "data"=> []]])));
-          Promise\resolve($server->messageAllNodes(array("data" => ["queryWalletData" => ["status" => 0, "message" => "Query wallet data.", "data"=>[]]])));
-          Promise\resolve($server->messageAllNodes(array("data" => ["queryWalletTransactions" => ["status" => 0, "message" => "Query wallet transaction data.", "data"=>[]]])));
-          Promise\resolve($server->messageAllNodes(array("data" => ["queryFarmData" => ["status" => 0, "message" => "Query farm transaction data.", "data"=>[]]])));
-          Promise\resolve($server->messageAllNodes(array("data" => ["queryHarvesterData" => ["status" => 0, "message" => "Query harvester transaction data.", "data"=>[]]])));
-          Promise\resolve($server->messageAllNodes(array("data" => ["get_script_version" => ["status" => 0, "message" => "Query chia node overall data.", "data"=>[]]])));
-         
-          $alertAllWARNCRIT = Promise\resolve((new Alerting_Api)->alertAllFoundWARNandCRIT());
-          $alertAllWARNCRIT->then(function($alertAllWARNCRIT_returned) use(&$resolve){
-            $resolve(array("cronJobExecution" => array("status" => 0, "message" => "Successfully executed system background jobs.", "data" => date("Y-m-d H:i:s"))));
+        Promise\all($cronjob_promises)->then(function($all_returned) use(&$resolve, $server){
+          echo "-------------------------------------------\n";
+          echo "HIER 0\n";
+
+          $further_cronjob_promises = [
+            Promise\resolve($server->messageFrontendClients(array("siteID" => 9), array("queryOverallData" => $all_returned[1]))),
+            /*Promise\resolve($server->messageFrontendClients(array("siteID" => 8), array("getSystemInfo" => $all_returned[3]))),
+            Promise\resolve($server->messageAllNodes(array("data" => ["querySystemInfo" => [ "status" => 0, "message" => "Query systeminfo data.", "data"=> []]]))),
+            Promise\resolve($server->messageAllNodes(array("data" => ["queryWalletData" => ["status" => 0, "message" => "Query wallet data.", "data"=>[]]]))),
+            Promise\resolve($server->messageAllNodes(array("data" => ["queryWalletTransactions" => ["status" => 0, "message" => "Query wallet transaction data.", "data"=>[]]]))),
+            Promise\resolve($server->messageAllNodes(array("data" => ["queryFarmData" => ["status" => 0, "message" => "Query farm transaction data.", "data"=>[]]]))),
+            Promise\resolve($server->messageAllNodes(array("data" => ["queryHarvesterData" => ["status" => 0, "message" => "Query harvester transaction data.", "data"=>[]]]))),
+            Promise\resolve($server->messageAllNodes(array("data" => ["get_script_version" => ["status" => 0, "message" => "Query chia node overall data.", "data"=>[]]]))),
+            *///promise\resolve((new Alerting_Api)->alertAllFoundWARNandCRIT())
+          ];
+
+          echo "HIER 1\n";
+          echo "-------------------------------------------\n";
+
+          Promise\all($further_cronjob_promises)->then(function($further_cronjob_promises_returned){
+            print_r($further_cronjob_promises_returned);
           });
+
+          //$alertAllWARNCRIT = Promise\resolve((new Alerting_Api)->alertAllFoundWARNandCRIT());
+          //$alertAllWARNCRIT->then(function($alertAllWARNCRIT_returned) use(&$resolve){
+            $resolve(array("cronJobExecution" => array("status" => 0, "message" => "Successfully executed system background jobs.", "data" => date("Y-m-d H:i:s"))));
+          //});
         });
       };
 

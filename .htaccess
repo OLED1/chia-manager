@@ -1,6 +1,6 @@
 Header set X-Content-Type-Options nosniff
 Header set Content-Security-Policy "script-src 'self';"
-Header set Content-Security-Policy "script-src 'nonce-3LMJm+1llrExr4spfB+DrjbN5ys7gYhj1w=';"
+Header set Content-Security-Policy "script-src 'nonce-GoMHP0jonKOZ4t7Cf6s5Ui5HZr1QBT1FxVbIExJokpoeTZmGYE';"
 
 Header set X-Content-Security-Policy "script-src 'self';"
 Header set X-WebKit-CSP "script-src 'self';"
