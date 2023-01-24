@@ -5,9 +5,9 @@
   use React\MySQL\QueryResult;
   use React\Promise\Deferred;
 
-  ini_set('display_errors', 1);
-  ini_set('display_startup_errors', 1);
-  error_reporting(E_ALL);
+  //ini_set('display_errors', 1);
+  //ini_set('display_startup_errors', 1);
+  //error_reporting(E_ALL);
 
   /**
    * The universal project db connector class.
@@ -17,7 +17,7 @@
      * Holds an instance to the database.
      * @var PDO
      */
-    private $con;
+    private $connection;
 
     /**
      * The constructur initialises the databse instance with the parameters stated in the config file.
@@ -44,8 +44,8 @@
     {
       //TODO Adapt async for installing process
       try{
-        $this->con = new \PDO("mysql:dbname={$db_name};host={$db_host}", $db_user, $db_password);
-        $this->con->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $con = new \PDO("mysql:dbname={$db_name};host={$db_host}", $db_user, $db_password);
+        $con->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
         return array("status" => 0, "message" => "Database connection successfull.");
       }catch(\Exception $e){
@@ -61,6 +61,7 @@
      */
     public function execute(string $statement, array $parameter)
     {                    
+      //print_r($statement);
       $promise = $this->connection->query($statement, $parameter)->then(
         function (QueryResult $command){
           return $command;
@@ -71,6 +72,8 @@
       );
       
       $this->connection->quit();
+
+      //print_r($promise);
 
       return $promise;
     }

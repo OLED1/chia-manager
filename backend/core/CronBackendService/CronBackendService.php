@@ -24,6 +24,11 @@
      * @var Logging_Api
      */
     private $logging_api;
+    /**
+     * Holds an instance to the System Update API Class.
+     * @var Logging_Api
+     */
+    private $system_update_api;
 
     /**
      * Initialises the needed and above stated private variables.
@@ -42,7 +47,6 @@
         $system_update = Promise\resolve($this->system_update_api->checkUpdateRoutine());
         $system_update->then(function($system_update_returned){
           if($system_update_returned["data"]["maintenance_mode"] == 0 && $system_update_returned["data"]["process_update"] == 0){
-
             $logging_message = Promise\resolve($this->logging_api->getErrormessage("queryData", "001"));
             $logging_message->then(function($logging_message_returned){
               echo "{$this->getDate()}: {$logging_message_returned["message"]}\n";

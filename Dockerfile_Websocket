@@ -1,8 +1,14 @@
-#chia-manager-websocket:0.1.3.dev-php8.2.1
+#chia-manager-websocket:0.2.dev-php8.2.1
 FROM php:8.2.1-fpm
+#chia-manager-websocket:0.2.dev-php8.1
+#FROM php:8.1-fpm
+#chia-manager-websocket:0.2.dev-php8.0
+#FROM php:8.0-fpm
+#chia-manager-websocket:0.2.dev-php7.4
+#FROM php:7.4-fpm
 
 # Install OS dependencies required
-RUN apt-get update && apt-get upgrade -y && apt-get install curl zip libicu-dev libonig-dev cron -y
+RUN apt-get update && apt-get upgrade -y && apt-get install curl zip libicu-dev libonig-dev cron host sudo -y
 
 # Install APCU
 RUN pecl install apcu 
@@ -17,7 +23,8 @@ RUN docker-php-ext-enable apcu opcache
 WORKDIR /var/www/html
 COPY backend backend/
 COPY composer.json .
-COPY docker/init_cm_websocket.php docker/init_cm_websocket.php 
+COPY docker/init_cm_websocket.php docker/init_cm_websocket.php
+COPY docker/set_svc_ip_to_hosts.sh docker/set_svc_ip_to_hosts.sh
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
 # Create default folders
@@ -32,9 +39,16 @@ RUN composer update
 VOLUME /var/www/html/backend/config
 VOLUME /var/www/html/logs
 
+# Set app owner to apache
+RUN chown www-data. /var/www/html/logs -R
+RUN chown www-data. /var/www/html/backend/config -R
+
+# Set default ENV variables
+ENV CM_DOCKER true
+
 # Execute websocket init script and start websocket server
-#CMD ["php /var/www/html/backend/core/WebSocketServer/websocket.php"]
+#CMD ["sh","-c","/bin/sh docker/set_svc_ip_to_hosts.sh && sudo -u www-data php /var/www/html/backend/core/WebSocketServer/websocket.php"]
 
 # Only for developing
-RUN apt-get install sudo net-tools telnet less
+RUN apt-get install sudo net-tools telnet less -y
 ENTRYPOINT ["tail", "-f", "/dev/null"]

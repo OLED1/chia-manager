@@ -61,7 +61,6 @@ $(function(){
       var siteID = 1;
     }
 
-
     $("#sitecontent").children().remove();
     $(".breadcrumb-item a").text(sitename);
     $(".xdsoft_datetimepicker").remove();

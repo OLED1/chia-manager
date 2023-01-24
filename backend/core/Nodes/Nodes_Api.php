@@ -131,6 +131,9 @@
         $client_nodes->then(function($client_nodes_returned) use(&$resolve){
           $returndata = array();
 
+          echo "CLIENT NODES RETURNED:";
+          print_r($client_nodes_returned);
+
           foreach ($client_nodes_returned->resultRows as $arrkey => $conninfo) {
             $returnarray[$conninfo["id"]] = $conninfo;
             $returnarray[$conninfo["id"]]["nodeauthhash"] = $this->encryption_api->decryptString($conninfo["nodeauthhash"]);
@@ -138,6 +141,7 @@
   
           $resolve(array("status" => 0, "message" => "Sucessfully loaded all client data.", "data" => $returnarray));
         })->otherwise(function(\Exception $e) use(&$resolve){
+          print_r($e->getMessage());
           $resolve($this->logging_api->getErrormessage("getConfiguredNodes", "001", $e));
         });
   
@@ -528,6 +532,7 @@
           $node_data = $all_returned[2]->resultRows;
 
           $returndata = [];
+          $returndata["updateinfos"] = [];
           foreach($node_data AS $arrkey => $nodedata){
             $returndata["updateinfos"][$nodedata["id"]] = $nodedata;
 
@@ -615,7 +620,7 @@
           $activeSubscriptions->then(function($activeSubscriptions_returned) use(&$resolve, $client_nodes_returned){
             $activeSubscriptions_returned = $activeSubscriptions_returned["getActiveSubscriptions"];
             
-            if(array_key_exists("data", $activeSubscriptions_returned)){
+            if(array_key_exists("data", $activeSubscriptions_returned) && array_key_exists("data", $client_nodes_returned)){
               foreach($client_nodes_returned["data"] AS $nodeid => $nodedata){
                 $found = false;
                 foreach(explode(",",$nodedata["nodetype"]) AS $arrkey => $nodetype){

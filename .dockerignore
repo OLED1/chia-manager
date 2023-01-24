@@ -7,3 +7,4 @@ Dockerfile_Websocket
 package-lock.json
 .gitignore
 .git
+composer.lock

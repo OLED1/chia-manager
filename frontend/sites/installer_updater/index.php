@@ -1,32 +1,40 @@
 <?php
+  use React\Promise;
   use ChiaMgmt\System_Update\System_Update_Api;
   require __DIR__ . '/../../../vendor/autoload.php';
 
   $system_update_api = new System_Update_Api();
-  $system_update_state = $system_update_api->checkUpdateRoutine();
-  
-  $ini = NULL;
-  if(!array_key_exists("db_install_needed", $system_update_state["data"])){
-    $ini = parse_ini_file(__DIR__.'/../../../backend/config/config.ini.php');
-  }
 
-  $default_nonce = "3LMJm+1llrExr4spfB+DrjbN5ys7gYhj1w=";
-  $db_install = false;
-  $process_update = false;
+  $site_infos_to_load = [
+    Promise\resolve($system_update_api->checkUpdateRoutine()),
+    Promise\resolve($system_update_api->checkForUpdates())
+  ];
 
-  if(array_key_exists("db_install_needed", $system_update_state["data"])){
-    $db_install = true;
-  }else if(array_key_exists("process_update", $system_update_state["data"]) && $system_update_state["data"]["process_update"]){
-    $default_nonce = $ini["nonce_key"];
-    $update_infos = $system_update_api->checkForUpdates()["data"];
-    $process_update = true;
-  }else{
-    header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/login.php");
-  }
+  Promise\all($site_infos_to_load)->then(function($all_returned){
+    $system_update_state = $all_returned[0];
 
-  echo "<script nonce={$default_nonce}>
-          var userID = {$_COOKIE["user_id"]};
-        </script>";
+    $ini = NULL;
+    if(!array_key_exists("db_install_needed", $system_update_state["data"])){
+      $ini = parse_ini_file(__DIR__.'/../../../backend/config/config.ini.php');
+    }
+
+    $default_nonce = "3LMJm+1llrExr4spfB+DrjbN5ys7gYhj1w=";
+    $db_install = false;
+    $process_update = false;
+
+    if(array_key_exists("db_install_needed", $system_update_state["data"])){
+      $db_install = true;
+    }else if(array_key_exists("process_update", $system_update_state["data"]) && $system_update_state["data"]["process_update"]){
+      $default_nonce = $ini["nonce_key"];
+      $update_infos = $all_returned[1]["data"];
+      $process_update = true;
+    }else{
+      header("Location: " . $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"]."/login.php");
+    }
+
+    echo "<script nonce={$default_nonce}>
+      var userID = {$_COOKIE["user_id"]};
+    </script>";
 ?>
 <html lang="en">
 <head>
@@ -450,5 +458,5 @@
     <script nonce=<?php echo $default_nonce; ?> src="<?php echo "https://{$_SERVER['SERVER_NAME']}/frontend/frameworks/bootstrap/js/sb-admin-2.min.js"; ?>"></script>
     <script nonce=<?php echo $default_nonce; ?> src="<?php echo "https://{$_SERVER['SERVER_NAME']}/frontend/sites/installer_updater/js/installer_updater.js"; ?>"></script>
 </body>
-
 </html>
+<?php }); ?>

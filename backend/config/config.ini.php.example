@@ -14,7 +14,6 @@ system_root = '/'
 backend_url = '/backend'
 frontend_url = '/frontend'
 backup_root = '/backup'
-log_root = '/logs'
 serversalt = 'Your-super-safe-serversalt'
 nonce_key = 'Your-super-safe-nonce-key'
 versnummer = '0.1.1.210909'
@@ -22,10 +21,12 @@ versnummer = '0.1.1.210909'
 [websocket]
 web_client_auth_hash = 'Your-super-safe-default-web-client-authhash'
 backend_client_auth_hash = 'G9ZdJiAUK/BmGh9dVsP0cHA0dxs5JpQcRIjlWcNrASCQKKs'
-socket_protocol = 'wss'
-socket_domain = 'dev.chiamgmt.edtmair.at'
+socket_protocol = 'wss' #For external websocket connections
+socket_domain = 'dev.chiamgmt.edtmair.at' #For external websocket connections
+local_socket_domain = 'localhost' #For local websocket connections
+socket_port = '8080' #For external websocket connections
+socket_local_port = '8443' #For local websocket connections
 socket_listener = '/chiamgmt'
-socket_local_port = '8443'
 
 [extapis]
 exchangerate_api_codes = 'https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies.json'

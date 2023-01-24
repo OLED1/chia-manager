@@ -115,15 +115,13 @@ class ChiaWebSocketServerNew implements MessageComponentInterface {
    * @param  array $msg                   The message as json which was sent in from the client.
    */
   public function onMessage(ConnectionInterface $from, $msg) {
-    
     Loop::get()->addTimer(0, function() use($from, $msg){
       $data = json_decode($msg, true);
       $request_id = substr(str_shuffle(str_repeat($x='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', ceil(10/strlen($x)) )),1,10);
       echo "[{$this->getDate()}] [{$request_id}] INFO EVENTLOOP GENERAL: Added connection {$from->resourceId} to event loop.\n";
-
+      
       if(is_array($data) && array_key_exists("node" , $data) && array_key_exists("request" , $data)
       && array_key_exists("data" , $data["request"]) && array_key_exists("backendInfo" , $data["request"])){
-
         //Setting variables for processing
         $nodeInfo = $data["node"];
         $request = $data["request"];

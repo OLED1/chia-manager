@@ -58,7 +58,7 @@
           }else{
             return $resolve($this->logging_api->getErrormessage("getSiteInfos", "001"));
           }
-          
+         
           $available_sites->then(function($available_sites_returned) use(&$resolve){
             $returndata["by-id"] = [];
             $returndata["by-namespace"] = [];
@@ -81,7 +81,6 @@
   
             $resolve(array("status" => 0, "message" => "Successfully loaded site(s) information.", "data" => $returndata));
           })->otherwise(function (\Exception $e) use(&$resolve){
-            print_r($e);
             $resolve($this->logging_api->getErrormessage("getSiteInfos", "002", $e));
           });
         }else{

@@ -25,6 +25,11 @@
        * @var array
        */
       private $ini;
+      /**
+       * Instance to websocket server class.
+       * @var ChiaWebSocketServerNew
+       */
+      private $server;
 
       /**
        * Initialises the needed and above stated private variables.
@@ -40,7 +45,7 @@
        * Function made for: Web(App)client, Backendclient.
        * @param array $loginData   {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
        */
-      public function testConnection(string $host = "localhost"): object
+      public function testConnection(): object
       {    
         $wss_online_status = Promise\resolve($this->sendToWSS("wssonlinestatus", array("command" => "onlineStatus")));
         return $wss_online_status->then(function($wss_online_status_returned){
@@ -57,12 +62,12 @@
        * @param  array  $data           The data which should be send to the websocket server.
        * @return array                  {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data" : [The returned data if stated.] }
        */
-      public function sendToWSS(string $socketaction, array $data, string $host = "localhost"): object
+      public function sendToWSS(string $socketaction, array $data): object
       {
-        $resolver = function (callable $resolve, callable $reject, callable $notify) use($socketaction, $data, $host){
+        $resolver = function (callable $resolve, callable $reject, callable $notify) use($socketaction, $data){
           $data = $this->buildCompleteRequest($socketaction, $data);
 
-          \Ratchet\Client\connect("ws://{$host}:{$this->ini["socket_local_port"]}")->then(function($conn) use($data, &$resolve){
+          \Ratchet\Client\connect("ws://{$this->ini["local_socket_domain"]}:{$this->ini["socket_local_port"]}")->then(function($conn) use($data, &$resolve){
             $conn->send(json_encode($data));
             
             $conn->on('message', function($msg) use (&$resolve, $conn) {

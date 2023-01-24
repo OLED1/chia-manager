@@ -21,10 +21,12 @@ versnummer = '[version]'
 [websocket]
 web_client_auth_hash = '[web_client_auth_hash]'
 backend_client_auth_hash = '[backend_client_auth_hash]'
-socket_protocol = '[socket_protocol]'
-socket_domain = '[app_domain]'
+socket_protocol = '[socket_protocol]' #For external websocket connections
+local_socket_protocol = '[local_socket_protocol]' #For local websocket connections
+socket_domain = '[app_domain]' #For external websocket connections
+local_socket_domain = '[local_socket_domain]' #For local websocket connections
+socket_local_port = '[socket_local_port]' #For local websocket connections
 socket_listener = '[socket_listener]'
-socket_local_port = '[socket_local_port]'
 
 [extapis]
 exchangerate_api_codes = 'https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies.json'

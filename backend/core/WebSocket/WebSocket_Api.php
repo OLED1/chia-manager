@@ -45,9 +45,9 @@
      * @throws Exception $e  Throws an exception websocket errors.
      * @return array         {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]" }
      */
-    public function testConnection(string $host = "localhost"): object
+    public function testConnection(): object
     {
-      return $this->wsclient->testConnection($host);
+      return $this->wsclient->testConnection();
     }
 
     /**

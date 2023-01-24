@@ -6,7 +6,7 @@
   require __DIR__ . '/../vendor/autoload.php';
 
   $ini = parse_ini_file(__DIR__.'/../backend/config/config.ini.php');
-
+  
   $check_login = React\Promise\resolve((new Login_Api())->checklogin());
   $update_running = React\Promise\resolve((new System_Update_Api())->checkUpdateRoutine());
 

@@ -27,11 +27,18 @@
         if(!$init_chia_manager_docker->installChiamgmt()) exit(1);
     }
 
-    if($init_chia_manager_docker->wait_for_websocket()){
-;
-    }else{
+    if(!$init_chia_manager_docker->adaptCMVersionInConfig()){
         exit(1);
     }
+
+    if(!$init_chia_manager_docker->checkAndAdjustDatabase()){
+        exit(1);
+    }
+
+    if(!$init_chia_manager_docker->wait_for_websocket()){
+        exit(1);
+    }
+
 
     echo "\n[STEP]Finished installation and migration steps. Starting server.\n";
 
@@ -142,7 +149,7 @@
                 try{
                     $dbh = new PDO("mysql:host=$this->db_host", $this->db_user, $this->db_user_pass);
                     $db_con_succ = true;
-                    echo "  [SUCC]Starting migration using following parameters:\n";
+                    echo "\n  [SUCC]Starting migration using following parameters:";
                 }catch(\Exception $e){
                     sleep(1);
                     continue;
@@ -154,12 +161,11 @@
         }
 
         public function wait_for_websocket(){
-            echo "\n[STEP]Waiting for websocket server to come online:";
-            $websocket_api = new WebSocket_Api();
+            echo "\n[STEP]Waiting for websocket server to come online ({$this->cm_websocket_docker_host}:{$this->cm_websocket_port}):";   
             $ws_con_succ = false;
             while(!$ws_con_succ){
                 echo ".";
-                if($websocket_api->testConnection(getenv("CM_WEBSOCKET_DOCKER_HOST"))["status"] == 0){
+                if(is_resource(@fsockopen($this->cm_websocket_docker_host, $this->cm_websocket_port, $error, $error_message, 1))){
                     $ws_con_succ = true;
                 }else{
                     sleep(1);
@@ -219,9 +225,10 @@
             $config = str_replace("[version]", $this->cm_version, $config);
             $config = str_replace("[web_client_auth_hash]", $web_client_auth_hash, $config);
             $config = str_replace("[backend_client_auth_hash]", $backend_client_auth_hash, $config);
+            $config = str_replace("[local_socket_domain]", $this->cm_websocket_docker_host, $config);
             $config = str_replace("[socket_protocol]", $this->cm_websocket_protocol, $config);
-            $config = str_replace("[socket_listener]", $this->cm_websocket_listener, $config);
             $config = str_replace("[socket_local_port]", $this->cm_websocket_port, $config);
+            $config = str_replace("[socket_listener]", $this->cm_websocket_listener, $config);
             echo " OK.";
 
             //1b. Create htaccess
@@ -270,7 +277,7 @@
             echo "[STEP]Installing database with default values.";
             try{
                 //2a. Instance db connection
-                $this->db_api = new DB_Api();
+                //$this->db_api = new DB_Api();
 
                 //2b. Importing structure dump
                 $query = '';
@@ -286,7 +293,9 @@
                 $query = $query . $line;
                     if($endWith == ';'){
                         //echo "\n  [INFO]Executing: $query.\n";
-                        $this->db_api->execute($query,[]);
+                        //$this->db_api->execute($query,[]);
+                        $stmt = $this->db_conn->prepare($query);
+                        $stmt->execute();
                         $query= '';
                     }
                 }
@@ -321,8 +330,10 @@
                 $query .= "INSERT INTO `nodetypes_avail` VALUES (1,'webClient',1,1,1,'app'),(2,'backendClient',2,0,3,'backend'),(3,'Farmer',3,1,2,'chianode'),(4,'Harvester',4,1,2,'chianode'),(5,'Wallet',5,1,2,'chianode'),(6,'Unknown',99,0,2,'');";
                 $query .= "INSERT INTO `nodetype` VALUES (1,1,1),(2,2,2);";
 
-                $this->db_api->execute($query,[]);
-
+                //$this->db_api->execute($query,[]);
+                $stmt = $this->db_conn->prepare($query);
+                $stmt->execute();
+                
                 echo "\n  [SUC]Default entries inserted successfully.\n";
 
                 //2d. Checking if all entries were inserted
@@ -340,8 +351,13 @@
                 ];
 
                 foreach($check_array AS $arrkey => $db_check){
-                    $sql = $this->db_api->execute($db_check["statement"],[]);
-                    $count = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["count"];
+                    //$sql = $this->db_api->execute($db_check["statement"],[]);
+                    //$count = $sql->fetchAll(\PDO::FETCH_ASSOC)[0]["count"];
+
+                    $stmt = $this->db_conn->prepare($db_check["statement"]);
+                    $stmt->execute();
+                    $count = $stmt->fetchAll(PDO::FETCH_ASSOC)[0]["count"];
+
                     if($count ==  $db_check["count"]){
                         echo "\n  [SUC]Table {$db_check["table"]} seems to be correct.";
                     }else{
@@ -356,6 +372,94 @@
             }
 
             return true;
+        }
+
+        public function adaptCMVersionInConfig(): bool
+        {
+            $config_file = "{$this->cm_app_root}/backend/config/config.ini.php";
+            if(!is_writable($config_file)){
+                echo "\n    [ERR]Can't open config file. It's not writeable.";
+                return false;
+            }
+
+            $config_data = parse_ini_file($config_file, true);
+            $current_version = $config_data["application"]["versnummer"];
+            $new_version = getenv("CM_VERSION");
+            echo "[STEP]Adapting Chia-Manager version from {$current_version} to {$new_version}.";     
+           
+            $key = "application";
+            $section = "versnummer";
+            $value = $new_version;
+      
+            $config_data[$key][$section] = $value;
+            $new_content = '';
+            foreach ($config_data as $section => $section_content) {
+                $section_content = array_map(function($value, $key) {
+                    return "$key='$value'";
+                }, array_values($section_content), array_keys($section_content));
+                $section_content = implode("\n", $section_content);
+                $new_content .= "[$section]\n$section_content\n\n";
+            }
+      
+            $new_content = ";<?php\n;die(); // For further security;\n;/*\n{$new_content};*/";
+            file_put_contents($config_file, $new_content);
+      
+            $tempini = parse_ini_file($config_file, true);
+            if(array_key_exists("application", $tempini) && array_key_exists("versnummer", $tempini["application"]) && $tempini["application"]["versnummer"] == $new_version){
+                echo "\n    [SUC]Successfully set new version to {$new_version}.";
+                return true;
+            }else {
+                echo "\n    [ERR]Config file was not adapted correctly.";
+                return false;
+            }
+        }
+
+        public function checkAndAdjustDatabase(): array
+        {
+            echo "\n[STEP]Checking and adjusting database.";
+            $this->db_api = new DB_Api();
+            $config_file = __DIR__.'/../backend/config/config.ini.php';
+            $config_data = parse_ini_file($config_file, true);
+            $db_update_json = file_get_contents(__DIR__."/../backend/core/System_Update/files/db_update.json");
+            $db_update_array = json_decode($db_update_json, true);
+            $alteredtables = [];
+        
+            foreach($db_update_array AS $version => $strucuture_filepath){
+                if(version_compare($config_data["application"]["versnummer"], $version, "<")){
+                if(file_exists(__DIR__."/files/{$strucuture_filepath}")){
+                    $query = '';
+                    $strucuture_file = file(__DIR__."/files/{$strucuture_filepath}");
+                    foreach($strucuture_file as $line)	{
+                    $startWith = substr(trim($line), 0 ,2);
+                    $endWith = substr(trim($line), -1 ,1);
+        
+                    if(empty($line) || $startWith == '--' || $startWith == '/*' || $startWith == '//') {
+                        continue;
+                    }
+                    
+                    $query = $query . $line;
+                    if($endWith == ';'){
+                        try{
+                        $sql = $this->db_api->execute($query, array());
+                        $query= '';
+                        }catch(\Exception $e){
+                        $this->logging_api->getErrormessage("001", $e);
+                        continue;
+                        }
+                    }
+                    }
+                }else{
+                    return $this->logging_api->getErrormessage("002");
+                }
+                }
+                try{
+                $this->db_api->execute("UPDATE system_infos SET dbversion = ?;", array($version));
+                }catch(Exception $e){
+                return $this->logging_api->getErrormessage("003", $e);
+                }
+            }
+        
+            return array("status" => 0, "message" => "Altered database successfully. DB version updated successfully.");
         }
     
         /**

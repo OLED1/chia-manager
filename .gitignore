@@ -8,7 +8,7 @@ frontend/frameworks/bootstrap-samples
 .vscode
 .htaccess
 backup/
-kubernetes
+kubernetes/development
 vendor
 vendor/*
 composer.lock

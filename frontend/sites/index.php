@@ -6,7 +6,6 @@
   use ChiaMgmt\System\System_Api;
 
   require __DIR__ . '/../../vendor/autoload.php';
-
   
   $ini = parse_ini_file(__DIR__.'/../../backend/config/config.ini.php');
   $frontendurl = $ini["app_protocol"]."://".$ini["app_domain"].$ini["frontend_url"];
@@ -120,31 +119,31 @@
             My Infrastructure
         </div>
         <li id="nav-nodes" class="nav-item">
-          <a class="nav-link" data-siteid=2 data-nav-target="nav-nodes" href="/sites/nodes">
+          <a class="nav-link" data-siteid=2 data-nav-target="nav-nodes" href="/sites/nodes/">
             <i class="fas fa-sitemap"></i>
             <span>Nodes</span>
           </a>
         </li>
         <li id="nav-infra-sysinfo" class="nav-item">
-          <a class="nav-link" data-siteid=8 data-nav-target="nav-infra-sysinfo" href="/sites/chia_infra_sysinfo">
+          <a class="nav-link" data-siteid=8 data-nav-target="nav-infra-sysinfo" href="/sites/chia_infra_sysinfo/">
             <i class="fas fa-network-wired"></i>
             <span>Infra Sysinfo</span>
           </a>
         </li>
         <li id="nav-wallet" class="nav-item">
-          <a class="nav-link" data-siteid=5 data-nav-target="nav-wallet" href="/sites/chia_wallet">
+          <a class="nav-link" data-siteid=5 data-nav-target="nav-wallet" href="/sites/chia_wallet/">
             <i class="fas fa-wallet"></i>
             <span>Wallet</span>
           </a>
         </li>
         <li id="nav-farm" class="nav-item">
-          <a class="nav-link" data-siteid=6 data-nav-target="nav-farm" href="/sites/chia_farm">
+          <a class="nav-link" data-siteid=6 data-nav-target="nav-farm" href="/sites/chia_farm/">
             <i class="fas fa-industry"></i>
             <span>Farm</span>
           </a>
         </li>
         <li id="nav-harvester" class="nav-item">
-          <a class="nav-link" data-siteid=7 data-nav-target="nav-harvester" href="/sites/chia_harvester">
+          <a class="nav-link" data-siteid=7 data-nav-target="nav-harvester" href="/sites/chia_harvester/">
             <i class="fas fa-hdd"></i>
             <span>Harvester</span>
           </a>
@@ -155,13 +154,13 @@
           Statistics
         </div>
         <li id="nav-chia-statistics" class="nav-item">
-          <a class="nav-link" data-siteid=12 data-nav-target="nav-chia-statistics" href="/sites/chia_statistics">
+          <a class="nav-link" data-siteid=12 data-nav-target="nav-chia-statistics" href="/sites/chia_statistics/">
             <i class="fas fa-chart-bar"></i>
             <span style="font-size: .80rem">Chia®</span>
           </a>
         </li>
         <li id="nav-systems-statistics" class="nav-item">
-          <a class="nav-link" data-siteid=13 data-nav-target="nav-systems-statistics" href="/sites/systems_statistics">
+          <a class="nav-link" data-siteid=13 data-nav-target="nav-systems-statistics" href="/sites/systems_statistics/">
             <i class="fas fa-chart-line"></i>
             <span>Systems</span>
           </a>
@@ -172,25 +171,25 @@
           System
         </div>
         <li id="nav-alerting" class="nav-item">
-          <a class="nav-link" data-siteid=14 data-nav-target="nav-alerting" href="/sites/alerting">
+          <a class="nav-link" data-siteid=14 data-nav-target="nav-alerting" href="/sites/alerting/">
           <i class="fa-solid fa-bell"></i>
             <span>Alerting</span>
           </a>
         </li>
         <li id="nav-users" class="nav-item">
-          <a class="nav-link" data-siteid=4 data-nav-target="nav-users" href="/sites/users">
+          <a class="nav-link" data-siteid=4 data-nav-target="nav-users" href="/sites/users/">
             <i class="fas fa-users-cog"></i>
             <span>Users</span>
           </a>
         </li>
         <li id="nav-system-settings" class="nav-item">
-          <a class="nav-link" data-siteid=3 data-nav-target="nav-system-settings" href="/sites/system">
+          <a class="nav-link" data-siteid=3 data-nav-target="nav-system-settings" href="/sites/system/">
             <i class="fas fa-server"></i>
             <span>Settings</span>
           </a>
         </li>
         <li id="nav-system-logging" class="nav-item">
-          <a class="nav-link" data-siteid=11 data-nav-target="nav-system-logging" href="/sites/logging">
+          <a class="nav-link" data-siteid=11 data-nav-target="nav-system-logging" href="/sites/logging/">
             <i class="fas fa-scroll"></i>
             <span>Logging</span>
           </a>
@@ -201,7 +200,7 @@
             Personal
         </div>
         <li id="nav-personal-settings" class="nav-item">
-          <a class="nav-link" data-siteid=5 data-nav-target="nav-personal-settings" href="/sites/usersettings">
+          <a class="nav-link" data-siteid=5 data-nav-target="nav-personal-settings" href="/sites/usersettings/">
             <i class="fas fa-user-cog"></i>
             <span>Profile & Settings</span>
           </a>
