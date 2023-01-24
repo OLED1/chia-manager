@@ -619,13 +619,8 @@
   
           $activeSubscriptions->then(function($activeSubscriptions_returned) use(&$resolve, $client_nodes_returned){
             $activeSubscriptions_returned = $activeSubscriptions_returned["getActiveSubscriptions"];
-<<<<<<< HEAD
-            
-            if(array_key_exists("data", $activeSubscriptions_returned) && array_key_exists("data", $client_nodes_returned)){
-=======
            
-            if(array_key_exists("data", $activeSubscriptions_returned)){
->>>>>>> ab276fdf8f5286415fb3b2b95b85f51d1f9c20c4
+            if(array_key_exists("data", $activeSubscriptions_returned) && array_key_exists("data", $client_nodes_returned)){
               foreach($client_nodes_returned["data"] AS $nodeid => $nodedata){
                 $found = false;
                 foreach(explode(",",$nodedata["nodetype"]) AS $arrkey => $nodetype){
