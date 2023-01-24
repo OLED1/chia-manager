@@ -99,7 +99,7 @@
 <div class="card shadow" style="margin: 1em;">
   <div class="card-body">
     <h5>Custom rules</h5>
-    These type of rules allows you to create even more specific rules for all of the known services for your hosts an it's services.<br>
+    These types of rules allows you to create even more specific rules for all of the known services for your hosts an it's services.<br>
     Create host specific custom rules by clicking one of these tabs.
     <?php if(count($chia_nodes) > 0){ ?>
     <ul class="nav nav-tabs" id="custom-rule-host-tabs" role="tablist">
@@ -122,7 +122,7 @@
                   <div class="dropdown-menu alerting-types-dropdown" aria-labelledby="types-dropdown-<?php echo $chia_node["nodeid"]; ?>" data-node-id=<?php echo $chia_node["nodeid"]; ?>>
                     <?php 
                       foreach($alerting_custom_rules AS $type_id => $types){
-                        if(array_key_exists($chia_node["nodeid"], $alerting_custom_rules[$type_id]["available_services"]) && count($alerting_custom_rules[$type_id]["available_services"][$chia_node["nodeid"]]) > 0){ 
+                        if(array_key_exists($chia_node["nodeid"], $alerting_custom_rules[$type_id]["available_services"]) && count($alerting_custom_rules[$type_id]["available_services"][$chia_node["nodeid"]]) > 0 && count($alerting_custom_rules[$type_id]["available_services"][$chia_node["nodeid"]]["configurable_services"]) > 0){ 
                     ?>
                       <a class="dropdown-item" data-node-id=<?php echo $chia_node["nodeid"]; ?> data-type-id=<?php echo $type_id; ?> href="#"><?php echo $types["service_desc"]; ?></a>
                     <?php 

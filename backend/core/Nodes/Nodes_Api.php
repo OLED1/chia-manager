@@ -619,8 +619,13 @@
   
           $activeSubscriptions->then(function($activeSubscriptions_returned) use(&$resolve, $client_nodes_returned){
             $activeSubscriptions_returned = $activeSubscriptions_returned["getActiveSubscriptions"];
+<<<<<<< HEAD
             
             if(array_key_exists("data", $activeSubscriptions_returned) && array_key_exists("data", $client_nodes_returned)){
+=======
+           
+            if(array_key_exists("data", $activeSubscriptions_returned)){
+>>>>>>> ab276fdf8f5286415fb3b2b95b85f51d1f9c20c4
               foreach($client_nodes_returned["data"] AS $nodeid => $nodedata){
                 $found = false;
                 foreach(explode(",",$nodedata["nodetype"]) AS $arrkey => $nodetype){
@@ -641,6 +646,7 @@
                   }
                   if($found) break;
                 }
+
                 if(!$found){
                   $promises = [
                     Promise\resolve($this->setNodeUpDown(["nodeid" => $nodeid, "updown" => 0])),
@@ -689,12 +695,13 @@
               });
             }
             
-            $getNodesStatus = Promise\resolve($this->getCurrentChiaNodesUPAndServiceStatus());
-            $getNodesStatus->then(function($getNodesStatus_returned) use(&$resolve){
-              $setNodesStatus = Promise\resolve((new Chia_Infra_Sysinfo_Api())->setAllNodesSystemAndServicesUpStatus($getNodesStatus_returned["data"]));
-              $setNodesStatus->then(function($setNodesStatus_returned) use(&$resolve){
+            $setNodesStatus = Promise\resolve((new Chia_Infra_Sysinfo_Api())->setAllNodesSystemAndServicesUpStatus($data));
+            $setNodesStatus->then(function($setNodesStatus_returned) use(&$resolve){
+              if($setNodesStatus_returned["status"] == 0){
                 $resolve(array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => []));
-              });
+              }else{
+                $resolve($setNodesStatus_returned);
+              }
             });
           })->otherwise(function (\Exception $e) use(&$resolve){
             $resolve($this->logging_api->getErrormessage("setNodeUpDown", "001", $e));
@@ -709,27 +716,6 @@
       };
 
       return new Promise\Promise($resolver, $canceller);
-      
-      if(array_key_exists("nodeid", $data) && is_numeric($data["nodeid"]) && $data["nodeid"] > 0 && array_key_exists("updown", $data) && is_numeric($data["updown"]) && ($data["updown"] == 0 || $data["updown"] == 1)){
-        try{
-          $sql = $this->db_api->execute("SELECT id, nodeid, onlinestatus, lastreported FROM nodes_up_status WHERE nodeid = ? ORDER BY firstreported DESC LIMIT 1", array($data["nodeid"]));
-          $founddata = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/;
-
-          if(!array_key_exists(0, $founddata) || $founddata[0]["onlinestatus"] != $data["updown"]){
-            $this->db_api->execute("INSERT INTO nodes_up_status (id, nodeid, onlinestatus, firstreported, lastreported) VALUES(NULL, ?, ?, current_timestamp(), current_timestamp())", array($data["nodeid"], $data["updown"]));
-          }
-          if(count($founddata) == 1) $this->db_api->execute("UPDATE nodes_up_status SET lastreported = current_timestamp() WHERE id = ?", array($founddata[0]["id"]));
-        }catch(\Exception $e){
-          return $this->logging_api->getErrormessage("001", $e);
-        }
-
-        $this->chia_infra_sysinfo_api = new Chia_Infra_Sysinfo_Api();
-        $this->chia_infra_sysinfo_api->setAllNodesSystemAndServicesUpStatus($this->getCurrentChiaNodesUPAndServiceStatus()["data"]);
-
-        return array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => []);
-      }else{
-        return $this->logging_api->getErrormessage("002");
-      }
     }
 
     /**
@@ -769,7 +755,7 @@
 
               $chia_nodes->then(function($chia_nodes_returned) use(&$resolve, $data){
                 $chia_nodes_returned = $chia_nodes_returned->resultRows;
-
+                
                 if(count($chia_nodes_returned) > 0){
                   foreach($chia_nodes_returned AS $arrkey => $savedstates){
                     if(is_numeric($data[$savedstates["description"]])){
@@ -797,12 +783,9 @@
                   $resolve($this->logging_api->getErrormessage("updateChiaStatus", "001"));
                 }
 
-                $get_current_nodes_states = Promise\resolve($this->getCurrentChiaNodesUPAndServiceStatus());
-                $get_current_nodes_states->then(function($get_current_nodes_states_returned) use(&$resolve){
-                  $set_current_nodes_states = Promise\resolve((new Chia_Infra_Sysinfo_Api())->setAllNodesSystemAndServicesUpStatus($get_current_nodes_states_returned["data"]));
-                  $set_current_nodes_states->then(function($set_current_nodes_states_returned) use(&$resolve){
-                    $resolve(array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => []));
-                  });
+                $set_current_nodes_states = Promise\resolve((new Chia_Infra_Sysinfo_Api())->setAllNodesSystemAndServicesUpStatus($data));
+                $set_current_nodes_states->then(function($set_current_nodes_states_returned) use(&$resolve){
+                  $resolve(array("status" => 0, "message" => "Succesfully loaded active subscriptions and upstatus.", "data" => []));
                 });
               })->otherwise(function(\Exception $e) use(&$resolve){
                 $resolve($this->logging_api->getErrormessage("updateChiaStatus", "005", $e));
@@ -833,8 +816,15 @@
      * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
     public function getCurrentChiaNodesUPAndServiceStatus(array $data = []): object
-    {
-      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){       
+    {     
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){    
+        $where_statement_string = "";
+        $statement_array = [];
+        if(array_key_exists("nodeid", $data)){
+          $where_statement_string .= "AND n.id = ?";
+          $statement_array[] = $data["nodeid"];
+        }
+
         $nodes_infos = Promise\resolve((new DB_Api())->execute("SELECT nus.id AS node_up_down_id, nss.id AS service_running_status_id, nt.nodeid, n.hostname, nus.onlinestatus, nus.firstreported AS node_firstreported, nus.lastreported AS node_lastreported, nta.description, nss.serviceid, nss.servicestate, nss.firstreported AS service_firstreported, nss.lastreported AS service_lastreported
                                                                 FROM nodetype nt
                                                                 INNER JOIN nodes n ON n.id = nt.nodeid
@@ -845,7 +835,7 @@
                                                                   SELECT id, nodeid, serviceid, servicestate, firstreported, lastreported FROM nodes_services_status WHERE nodeid = n.id AND serviceid = nt.code ORDER BY firstreported DESC, lastreported DESC LIMIT 1
                                                                 ) AS nss
                                                                 INNER JOIN nodetypes_avail nta ON nta.code = nt.code
-                                                                WHERE nt.code IN (3,4,5)", array()));
+                                                                WHERE nt.code IN (3,4,5) {$where_statement_string}", $statement_array));
 
         $nodes_infos->then(function($nodes_infos_returned) use(&$resolve){
           $returndata = [];

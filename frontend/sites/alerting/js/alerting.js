@@ -394,6 +394,7 @@ function resetCreateCustomRule(nodeid){
 function recreateTypeDropdown(nodeid){
     var target_dropdown = $(".alerting-types-dropdown[data-node-id='" + nodeid + "'");
     target_dropdown.children().remove();
+
     $.each(available_custom_rules, function(typeid, typedata){
         if((nodeid in typedata["available_services"]) && ("configurable_services" in typedata["available_services"][nodeid]) && typedata["available_services"][nodeid]["configurable_services"].length > 0){
             target_dropdown.append("<a class='dropdown-item' data-node-id=" + nodeid + " data-type-id=" + typeid + " href='#'>" + typedata["service_desc"] + "</a>") 
@@ -576,7 +577,7 @@ function messagesTrigger(data){
                         adaptServiceTypeWidth();
                         $("#services-dropdown-" + nodeid).prop("disabled", true);
                         $("#configurable_services_" + nodeid + " .alerting-services-dropdown").children().remove();
-                        window.sendToWSS("backendRequest", "ChiaMgmt\\Alerting\\Alerting_Api", "Alerting_Api", "getAvailableRuleTypesAndServices", {"nodeid" : nodeid});
+                        window.sendToWSS("backendRequest", "ChiaMgmt\\Alerting\\Alerting_Api", "Alerting_Api", "getAvailableRuleTypesAndServices", { "nodeid" : nodeid });
                     }
                 });
             }
