@@ -61,11 +61,15 @@ class ChiaWebSocketServerNew implements MessageComponentInterface {
    * @var Logging_Api
    */
   private $logging;
-
   /**
    * @var
    */
   private $eventLoop;
+  /**
+   * An array which includes all informated connected nodes.
+   * @var array
+   */
+  private $connectedNodesInformed;
 
   /**
    * Initialises the needed and above stated private variables.

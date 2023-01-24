@@ -1,0 +1,9 @@
+kubernetes
+logs
+vendor
+backend/config/*
+Dockerfile_App
+Dockerfile_Websocket
+package-lock.json
+.gitignore
+.git

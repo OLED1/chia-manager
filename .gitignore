@@ -8,3 +8,8 @@ frontend/frameworks/bootstrap-samples
 .vscode
 .htaccess
 backup/
+kubernetes
+vendor
+vendor/*
+composer.lock
+package-lock.json

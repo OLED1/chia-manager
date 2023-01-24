@@ -21,7 +21,7 @@ versnummer = '[version]'
 [websocket]
 web_client_auth_hash = '[web_client_auth_hash]'
 backend_client_auth_hash = '[backend_client_auth_hash]'
-socket_protocol = 'wss'
+socket_protocol = '[socket_protocol]'
 socket_domain = '[app_domain]'
 socket_listener = '[socket_listener]'
 socket_local_port = '[socket_local_port]'
