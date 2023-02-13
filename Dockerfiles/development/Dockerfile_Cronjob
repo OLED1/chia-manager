@@ -1,5 +1,0 @@
-#chia-manager-cronjob:0.2.dev-php8.2.1
-FROM php:8.2.1-fpm
-
-# Install OS dependencies required
-RUN apt-get update && apt-get upgrade -y && apt-get install curl zip libicu-dev libonig-dev cron host sudo -y
