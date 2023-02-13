@@ -296,7 +296,7 @@
                 <?php
                   if($cronjobEnabled["status"] == 0){
                     $now = new \DateTime("now");
-                    $lastexecdate = new \DateTime($cronjobEnabled["data"]);
+                    $lastexecdate = new \DateTime($cronjobEnabled["data"]["lastcronrun"]);
                     $interval = $now->diff($lastexecdate);
                     $seconds = $interval->s;
                   }
@@ -312,7 +312,7 @@
                   <h5><span id="cronjobbadge" class="badge badge-danger">Last Cronjob run more than 1 minutes ago.</span></h5>
                 <?php } ?>
                 <div class="custom-control custom-checkbox">
-                  <input type="checkbox" class="custom-control-input wsbutton" id="enableSystemCronjob" <?php echo( $cronjobEnabled["status"] == 0 ? "checked" : ""); ?> >
+                  <input type="checkbox" class="custom-control-input <?php echo ($cronjobEnabled["data"]["type"] != "docker" ? "wsbutton" : ""); ?>" id="enableSystemCronjob" <?php echo ($cronjobEnabled["data"]["type"] == "docker" ? "disabled" : "") . " " . ($cronjobEnabled["status"] == 0 ? "checked" : ""); ?>>
                   <label class="custom-control-label" for="enableSystemCronjob">Enable automated background tasks</label>
                 </div>
               </div>

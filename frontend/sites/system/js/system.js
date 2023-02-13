@@ -232,7 +232,6 @@ $(function(){
   }
 
   function setWSSRunning(pid){
-    console.log("HIER");
     $("#wssstatus").children().remove();
     $("#wssstatus").append(
       "<div class='card bg-warning text-white shadow'>" +
@@ -273,8 +272,6 @@ function settingConfirmHandler(){
 }
 
 function reloadCronJobExecTimer(){
-  console.log("HIER");
-
   if("system" in intervals && "cron" in intervals["system"]){
     clearTimeout(intervals["system"]["cron"]);
   }

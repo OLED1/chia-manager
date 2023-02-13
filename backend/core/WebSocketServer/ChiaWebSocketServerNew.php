@@ -246,7 +246,7 @@ class ChiaWebSocketServerNew implements MessageComponentInterface {
                         $message_frontend_clients->then(function($message_frontend_clients_returned) use($request_id, $from, $this_req_returned){
                           echo "[{$this->getDate()}] [{$request_id}] INFO EVENTLOOP CRON_PROCESSING: Successfully sent message to frontend clients." . json_encode($this_req_returned) . ". \n";
                         });
-                        echo "[{$this->getDate()}] [{$request_id}] INFO EVENTLOOP CRON_PROCESSING: Cronjob execution finished.\n";
+                        echo "[{$this->getDate()}] [{$request_id}] INFO EVENTLOOP CRON_PROCESSING: Cronjob execution finished. It took {$this_req_returned["cronJobExecution"]["data"]["duration"]} seconds.\n";
                       });
 
                       $this->users[$from->resourceId]->send(json_encode(array("cronJobExecution" => array("status" => 0, "message" => "Successfully queried system background jobs. They will be processed soon.", "data" => date("Y-m-d H:i:s")))));

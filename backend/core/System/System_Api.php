@@ -126,7 +126,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -150,7 +150,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -181,7 +181,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -206,7 +206,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -310,7 +310,7 @@
             $returndata["count"] = $returndata["count"] + 1;
           }else if($cronjobEnabled["status"] == 0){
             $now = new \DateTime("now");
-            $lastexecdate = new \DateTime($cronjobEnabled["data"]);
+            $lastexecdate = new \DateTime($cronjobEnabled["data"]["lastcronrun"]);
             $interval = $now->diff($lastexecdate);
             $seconds = $interval->s;
     
@@ -343,7 +343,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -409,10 +409,10 @@
     {
       $resolver = function (callable $resolve, callable $reject, callable $notify){
         $enabledCronjobs = $this->crontabRepository->findJobByRegex("/ChiaMgmt\ cronjob\ -\ Do\ not\ remove\ this\ comment\ -\ {$this->ini["serversalt"]}/");
-        if(count($enabledCronjobs) > 0){
+        if(count($enabledCronjobs) > 0 || getenv("CM_DOCKER")){
           $last_cron_run = Promise\resolve((new DB_Api())->execute("SELECT lastcronrun FROM system_infos", array()));
           $last_cron_run->then(function($last_cron_run_returned) use(&$resolve){
-            $resolve(array("status" => 0, "message" => "Cronjob exists.", "data" => $last_cron_run_returned->resultRows[0]["lastcronrun"]));
+            $resolve(array("status" => 0, "message" => "Cronjob exists.", "data" => ["type" => (getenv("CM_DOCKER") ? "docker" : "system"), "lastcronrun" => $last_cron_run_returned->resultRows[0]["lastcronrun"]]));
           })->otherwise(function (\Exception $e) use(&$resolve){
             $resolve($this->logging_api->getErrormessage("getCronjobEnabled", "002", $e));
           });
@@ -422,7 +422,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -436,6 +436,8 @@
     public function enableCronjob(): object
     {
       $resolver = function (callable $resolve, callable $reject, callable $notify){
+        if(getenv("CM_DOCKER")) return $resolve($this->logging_api->getErrormessage("enableCronjob", "002"));
+
         $cronjobEnabled = Promise\resolve($this->getCronjobEnabled());
         $cronjobEnabled->then(function($cronjobEnabled_returned) use(&$resolve){
           if($cronjobEnabled_returned["status"] != 0){
@@ -468,7 +470,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -482,6 +484,8 @@
     public function disableCronjob(): object
     {
       $resolver = function (callable $resolve, callable $reject, callable $notify){
+        if(getenv("CM_DOCKER")) return $resolve($this->logging_api->getErrormessage("enableCronjob", "002"));
+
         $cronjobEnabled = Promise\resolve($this->getCronjobEnabled());
         $cronjobEnabled->then(function($cronjobEnabled_returned)  use(&$resolve){
           if($cronjobEnabled_returned["status"] == 0){
@@ -505,7 +509,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -529,7 +533,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);

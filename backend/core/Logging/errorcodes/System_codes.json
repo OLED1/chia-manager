@@ -51,10 +51,12 @@
       "002" : [2, "An error occured."]
     },
     "enableCronjob" : {
-      "001" : [2, "An error occured. Could not create the systems cronjob."]
+      "001" : [2, "An error occured. Could not create the systems cronjob."],
+      "002" : [0, "No need to ENABLE. Running in Docker/Kubernetes infrastructure."]
     },
     "disableCronjob" : {
-      "001" : [2, "An error occured. Could not disable the systems cronjob."]
+      "001" : [2, "An error occured. Could not disable the systems cronjob."],
+      "002" : [0, "No need to DISABLE. Running in Docker/Kubernetes infrastructure."]
     },
     "setCurrentCronjobRunTimestamp" : {
       "001" : [2, "An error occured."]
