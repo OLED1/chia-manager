@@ -1,0 +1,49 @@
+#chia-manager-websocket:0.2.dev-php8.2.1
+FROM php:8.2.1-fpm
+
+# Install OS dependencies required
+RUN apt-get update && apt-get upgrade -y && apt-get install curl zip libicu-dev libonig-dev cron host sudo -y
+
+# Install APCU
+RUN pecl install apcu 
+
+# Install required PHP extensions
+RUN docker-php-ext-install intl mysqli pdo pdo_mysql mbstring sockets posix sysvmsg
+# Enabled required PHP extensions
+RUN docker-php-ext-enable apcu opcache
+
+# Copy app content
+# Use the .dockerignore file to control what ends up inside the image!
+WORKDIR /var/www/html
+COPY backend backend/
+COPY composer.json .
+COPY docker/init_cm_websocket.php docker/init_cm_websocket.php
+COPY docker/set_svc_ip_to_hosts.sh docker/set_svc_ip_to_hosts.sh
+COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
+
+# Create default folders
+RUN mkdir /var/www/html/logs
+
+# Install composer dependencies
+RUN composer install
+# Update composer dependencies
+RUN composer update
+
+#Expose useful volumes (see documentation)
+VOLUME /var/www/html/backend/config
+VOLUME /var/www/html/logs
+
+# Set app owner to apache
+RUN chown www-data. /var/www/html/logs -R
+RUN chown www-data. /var/www/html/backend/config -R
+
+# Set default ENV variables
+ENV CM_DOCKER true
+
+# Execute websocket init script and start websocket server
+#CMD ["sh","-c","/bin/sh docker/set_svc_ip_to_hosts.sh && sudo -u www-data php /var/www/html/backend/core/WebSocketServer/websocket.php"]
+
+# Only for developing
+USER root
+RUN apt-get install sudo net-tools telnet less -y
+ENTRYPOINT [ "sh","-c","/bin/sh docker/set_svc_ip_to_hosts.sh && tail -f /dev/null" ]
