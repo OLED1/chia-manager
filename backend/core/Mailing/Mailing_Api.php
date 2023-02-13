@@ -94,19 +94,10 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
-      
-      if(array_key_exists("receipients", $data) && is_array($data["receipients"])){
-        $subject = "Mail Settings Testmail";
-        $message = "If you got this message your mail settings are working correctly.<br>Congrats!<br><strong>Note: Please do not reply to this e-mail.</strong>";
-        $recpients = $data["receipients"];
-        return $this->sendMail($recpients, $subject, $message);
-      }else{
-        return $this->logging_api->getErrormessage("001");
-      }
     }
 
     /**
@@ -141,7 +132,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);

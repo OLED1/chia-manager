@@ -117,7 +117,6 @@
             ];
 
             Promise\all($data_to_check)->then(function($data_to_check_returned) use(&$resolve, $data){
-              print_r($data_to_check_returned);
               $userexists = $data_to_check_returned[0];
               $pwcheck = $data_to_check_returned[1];
 

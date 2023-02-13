@@ -21,9 +21,6 @@
     $nodetypes = $all_returned[3];
     $scriptupdatesavail = $all_returned[4];
 
-    print_r($all_returned);
-
-
     if(array_key_exists("data", $configuredNodes)) $configuredNodes = $configuredNodes["data"];
     if(array_key_exists("data", $activeSubscriptions)) $activeSubscriptions = $activeSubscriptions["data"];
     if(array_key_exists("data", $activeRequests)) $activeRequests = $activeRequests["data"];

@@ -68,7 +68,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -100,7 +100,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -141,9 +141,6 @@
                 
                 $new_rule = Promise\resolve($this->getConfiguredRules(["rule_id" => $new_rule_id]));
                 $new_rule->then(function($new_rule_returned) use(&$resolve, $new_rule_id, $rule_target, $data){
-
-                  print_r($new_rule_returned);
-                  echo "NEW RULE ID: {$new_rule_id} SERVICE_TARGET: {$rule_target} NODEID: {$data["nodeid"]} SERVICE_TYPE: {$data["service_type"]}\n";
                   if(array_key_exists("data", $new_rule_returned)){
 
 
@@ -155,9 +152,6 @@
                                                                 array($new_rule_id, $rule_target, $data["nodeid"], $data["service_type"])));
 
                     $update_dependencies->then(function($update_dependencies_returned) use(&$resolve, $new_rule_returned){
-                      echo "HIER!!!\n";
-                      print_r($update_dependencies_returned);
-
                       $resolve(array("status" => 0, "message" => "Successfully created new custom rule.", "data" => $new_rule_returned["data"]));
                     })->otherwise(function(\Exception $e) use(&$resolve){
                       //TODO Implement correct status code
@@ -183,7 +177,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -219,7 +213,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -280,7 +274,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -382,7 +376,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -447,7 +441,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -555,7 +549,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -631,7 +625,7 @@
             // Cancel/abort any running operations like network connections, streams etc.
 
             // Reject promise by throwing an exception
-            throw new Exception('Promise cancelled');
+            throw new \Exception('Promise cancelled');
           };
 
           $processing_promise = Promise\Promise($processing_resolver, $processing_canceller);
@@ -656,7 +650,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -760,7 +754,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -810,7 +804,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -868,7 +862,7 @@
 
         $getHostsToAlert->then(function($getHostsToAlert_returned) use(&$resolve){
           $alerting_services_array = [];
-          
+         
           foreach($getHostsToAlert_returned->resultRows AS $arrkey => $this_alert){
             if(!array_key_exists($this_alert["id"],$alerting_services_array))
             $alerting_services_array[$this_alert["id"]] = [];
@@ -887,29 +881,42 @@
               $alerting_services_array[$this_alert["id"]][$this_alert["service_type"]][$this_alert["alerting_service_desc"]]->queueNewMessage($this_alert);
             }
           }
-  
+          
+          $send_queued_messages_promises = [];
+
           foreach($alerting_services_array AS $alert_id => $service_types){
             foreach($service_types AS $service_type_id => $found_alerting_services){
               foreach($found_alerting_services AS $alerting_service_id => $this_service_obj){
                 if(method_exists($this_service_obj,'sendQueuedMessages')){
-                  echo "HIER :) \n";
-                  $alerted_messages = $this_service_obj->sendQueuedMessages();
-
-                  echo "Alerted_Messages:\n";
-                  print_r($alerted_messages);
-                  echo "===================\n";
-
-                  $update_alerted_history = Promise\resolve($this->updateAlertedServicesHistory($alerted_messages["data"]));
-                  $update_alerted_history->then(function($update_alerting_history_returned){
-                    echo "HIER :) :) :) \n";
-                    print_r($update_alerting_history_returned);
-                  });
+                  array_push($send_queued_messages_promises, Promise\resolve($this_service_obj->sendQueuedMessages()));
                 }
               }
             }
           }
-          
-          $resolve(array("status" => 0, "message" => "Successfully alerted all configured and found WARN, CRIT and UNKN messages.")); 
+
+          Promise\all($send_queued_messages_promises)->then(function($send_queued_messages_promises_returned) use(&$resolve){
+            $error = 0;
+            $message_to_mark_as_alerted = [];          
+
+            foreach($send_queued_messages_promises_returned AS $arrkey => $this_queued_messages){
+              if($this_queued_messages["status"] == 0){
+                foreach($this_queued_messages["data"] AS $this_message_arrkey => $this_sent_message){
+                  array_push($message_to_mark_as_alerted, $this_sent_message);
+                }
+              }else{
+                $error = 1;
+              }
+            }
+
+            $update_alerted_history = Promise\resolve($this->updateAlertedServicesHistory($message_to_mark_as_alerted));
+            $update_alerted_history->then(function($update_alerting_history_returned) use(&$resolve, $error){
+              if($error == 0){
+                $resolve(array("status" => 0, "message" => "Successfully alerted all configured and found WARN, CRIT and UNKN messages.")); 
+              }else{
+                $resolve(array("status" => 1, "message" => "Some queued messages could not be sent.")); 
+              }
+            });
+          });
         })->otherwise(function(\Exception $e) use(&$resolve){
           //TODO Implement correct status code
           $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
@@ -918,7 +925,7 @@
 
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -930,13 +937,12 @@
      * @param array $alerted_message (Object of type Alertingdata)
      * @return array
      */
-    private function updateAlertedServicesHistory(array $alerted_message): object
+    private function updateAlertedServicesHistory(array $alerted_messages): object
     {
-      $resolver = function (callable $resolve, callable $reject, callable $notify) use($alerted_message){
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($alerted_messages){
+        if(count($alerted_messages) == 0) return $resolve(array("status" => 0, "message" => "Successfully alerted all configured and found WARN, CRIT and UNKN messages."));
 
-        echo "HIER\n";
-
-        foreach($alerted_message AS $arrkey => $this_alerted_message){
+        foreach($alerted_messages AS $arrkey => $this_alerted_message){
           $avail_serv_id = $this_alerted_message->get_avail_serv_id();
           $service_alerted_using = $this_alerted_message->get_alerting_service_id();
           $state_changed_from = $this_alerted_message->get_prev_state_short();
@@ -945,11 +951,11 @@
           $alert_contact = $this_alerted_message->get_contact();
 
           $alerting_id = Promise\resolve((new DB_Api)->execute("SELECT id FROM `alerting_history` WHERE avail_alerting_serv_id = ? and service_alerted_using = ? LIMIT 1", array($avail_serv_id, $service_alerted_using)));
-          $alerting_id->then(function($alerting_id_returned) use(&$resolve){
-            
+          $alerting_id->then(function($alerting_id_returned) use(&$resolve, $avail_serv_id, $service_alerted_using, $state_changed_from, $state_changed_to, $alerted_to, $alert_contact){
             $alerting_history_id = 0;
-            if(count($alerting_id_returned) == 1){
-              $alerting_history_id = Promise\resolve($alerting_id_returned[0]["id"]);
+
+            if(count($alerting_id_returned->resultRows) == 1){
+              $alerting_history_id = Promise\resolve($alerting_id_returned->resultFields[0]["id"]);
             }else{
               $alerting_history_id = Promise\resolve((new DB_Api)->execute("INSERT INTO alerting_history (id, avail_alerting_serv_id, service_alerted_using, state_changed_from, state_changed_to, state_alerted_at) VALUES (NULL, ?, ?, ?, ?, NOW())", 
                                                       array($avail_serv_id, $service_alerted_using, $state_changed_from, $state_changed_to)));
@@ -964,8 +970,9 @@
               $update_alerting_history = true;
               if($alerting_history_id > 0){
                 $update_alerting_history = Promise\resolve((new DB_Api)->execute("INSERT INTO alerting_history_alerted_to (id, alerting_history_id, user_id, contact) VALUES (NULL, ?, ?, ?)", 
-                                                          array($alerting_history_id, $alerted_to, $alert_contact)));
-                 
+                                                          array($alerting_history_id, $alerted_to, $alert_contact))); 
+              }else{
+                $update_alerting_history = Promise\resolve([]);
               }
 
               $update_alerting_history->then(function($update_alerting_history_returned) use(&$resolve){
@@ -983,11 +990,10 @@
             $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
           });
         }
-
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -1031,7 +1037,6 @@
         print_r($e);
         return array("status" => 1, "message" => "An error occured.");
       }
-
     }
 
     /**
@@ -1042,7 +1047,7 @@
      */
     public function getConfigurableDowntimeServices(array $data = []): object
     {
-      return $this->alerting_downtimes->getConfigurableDowntimeServices($data);
+      return Promise\resolve($this->alerting_downtimes->getConfigurableDowntimeServices($data));
     }
 
     /**
@@ -1053,7 +1058,7 @@
      */
     public function setUpNewDowntime(array $data): object
     {
-      return $this->alerting_downtimes->e($data);
+      return Promise\resolve($this->alerting_downtimes->setUpNewDowntime($data));
     }
 
     /**
@@ -1064,7 +1069,7 @@
      */
     public function getSetupDowntimes(array $data = []): object
     {
-      return $this->alerting_downtimes->getSetupDowntimes($data);
+      return Promise\resolve($this->alerting_downtimes->getSetupDowntimes($data));
     }
 
     /**
@@ -1075,7 +1080,7 @@
      */
     public function editDowntimes(array $data = []): object
     {
-      return $this->alerting_downtimes->editDowntimes($data);
+      return Promise\resolve($this->alerting_downtimes->editDowntimes($data));
     }
   }
 ?>

@@ -5,9 +5,9 @@
   use React\MySQL\QueryResult;
   use React\Promise\Deferred;
 
-  //ini_set('display_errors', 1);
-  //ini_set('display_startup_errors', 1);
-  //error_reporting(E_ALL);
+  /*ini_set('display_errors', 1);
+  ini_set('display_startup_errors', 1);
+  error_reporting(E_ALL);*/
 
   /**
    * The universal project db connector class.
@@ -61,7 +61,6 @@
      */
     public function execute(string $statement, array $parameter)
     {                    
-      //print_r($statement);
       $promise = $this->connection->query($statement, $parameter)->then(
         function (QueryResult $command){
           return $command;
@@ -72,8 +71,6 @@
       );
       
       $this->connection->quit();
-
-      //print_r($promise);
 
       return $promise;
     }

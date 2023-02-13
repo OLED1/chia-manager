@@ -142,7 +142,7 @@
         };
         
         $canceller = function () {
-            throw new Exception('Promise cancelled');
+            throw new \Exception('Promise cancelled');
         };
 
         return new Promise\Promise($resolver, $canceller);
@@ -264,10 +264,6 @@
                 $edit_downtime->then(function($edit_downtime_returned) use(&$resolve){
                     $found_downtimes = Promise\resolve($this->getSetupDowntimes());
                     $found_downtimes->then(function($found_downtimes_returned) use(&$resolve){
-
-                        echo "RETURNED:\n";
-                        print_r($found_downtimes_returned);
-
                         if(array_key_exists("data", $found_downtimes_returned)){
                             $found_downtimes = $found_downtimes_returned["data"];
                         }else{

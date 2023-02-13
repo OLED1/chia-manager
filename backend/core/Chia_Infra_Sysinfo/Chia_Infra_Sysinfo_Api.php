@@ -568,10 +568,7 @@
      */
     public function updateAvailableServices(array $data): object
     {
-      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
-        echo "updateAvailableServices\n";
-        print_r($data);
-        
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){       
         if(array_key_exists("node_id", $data) && array_key_exists("service_type_id", $data) && array_key_exists("service_insert_id", $data) && 
         array_key_exists("defined_maximum", $data) && array_key_exists("current_service_level", $data) && 
         ($data["service_type_id"] == 9 && array_key_exists("service_target", $data)) || $data["service_type_id"] < 9){
@@ -598,10 +595,7 @@
               Promise\resolve((new DB_API())->execute("UPDATE chia_infra_available_services SET current = 0 WHERE current = 1 AND (service_target = ? OR service_target IS NULL OR service_target = '') AND service_type = ? AND node_id = ?", array($this_service_target, $this_service_type_id, $nodeid)))
             ];
             
-            Promise\all($promises)->then(function($all_returned) use(&$resolve, $nodeid, $this_service_type_id, $this_service_target, $this_service_alerting_infos_returned, $service_insert_id){                          
-              echo "NODEID: {$nodeid} SERVICE_TYPE_ID: {$this_service_type_id}\n";
-              print_r($all_returned[1]);
-              
+            Promise\all($promises)->then(function($all_returned) use(&$resolve, $nodeid, $this_service_type_id, $this_service_target, $this_service_alerting_infos_returned, $service_insert_id){                                       
               $found_node_available_services = [];
               if(array_key_exists("data", $all_returned[0])){
                 $found_node_available_services = $all_returned[0]["data"];
@@ -638,10 +632,7 @@
                 $insert_new = true;
               }
 
-              if($insert_new){
-                echo "\nINSERT INTO chia_infra_available_services (id, curr_service_insert_id, service_target, service_type, refers_to_rule_id, service_state, time_or_usage, node_id, current, service_state_first_reported, service_state_last_reported) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())\n";
-                print_r(array($service_insert_id, $this_service_target, $this_service_type_id, $this_service_alerting_infos_returned["id"], $current_service_alerting_level["level"], $current_service_alerting_level["time_or_usage"], $nodeid));
-                
+              if($insert_new){               
                 $insert_new = Promise\resolve((new DB_Api())->execute("INSERT INTO chia_infra_available_services (id, curr_service_insert_id, service_target, service_type, refers_to_rule_id, service_state, time_or_usage, node_id, current, service_state_first_reported, service_state_last_reported) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())", 
                                               array($service_insert_id, $this_service_target, $this_service_type_id, $this_service_alerting_infos_returned["id"], $current_service_alerting_level["level"], $current_service_alerting_level["time_or_usage"], $nodeid)));
                                               
@@ -686,14 +677,7 @@
         $available_nodes->then(function($available_nodes_returned) use(&$resolve, $data){
           if(array_key_exists("data", $available_nodes_returned)) $available_nodes_returned = $available_nodes_returned["data"];
 
-          echo "AVAIL NODES RETURNED:\n";
-          print_r($available_nodes_returned);
-
           foreach($available_nodes_returned AS $nodeid => $services_data){
-            echo "\n--------------------\n";
-            echo "LOOP:\n";
-            echo "\n-------------------\n";
-
             $this_service_type_id = 1;
             $node_up_down_since = (strtotime($services_data["onlinestatus"]["node_lastreported"]) - strtotime($services_data["onlinestatus"]["node_firstreported"])) / 60;
             $updateData = [
@@ -705,11 +689,6 @@
               "current_service_level" => $services_data["onlinestatus"]["status"],
               "current_service_minutes" => $node_up_down_since
             ];
-
-            //Promise\resolve($this->updateAvailableServices($updateData));
-
-            echo "Services Data: \n";
-            print_r($services_data["services"]);
 
             foreach($services_data["services"] AS $service_id => $node_service_state){
               $service_up_down_since = (strtotime($node_service_state["service_lastreported"]) - strtotime($node_service_state["service_firstreported"])) / 60;
@@ -723,12 +702,7 @@
                 "current_service_level" => $node_service_state["servicestate"],
                 "current_service_minutes" => $service_up_down_since
               ];
-
-              echo "=========================================\n";
-              echo "setAllNodesSystemAndServicesUpStatus: \n";
-              print_r($updateData);
-              echo "=========================================\n";
-    
+   
               Promise\resolve($this->updateAvailableServices($updateData));
             }
           }

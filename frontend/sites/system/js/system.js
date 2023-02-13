@@ -391,6 +391,8 @@ function messagesTrigger(data){
       $("#enableSystemCronjob").prop( "checked", false );
     }else if(key == "disableCronjob"){
       $("#enableSystemCronjob").prop( "checked", true );
+    }else if(key == "sendTestMail"){
+      $("#confirm-testmail-option i").hide();
     }
   }
 

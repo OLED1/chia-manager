@@ -131,9 +131,6 @@
         $client_nodes->then(function($client_nodes_returned) use(&$resolve){
           $returndata = array();
 
-          echo "CLIENT NODES RETURNED:";
-          print_r($client_nodes_returned);
-
           foreach ($client_nodes_returned->resultRows as $arrkey => $conninfo) {
             $returnarray[$conninfo["id"]] = $conninfo;
             $returnarray[$conninfo["id"]]["nodeauthhash"] = $this->encryption_api->decryptString($conninfo["nodeauthhash"]);
@@ -141,7 +138,6 @@
   
           $resolve(array("status" => 0, "message" => "Sucessfully loaded all client data.", "data" => $returnarray));
         })->otherwise(function(\Exception $e) use(&$resolve){
-          print_r($e->getMessage());
           $resolve($this->logging_api->getErrormessage("getConfiguredNodes", "001", $e));
         });
   

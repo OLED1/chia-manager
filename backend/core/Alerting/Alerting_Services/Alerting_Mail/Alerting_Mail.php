@@ -1,5 +1,6 @@
 <?php
     namespace ChiaMgmt\Alerting\Alerting_Services\Alerting_Mail;
+    use React\Promise;
     use ChiaMgmt\Mailing\Mailing_Api;
     use ChiaMgmt\Alerting\Data_Objects\Alertingdata;
 
@@ -31,27 +32,38 @@
         }
 
         public function sendQueuedMessages(){
-            $recepients = [];
-            $allerted_messages = [];
-            $error = 0;
-            foreach($this->messages AS $arrkey => $message){
-                $subject = "Status changed for service " . $message->get_service_desc() . " on host " . $message->get_hostname();
-                $generated_message = $this->generateMail($arrkey);              
+            $resolver = function (callable $resolve, callable $reject, callable $notify){
+                $error_mailing_promises = [];
 
-                $mail_sent = $this->mailing_api->sendMail([$message->get_contact()], $subject , $generated_message);
-                if($mail_sent["status"] == 0){
-                    array_push($allerted_messages, $message);
-                }else{
-                    //Log the message could not be sent
-                    $error = 1;
+                foreach($this->messages AS $arrkey => $message){
+                    $subject = "Status changed for service " . $message->get_service_desc() . " on host " . $message->get_hostname();
+                    $generated_message = $this->generateMail($arrkey); 
+                    array_push($error_mailing_promises, Promise\resolve((new Mailing_Api())->sendMail([$message->get_contact()], $subject , $generated_message)));
                 }
-            }
 
-            if($error == 0){
-                return array("status" => 0, "message" => "Messages were successfully sent using service 'Mail'.", "data" => $allerted_messages);
-            }else{
-                return array("status" => 1, "message" => "Some messages could not be sent. Trying again later.'.", "data" => $allerted_messages);
-            }
+                return Promise\all($error_mailing_promises)->then(function($error_mailing_promises_returned) use(&$resolve){
+                    $error = 0;
+                    $alerted_messages = [];
+                    foreach($error_mailing_promises_returned AS $arrkey => $this_mail_returned){
+                        if($this_mail_returned["status"] == 0){
+                            array_push($alerted_messages, $this->messages[$arrkey]);
+                        }else{
+                            $error = 1;
+                        }
+                    }
+
+                    if($error == 0){
+                        $resolve(array("status" => 0, "message" => "Messages were successfully sent using service 'Mail'.", "data" => $alerted_messages));
+                    }
+                    $resolve(array("status" => 1, "message" => "Some messages could not be sent. Trying again later.'.", "data" => $alerted_messages));
+                });
+            };
+
+            $canceller = function () {
+                throw new \Exception('Promise cancelled');
+            };
+        
+            return new Promise\Promise($resolver, $canceller);
         }
 
         private function generateMail(int $array_key){
