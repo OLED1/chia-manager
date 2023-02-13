@@ -17,6 +17,8 @@
     $connection = $system_settings_returned[2];
     $cronjobEnabled = $system_settings_returned[3];
 
+    print_r($cronjobEnabled);
+
     $mailsettings = $all_settings["mailing"];
     $security = $all_settings["security"];
     if(array_key_exists("TOTP", $security) && array_key_exists("value", $security["TOTP"])) $security = filter_var($security["TOTP"]["value"], FILTER_VALIDATE_BOOLEAN);
@@ -297,8 +299,7 @@
                   if($cronjobEnabled["status"] == 0){
                     $now = new \DateTime("now");
                     $lastexecdate = new \DateTime($cronjobEnabled["data"]["lastcronrun"]);
-                    $interval = $now->diff($lastexecdate);
-                    $seconds = $interval->s;
+                    $seconds = $now->getTimestamp() - $lastexecdate->getTimestamp();
                   }
                 ?>
                 <p>The automated background tasks are needed to query current data in the background.<br>
