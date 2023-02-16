@@ -29,11 +29,14 @@ RUN composer update
 VOLUME /var/www/html/backend/config
 VOLUME /var/www/html/logs
 
+# Set default ENV variables
+ENV CM_DOCKER true
+
 # Set app owner to apache
 RUN chown www-data. /var/www/html/backend/config -R
 
 # Execute websocket init script and start websocket server
-#CMD ["sh","-c","/bin/sh docker/set_svc_ip_to_hosts.sh && sudo -u www-data php /var/www/html/backend/core/WebSocketServer/websocket.php"]
+CMD ["sh","-c","/bin/sh docker/set_svc_ip_to_hosts.sh && php /var/www/html/backend/core/CronBackendService/CronBackendService.php"]
 
 # Only for developing
-ENTRYPOINT [ "sh","-c","/bin/sh docker/set_svc_ip_to_hosts.sh && tail -f /dev/null" ]
+#ENTRYPOINT [ "sh","-c","/bin/sh docker/set_svc_ip_to_hosts.sh && tail -f /dev/null" ]
