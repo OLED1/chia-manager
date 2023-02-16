@@ -54,17 +54,25 @@
 
             $wssstatus = Promise\resolve($this->websocket_api->testConnection());
             $wssstatus->then(function($wssstatus_returned){
-              if($wssstatus_returned["status"] == "016001001"){
-                $logging_message = Promise\resolve($this->logging_api->getErrormessage("queryData", "002"));
-                $logging_message->then(function($logging_message_returned){
-                  echo "{$this->getDate()}: {$logging_message_returned["message"]}\n";
-                });
+              if($wssstatus_returned["status"] == "016001001" ){
+                if(!getenv("CM_DOCKER")){
+                  $logging_message = Promise\resolve($this->logging_api->getErrormessage("queryData", "002"));
+                  $logging_message->then(function($logging_message_returned){
+                    echo "{$this->getDate()}: {$logging_message_returned["message"]}\n";
+                  });
 
-                $wss_start = Promise\resolve($this->websocket_api->startWSS());
-                $wss_start->then(function($wss_start_returned){
-                  echo "{$this->getDate()}: {$wss_start_returned["message"]}\n";
-                  return $this->queryData();
-                });
+                  $wss_start = Promise\resolve($this->websocket_api->startWSS());
+                  $wss_start->then(function($wss_start_returned){
+                    echo "{$this->getDate()}: {$wss_start_returned["message"]}\n";
+                    return $this->queryData();
+                  });
+                }else{
+                  $logging_message = Promise\resolve($this->logging_api->getErrormessage("queryData", "006"));
+                  $logging_message->then(function($logging_message_returned){
+                    echo "{$this->getDate()}: {$logging_message_returned["message"]}\n";
+                    exit(1);
+                  });
+                }
               };
 
               if($wssstatus_returned["status"] == 0){

@@ -4,13 +4,18 @@
     "processGetActiveSubscriptions" : "002",
     "processGetActiveRequests" : "003",
     "processUpdateFrontendViewingSite" : "004",
-    "requesterLogin" : "005"
+    "requesterLogin" : "005",
+    "processCronRequest" : "006"
   },
   "errormessages" : {
     "processRequest" : {
       "001" : [1, "This system is currently in maintenance."],
       "002" : [1, "Class or function not found."],
       "003" : [1, "Class or function not found."]
+    },
+    "processCronRequest" : {
+      "001" : [2, "Job running since longer than 5minutes. Aborting now."],
+      "002" : [0, "Aborted cron execution. Cronjob already processing."]
     },
     "processGetActiveSubscriptions" : {
       "001" : [1, "You are not allowed to query this information."]

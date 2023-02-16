@@ -9,7 +9,8 @@
       "002" : [0, "Starting websocket server."],
       "003" : [0, "Sending Cron Query Request to WSS."],
       "004" : [0, "Cron query processed successfully."],
-      "005" : [0, "This instance is currently in maintenance mode. Skip processing."]
+      "005" : [0, "This instance is currently in maintenance mode. Skip processing."],
+      "006" : [2, "Websocket Server not running. Not starting, because of Docker environment."]
     },
     "getSystemInfo" : {
       "001" : [2, "An error occured."],
