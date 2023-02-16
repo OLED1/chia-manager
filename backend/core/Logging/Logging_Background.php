@@ -13,7 +13,7 @@
 
         $loggingfile = fopen($logpath, 'a') or die(json_encode(array("status" => 1, "message" => "Unable to open file!")));
         $text = str_replace(PHP_EOL, '', $text);
-        $errortext = date("Y/m/d H:i:s") . ";" . $loglevel . ";" . $errorcode . ";". $text . ";";
+        $errortext = date("Y/m/d H:i:s") . ";" . $loglevel . ";" . $errorcode . ";". str_replace(";","--",$text) . ";";
 
         fwrite($loggingfile, $errortext."\n");
         fclose($loggingfile);

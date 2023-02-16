@@ -2,7 +2,10 @@
   namespace ChiaMgmt\Logging;
   use React\Promise;
   use React\ChildProcess;
-  use ChiaMgmt\WebSocketClient\WebSocketClient_Api;
+  use React\EventLoop\Loop;
+  use React\Filesystem\Factory;
+  use React\Filesystem\Node\FileInterface;
+  use React\Filesystem\Stat;
 
   /**
    * The logging api is the core of the project's logging.
@@ -95,7 +98,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -147,43 +150,10 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
-      
-      $sitecodefile = @file_get_contents($this->codefilepath);
-      $sitecoderarray = json_decode($sitecodefile, true);
-
-      $errorfile = file_get_contents($this->errorfilepath . $this->callerClass . "_codes.json");
-      $errorarray = json_decode($errorfile, true);
-
-      $sitecode = $sitecoderarray[$this->callerClass];
-
-      if(isset($errorarray["functioncodes"]) && isset($errorarray["errormessages"]) &&
-         isset($errorarray["functioncodes"][$methodname]) && isset($errorarray["errormessages"][$methodname]) &&
-         isset($errorarray["errormessages"][$methodname][$functioncode])
-        ){
-        $functionID = $errorarray["functioncodes"][$methodname];
-        $errormessage = $errorarray["errormessages"][$methodname][$functioncode];
-        $errorcode = "$sitecode$functionID$functioncode";
-
-        if(is_array($errormessage)){
-          $loglevel = $errormessage[0];
-          $messagetoshow = $errorcode . ": " . $this->getHReadableLoglevel($loglevel) . " " . $errormessage[1];
-          $messagetolog = (strlen($additional) > 0 ? $additional : $errormessage[1]);
-        }else{
-          $loglevel = 3;
-          $messagetoshow = $errorcode . ": " . $this->getHReadableLoglevel($loglevel) . " " . $errormessage;
-          $messagetolog = (strlen($additional) > 0 ? $additional : $errormessage);
-        }
-
-        if($logtofile) $this->logtofile($loglevel,$errorcode,$messagetolog.";");
-
-        return array("status" => $errorcode, "loglevel" => $loglevel, "message" => $messagetoshow);
-      }else{
-        return array("status" => "999999999", "message" => "No errormessage found. Please check the corresponding errorcodefile or caller method function parameters.");
-      }
     }
 
     /**
@@ -214,8 +184,81 @@
      * @return array            A status code array with the needed data
      */
      //public function getMessagesFromFile(int $fromline, int $toline){
-    public function getMessagesFromFile(array $data): array
+    public function getMessagesFromFile(array $data): object
     {
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
+        if(array_key_exists("fromline", $data) && array_key_exists("toline", $data) && is_numeric($data["fromline"]) && is_numeric($data["toline"]) && $data["toline"] >= $data["fromline"]){
+          $filesize = 0;
+          $fromline = $data["fromline"];
+          $toline = $data["toline"];
+
+          Factory::create()->detect($this->logpath)->then(function (FileInterface $file){
+            return $file->stat();
+          })->then(static function (Stat $stat) use(&$filesize){
+            $filesize = $stat->size();
+          }, function (\Throwable $throwable) {
+            //TODO Implement status code
+            echo $throwable;
+          });
+
+          Factory::create()->detect($this->logpath)->then(function (FileInterface $file) use(&$resolve, $filesize, $fromline, $toline){
+            $line_delimiter_count = 4;
+            $logs_to_return = [];
+            
+            $byte_buffer = ceil((($toline - $fromline) >= 50 ? ($toline - $fromline) / 5 : 2));
+            $chunks_to_load = $byte_buffer*1024;
+            $current_chunk = $filesize;
+            $removed_offset = 0;
+            
+            $loop = Loop::get();
+            $loop->addPeriodicTimer(0, function($timer) use(&$resolve, $file, $loop, $fromline, $toline, &$chunks_to_load, &$logs_to_return, &$current_chunk, &$removed_offset, $line_delimiter_count){              
+              $file->getContents(($current_chunk-$chunks_to_load), ($chunks_to_load+$removed_offset))->then(function (string $contents) use(&$chunks_to_load, &$logs_to_return, &$current_chunk, &$removed_offset, $line_delimiter_count){
+                $removed_offset = 0;
+                $current_chunk -= $chunks_to_load;
+  
+                $csv_array = str_getcsv(str_replace(PHP_EOL, '', $contents),";");
+                foreach($csv_array AS $arrkey => $value){
+                  if (\DateTime::createFromFormat('Y/m/d H:i:s', $value) !== false){
+                    break;
+                  }else{
+                    $removed_offset += strlen($value)+1;
+                    unset($csv_array[$arrkey]);
+                  }
+                }
+  
+                $filtered_csv_array = array_filter($csv_array, (function ($var){ return $var !== NULL && $var !== FALSE && $var !== ""; } ));
+                $chunked_csv_array = array_chunk($filtered_csv_array, $line_delimiter_count);
+                $reversed_csv_array = array_reverse($chunked_csv_array);
+  
+                if(count($logs_to_return) == 0){
+                  $logs_to_return = $reversed_csv_array;
+                }else{ 
+                  $logs_to_return = array_merge($logs_to_return, $reversed_csv_array);
+                }
+              }, function (\Throwable $throwable) {
+                //TODO Implement status code
+                echo $throwable;
+              });
+                            
+              if((array_key_exists($fromline, $logs_to_return) && array_key_exists($toline, $logs_to_return)) || ($current_chunk-$chunks_to_load) < 0){
+                $loop->cancelTimer($timer);
+                foreach($logs_to_return AS $key => $value){
+                  if($key < $fromline || $key > $toline) unset($logs_to_return[$key]);
+                }
+
+                $resolve(array("status" => 0, "message" => "Logs successfully loaded.","data" => $logs_to_return));
+              }
+            });
+          });
+        }
+      };
+
+      $canceller = function () {
+        throw new \Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
+
       if(array_key_exists("fromline", $data) && array_key_exists("toline", $data) && is_numeric($data["fromline"]) && is_numeric($data["toline"])){
         $logarray = [];
         $fromline = $data["fromline"];
@@ -256,20 +299,20 @@
      * Returns all logs newer than an given timestamp.
      * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[Locally found log-messages]}}
      */
-    public function getNewerLogsFromTimestamp(DateTime $lastData): array
+    public function getNewerLogsFromTimestamp(\DateTime $lastData): array
     {
       $logarray = [];
-      $loggingfile = new SplFileObject($this->logpath);
+      $loggingfile = new \SplFileObject($this->logpath);
 
       if($loggingfile){
         $loggingfile->seek(PHP_INT_MAX); // cheap trick to seek to EoF
         $total_lines = $loggingfile->key(); // last line number
 
-        $reader = new LimitIterator($loggingfile, 0);
+        $reader = new \LimitIterator($loggingfile, 0);
         foreach ($reader as $line) {
           $splittedline = explode(";", $line);
           if(count($splittedline) > 1){
-            $logdate = new DateTime($splittedline[0]);
+            $logdate = new \DateTime($splittedline[0]);
 
             if($logdate >= $lastData){
               array_push($logarray, $splittedline);
