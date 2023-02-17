@@ -76,24 +76,15 @@
      */
     public function logtofile(int $loglevel, string $errorcode, string $text){
       $resolver = function (callable $resolve, callable $reject, callable $notify) use($loglevel, $errorcode, $text){
-        $cmd = "php " . __DIR__ . "/Logging_Background.php '{$loglevel}' '{$errorcode}' '{$text}'";
-      
-        $process = new ChildProcess\Process($cmd);
-        $process->start();
-  
-        $process->stdout->on('data', function ($chunk) use($resolve){
-          $returned_message = (!is_null($chunk) ? json_decode($chunk, true) : array());
-
-          if(!is_null($returned_message) && array_key_exists("status", $returned_message) && $returned_message["status"] == 0){
+        Factory::create()->detect($this->logpath)->then(function (FileInterface $file) use(&$resolve, $loglevel, $errorcode, $text){
+          $text = str_replace(PHP_EOL, '', $text);
+          $errortext = date("Y/m/d H:i:s") . ";" . $loglevel . ";" . $errorcode . ";". str_replace(";","--",$text) . ";\n";
+          $file->putContents($errortext, \FILE_APPEND)->then(function (string $contents) use(&$resolve){
+            Promise\resolve($this->server->messageFrontendClients(array("siteID" => 11), array("logsChanged" => $this->getMessagesFromFile(["fromline" => 0, "toline" => 0]))));
             $resolve(array("status" => 0, "message" => "Message has been logged on " . date("Y-m-d H:i:s") . "."));
-            if(!is_null($this->server)){
-              Promise\resolve($this->server->messageFrontendClients(array("siteID" => 11), array("logsChanged" => $this->getMessagesFromFile(["fromline" => 0, "toline" => 1]))));
-            }
-          }else if(!is_null($returned_message) && array_key_exists("data", $returned_message) && $returned_message["status"] != 0){
-            $resolve("Message could not be logged. Logging Error: " . $returned_message["data"] . ".");
-          }else{
-            $resolve("Message could not be logged. UNKNOWN Error.");
-          }
+          }, function (\Throwable $e) use(&$resolve){
+            $resolve("Message could not be logged. Logging Error: " . $e->getMessage() . ".");
+          });
         });
       };
 
@@ -191,14 +182,13 @@
           $filesize = 0;
           $fromline = $data["fromline"];
           $toline = $data["toline"];
-
+          
           Factory::create()->detect($this->logpath)->then(function (FileInterface $file){
             return $file->stat();
           })->then(static function (Stat $stat) use(&$filesize){
             $filesize = $stat->size();
           }, function (\Throwable $throwable) {
-            //TODO Implement status code
-            echo $throwable;
+            $resolve("Message could not be logged. Logging Error: " . $e->getMessage() . ".");
           });
 
           Factory::create()->detect($this->logpath)->then(function (FileInterface $file) use(&$resolve, $filesize, $fromline, $toline){
@@ -215,7 +205,7 @@
               $file->getContents(($current_chunk-$chunks_to_load), ($chunks_to_load+$removed_offset))->then(function (string $contents) use(&$chunks_to_load, &$logs_to_return, &$current_chunk, &$removed_offset, $line_delimiter_count){
                 $removed_offset = 0;
                 $current_chunk -= $chunks_to_load;
-  
+ 
                 $csv_array = str_getcsv(str_replace(PHP_EOL, '', $contents),";");
                 foreach($csv_array AS $arrkey => $value){
                   if (\DateTime::createFromFormat('Y/m/d H:i:s', $value) !== false){
@@ -229,23 +219,21 @@
                 $filtered_csv_array = array_filter($csv_array, (function ($var){ return $var !== NULL && $var !== FALSE && $var !== ""; } ));
                 $chunked_csv_array = array_chunk($filtered_csv_array, $line_delimiter_count);
                 $reversed_csv_array = array_reverse($chunked_csv_array);
-  
+
                 if(count($logs_to_return) == 0){
                   $logs_to_return = $reversed_csv_array;
                 }else{ 
                   $logs_to_return = array_merge($logs_to_return, $reversed_csv_array);
                 }
               }, function (\Throwable $throwable) {
-                //TODO Implement status code
-                echo $throwable;
+                $resolve("Message could not be logged. Logging Error: " . $e->getMessage() . ".");
               });
                             
-              if((array_key_exists($fromline, $logs_to_return) && array_key_exists($toline, $logs_to_return)) || ($current_chunk-$chunks_to_load) < 0){
+              if((array_key_exists($fromline, $logs_to_return) && array_key_exists($toline, $logs_to_return)) || ($current_chunk+$chunks_to_load+$removed_offset) < 0){
                 $loop->cancelTimer($timer);
                 foreach($logs_to_return AS $key => $value){
                   if($key < $fromline || $key > $toline) unset($logs_to_return[$key]);
                 }
-
                 $resolve(array("status" => 0, "message" => "Logs successfully loaded.","data" => $logs_to_return));
               }
             });
@@ -258,72 +246,6 @@
       };
 
       return new Promise\Promise($resolver, $canceller);
-
-      if(array_key_exists("fromline", $data) && array_key_exists("toline", $data) && is_numeric($data["fromline"]) && is_numeric($data["toline"])){
-        $logarray = [];
-        $fromline = $data["fromline"];
-        $toline = $data["toline"];
-
-        $loggingfile = new \SplFileObject($this->logpath);
-
-        if($loggingfile) {
-          $loggingfile->seek(PHP_INT_MAX); // cheap trick to seek to EoF
-          $total_lines = $loggingfile->key(); // last line number
-
-          if($toline <= $total_lines || $fromline <= $total_lines){
-            if($toline > $total_lines) $toline = $total_lines;
-
-            $i = $toline;
-            $reader = new \LimitIterator($loggingfile, $total_lines - $toline);
-            foreach ($reader as $line) {
-              $splittedline = explode(";", $line);
-              if(count($splittedline) > 1){
-                //echo $line; // includes newlines
-                $logarray[$i] = $splittedline;
-                if($i == $fromline) break;
-                $i--;
-              }
-            }
-          }
-        }else{
-          return array("status" => 1, "message" => "An error occured.");
-        }
-        return array("status" => 0, "message" => "Logs successfully loaded.","data" => $logarray);
-      }else{
-
-      }
-      //$loggingfile = fopen($this->logpath, 'r') or die("Unable to open file!");
-    }
-
-    /**
-     * Returns all logs newer than an given timestamp.
-     * @return array {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {[Locally found log-messages]}}
-     */
-    public function getNewerLogsFromTimestamp(\DateTime $lastData): array
-    {
-      $logarray = [];
-      $loggingfile = new \SplFileObject($this->logpath);
-
-      if($loggingfile){
-        $loggingfile->seek(PHP_INT_MAX); // cheap trick to seek to EoF
-        $total_lines = $loggingfile->key(); // last line number
-
-        $reader = new \LimitIterator($loggingfile, 0);
-        foreach ($reader as $line) {
-          $splittedline = explode(";", $line);
-          if(count($splittedline) > 1){
-            $logdate = new \DateTime($splittedline[0]);
-
-            if($logdate >= $lastData){
-              array_push($logarray, $splittedline);
-            }
-          }
-        }
-
-        return array("status" => 0, "message" => "Successfully loaded new logs.", "data" => $logarray);
-      }else{
-        return array("status" => 1, "message" => "An error occured.");
-      }
     }
   }
 ?>
