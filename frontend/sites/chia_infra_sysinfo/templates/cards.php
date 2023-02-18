@@ -476,7 +476,7 @@
                             </li>
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 Memory
-                                <span class="badge badge-primary badge-pill"><?php echo "RAM: " . number_format(floatval($sysinfo["memory"]["ram"]["memory_total"])/1024/1024/1024, 2) . "GB" . ", SWAP " . number_format(floatval($sysinfo["memory"]["swap"]["swap_total"])/1024/1024/1024, 2) . "GB"; ?></span>
+                                <span class="badge badge-primary badge-pill"><?php echo "RAM: " . number_format(floatval($sysinfo["memory"]["ram"]["memory_total"])/1024/1024/1024, 2) . "GB" . ", SWAP " . number_format((array_key_exists("swap", $sysinfo["memory"]) ? floatval($sysinfo["memory"]["swap"]["swap_total"])/1024/1024/1024 : 0), 2) . "GB"; ?></span>
                             </li>
                           </ul>
                         </div>
