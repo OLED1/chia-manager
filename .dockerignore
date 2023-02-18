@@ -8,3 +8,5 @@ package-lock.json
 .gitignore
 .git
 composer.lock
+frontend/frameworks/node_modules/*
+frontend/frameworks/package-lock.json

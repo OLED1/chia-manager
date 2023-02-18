@@ -2,7 +2,7 @@
 FROM php:8.2.1-apache
 
 # Install OS dependencies required
-RUN apt-get update && apt-get upgrade -y && apt-get install curl zip libicu-dev libonig-dev libedit-dev cron -y
+RUN apt-get update && apt-get upgrade -y && apt-get install curl zip libicu-dev libonig-dev libedit-dev cron npm -y
 
 # Adapt apache config
 RUN a2enmod headers proxy proxy_http proxy_fcgi rewrite actions alias
@@ -27,10 +27,15 @@ COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 # Create default folders
 RUN mkdir /var/www/html/logs
 
-# Install composer dependencies
+# Install PHP composer dependencies
 RUN composer install
-# Update composer dependencies
+# Update PHP composer dependencies
 RUN composer update
+
+# Install npm packages
+RUN npm install
+# Update npm
+RUN npm update
 
 # Expose useful volumes (see documentation)
 #VOLUME /var/www/html/backend/config
