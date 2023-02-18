@@ -13,3 +13,5 @@ vendor
 vendor/*
 composer.lock
 package-lock.json
+frontend/frameworks/node_modules
+frontend/frameworks/package-lock.json
