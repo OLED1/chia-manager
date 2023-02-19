@@ -282,7 +282,7 @@
                   <img class="img-profile rounded-circle" src="../frameworks/bootstrap/img/undraw_profile.svg">
                 </a>
                 <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
-                    <a class="dropdown-item" data-siteid=5 data-nav-target="nav-personal-settings"href="/sites/usersettings">
+                    <a class="dropdown-item" data-siteid=5 data-nav-target="nav-personal-settings"href="/sites/usersettings/">
                       <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
                       <span>Profile & Settings</span>
                     </a>
