@@ -90,7 +90,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -148,7 +148,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -207,7 +207,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -241,7 +241,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -281,7 +281,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -311,7 +311,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -366,7 +366,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -402,7 +402,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -449,7 +449,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -485,7 +485,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -528,36 +528,10 @@
       };
       
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
-      
-      if(isset($data["userID"]) && isset($data["password"])){
-        try{
-          $sql = $this->db_api->execute("SELECT password, salt from users where id = ?",
-          array($data["userID"]));
-
-          if($sql->rowCount() == 1){
-            $sqData = $sql->fetch();
-            $salt = $sqData["salt"];
-            $current_salted_pw = $sqData["password"];
-            $stated_salted_password = hash('sha256',$data["password"].$salt.$this->ini["serversalt"]);
-
-            if($stated_salted_password == $current_salted_pw){
-              return array("status" => 0, "message" => "Stated password matches.");
-            }else{
-              return $this->logging_api->getErrormessage("001");
-            }
-          }else{
-            return $this->logging_api->getErrormessage("002");
-          }
-        }catch(\Exception $e){
-          return $this->logging_api->getErrormessage("003",$e);
-        }
-      }else{
-        return $this->logging_api->getErrormessage("004");
-      }
     }
 
     /**
@@ -636,7 +610,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -667,7 +641,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -697,7 +671,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -739,7 +713,7 @@
                   $resolve(array("status" => 0, "message" => "Successfully sent invitation mail to user with ID {$data["userID"]}."));
                 });
               }else{
-                $resolve($userdata);
+                $resolve($userdata_returned);
               }
             });
           }else{
@@ -751,7 +725,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);

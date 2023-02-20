@@ -98,6 +98,32 @@ $(function(){
     showloginwindow();
   });
 
+  $("#inputsendBackupKey").on("input", function(e){
+    var backupKey = $(this).val();
+    
+    if(backupKey.length > 0){
+      $("#sendBackupKeyBtn").removeAttr("disabled");
+    }else{
+      $("#sendBackupKeyBtn").attr("disabled","disabled");
+    }
+  });
+
+  $("#sendBackupKeyBtn").on("click", function(e){
+    e.preventDefault();
+
+    var backupKey = $("#inputsendBackupKey").val();
+    if(backupKey.length > 25){
+      var url = backend + "/core/Login/Login_Rest.php";
+      var action = "checkBackupKeyValid";
+      var type = "POST";
+      var data = {
+        backupkey: backupKey
+      };
+  
+      sendToAPI(url, action, type, data);
+    }
+  });
+
   $("#inputPWReset").on("input", function(){
     if($(this).val().trim().length > 0){
       $("#sendResetLinkBtn").removeAttr("disabled");
@@ -154,9 +180,17 @@ $(function(){
 
   $(".send-backupkey").on("click", function(e){
     e.preventDefault();
-
-    console.log("HIER");
+    $("#authkeywindow").hide();
+    $("#sendBackupKey").show();
   });
+
+  $("#sendBackupKey-go-back").on("click", function(e){
+    e.preventDefault();
+    $("#sendBackupKey").hide();
+    $("#authkeywindow").show();
+  });
+
+
 
   $(".totpinput").on('paste', function(e){
     e.preventDefault();
@@ -284,7 +318,7 @@ $(function(){
       async: true,
       success: function (result, status, xhr) {
         if(result["status"] == 0){
-          if(action == "login"){
+          if(action == "login" || action == "checkAuthKey" || action == "checkTOTPKey" || action == "checkBackupKeyValid"){
             $(location).attr('href',frontend + '/index.php');
           }else if(action == "sendPWResetLink"){
             showMessage("alert-success", result["message"]);
@@ -295,10 +329,6 @@ $(function(){
             showMessage("alert-success", result["message"]);
           }else if(action == "invalidateLogin"){
             showloginwindow();
-          }else if(action == "checkAuthKey"){
-            $(location).attr('href',frontend + '/index.php');
-          }else if(action == "checkTOTPKey"){
-            $(location).attr('href',frontend + '/index.php');
           }else if(action == "requestUserPasswordReset"){
             $("#pwResetMessage").show();
             $("#pwResetMessage .card-body").text(result["message"]);

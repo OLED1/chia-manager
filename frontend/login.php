@@ -176,6 +176,33 @@
                   </div>
                 </div>
               </div>
+              <div id="sendBackupKey" class="row" style="display: none;">
+                <div class="col">
+                  <div class="p-5">
+                    <div class="text-center">
+                      <h1 class="h4 text-gray-900 mb-4">Send Backup Key</h1>
+                      <p>If you are not able to login anymore using second factor, paste your backup key below.</p>
+                    </div>
+                    <form class="check-authkey">
+                      <div class="form-group">
+                        <input type="text" class="form-control form-control-user" id="inputsendBackupKey" placeholder="Backup Key" maxlength="100">
+                      </div>
+                      <button id="sendBackupKeyBtn" href="#" class="btn btn-primary btn-user btn-block" disabled>
+                        Send backup key
+                        <i class="fas fa-spinner fa-spin" style="display: none;"></i>
+                      </button>
+                      <div id="pwResetMessage" class='card bg-success text-white shadow' style="display: none;">
+                        <div class='card-body'>
+                        </div>
+                      </div>
+                      <hr>
+                      <div class="text-center">
+                        <a id="sendBackupKey-go-back" href="#" class="small" href="">Go back</a>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

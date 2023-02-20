@@ -2,14 +2,12 @@
   namespace ChiaMgmt\Login;
 
   use React\Promise;
-  use React\Promise\Deferred;
-
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\Mailing\Mailing_Api;
   use ChiaMgmt\System\System_Api;
+  use ChiaMgmt\Encryption\Encryption_Api;
   use ChiaMgmt\Second_Factor\Second_Factor_Api;
-  use ChiaMgmt\Users\Users_Api;
   
   require __DIR__ . '/../../../vendor/autoload.php';
 
@@ -42,6 +40,11 @@
      * @var WebSocketServer
      */
     private $server;
+    /**
+     * Holds an instance to the Encryption Class.
+     * @var Encryption_Api
+     */
+    private $encryption_api;
 
     /**
      * Initialises the needed and above stated private variables.
@@ -51,6 +54,7 @@
       $this->second_factor_api = new Second_Factor_Api();
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
       $this->server = $server;
+      $this->encryption_api = new Encryption_Api();
     }
 
     /**
@@ -105,7 +109,7 @@
                       }
 
                       $user_sessions_promise = Promise\resolve((new DB_Api())->execute("Insert INTO users_sessions (id, userid, sessid, authkeypassed, totpmobilepassed, deviceinfo, validuntil) VALUES (NULL, ?, ?, ?, ?, ?, " . ($stayloggedin ? "NULL" : "DATE_ADD(now(), INTERVAL 30 MINUTE)" ) . ")", array($session_set["data"]["userid"], $session_set["data"]["sessid"], $authkeypassed, $totpmobilepassed, $_SERVER['HTTP_USER_AGENT'])));
-                      $user_sessions_promise->then(function($totpenabled_returned) use(&$resolve, $session_set, $totpmobilepassed, $sendauthkey, $checktotpmobile){                      
+                      $user_sessions_promise->then(function($user_sessions_promise_returned) use(&$resolve, $session_set, $totpmobilepassed, $sendauthkey, $checktotpmobile){                      
                         if($sendauthkey && !$checktotpmobile){
                           $generate_send_key = Promise\resolve($this->generateAndsendAuthKey($session_set["data"]["userid"], $session_set["data"]["sessid"]));
                           $generate_send_key->then(function($generate_send_key_returned) use(&$resolve){
@@ -138,7 +142,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -189,7 +193,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -232,33 +236,10 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
-
-
-
-      if(array_key_exists('user_id', $_COOKIE) && array_key_exists('PHPSESSID', $_COOKIE)){
-        $userid = $_COOKIE['user_id'];
-        $sessionid = $_COOKIE['PHPSESSID'];
-        $currentdate = new \DateTime();
-
-        try{
-          $totpkeyvalid = $this->second_factor_api->totpProof(["userID" => $userid, "totpkey" => $key]);
-
-          if($totpkeyvalid["status"] == 0){
-            $sql = $this->db_api->execute("UPDATE users_sessions SET totpmobilepassed = 1 WHERE userid = ? AND sessid = ?", array($userid, $sessionid));
-            return $this->checklogin($sessid, $userid);
-          }else{
-            return $totpkeyvalid;
-          }
-        }catch(\Exception $e){
-          return $this->logging_api->getErrormessage("001", $e);
-        }
-      }else{
-        return $this->logging_api->getErrormessage("002");
-      }
     }
 
     /**
@@ -324,7 +305,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -357,7 +338,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -389,7 +370,7 @@
       };
       
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -437,7 +418,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -510,7 +491,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -543,7 +524,67 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
+    }
+
+    /**
+     * Checks if the stated backup key is valid and sets the user session as logged in. It skips all other TOTP checks.
+     * Function made for: WebGUI/App
+     * @param  string $backupkey  The user who wants to login and his backup key.
+     * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
+     */
+    public function checkBackupKeyValid(string $backupkey): object
+    {
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($backupkey){
+        if(array_key_exists('user_id', $_COOKIE) && array_key_exists('PHPSESSID', $_COOKIE)){
+          $checklogin = Promise\resolve($this->checklogin());
+          $checklogin->then(function($checklogin_returned) use(&$resolve, $backupkey){
+            $userid = $_COOKIE['user_id'];
+            $sessionid = $_COOKIE['PHPSESSID'];
+            
+            if($checklogin_returned["status"] == "007009002" || $checklogin_returned["status"] == "007009003"){
+              $encrpyted_backupkey = $this->encryption_api->encryptString($backupkey);
+
+              $check_backup_key = Promise\resolve((new DB_Api())->execute("SELECT Count(*) AS valid_count FROM users_backupkeys WHERE userid = ? AND backupkey = ? AND valid = 1", array($userid, $encrpyted_backupkey)));
+              $check_backup_key->then(function($check_backup_key_returned) use(&$resolve, $userid, $sessionid){
+                if($check_backup_key_returned->resultRows[0]["valid_count"] > 0){
+                  $set_user_logged_in = Promise\resolve((new DB_Api())->execute("UPDATE users_sessions SET authkeypassed = ?, totpmobilepassed = ? WHERE userid = ? AND sessid = ?", array(1,1, $userid, $sessionid)));
+                  $set_user_logged_in->then(function($set_user_logged_in_returned) use(&$resolve){
+                    $resolve(Promise\resolve($this->checklogin()));
+                  })->otherwise(function(\Exception $e) use(&$resolve){
+                    //TODO Implement correct status code
+                    print_r($e);
+                    $resolve(array("status" => "1", "message" => "An error occured."));
+                  });
+                }else{
+                  //TODO Implement correct status code
+                  $resolve(array("status" => "1", "message" => "Backup key not valid (anymore)."));
+                }
+              })->otherwise(function(\Exception $e) use(&$resolve){
+                //TODO Implement correct status code
+                print_r($e);
+                //$resolve($this->logging_api->getErrormessage("checkBackupKeyValid", "001", $e));
+                $resolve(array("status" => "1", "message" => "An error occured."));
+              });
+            }else{
+              $resolve($checklogin_returned);
+            }
+          })->otherwise(function(\Exception $e) use(&$resolve){
+            //TODO Implement correct status code
+            print_r($e);
+            //$resolve($this->logging_api->getErrormessage("checkBackupKeyValid","001",$e));
+            $resolve(array("status" => "1", "message" => "An error occured."));
+          });
+        }else{
+          $resolve(array("status" => "1", "message" => "An error occured."));
+        }
+      };
+
+      $canceller = function () {
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);

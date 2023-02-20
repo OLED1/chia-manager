@@ -2,8 +2,6 @@
   session_start();
 
   use React\Promise;
-  use React\Promise\Deferred;
-
   use ChiaMgmt\Login\Login_Api;
   require __DIR__ . '/../../../vendor/autoload.php';
 
@@ -50,6 +48,11 @@
     $invalidate_login = Promise\resolve($login_api->invalidateLogin());
     $invalidate_login->then(function($invalidate_login_returned){
       echo json_encode($invalidate_login_returned);
+    });
+  }else if(isset($_POST["action"]) && $_POST["action"] == "checkBackupKeyValid"){
+    $checkBackupKeyValid = Promise\resolve($login_api->checkBackupKeyValid($_POST["data"]["backupkey"]));
+    $checkBackupKeyValid->then(function($checkBackupKeyValid_returned){
+      echo json_encode($checkBackupKeyValid_returned);
     });
   }else{
     echo json_encode(array("status" => 1, "message" => "Action not known or not allowed."));
