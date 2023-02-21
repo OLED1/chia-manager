@@ -2,9 +2,7 @@
   namespace ChiaMgmt\System_Update;
 
   use React\Promise;
-  use React\Promise\Deferred;
   use React\Http\Browser;
-
   use ChiaMgmt\DB\DB_Api;
   use ChiaMgmt\WebSocket\WebSocket_Api;
   use ChiaMgmt\Logging\Logging_Api;
