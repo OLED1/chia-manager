@@ -238,7 +238,7 @@ function setServiceBadge(){
       }
     }
 
-    $(".statusbadge[data-node-id='" + nodeid + "'").removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-warning").removeClass("badge-danger").addClass(statusicon).text(statustext);
+    $(".statusbadge[data-node-id='" + nodeid + "']").removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-warning").removeClass("badge-danger").addClass(statusicon).text(statustext);
   });
 }
 
