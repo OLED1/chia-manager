@@ -739,36 +739,51 @@
      * @param string $username  The user's username which wants his password be reset
      * @return array             {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function requestUserPasswordReset(string $username): array
+    public function requestUserPasswordReset(string $username): object
     {
-      try{
-        $sql = $this->db_api->execute("SELECT id, name, lastname, email FROM users WHERE username = ? AND enabled = 1", array($username));
-        $userdata = $sql;
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($username){
+        $user_infos = Promise\resolve((new DB_Api)->execute("SELECT id, name, lastname, email FROM users WHERE username = ? AND enabled = 1", array($username)));
+        $user_infos->then(function($user_infos_returned) use(&$resolve, $username){
+          $userdata = $user_infos_returned->resultRows;
 
-        if(count($userdata) == 1){
-          $userdata = $userdata[0];
-          $resetLink = bin2hex(random_bytes(35));
-          $resetLinkEncrypted = $this->encryption_api->encryptString($resetLink);
-          $keyvaliduntil = new \DateTime();
-          $keyvaliduntil->modify("+15 minutes");
-
-          $resetPWLink = "{$this->ini["app_protocol"]}://{$this->ini["app_domain"]}{$this->ini["frontend_url"]}/password-reset.php?pw-reset-key={$resetLink}";
-
-          $message = "<h1>Password reset</h1><br>Hello {$userdata["name"]} {$userdata["lastname"]},<br><br>you recently decided to reset your password.<br>Please click <a href='$resetPWLink'>here</a> to comlete the request.<br><br>This link will be valid until {$keyvaliduntil->format("Y-m-d H:i:s")}.";
-          $mailingstatus = $this->mailing_api->sendMail(array($userdata["email"]), "Chia Management Password Reset" , $message);
-
-          if($mailingstatus["status"] == 0){
-            $sql = $this->db_api->execute("UPDATE users_pwresets SET expired = 1 WHERE userid = ?", array($userdata["id"]));
-            $sql = $this->db_api->execute("Insert INTO users_pwresets (id, userid, linkkey, expiration, expired) VALUES (NULL, ?, ?, ?, 0)", array($userdata["id"], $resetLinkEncrypted, $keyvaliduntil->format("Y-m-d H:i:s")));
-          }else{
-            return $this->logging_api->getErrormessage("001");
+          if(count($userdata) == 1){
+            $userdata = $userdata[0];
+            $resetLink = bin2hex(random_bytes(35));
+            $resetLinkEncrypted = $this->encryption_api->encryptString($resetLink);
+            $keyvaliduntil = new \DateTime();
+            $keyvaliduntil->modify("+15 minutes");
+  
+            $resetPWLink = "{$this->ini["app_protocol"]}://{$this->ini["app_domain"]}{$this->ini["frontend_url"]}/password-reset.php?pw-reset-key={$resetLink}";
+  
+            $message = "<h1>Password reset</h1><br>Hello {$userdata["name"]} {$userdata["lastname"]},<br><br>you recently decided to reset your password.<br>Please click <a href='$resetPWLink'>here</a> to complete the request.<br><br>This link will be valid until {$keyvaliduntil->format("Y-m-d H:i:s")}.";
+            $mailingstatus = Promise\resolve($this->mailing_api->sendMail(array($userdata["email"]), "Chia Management Password Reset" , $message));
+            $mailingstatus->then(function($mailingstatus_returned) use(&$resolve, $username, $userdata, $resetLinkEncrypted, $keyvaliduntil){             
+              if($mailingstatus_returned["status"] == 0){
+                $expire_old_keys = Promise\resolve((new DB_Api)->execute("UPDATE users_pwresets SET expired = 1 WHERE userid = ?", array($userdata["id"])));
+                $expire_old_keys->then(function($expire_old_keys_returned) use($userdata, $resetLinkEncrypted, $keyvaliduntil){
+                  $add_new_entry = Promise\resolve((new DB_Api)->execute("INSERT INTO users_pwresets (id, userid, linkkey, expiration, expired) VALUES (NULL, ?, ?, ?, 0)", array($userdata["id"], $resetLinkEncrypted, $keyvaliduntil->format("Y-m-d H:i:s"))));
+                  $add_new_entry->otherwise(function(\Exception $e) use(&$resolve){
+                    $resolve(Promise\resolve($this->logging_api->getErrormessage("requestUserPasswordReset","003", $e)));
+                  });
+                })->otherwise(function(\Exception $e) use(&$resolve){
+                  $resolve(Promise\resolve($this->logging_api->getErrormessage("requestUserPasswordReset","004", $e)));
+                });
+                $resolve(array("status" => 0, "message" => "Successfully sent email with resetlink to user {$username}."));
+              }else{
+                $resolve(Promise\resolve($this->logging_api->getErrormessage("requestUserPasswordReset","001")));
+              }
+            });
           }
-        }
+        })->otherwise(function(\Exception $e) use(&$resolve){
+          $resolve(Promise\resolve($this->logging_api->getErrormessage("requestUserPasswordReset","002", $e)));
+        });
+      };
 
-        return array("status" => 0, "message" => "Successfully sent email with resetlink to user {$username}.");
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("002", $e);
-      }
+      $canceller = function () {
+        throw new \Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -778,20 +793,27 @@
      * @param string $resetLink   The reset link which should be checked.
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function checkResetLinkValid(string $resetLink): array
+    public function checkResetLinkValid(string $resetLink): object
     {
-      try{
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($resetLink){
         $encryptedResetKey = $this->encryption_api->encryptString($resetLink);
-        $sql = $this->db_api->execute("SELECT Count(*) as count FROM users_pwresets WHERE linkkey = ? AND expired = 0 AND expiration >= NOW()", array($encryptedResetKey));
+        $check_reset_link = Promise\resolve((new DB_Api)->execute("SELECT Count(*) as count FROM users_pwresets WHERE linkkey = ? AND expired = 0 AND expiration >= NOW()", array($encryptedResetKey)));
+        $check_reset_link->then(function($check_reset_link_returned) use(&$resolve){
+          if($check_reset_link_returned->resultRows[0]["count"] == 1){
+            $resolve(array("status" => 0, "message" => "Reset link valid."));
+          }else{
+            $resolve(Promise\resolve($this->logging_api->getErrormessage("checkResetLinkValid","001")));
+          }
+        })->otherwise(function(\Exception $e) use(&$resolve){
+          $resolve(Promise\resolve($this->logging_api->getErrormessage("checkResetLinkValid","002", $e)));
+        });
+      };
 
-        if($sql[0]["count"] == 1){
-          return array("status" => 0, "message" => "Reset link valid.");
-        }else{
-          return $this->logging_api->getErrormessage("001");
-        }
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("002", $e);
-      }
+      $canceller = function () {
+        throw new \Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -803,31 +825,44 @@
      * @param string $newUserPassword  The new password which should be set
      * @return array                   {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function resetPassword(string $resetKey, string $newUserPassword): array
+    public function resetPassword(string $resetKey, string $newUserPassword): object
     {
-      try{
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($resetKey, $newUserPassword){
         $encryptedResetKey = $this->encryption_api->encryptString($resetKey);
-        $sql = $this->db_api->execute("SELECT userid FROM users_pwresets WHERE linkkey = ? AND expired = 0 AND expiration >= NOW()", array($encryptedResetKey));
-        $sqreturn = $sql;
+        $user_data = Promise\resolve((new DB_Api)->execute("SELECT userid FROM users_pwresets WHERE linkkey = ? AND expired = 0 AND expiration >= NOW()", array($encryptedResetKey)));
+        $user_data->then(function($user_data_returned) use(&$resolve, $newUserPassword){
+          $sqreturn = $user_data_returned->resultRows;
 
-        if(count($sqreturn) == 1){
-          $userid = $sqreturn[0]["userid"];
-          $pwreset = $this->resetUserPassword(array("userID" => $userid, "password" => $newUserPassword));
+          if(count($sqreturn) == 1){
+            $userid = $sqreturn[0]["userid"];
 
-          if($pwreset["status"] == 0){
-            $sql = $this->db_api->execute("UPDATE users_pwresets SET expired = 1 WHERE userid = ?", array($userid));
-            return array("status" => 0, "message" => "Successfully reset password.");
+            $pwreset = Promise\resolve($this->resetUserPassword(array("userID" => $userid, "password" => $newUserPassword)));
+            $pwreset->then(function($pwreset_returned) use(&$resolve, $userid){
+              if($pwreset_returned["status"] == 0){
+                $invalidate_key = Promise\resolve((new DB_Api)->execute("UPDATE users_pwresets SET expired = 1 WHERE userid = ?", array($userid)));
+                $invalidate_key->then(function($invalidate_key_returned) use(&$resolve){
+                  $resolve(array("status" => 0, "message" => "Successfully reset password."));
+                })->otherwise(function(\Exception $e) use(&$resolve){
+                  $resolve(Promise\resolve($this->logging_api->getErrormessage("resetPassword","003", $e)));
+                });
+              }else{
+                $resolve($pwreset_returned);
+              }
+            });
           }else{
-            return $pwreset;
+            $resolve(Promise\resolve($this->logging_api->getErrormessage("resetPassword","001")));
           }
-        }else{
-          return $this->logging_api->getErrormessage("001");
-        }
 
-        return array("status" => 0, "message" => "Successfully set new password.");
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("002", $e);
-      }
+        })->otherwise(function(\Exception $e) use(&$resolve){
+          $resolve(Promise\resolve($this->logging_api->getErrormessage("resetPassword","002", $e)));
+        });
+      };
+
+      $canceller = function () {
+        throw new \Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
   }
 ?>

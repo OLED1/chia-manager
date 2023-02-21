@@ -69,7 +69,6 @@ function sendToAPI(){
       }
     },
     success: function (result, status, xhr) {
-      console.log(result);
       if(result["status"] == 0){
         showMessage("alert-success", result["message"]);
         showMessage("alert-success", "You will be redirected in 3 seconds.");

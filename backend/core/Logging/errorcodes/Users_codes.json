@@ -88,7 +88,9 @@
     },
     "requestUserPasswordReset" : {
       "001" : [2, "An error occured during e-mail sending. Please contact this instance administrator."],
-      "002" : [2, "An error occured."]
+      "002" : [2, "An error occured."],
+      "003" : [2, "An error occured."],
+      "004" : [2, "An error occured."]
     },
     "checkResetLinkValid" : {
       "001" : [1, "Reset link not valid (anymore)."],
@@ -96,7 +98,8 @@
     },
     "resetPassword" : {
       "001" : [1, "Could not reset user password, maybe the key is not valid anymore. Please try again."],
-      "002" : [2, "An error occured."]
+      "002" : [2, "An error occured."],
+      "003" : [2, "An error occured."]
     },
     "removeDisabledUser" : {
       "001" : [1, "This user seems not to be disabled. Please disable first."],
