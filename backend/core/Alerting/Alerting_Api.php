@@ -22,7 +22,7 @@
     private $logging_api;
     /**
      * Holds an instance to the AlertingServices Class.
-     * @var DB_Api
+     * @var AlertingServices
      */
     private $alerting_services;
     /**
