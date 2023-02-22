@@ -1,0 +1,73 @@
+{
+  "functioncodes" : {
+    "getAvailableServices" : "001",
+    "enableService" : "002",
+    "addCustomRule" : "003",
+    "editConfiguredRule" : "004",
+    "removeConfiguredCustomRule" : "005",
+    "getConfiguredRules" : "006",
+    "getAvailableRuleTypesAndServices" : "007",
+    "getConfiguredAlertingRules" : "008",
+    "editAddAlertingRule" : "009",
+    "getRuleInformationOfService" : "010",
+    "calculateAlertingLevel" : "011",
+    "alertAllFoundWARNandCRIT" : "012",
+    "updateAlertedServicesHistory" : "013"
+  },
+  "errormessages" : {
+    "getAvailableServices" : {
+      "001" : [2, "An error occured."]
+    },
+    "enableService" : {
+      "001" : [2, "An error occured."],
+      "002" : [1, "Stated data not valid."]
+    },
+    "addCustomRule" : {
+      "001" : [2, "An error occured."],
+      "002" : [2, "An error occured."],
+      "003" : [1, "Stated type seems not to be valid or this service is already configured."],
+      "004" : [1, "Stated data not valid."]
+    },
+    "editConfiguredRule" : {
+      "001" : [2, "An error occured."],
+      "002" : [2 , "Not all data stated."]
+    },
+    "removeConfiguredCustomRule" : {
+      "001" : [1, "No custom rule could be found using the stated id."],
+      "002" : [2, "An error occured."],
+      "003" : [2, "An error occured."],
+      "004" : [1, "Not all data stated."]
+    },
+    "getConfiguredRules" : {
+      "001" : [2, "An error occured."]
+    },
+    "getAvailableRuleTypesAndServices" : {
+      "001" : [2, "An error occured."]
+    },
+    "getConfiguredAlertingRules" : {
+      "001" : [2, "An error occured."]
+    },
+    "editAddAlertingRule" : {
+      "001" : [2, "An error occured."],
+      "002" : [2, "An error occured."],
+      "003" : [2, "An error occured."],
+      "004" : [1, "Not all data stated. Nothing to save."]
+    },
+    "getRuleInformationOfService" : {
+      "001" : [2, "An error occured."],
+      "002" : [1, "Not all data stated."]
+    },
+    "calculateAlertingLevel" : {
+      "001" : [1, "Not all data stated."]
+    },
+    "alertAllFoundWARNandCRIT" : {
+      "001" : [1, "Some queued messages could not be sent."],
+      "002" : [1, "Not all data stated."]
+    },
+    "updateAlertedServicesHistory" : {
+      "001" : [2, "An error occured."],
+      "002" : [2, "An error occured."],
+      "003" : [2, "An error occured."]
+    }
+  }
+}

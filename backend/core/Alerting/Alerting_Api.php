@@ -1,6 +1,7 @@
 <?php
   namespace ChiaMgmt\Alerting;
   use React\Promise;
+  use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\Alerting\Additional_Functions\AlertingServices;
   use ChiaMgmt\Alerting\Additional_Functions\AlertingDowntimes;
   use ChiaMgmt\DB\DB_Api;
@@ -15,10 +16,10 @@
    */
   class Alerting_Api{
     /**
-     * Holds an instance to the Database Class.
-     * @var DB_Api
+     * Holds an instance to the Logging Class.
+     * @var Logging_Api
      */
-    private $db_api;
+    private $logging_api;
     /**
      * Holds an instance to the AlertingServices Class.
      * @var DB_Api
@@ -36,13 +37,15 @@
     public function __construct(object $server = NULL){
         $this->alerting_services = new AlertingServices();
         $this->alerting_downtimes = new AlertingDowntimes();
-        $this->db_api = new DB_Api();
+        $this->logging_api = new Logging_Api();
     }
 
     /**
      * Returns all available alerting services and there enabled status.
-     *
-     * @return array
+     * Function made for: Web GUI/App, API
+     * @throws Exception $e                   Throws an exception on db errors.
+     * @param  array $data                    Default: [] (empty) - Returns all availabe services. Can include comma (,) seperated service id's to only return these.
+     * @return object                         Returns a promise object: {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
      */
     public function getAvailableServices(array $data = []): object
     {
@@ -62,8 +65,7 @@
           }
           $resolve(array("status" => 0, "message" => "Successfully loaded all system settings.", "data" => $returnarray));
         })->otherwise(function(\Exception $e) use(&$resolve){
-        //TODO Implement correct status code
-          $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+          $resolve($this->logging_api->getErrormessage("getAvailableServices", "001", $e));
         });
       };
 
@@ -75,10 +77,11 @@
     }
 
     /**
-     * Undocumented function
-     *
-     * @param array $data
-     * @return array
+     * Enables a certain service.
+     * Function made for: Web GUI/App
+     * @throws Exception $e                   Throws an exception on db errors.
+     * @param array $data                     { "alerting_service_id" : <id>, "enabled" : <0/1> }
+     * @return object                         Returns a promise object: {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
      */
     public function enableService(array $data = []): object
     {
@@ -91,11 +94,10 @@
               $resolve(array("status" => 0, "message" => "Successfully set service ({$data["alerting_service_id"]}) to {$data["enabled"]}", "data" => $get_avail_services_returned["data"]));
             });
           })->otherwise(function(\Exception $e) use(&$resolve){
-            $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+            $resolve($this->logging_api->getErrormessage("enableService", "001", $e));
           });
         }else{
-          //TODO Implement correct status code
-          $resolve(array("status" => 1, "message" => "Stated data not valid."));
+          $resolve($this->logging_api->getErrormessage("enableService", "002"));
         }
       };
 
@@ -107,10 +109,11 @@
     }
 
     /**
-     * Adds a new custom rule to the databse.
-     *
-     * @param array $data
-     * @return array
+     * Adds a new custom rule to the databse which will be applied immediately.
+     * Function made for: Web GUI/App
+     * @throws Exception $e                   Throws an exception on db errors.
+     * @param array $data                     { "nodeid" : <int>, "service_type" : <int>, "service_name" : <string>, "warn_at_after" : <int>, "crit_at_after" : <int> }
+     * @return object                         Returns a promise object: {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
      */
     public function addCustomRule(array $data): object
     {         
@@ -154,25 +157,21 @@
                     $update_dependencies->then(function($update_dependencies_returned) use(&$resolve, $new_rule_returned){
                       $resolve(array("status" => 0, "message" => "Successfully created new custom rule.", "data" => $new_rule_returned["data"]));
                     })->otherwise(function(\Exception $e) use(&$resolve){
-                      //TODO Implement correct status code
-                      $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+                      $resolve($this->logging_api->getErrormessage("addCustomRule", "001", $e));
                     });
                   }else{
                     $resolve($new_rule_returned);
                   }
                 });
               })->otherwise(function(\Exception $e) use(&$resolve){
-                //TODO Implement correct status code
-                $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+                $resolve($this->logging_api->getErrormessage("addCustomRule", "002", $e));
               });
             }else{
-              //TODO Implement correct status code
-              $resolve(array("status" => 1, "message" => "Stated type {$data["service_type"]} seems not to be valid or this service is already configured for node {$data["nodeid"]}."));
+              $resolve($this->logging_api->getErrormessage("addCustomRule", "003"));
             }
           });
         }else{
-          //TODO Implement correct status code
-          $resolve(array("status" => 1, "message" => "Stated data not valid."));
+          $resolve($this->logging_api->getErrormessage("addCustomRule", "004"));
         }
       };
 
@@ -185,9 +184,10 @@
 
     /**
      * Edit a configured default or custom rule by stating the new values and the id.
-     *
-     * @param array $data
-     * @return array
+     * Function made for: Web GUI/App
+     * @throws Exception $e                   Throws an exception on db errors.
+     * @param array $data                     { "rule_id" : <int>, "warn_level" : <int>, "crit_level" : <int> }
+     * @return object                         Returns a promise object: {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
      */
     public function editConfiguredRule(array $data): object
     {
@@ -203,12 +203,10 @@
               $resolve(array("status" => 0, "message" => "Successfully edited value of rule with ID ({$data["rule_id"]}). Set warn level to {$data["warn_level"]} and crit level to {$data["crit_level"]}.", "data" => array("rule_id_changed" => $data["rule_id"], "saved_values" => $get_configured_rules_returned["data"])));
             });
           })->otherwise(function(\Exception $e) use(&$resolve){
-            //TODO Implement correct status codes
-            $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+            $resolve($this->logging_api->getErrormessage("editConfiguredRule", "001", $e));
           });
         }else{
-          //TODO Implement correct status code
-          $resolve(array("status" => 1, "message" => "Not all data stated."));
+          $resolve($this->logging_api->getErrormessage("editConfiguredRule", "002"));
         } 
       };
 
@@ -217,30 +215,14 @@
       };
 
       return new Promise\Promise($resolver, $canceller);
-
-      if(array_key_exists("rule_id", $data) && is_numeric($data["rule_id"]) && $data["rule_id"] > 0 &&
-          array_key_exists("warn_level", $data) && is_numeric($data["warn_level"]) && 
-          array_key_exists("crit_level", $data) && is_numeric($data["crit_level"])){
-        try{
-          $sql = $this->db_api->execute("UPDATE alerting_rules SET warn_at_after = ?, crit_at_after = ? WHERE id = ?", array($data["warn_level"],$data["crit_level"], $data["rule_id"]));
-
-          return array("status" => 0, "message" => "Successfully edited value of rule with ID ({$data["rule_id"]}). Set warn level to {$data["warn_level"]} and crit level to {$data["crit_level"]}.", "data" => array("rule_id_changed" => $data["rule_id"], "saved_values" => $this->getConfiguredRules()["data"]));
-        }catch(\Exception $e){
-           //TODO Implement correct status codes
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
-        }
-      }else{
-        //TODO Implement correct status code
-        return array("status" => 1, "message" => "Not all data stated.");
-      }
     }
 
     /**
      * Remove a configured custom rule by stating the current rule id.
-     *
-     * @param array $data
-     * @return array
+     * Function made for: Web GUI/App
+     * @throws Exception $e                   Throws an exception on db errors.
+     * @param array $data                     { "rule_id" : <int> }
+     * @return object                         Returns a promise object: {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
      */
     public function removeConfiguredCustomRule(array $data): object
     {
@@ -255,21 +237,17 @@
               if($remove_custom_rule_returned->affectedRows > 0){
                 $resolve(array("status" => 0, "message" => "Successfully removed rule with ID {$data["rule_id"]}", "data" => array("rule_id" => $data["rule_id"], "node_id" => $found_entries["system_target"])));
               }else{
-                //TODO Implement correct status code
-                $resolve(array("status" => 1, "message" => "There was no custom rule for rule with ID {$data["rule_id"]} found."));
+                $resolve($this->logging_api->getErrormessage("editConfiguredRule", "001", "There was no custom rule for rule with ID {$data["rule_id"]} found."));
               }
             })->otherwise(function(\Exception $e) use(&$resolve){
-              //TODO Implement correct status code
-              $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+              $resolve($this->logging_api->getErrormessage("editConfiguredRule", "002", $e));
             });
           })->otherwise(function(\Exception $e) use(&$resolve){
-            //TODO Implement correct status code
-            $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+            $resolve($this->logging_api->getErrormessage("editConfiguredRule", "003", $e));
           });
           
         }else{  
-          //TODO Implement correct status code
-          $resolve(array("status" => 1, "message" => "Not all data stated."));
+          $resolve($this->logging_api->getErrormessage("editConfiguredRule", "004"));
         }
       };
 
@@ -278,36 +256,14 @@
       };
 
       return new Promise\Promise($resolver, $canceller);
-
-      try{
-        if(array_key_exists("rule_id", $data)){ 
-          $sql = $this->db_api->execute("SELECT Count(*) as count, system_target FROM alerting_rules WHERE id = ? AND rule_default = 0", array($data["rule_id"]));
-          $found_entries = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/[0];
-
-          if($found_entries["count"] == 1){
-            $sql = $this->db_api->execute("DELETE FROM alerting_rules WHERE id = ? AND rule_default = 0", array($data["rule_id"]));
-
-            return array("status" => 0, "message" => "Successfully removed rule with ID {$data["rule_id"]}", "data" => array("rule_id" => $data["rule_id"], "node_id" => $found_entries["system_target"]));
-          }else{
-            //TODO Implement correct status code
-            return array("status" => 1, "message" => "There was no custom rule for rule with ID {$data["rule_id"]} found.");
-          }
-        }else{
-          //TODO Implement correct status code
-          return array("status" => 1, "message" => "Not all data stated.");
-        }
-      }catch(\Exception $e){
-          //TODO Implement correct status codes
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
-      }
     }
 
     /**
      * Returns all configured rules available on the database. There are some filters available.
-     *
-     * @param array $data
-     * @return array
+     * Function made for: Web GUI/App, Api
+     * @throws Exception $e                   Throws an exception on db errors.
+     * @param array $data                     Default: [] (empty), returns all rules. Optional: { "rule_type" : <int|null>, "rule_default" : <int|null>, "rule_target" : <int|null>, "rule_id" : <int|null>, "monitor" : <int|null> }
+     * @return object                         Returns a promise object: {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
      */
     public function getConfiguredRules(array $data = []): object
     {
@@ -370,8 +326,7 @@
           
           $resolve(array("status" => 0, "message" => "Successfully loaded all found rules.", "data" => $returnarray));
         })->otherwise(function(\Exception $e) use(&$resolve){
-          //TODO Implement correct status codes
-          $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+          $resolve($this->logging_api->getErrormessage("getConfiguredRules", "001", $e));
         });
       };
 
@@ -384,9 +339,10 @@
     
     /**
      * Returns all or host specific available rule types and configured services.
-     *
-     * @param array $data
-     * @return array
+     * Function made for: Web GUI/App, Api
+     * @throws Exception $e                   Throws an exception on db errors.
+     * @param array $data                     Default: [] (empty), returns all rules and types. Optional: { "nodeid" : <int|null>, "typeid" : <int|null> }
+     * @return object                         Returns a promise object: {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
      */
     public function getAvailableRuleTypesAndServices(array $data = []): object
     {
@@ -435,8 +391,7 @@
 
           $resolve(array("status" => 0, "message" => "Successfully loaded all available configurations.", "data" => $returnarray));
         })->otherwise(function(\Exception $e) use(&$resolve){
-          //TODO Implement correct status codes
-          $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+          $resolve($this->logging_api->getErrormessage("getAvailableRuleTypesAndServices", "001", $e));
         });
       };
 
@@ -449,9 +404,10 @@
 
     /**
      * Returns all or a specific configured alerting rules. This rules can be filtered by rule_id or by alerting_service id.
-     *
-     * @param array $data
-     * @return array
+     * Function made for: Web GUI/App, Api
+     * @throws Exception $e                   Throws an exception on db errors.
+     * @param array $data                     Default: [] (empty), returns all rules and types. Optional: { "rule_id" : <int|null>, "node_id" : <int|null>, "monitor" : <int|null> }
+     * @return object                         Returns a promise object: {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
      */
     public function getConfiguredAlertingRules(array $data = []): object
     {
@@ -480,11 +436,11 @@
         }
   
         if(array_key_exists("alerting_service", $data)){
-          
+          //TODO Implement when needed
         }
   
         if(array_key_exists("alerting_procedure_id", $data)){
-          
+          //TODO Implement when needed
         }
 
         $configured_rules = Promise\resolve((new DB_Api())->execute("SELECT ap.id, ap.rule_id, ac.user_id AS alerting_user_id, ap.rule_node_target, ap.alerting_service, ar.system_target, ap.warn_alert_after, ap.crit_alert_after, ar.monitor
@@ -543,8 +499,7 @@
   
           $resolve(array("status" => 0, "message" => "Successfully loaded all available alerting rules.", "data" => $returnarray));
         })->otherwise(function(\Exception $e) use(&$resolve){
-          //TODO Implement correct status codes
-          $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+          $resolve($this->logging_api->getErrormessage("getConfiguredAlertingRules", "001", $e));
         });
       };
 
@@ -556,10 +511,11 @@
     }
     
     /**
-     * Add, edit or delete an alerting rule for a specific existing rule ID
-     *
-     * @param array $data
-     * @return array
+     * Add, edit or delete an alerting rule for a specific existing rule ID.
+     * Function made for: Web GUI/App, Api
+     * @throws Exception $e                   Throws an exception on db errors.
+     * @param array $data                     { "node_id" : <int>, "rule_id" : <int>, "alerting" : <int>, "users" : { (int)<alerting-service-id> : [(int)<user-id>,(int)<user-id>,...] } }
+     * @return object                         Returns a promise object: {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
      */
     public function editAddAlertingRule(array $data): object
     {
@@ -597,21 +553,18 @@
                                                               array($alerting_user_id, $new_procedure_id)));
     
                               $set_alerting_contact->otherwise(function(\Exception $e) use(&$resolve){
-                                //TODO Implement correct status codes
-                                return $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+                                $resolve($this->logging_api->getErrormessage("editAddAlertingRule", "001", $e));
                               });
                             }
                           }
                         })->otherwise(function(\Exeption $e) use(&$resolve){
-                          //TODO Implement correct status codes
-                          return $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+                          $resolve($this->logging_api->getErrormessage("editAddAlertingRule", "002", $e));
                         });
                       }
                     }
                   }
                 })->otherwise(function(\Exception $e) use(&$resolve){
-                  //TODO Implement correct status codes
-                  return $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+                  $resolve($this->logging_api->getErrormessage("editAddAlertingRule", "003", $e));
                 });
               }
               $resolve(array("status" => 0, "message" => "Resolved."));
@@ -622,9 +575,6 @@
 
 
           $processing_canceller = function () {
-            // Cancel/abort any running operations like network connections, streams etc.
-
-            // Reject promise by throwing an exception
             throw new \Exception('Promise cancelled');
           };
 
@@ -644,8 +594,7 @@
             }
           });
         }else{
-          //TODO Implement correct status code
-          $resolve(array("status" => 1, "message" => "Not all data stated. Nothing to save."));   
+          $resolve($this->logging_api->getErrormessage("editAddAlertingRule", "004"));
         }
       };
 
@@ -654,67 +603,14 @@
       };
 
       return new Promise\Promise($resolver, $canceller);
-      
-      if(array_key_exists("node_id", $data) && is_numeric($data["node_id"]) && $data["node_id"] > 2 &&
-        array_key_exists("rule_id", $data) && is_numeric($data["rule_id"]) && $data["rule_id"] > 0 &&
-        array_key_exists("alerting", $data) && is_array($data["alerting"]) &&
-        array_key_exists("users", $data) && is_array($data["users"])
-      ){
-        try{
-          $rule_id = $data["rule_id"];
-          $node_id = $data["node_id"];
-          
-
-          foreach($data["alerting"] AS $alerting_service_id => $service_config){
-            $sql = $this->db_api->execute("DELETE FROM alerting_procedure WHERE rule_id = ? AND alerting_service = ? AND rule_node_target = ?", 
-                                            array($rule_id, $alerting_service_id, $node_id));
-
-            if(is_numeric($alerting_service_id)){
-              //-1 = "do not alert", 0 = "immediately alert", >0 = "alert after x minutes"
-              if(array_key_exists("warn_exceeds", $service_config) || array_key_exists("crit_exceeds", $service_config)){
-                $warn_exceeds = (array_key_exists("warn_exceeds", $service_config) && is_numeric($service_config["warn_exceeds"]) && $service_config["warn_exceeds"] >= 0 ? $service_config["warn_exceeds"] : -1 );
-                $crit_exceeds = (array_key_exists("crit_exceeds", $service_config) && is_numeric($service_config["crit_exceeds"]) && $service_config["crit_exceeds"] >= 0 ? $service_config["crit_exceeds"] : -1 );
-                
-                if($warn_exceeds >= 0 || $crit_exceeds >= 0){
-                  $sql = $this->db_api->execute("INSERT INTO alerting_procedure (id, rule_id, rule_node_target, alerting_service, warn_alert_after, crit_alert_after) VALUES (NULL, ?, ?, ?, ?, ?)", 
-                                                  array($rule_id, $node_id, $alerting_service_id, $warn_exceeds, $crit_exceeds));
-
-                  $new_procedure_id = $this->db_api->lastInsertId();
-                  if(array_key_exists($alerting_service_id, $data["users"])){
-                    foreach($data["users"][$alerting_service_id] AS $arrkey => $alerting_user_id){
-                      $sql = $this->db_api->execute("INSERT INTO alerting_contact (id, user_id, alerting_procedure_id) VALUES (NULL, ?, ?)", 
-                                                      array($alerting_user_id, $new_procedure_id));
-                    }
-                  }
-                }
-              }
-            }
-          }
-
-          $new_alerting_rule = $this->getConfiguredAlertingRules(["rule_id" => $rule_id, "node_id" => $node_id]);
-          if(array_key_exists("data", $new_alerting_rule)){
-            return array("status" => 0, "message" => "Successfully processed service alerting for ID {$data["rule_id"]}.", "data" => array("rule_id" => $data["rule_id"], "node_id" => $node_id, "new_data" => $new_alerting_rule["data"]));
-          }else{
-            return $new_alerting_rule;
-          }
-        
-        }catch(\Exception $e){
-          //TODO Implement correct status codes
-          print_r($e);
-          return array("status" => 1, "message" => "An error occured.");
-        }
-
-      }else{
-        //TODO Implement correct status code
-        return array("status" => 1, "message" => "Not all data stated. Nothing to save.");   
-      }
     }
 
     /**
      * Returns the current applicable alerting rule id of a specific service by stating the service_type_id, node_id and if available service_target.
-     *
-     * @param array $data
-     * @return array
+     * Function made for: Web GUI/App, Api
+     * @throws Exception $e                   Throws an exception on db errors.
+     * @param array $data                     { "service_type_id" : <int>, "node_id" : <int>, "service_target" : <string|null> }
+     * @return object                         Returns a promise object: {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
      */
     public function getRuleInformationOfService(array $data): object
     {          
@@ -744,12 +640,10 @@
           $alerting_rules->then(function($alerting_rules_returned) use(&$resolve){
             $resolve(array("status" => 0, "message" => "Rule id was found.", "data" => $alerting_rules_returned->resultRows[0]));
           })->otherwise(function(\Exception $e) use(&$resolve){
-            //TODO Implement correct status codes
-            $resolve(array("status" => 1, "message" => "An error occured. {$e->getMessage()}"));
+            $resolve($this->logging_api->getErrormessage("getRuleInformationOfService", "001", $e));
           });
         }else{
-          //TODO Implement correct status code
-          $resolve(array("status" => 1, "message" => "Not all data stated."));   
+          $resolve($this->logging_api->getErrormessage("getRuleInformationOfService", "002"));  
         }
       };
 
@@ -761,11 +655,10 @@
     }
 
     /**
-     * Calculates the alerting level of given values and returns the result.
-     * 1 = OK, 2 = WARN, 3 = CRIT, 4 = UNKN
-     *
-     * @param array $data
-     * @return array
+     * Calculates the alerting level of given values and returns the result. (1 = OK, 2 = WARN, 3 = CRIT, 4 = UNKN)
+     * Function made for: Web GUI/App, Api
+     * @param array $data                     { "current_service_level" : <int>, "perc_or_min_value" : <int>, "warn_level_at_after" : <int>, "crit_level_at_after" : <int>, "defined_maximum" : <int>, "current_service_minutes" : <int> }
+     * @return object                         Returns a promise object: {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
      */
     public function calculateAlertingLevel(array $data): object
     {
@@ -798,8 +691,7 @@
 
           $resolve(array("status" => 0, "message" => "Successfully calculated current service state.", "data" => $returndata));
         }else{
-          //TODO Implement correct status code
-          $resolve(array("status" => 1, "message" => "Not all data stated.")); 
+          $resolve($this->logging_api->getErrormessage("calculateAlertingLevel", "001"));
         }
       };
 
@@ -810,6 +702,13 @@
       return new Promise\Promise($resolver, $canceller);
     }
 
+    /**
+     * Alerts all found WARN, CRIT and UNKN messages using the alerting services which are configured.
+     * Function made for: Web GUI/App, Api
+     * @throws Exception $e                   Throws an exception on db errors.
+     * @param array $data                     Default: [] (empty) - All nodes will be alerted. Optional: { "node_id" : <int|null> }
+     * @return object                         Returns a promise object: {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
+     */
     public function alertAllFoundWARNandCRIT(array $data = []): object
     {
       $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
@@ -913,13 +812,12 @@
               if($error == 0){
                 $resolve(array("status" => 0, "message" => "Successfully alerted all configured and found WARN, CRIT and UNKN messages.")); 
               }else{
-                $resolve(array("status" => 1, "message" => "Some queued messages could not be sent.")); 
+                $resolve($this->logging_api->getErrormessage("alertAllFoundWARNandCRIT", "001"));
               }
             });
           });
         })->otherwise(function(\Exception $e) use(&$resolve){
-          //TODO Implement correct status code
-          $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+          $resolve($this->logging_api->getErrormessage("alertAllFoundWARNandCRIT", "002", $e));
         });
       };
 
@@ -932,12 +830,13 @@
     }
 
     /**
-     * Updates the alerting_history and alerting_hsitory_alerted_to table with all successfully alerted services.
-     *
-     * @param array $alerted_message (Object of type Alertingdata)
-     * @return array
+     * Updates the history of alerted services to be able to see when which service was alerted.
+     * Function made for: Api/Backend
+     * @throws Exception $e                   Throws an exception on db errors.
+     * @param array $alerted_messages         Default: [] (empty) - No service has been alerted so not logged. Optional: [<Alerting-Service-Obj>, <Alerting-Service-Obj>, ...]
+     * @return object                         Returns a promise object: {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
      */
-    private function updateAlertedServicesHistory(array $alerted_messages): object
+    private function updateAlertedServicesHistory(array $alerted_messages = []): object
     {
       $resolver = function (callable $resolve, callable $reject, callable $notify) use($alerted_messages){
         if(count($alerted_messages) == 0) return $resolve(array("status" => 0, "message" => "Successfully alerted all configured and found WARN, CRIT and UNKN messages."));
@@ -978,16 +877,13 @@
               $update_alerting_history->then(function($update_alerting_history_returned) use(&$resolve){
                 $resolve(array("status" => 0, "message" => "Successfully alerted all configured and found WARN, CRIT and UNKN messages."));
               })->then(function(\Exception $e) use(&$resolve){
-                //TODO Implement correct status code
-                $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+                $resolve($this->logging_api->getErrormessage("updateAlertedServicesHistory", "001", $e));
               });
             })->otherwise(function(\Exception $e) use(&$resolve){
-              //TODO Implement correct status code
-              $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+              $resolve($this->logging_api->getErrormessage("updateAlertedServicesHistory", "002", $e));
             });
           })->otherwise(function(\Exception $e) use(&$resolve){
-            //TODO Implement correct status code
-            $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+            $resolve($this->logging_api->getErrormessage("updateAlertedServicesHistory", "003", $e));
           });
         }
       };
@@ -997,46 +893,6 @@
       };
 
       return new Promise\Promise($resolver, $canceller);
-
-      try{
-        foreach($alerted_message AS $arrkey => $this_alerted_message){
-          $avail_serv_id = $this_alerted_message->get_avail_serv_id();
-          $service_alerted_using = $this_alerted_message->get_alerting_service_id();
-          $state_changed_from = $this_alerted_message->get_prev_state_short();
-          $state_changed_to = $this_alerted_message->get_current_state_short();
-          $alerted_to = $this_alerted_message->get_user_id();
-          $alert_contact = $this_alerted_message->get_contact();
-
-          $sql = $this->db_api->execute("SELECT id
-                                        FROM `alerting_history` 
-                                        WHERE avail_alerting_serv_id = ? and service_alerted_using = ? LIMIT 1", array($avail_serv_id, $service_alerted_using));
-
-          $found_data = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/;
-
-          $alerting_history_id = 0;
-          if(count($found_data) == 1){
-            $alerting_history_id = $found_data[0]["id"];
-          }else{
-            $sql = $this->db_api->execute("INSERT INTO alerting_history (id, avail_alerting_serv_id, service_alerted_using, state_changed_from, state_changed_to, state_alerted_at) 
-                                          VALUES (NULL, ?, ?, ?, ?, NOW())", 
-                                          array($avail_serv_id, $service_alerted_using, $state_changed_from, $state_changed_to));
-
-            $alerting_history_id = $this->db_api->lastInsertId();
-          }
-
-          if($alerting_history_id > 0){
-            $sql = $this->db_api->execute("INSERT INTO alerting_history_alerted_to (id, alerting_history_id, user_id, contact) 
-                                            VALUES (NULL, ?, ?, ?)", 
-                                            array($alerting_history_id, $alerted_to, $alert_contact));
-          }
-        }
-  
-        return array("status" => 0, "message" => "Successfully alerted all configured and found WARN, CRIT and UNKN messages."); 
-      }catch(\Exception $e){
-        //TODO Implement correct status code
-        print_r($e);
-        return array("status" => 1, "message" => "An error occured.");
-      }
     }
 
     /**
