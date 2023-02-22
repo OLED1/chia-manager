@@ -2,7 +2,6 @@
   namespace ChiaMgmt\Alerting;
   use React\Promise;
   use ChiaMgmt\Logging\Logging_Api;
-  use ChiaMgmt\Alerting\Additional_Functions\AlertingServices;
   use ChiaMgmt\Alerting\Additional_Functions\AlertingDowntimes;
   use ChiaMgmt\DB\DB_Api;
 
@@ -21,11 +20,6 @@
      */
     private $logging_api;
     /**
-     * Holds an instance to the AlertingServices Class.
-     * @var AlertingServices
-     */
-    private $alerting_services;
-    /**
      * Holds an instance to the AlertingDowntimes Class.
      * @var AlertingDowntimes
      */
@@ -35,9 +29,8 @@
      * Initialises the needed and above stated private variables.
      */
     public function __construct(object $server = NULL){
-        $this->alerting_services = new AlertingServices();
         $this->alerting_downtimes = new AlertingDowntimes();
-        $this->logging_api = new Logging_Api();
+        $this->logging_api = new Logging_Api($this, $server);
     }
 
     /**
@@ -134,6 +127,8 @@
               $rule_target = ($found_type[$data["service_type"]]["rule_target_needed"] == 0 ? NULL : $data["service_name"]);
               $perc_or_min = $found_type[$data["service_type"]]["perc_or_min"];           
               $monitor = (array_key_exists("monitor", $data) ? intval(boolval($data["monitor"])) : 1 );
+
+              echo "MONITOR: $monitor\n";
 
               $add_rule = Promise\resolve((new DB_Api())->execute("INSERT INTO alerting_rules (id, system_target, rule_type, rule_target, rule_default, perc_or_min_value, warn_at_after, crit_at_after, monitor) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?)", 
                                             array($data["nodeid"], $data["service_type"], $rule_target, 0, $perc_or_min, $data["warn_at_after"], $data["crit_at_after"], $monitor)));

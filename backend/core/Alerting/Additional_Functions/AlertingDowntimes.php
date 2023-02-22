@@ -15,7 +15,7 @@
      * Initialises the needed and above stated private variables.
      */
     public function __construct(object $server = NULL){
-        $this->logging_api = new Logging_Api();
+        $this->logging_api = new Logging_Api($this, $server);
     }
 
     /**

@@ -33,7 +33,7 @@
      * Initialises the needed and above stated private variables.
      */
     public function __construct(object $server = NULL){
-      $this->logging_api = new Logging_Api($this);
+      $this->logging_api = new Logging_Api($this, $server);
       $this->ini = parse_ini_file(__DIR__.'/../../config/config.ini.php');
     }
 

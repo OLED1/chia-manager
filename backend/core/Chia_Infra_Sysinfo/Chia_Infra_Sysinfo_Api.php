@@ -719,7 +719,7 @@
      * @return array
      */
     public function editMonitoredServices(array $data): object
-    {
+    {      
       $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
         if(array_key_exists("node_id", $data) && is_numeric($data["node_id"]) && $data["node_id"] > 2 && 
           array_key_exists("service_id", $data) && is_numeric($data["service_id"]) &&
@@ -780,7 +780,7 @@
               }
 
               Promise\all($statements_to_resolve)->then(function($all_returned) use(&$resolve, $data){
-                if(array_key_exists("status", $all_returned) && $all_returned["status"] != 0) return $resolve($all_returned[0]);
+                if(array_key_exists("status", $all_returned[0]) && $all_returned[0]["status"] != 0) return $resolve($all_returned[0]);
                 
                 $new_monitored_services = Promise\resolve($this->alerting_api->getConfigurableDowntimeServices(["node_id" => $data["node_id"]]));
                 $new_monitored_services->then(function($new_monitored_services_returned) use(&$resolve, $data){
