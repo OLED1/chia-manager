@@ -61,7 +61,7 @@ function reinitQueryAllButton(){
 }
 
 function initRebuildTooltips(){
-  $(".badge[data-toggle='tooltip'").tooltip();
+  $(".badge[data-toggle='tooltip']").tooltip();
 }
 
 function initNodeTabChange(){
@@ -618,7 +618,7 @@ function setServiceBadge(){
       statusicon = "badge-success";
     }
 
-    $(".statusbadge[data-node-id='" + nodeid + "'").removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-warning").removeClass("badge-danger").addClass(statusicon).text(statustext);
+    $(".statusbadge[data-node-id='" + nodeid + "']").removeClass("badge-secondary").removeClass("badge-success").removeClass("badge-warning").removeClass("badge-danger").addClass(statusicon).text(statustext);
   });
 }
 
@@ -639,8 +639,12 @@ function initAndDrawRAMorSWAPChart(nodeid, type){
       var labels = ["RAM used", "RAM free"];
       var data = [memoryused, memoryfree];
     }else if(type == "swap"){
-      var used = (parseInt(infodata["memory"]["swap"]["swap_total"]) - parseInt(infodata["memory"]["swap"]["swap_free"]))/1024/1024/1024;
-      var free = parseInt(infodata["memory"]["swap"]["swap_free"])/1024/1024/1024;
+      var used = 0;
+      var free = 0;
+      if(infodata["memory"]["swap"] !== undefined){
+        used = (parseInt(infodata["memory"]["swap"]["swap_total"]) - parseInt(infodata["memory"]["swap"]["swap_free"]))/1024/1024/1024;
+        free = parseInt(infodata["memory"]["swap"]["swap_free"])/1024/1024/1024;
+      }
   
       var labels = ["SWAP used", "SWAP free"];
       var data = [used.toFixed(2), free.toFixed(2)];
