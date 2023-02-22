@@ -1,7 +1,10 @@
 {
   "functioncodes" : {
     "updateSystemInfo" : "001",
-    "getSystemInfo" : "002"
+    "getSystemInfo" : "002",
+    "getAvailableServices" : "003",
+    "updateAvailableServices" : "004",
+    "editMonitoredServices" : "005"
   },
   "errormessages" : {
     "updateSystemInfo" : {
@@ -10,6 +13,22 @@
     "getSystemInfo" : {
       "001" : [2, "An error occured."],
       "002" : [1, "Not all data stated."]
+    },
+    "getAvailableServices" : {
+      "001" : [2, "An error occured."]
+    },
+    "updateAvailableServices" : {
+      "001" : [2, "An error occured."],
+      "002" : [2, "An error occured."],
+      "003" : [1, "Not all data stated."]
+    },
+    "editMonitoredServices" : {
+      "001" : [1, "A default rule cannot be edited."],
+      "002" : [1, "Stated monitor value not valid."],
+      "003" : [2, "An error occured."],
+      "004" : [2, "This service has no valid alerting rule. Please report this error to the dev team."],
+      "005" : [2, "An error occured."],
+      "006" : [1, "Not all data stated."]
     }
   }
 }

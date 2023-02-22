@@ -436,7 +436,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -479,7 +479,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -547,14 +547,12 @@
 
           $resolve(array("status" => 0, "message" => "Successfully loaded available services.", "data" => $found_data));
         })->otherwise(function(\Exception $e) use(&$resolve){
-          //TODO Implement correct status codes
-          print_r($e);
-          $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+          $resolve($this->logging_api->getErrormessage("getAvailableServices", "001", $e));
         });
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -625,8 +623,7 @@
                                                   array($service_insert_id, intval($current_service_alerting_level["time_or_usage"]), $target_avail_serv_id)));
 
                 $update_service->otherwise(function(\Exception $e) use(&$resolve){
-                  //TODO Implement correct status code
-                  return $resolve(array("status" => 1, "messages" => "An error occured {$e->getMessage()}."));
+                  $resolve($this->logging_api->getErrormessage("updateAvailableServices", "001", $e));
                 });
               }else{
                 $insert_new = true;
@@ -637,9 +634,7 @@
                                               array($service_insert_id, $this_service_target, $this_service_type_id, $this_service_alerting_infos_returned["id"], $current_service_alerting_level["level"], $current_service_alerting_level["time_or_usage"], $nodeid)));
                                               
                 $insert_new->otherwise(function(\Exception $e) use(&$resolve){
-                  //TODO Implement correct status code
-                  print_r($e);
-                  return $resolve(array("status" => 1, "messages" => "An error occured {$e->getMessage()}."));
+                  $resolve($this->logging_api->getErrormessage("updateAvailableServices", "002", $e));
                 });
               }
 
@@ -648,13 +643,12 @@
           });
 
         }else{
-          //TODO Implement correct status code
-          $resolve(array("status" => 1, "messages" => "Not all data stated."));
+          $resolve($this->logging_api->getErrormessage("updateAvailableServices", "002"));
         }
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -712,7 +706,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -774,16 +768,14 @@
                       Promise\resolve((new DB_Api())->execute("UPDATE alerting_rules SET monitor = 1 WHERE id = ?", array($found_service["alerting_id"])))
                     ];
                   }else{
-                    //TODO Implement correct status code
-                    return $resolve(array("status" => 1, "message" => "A default rule cannot be edited."));
+                    $resolve($this->logging_api->getErrormessage("editMonitoredServices", "001"));
                   }
                 }else if($found_service["monitor"] == 1){
                   $statements_to_resolve = [
                     Promise\resolve((new DB_Api())->execute("UPDATE alerting_rules SET monitor = 0 WHERE id = ?", $found_service["alerting_id"]))
                   ];
                 }else{
-                  //TODO Implement correct status code
-                  return $resolve(array("status" => 1, "message" => "Monitor value '{$found_service["monitor"]}' not valid."));
+                  $resolve($this->logging_api->getErrormessage("editMonitoredServices", "002", "Monitor value '{$found_service["monitor"]}' not valid."));
                 }                
               }
 
@@ -798,25 +790,21 @@
                   $resolve(array("status" => 0, "message" => "Successfully set monitor to {$data["monitor"]} for service with ID {$data["service_id"]}.", "data" => $new_monitored_services));  
                 });
               })->otherwise(function(\Exception $e) use(&$resolve){
-                //TODO Implement correct status code
-                return $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+                $resolve($this->logging_api->getErrormessage("editMonitoredServices", "003", $e));
               });
             }else{
-              //TODO Implement correct status code
-              $resolve(array("status" => 1, "message" => "This service has no valid alerting rule. Please report this error to the dev team."));
+              $resolve($this->logging_api->getErrormessage("editMonitoredServices", "004"));
             }
           })->otherwise(function(\Exception $e) use(&$resolve){
-            //TODO Implement correct status code
-            $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+            $resolve($this->logging_api->getErrormessage("editMonitoredServices", "005", $e));
           });
         }else{
-          //TODO Implement correct status code
-          $resolve(array("status" => 1, "message" => "Not all data stated."));
+          $resolve($this->logging_api->getErrormessage("editMonitoredServices", "006"));
         }
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
