@@ -1,0 +1,27 @@
+{
+  "functioncodes" : {
+    "getConfigurableDowntimeServices" : "001",
+    "setUpNewDowntime" : "002",
+    "getSetupDowntimes" : "003",
+    "editDowntimes" : "004"
+  },
+  "errormessages" : {
+    "getConfigurableDowntimeServices" : {
+      "001" : [2, "An error occured."]
+    },
+    "setUpNewDowntime" : {
+      "001" : [1, "Service incomplete. Missing key 'type_id' or key 'data-service-target'."],
+      "002" : [2, "Wrong downtime type stated. 0 (for node) or 1 (for service)."],
+      "003" : [2, "An error occured."],
+      "004" : [2 , "Downtime end time must be newer than downtime start time."],
+      "005" : [1 , "Not all data stated or wrong data sent."]
+    },
+    "getSetupDowntimes" : {
+      "001" : [2, "An error occured."]
+    },
+    "editDowntimes" : {
+      "001" : [2, "An error occured."],
+      "002" : [1 , "Not all data stated."]
+    }
+  }
+}

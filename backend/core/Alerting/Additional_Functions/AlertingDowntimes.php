@@ -2,23 +2,28 @@
   namespace ChiaMgmt\Alerting\Additional_Functions;
   use React\Promise;
   use ChiaMgmt\DB\DB_Api;
+  use ChiaMgmt\Logging\Logging_Api;
 
   class AlertingDowntimes{
     /**
-     * Holds an instance to the Database Class.
-     * @var DB_Api
+     * Holds an instance to the Logging Class.
+     * @var Logging_Api
      */
-    private $db_api;
+    private $logging_api;
 
-    public function __construct(){
-      $this->db_api = new DB_Api();
+    /**
+     * Initialises the needed and above stated private variables.
+     */
+    public function __construct(object $server = NULL){
+        $this->logging_api = new Logging_Api();
     }
 
     /**
      * Returns all services for which a downtime can be configured.
-     *
-     * @param array $data
-     * @return array
+     * Function made for: Web GUI/App, API
+     * @throws Exception $e                   Throws an exception on db errors.
+     * @param  array $data                    Default: [] (empty) - Returns all availabe configurable downtime services. Optional: { "node_id" : <int>, "monitor" : <int> }
+     * @return object                         Returns a promise object: {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
      */
     public function getConfigurableDowntimeServices(array $data = []): object
     {
@@ -65,24 +70,23 @@
     
                 $resolve(array("status" => 0, "message" => "Successfully returned all found configurable downtime services.", "data" => $returnarray)); 
             })->otherwise(function(\Exception $e) use(&$resolve){
-                //TODO Implement correct status code
-                $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+                $resolve($this->logging_api->getErrormessage("getConfigurableDowntimeServices", "001", $e));
             });
         };
 
         $canceller = function () {
-            throw new Exception('Promise cancelled');
+            throw new \Exception('Promise cancelled');
         };
     
         return new Promise\Promise($resolver, $canceller);
     }
 
     /**
-     * Creates a new downtime for all or specific services of a certain Chia node.
-     * Downtimetype 0 = Node, 1 = Service
-     *
-     * @param array $data
-     * @return array
+     * Creates a new downtime for all or specific services of a certain Chia node (Downtimetype 0 = Node, 1 = Service).
+     * Function made for: Web GUI/App, API
+     * @throws Exception $e                   Throws an exception on db errors.
+     * @param  array $data                    { "time_from" : <string>, "time_to" : <string>, "comment" : <string>, "created_by" : <int> }
+     * @return object                         Returns a promise object: {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
      */
     public function setUpNewDowntime(array $data): object
     {
@@ -112,13 +116,11 @@
                                 $insert_statement .= "(NULL, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)" . (array_key_exists($arrkey+1, $data["selected_services"]) ? "," : "");
                                 array_push($insert_array, $data["nodeid"], $data["downtime_type"], $downtime_for_service["type_id"], $downtime_for_service["data-service-target"], $data["comment"], $data["time_from"], $data["time_to"], $data["created_by"]);
                             }else{
-                                //TODO Implement correct status code
-                                $resolve(array("status" => 1, "message" => "Service incomplete. Missing key 'type_id' or key 'data-service-target'."));
+                                $resolve($this->logging_api->getErrormessage("setUpNewDowntime", "001"));
                             }
                         }
                     }else{
-                        //TODO Implement correct status code
-                        return $resolve(array("status" => 1, "message" => "Wrong downtime type stated. 0 (for node) or 1 (for service)."));
+                        $resolve($this->logging_api->getErrormessage("setUpNewDowntime", "002"));
                     }
 
                     $set_up_downtime = Promise\resolve((new DB_Api())->execute($insert_statement, $insert_array));
@@ -128,16 +130,13 @@
                             $resolve(array("status" => 0, "message" => "Successfully set new downtime.", "data" => (array_key_exists("data", $found_downtimes_returned) ? $found_downtimes_returned["data"] : [])));
                         });
                     })->otherwise(function(\Exception $e) use(&$resolve){
-                        //TODO Implement correct status code
-                        $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+                        $resolve($this->logging_api->getErrormessage("setUpNewDowntime", "003", $e));
                     });
                 }else{
-                    //TODO Implement correct status code
-                    $resolve(array("status" => 1, "message" => "Downtime end time must be newer than downtime start time."));
+                    $resolve($this->logging_api->getErrormessage("setUpNewDowntime", "004"));
                 }  
             }else{
-                //TODO Implement correct status code
-                $resolve(array("status" => 1, "message" => "Not all data stated or wrong data sent."));
+                $resolve($this->logging_api->getErrormessage("setUpNewDowntime", "005"));
             }
         };
         
@@ -149,11 +148,11 @@
     }
 
     /**
-     * Returns current setup downtimes. Defaultly it returns all downtimes in the past 24 hours. The range for the past can be changed.
-     * downtime_active (0 = Past, 1 = Currently, 2 = Future)
-     *
-     * @param array $data
-     * @return array
+     * Returns current setup downtimes. Defaultly it returns all downtimes in the past 24 hours. The range for the past can be changed (downtime_active: 0 = Past, 1 = Current, 2 = Future).
+     * Function made for: Web GUI/App, API
+     * @throws Exception $e                   Throws an exception on db errors.
+     * @param  array $data                    Default: [] (Empty) - Returns all downtimes. Optional: { "time_past" : <int> (hours), "node_id" : <int> }
+     * @return object                         Returns a promise object: {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
      */
     public function getSetupDowntimes(array $data = []): object
     {
@@ -196,25 +195,24 @@
     
                 $resolve(array("status" => 0, "message" => "Successfully returnded found setup downtimes.", "data" => $returnarray));   
             })->otherwise(function(\Exception $e) use(&$resolve){
-                //TODO Implement correct status code
-                $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+                $resolve($this->logging_api->getErrormessage("getSetupDowntimes", "001", $e));
             });
         };
 
         $canceller = function () {
-            throw new Exception('Promise cancelled');
+            throw new \Exception('Promise cancelled');
         };
     
         return new Promise\Promise($resolver, $canceller);
     }
 
     /**
-     * Edits the information (Comment, Start date, enddate) of one or more downtime(s).
-     *
-     * @param array $data
-     * @return array
+     * Edits the information (Comment, start date, end date) of one or more downtime(s).
+     * Function made for: Web GUI/App, API
+     * @param  array $data                    { "ids_to_edit" : [<dt_id>(int), <dt_id>(int), ...], "edit_downtime_comment" : <string|null>, "edit_downtime_from" : <string|null>, "edit_downtime_to" : <string|null>, "remove_downtimes" : <boolean|null> }
+     * @return object                         Returns a promise object: {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
      */
-    public function editDowntimes(array $data = []): object
+    public function editDowntimes(array $data): object
     {
         $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
             $date_time_regex = "(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) ";
@@ -265,25 +263,21 @@
                     $found_downtimes = Promise\resolve($this->getSetupDowntimes());
                     $found_downtimes->then(function($found_downtimes_returned) use(&$resolve){
                         if(array_key_exists("data", $found_downtimes_returned)){
-                            $found_downtimes = $found_downtimes_returned["data"];
+                            $resolve(array("status" => 0, "message" => "Successfully edited stated downtimes.", "data" => $found_downtimes_returned["data"]));
                         }else{
-                            return $resolve($found_downtimes);
+                            $resolve($found_downtimes_returned);
                         }
-        
-                        $resolve(array("status" => 0, "message" => "Successfully edited stated downtimes.", "data" => $found_downtimes));
                     });
                 })->otherwise(function(\Exception $e) use(&$resolve){
-                    //TODO Implement correct status code
-                    $resolve(array("status" => 1, "message" => "An error occured {$e->getMessage()}."));
+                    $resolve($this->logging_api->getErrormessage("editDowntimes", "001", $e));
                 });
             }else{
-                //TODO Implement correct status code
-                $resolve(array("status" => 1, "message" => "Not all data stated."));
+                $resolve($this->logging_api->getErrormessage("editDowntimes", "002"));
             }  
         };
 
         $canceller = function () {
-            throw new Exception('Promise cancelled');
+            throw new \Exception('Promise cancelled');
         };
     
         return new Promise\Promise($resolver, $canceller);
