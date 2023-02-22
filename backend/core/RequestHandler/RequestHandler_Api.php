@@ -130,44 +130,53 @@
     {
       $resolver = function (callable $resolve, callable $reject, callable $notify) use($loginData, $backendInfo, $data, $server){
         //status 0 = Success, status 1 = Error, status 2 = Aborted, status 3 = Processing
-        $cron_processing = Promise\resolve((new DB_Api())->execute("SELECT id AS job_id, exec_started FROM `cron_execution` WHERE status = 3 LIMIT 1; ",[]));
+        $cron_processing = Promise\resolve((new DB_Api())->execute("SELECT id AS job_id, status, exec_started, exec_ended FROM cron_execution ORDER BY exec_started DESC LIMIT 1",[]));
         $cron_processing->then(function($cron_processing_returned) use(&$resolve, $loginData, $server){
-          if(count($cron_processing_returned->resultRows) == 0){
-            $set_cron_processing = Promise\resolve((new DB_Api())->execute("INSERT INTO cron_execution (id, status, exec_started, exec_ended, exec_duration) VALUES (NULL, ?, NOW(), NULL, NULL)",array(3)));
-            $set_cron_processing->then(function($set_cron_processing_returned) use(&$resolve, $loginData, $server){
-              $job_id = $set_cron_processing_returned->insertId;
-              $start = microtime(true);
+          $returned_cron_job = $cron_processing_returned->resultRows;
 
-              $cronjob_promises = [
-                Promise\resolve((new System_Api())->setCurrentCronjobRunTimestamp()),
-                Promise\resolve((new Chia_Overall_Api())->queryOverallData()),
-                Promise\resolve((new Exchangerates_Api())->queryExchangeRatesData()),
-                Promise\resolve((new Chia_Infra_Sysinfo_Api())->getSystemInfo()),
-                Promise\resolve($this->processRequest($loginData, ["namespace" => "ChiaMgmt\Nodes\Nodes_Api", "method" => "queryNodesServicesStatus"], [])),
-              ];
-              
-              Promise\all($cronjob_promises)->then(function($all_returned) use(&$resolve, $server, $start, $job_id){
-                $further_cronjob_promises = [
-                  Promise\resolve($server->messageFrontendClients(array("siteID" => 9), array("queryOverallData" => $all_returned[1]))),
-                  Promise\resolve($server->messageFrontendClients(array("siteID" => 8), array("getSystemInfo" => $all_returned[3]))),
-                  Promise\resolve($server->messageAllNodes(array("data" => ["querySystemInfo" => [ "status" => 0, "message" => "Query systeminfo data.", "data"=> []]]))),
-                  Promise\resolve($server->messageAllNodes(array("data" => ["queryWalletData" => ["status" => 0, "message" => "Query wallet data.", "data"=>[]]]))),
-                  Promise\resolve($server->messageAllNodes(array("data" => ["queryWalletTransactions" => ["status" => 0, "message" => "Query wallet transaction data.", "data"=>[]]]))),
-                  Promise\resolve($server->messageAllNodes(array("data" => ["queryFarmData" => ["status" => 0, "message" => "Query farm transaction data.", "data"=>[]]]))),
-                  Promise\resolve($server->messageAllNodes(array("data" => ["queryHarvesterData" => ["status" => 0, "message" => "Query harvester transaction data.", "data"=>[]]]))),
-                  Promise\resolve($server->messageAllNodes(array("data" => ["get_script_version" => ["status" => 0, "message" => "Query chia node overall data.", "data"=>[]]]))),
+          if(count($returned_cron_job) == 0 || (array_key_exists(0, $returned_cron_job) && $returned_cron_job[0]["status"] != 3)){
+            if(array_key_exists(0, $returned_cron_job) && $returned_cron_job[0]["exec_ended"] != "" && strtotime($returned_cron_job[0]["exec_ended"])+30 > time()){
+              $logging_message = Promise\resolve($this->logging->getErrormessage("processCronRequest", "001"));
+              $logging_message->then(function($logging_message_returned) use(&$resolve){
+                $resolve(array("cronJobExecution" => $logging_message_returned));
+              });
+            }else{
+              $set_cron_processing = Promise\resolve((new DB_Api())->execute("INSERT INTO cron_execution (id, status, exec_started, exec_ended, exec_duration) VALUES (NULL, ?, NOW(), NULL, NULL)",array(3)));
+              $set_cron_processing->then(function($set_cron_processing_returned) use(&$resolve, $loginData, $server){
+                $job_id = $set_cron_processing_returned->insertId;
+                $start = microtime(true);
+  
+                $cronjob_promises = [
+                  Promise\resolve((new System_Api())->setCurrentCronjobRunTimestamp()),
+                  Promise\resolve((new Chia_Overall_Api())->queryOverallData()),
+                  Promise\resolve((new Exchangerates_Api())->queryExchangeRatesData()),
+                  Promise\resolve((new Chia_Infra_Sysinfo_Api())->getSystemInfo()),
+                  Promise\resolve($this->processRequest($loginData, ["namespace" => "ChiaMgmt\Nodes\Nodes_Api", "method" => "queryNodesServicesStatus"], [])),
                 ];
-      
-                Promise\all($further_cronjob_promises)->then(function($further_cronjob_promises_returned) use(&$resolve, $start, $job_id){
-                  $alertAllWARNCRIT = Promise\resolve((new Alerting_Api)->alertAllFoundWARNandCRIT()); 
-                  $alertAllWARNCRIT->then(function($alertAllWARNCRIT_returned) use(&$resolve, $start, $job_id){
-                    $time_elapsed_secs = microtime(true) - $start;
-                    Promise\resolve((new DB_Api())->execute("UPDATE cron_execution SET status = ?, exec_ended = NOW(), exec_duration = ? WHERE id = ?",array(0, $time_elapsed_secs, $job_id)));
-                    $resolve(array("cronJobExecution" => array("status" => 0, "message" => "Successfully executed system background jobs.", "data" => ["endtime" => date("Y-m-d H:i:s"), "duration" => $time_elapsed_secs])));
+                
+                Promise\all($cronjob_promises)->then(function($all_returned) use(&$resolve, $server, $start, $job_id){
+                  $further_cronjob_promises = [
+                    Promise\resolve($server->messageFrontendClients(array("siteID" => 9), array("queryOverallData" => $all_returned[1]))),
+                    Promise\resolve($server->messageFrontendClients(array("siteID" => 8), array("getSystemInfo" => $all_returned[3]))),
+                    Promise\resolve($server->messageAllNodes(array("data" => ["querySystemInfo" => [ "status" => 0, "message" => "Query systeminfo data.", "data"=> []]]))),
+                    Promise\resolve($server->messageAllNodes(array("data" => ["queryWalletData" => ["status" => 0, "message" => "Query wallet data.", "data"=>[]]]))),
+                    Promise\resolve($server->messageAllNodes(array("data" => ["queryWalletTransactions" => ["status" => 0, "message" => "Query wallet transaction data.", "data"=>[]]]))),
+                    Promise\resolve($server->messageAllNodes(array("data" => ["queryFarmData" => ["status" => 0, "message" => "Query farm transaction data.", "data"=>[]]]))),
+                    Promise\resolve($server->messageAllNodes(array("data" => ["queryHarvesterData" => ["status" => 0, "message" => "Query harvester transaction data.", "data"=>[]]]))),
+                    Promise\resolve($server->messageAllNodes(array("data" => ["get_script_version" => ["status" => 0, "message" => "Query chia node overall data.", "data"=>[]]]))),
+                  ];
+        
+                  Promise\all($further_cronjob_promises)->then(function($further_cronjob_promises_returned) use(&$resolve, $start, $job_id){
+                    $alertAllWARNCRIT = Promise\resolve((new Alerting_Api)->alertAllFoundWARNandCRIT()); 
+                    $alertAllWARNCRIT->then(function($alertAllWARNCRIT_returned) use(&$resolve, $start, $job_id){
+                      $time_elapsed_secs = microtime(true) - $start;
+                      Promise\resolve((new DB_Api())->execute("UPDATE cron_execution SET status = ?, exec_ended = NOW(), exec_duration = ? WHERE id = ?",array(0, $time_elapsed_secs, $job_id)));
+                      $resolve(array("cronJobExecution" => array("status" => 0, "message" => "Successfully executed system background jobs.", "data" => ["endtime" => date("Y-m-d H:i:s"), "duration" => $time_elapsed_secs])));
+                    });
                   });
                 });
               });
-            });
+            }
           }else{
             $now = new \DateTime("NOW");
             $exec_start = new \DateTime($cron_processing_returned->resultRows[0]["exec_started"]);
@@ -177,12 +186,12 @@
               $job_id = $cron_processing_returned->resultRows[0]["job_id"];
               Promise\resolve((new DB_Api())->execute("UPDATE cron_execution SET status = ?, exec_ended = NOW(), exec_duration = ? WHERE id = ?",array(2, $active_exec_time, $job_id)));
 
-              $logging_message = Promise\resolve($this->logging->getErrormessage("processCronRequest", "001"));
+              $logging_message = Promise\resolve($this->logging->getErrormessage("processCronRequest", "002"));
               $logging_message->then(function($logging_message_returned) use(&$resolve){
                 $resolve(array("cronJobExecution" => $logging_message_returned));
               });
             }else{
-              $logging_message = Promise\resolve($this->logging->getErrormessage("processCronRequest", "002"));
+              $logging_message = Promise\resolve($this->logging->getErrormessage("processCronRequest", "003"));
               $logging_message->then(function($logging_message_returned) use(&$resolve){
                 $resolve(array("cronJobExecution" => $logging_message_returned));
               });

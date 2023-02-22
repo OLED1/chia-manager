@@ -14,8 +14,9 @@
       "003" : [1, "Class or function not found."]
     },
     "processCronRequest" : {
-      "001" : [2, "Job running since longer than 5minutes. Aborting now."],
-      "002" : [0, "Aborted cron execution. Cronjob already processing."]
+      "001" : [1, "Last cron run was some seconds ago. Aborting this execution."],
+      "002" : [2, "Job running since longer than 5minutes. Aborting now."],
+      "003" : [0, "Aborted cron execution. Cronjob already processing."]
     },
     "processGetActiveSubscriptions" : {
       "001" : [1, "You are not allowed to query this information."]
