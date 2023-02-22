@@ -1,7 +1,6 @@
 <?php
   namespace ChiaMgmt\Logging;
   use React\Promise;
-  use React\ChildProcess;
   use React\EventLoop\Loop;
   use React\Filesystem\Factory;
   use React\Filesystem\Node\FileInterface;
@@ -104,11 +103,28 @@
     public function getErrormessage(string $methodname, string $functioncode, string $additional = "", bool $logtofile = true): object
     {
       $resolver = function (callable $resolve, callable $reject, callable $notify) use($methodname, $functioncode, $additional, $logtofile){
-        $sitecodefile = @file_get_contents($this->codefilepath);
-        $sitecoderarray = json_decode($sitecodefile, true);
-  
-        $errorfile = file_get_contents($this->errorfilepath . $this->callerClass . "_codes.json");
-        $errorarray = json_decode($errorfile, true);
+
+        $sitecoderarray = [];
+        Factory::create()->detect($this->codefilepath)->then(function (FileInterface $file) use(&$resolve, &$sitecoderarray){
+          $file->getContents()->then(function (string $sitecodefile) use(&$sitecoderarray){
+            $sitecoderarray = json_decode($sitecodefile, true);
+          }, function (\Throwable $e) use(&$resolve){
+            return $resolve("Message could not be logged. Logging Error: " . $e->getMessage() . ".");
+          });
+        }, function (\Throwable $e) use(&$resolve){
+          return $resolve("Message(s) could not be loaded. Logging Error: " . $e->getMessage() . ".");
+        });
+
+        $errorarray = [];
+        Factory::create()->detect($this->errorfilepath . $this->callerClass . "_codes.json")->then(function (FileInterface $file) use(&$resolve, &$errorarray){
+          $file->getContents()->then(function (string $errorfile) use(&$errorarray){
+            return $errorarray = json_decode($errorfile, true);
+          }, function (\Throwable $e) use(&$resolve){
+            $resolve("Message could not be logged. Logging Error: " . $e->getMessage() . ".");
+          });
+        }, function (\Throwable $e) use(&$resolve){
+          return $resolve("Message(s) could not be loaded. Logging Error: " . $e->getMessage() . ".");
+        });
   
         $sitecode = $sitecoderarray[$this->callerClass];
   
@@ -187,8 +203,8 @@
             return $file->stat();
           })->then(static function (Stat $stat) use(&$filesize){
             $filesize = $stat->size();
-          }, function (\Throwable $throwable) {
-            $resolve("Message could not be logged. Logging Error: " . $e->getMessage() . ".");
+          }, function (\Throwable $e) use(&$resolve){
+            $resolve("Message(s) could not be loaded. Logging Error: " . $e->getMessage() . ".");
           });
 
           Factory::create()->detect($this->logpath)->then(function (FileInterface $file) use(&$resolve, $filesize, $fromline, $toline){
@@ -225,8 +241,8 @@
                 }else{ 
                   $logs_to_return = array_merge($logs_to_return, $reversed_csv_array);
                 }
-              }, function (\Throwable $throwable) {
-                $resolve("Message could not be logged. Logging Error: " . $e->getMessage() . ".");
+              }, function (\Throwable $e) use(&$resolve){
+                $resolve("Message could not be loaded. Logging Error: " . $e->getMessage() . ".");
               });
                             
               if((array_key_exists($fromline, $logs_to_return) && array_key_exists($toline, $logs_to_return)) || ($current_chunk+$chunks_to_load+$removed_offset) < 0){
