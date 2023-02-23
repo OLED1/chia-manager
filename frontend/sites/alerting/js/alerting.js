@@ -164,18 +164,18 @@ function initAlertingTypesDropdown(){
         this_configurable_services.find(".add-rules-input.crit-input").removeAttr("disabled").val("");
         $(".alerting-types-button[data-node-id='" + nodeid + "']").text(available_custom_rules[typeid]["service_desc"]);
     
-        var target_service_select = $(".alerting-services-dropdown[data-node-id='" + nodeid + "'");
+        var target_service_select = $(".alerting-services-dropdown[data-node-id='" + nodeid + "']");
         target_service_select.children().remove();
         $.each(available_custom_rules[typeid]["available_services"][nodeid]["configurable_services"], function(arrkey, service_desc){
             target_service_select.append("<a class='dropdown-item' data-sort-id=" + arrkey + " data-service-desc='" + service_desc + "' href='#'>" + service_desc + "</a>");
         });
         $(".alerting-services-button[data-node-id='" + nodeid + "']").removeAttr("disabled");
-        $(".alerting-services-button[data-node-id='" + nodeid + "'").text("Select service");
+        $(".alerting-services-button[data-node-id='" + nodeid + "']").text("Select service");
     
         $(".alerting-services-dropdown .dropdown-item").off("click");
         $(".alerting-services-dropdown .dropdown-item").on("click", function(){
             var selected_service = available_custom_rules[typeid]["available_services"][nodeid]["configurable_services"][$(this).attr("data-sort-id")];
-            $(".alerting-services-button[data-node-id='" + nodeid + "'").text(selected_service);
+            $(".alerting-services-button[data-node-id='" + nodeid + "']").text(selected_service);
             custom_rules_tosave[nodeid]["service_name"] = selected_service;
             checkAddRuleDataComplete(nodeid);
         });
@@ -222,7 +222,7 @@ function checkAddRuleDataComplete(nodeid){
     if(!("warn_at_after" in target_custom_rule) || target_custom_rule["warn_at_after"].trim() < 0) all_fields_stated = false;
     if(!("crit_at_after" in target_custom_rule) ||  target_custom_rule["crit_at_after"].trim() < 0) all_fields_stated = false;
 
-    var target_save_button = $(".add-custom-rule[data-node-id='" + nodeid + "'");
+    var target_save_button = $(".add-custom-rule[data-node-id='" + nodeid + "']");
     if(all_fields_stated) target_save_button.show();
     else target_save_button.hide();
 
@@ -392,7 +392,7 @@ function resetCreateCustomRule(nodeid){
 }
 
 function recreateTypeDropdown(nodeid){
-    var target_dropdown = $(".alerting-types-dropdown[data-node-id='" + nodeid + "'");
+    var target_dropdown = $(".alerting-types-dropdown[data-node-id='" + nodeid + "']");
     target_dropdown.children().remove();
 
     $.each(available_custom_rules, function(typeid, typedata){
