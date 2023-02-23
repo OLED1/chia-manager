@@ -361,7 +361,7 @@
                                                                                     (CASE WHEN cisf.mountpoint IS NULL AND cist.perc_or_min = 0 AND cias.refers_to_rule_id <= (SELECT max(rule_type) FROM alerting_rules WHERE rule_default = 1) THEN 'total percent'
                                                                                           WHEN cisf.mountpoint IS NULL AND cist.perc_or_min = 1 AND cias.refers_to_rule_id <= (SELECT max(rule_type) FROM alerting_rules WHERE rule_default = 1) THEN 'total downtime'
                                                                                           ELSE cisf.mountpoint
-                                                                                    END) AS service_target
+                                                                                    END) AS service_target, ar.rule_default
                                                                               FROM nodes n
                                                                               LEFT JOIN chia_infra_available_services cias ON cias.current = 1 AND cias.node_id = n.id
                                                                               LEFT JOIN chia_infra_service_types cist ON cist.id = cias.service_type

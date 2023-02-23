@@ -97,9 +97,9 @@
                   if(array_key_exists("usd", $rates_result) && array_key_exists($currency_code_res, $rates_result["usd"])){
                     $last_updated = Promise\resolve((new DB_Api())->execute("REPLACE INTO exchangerates (currency_code, currency_desc, currency_rate, updatedate) VALUES (?, ?, ?, ?)", 
                                                       array($currency_code_res, $currency_description, $rates_result["usd"][$currency_code_res], $rates_result["date"])));
-                    $last_updated->otherwise(function (\Exception $e) use(&$resolve){
+                    $last_updated->then()->otherwise(function (\Exception $e) use(&$resolve){
                       return $resolve($this->logging_api->getErrormessage("queryExchangeRatesData", "005", $e));
-                    });                
+                    });               
                   }
                 }
               });
