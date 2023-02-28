@@ -144,7 +144,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -174,7 +174,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -219,7 +219,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -289,7 +289,7 @@
       };  
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -331,7 +331,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -388,7 +388,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -551,7 +551,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -586,7 +586,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -613,7 +613,7 @@
             $activeSubscriptions = Promise\resolve((new WebSocket_Api())->sendToWSS("getActiveSubscriptions"));
           }
   
-          $activeSubscriptions->then(function($activeSubscriptions_returned) use(&$resolve, $client_nodes_returned){
+          $activeSubscriptions->then(function($activeSubscriptions_returned) use(&$resolve, $client_nodes_returned, $server){
             $activeSubscriptions_returned = $activeSubscriptions_returned["getActiveSubscriptions"];
            
             if(array_key_exists("data", $activeSubscriptions_returned) && array_key_exists("data", $client_nodes_returned)){
@@ -653,7 +653,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -703,7 +703,7 @@
       };
       
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -730,7 +730,7 @@
             $nodeid = Promise\resolve((new DB_Api())->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"]))));
           }
           
-          $nodeid->then(function($nodeid_returned) use(&$resolve, $data){
+          $nodeid->then(function($nodeid_returned) use(&$resolve, $data, $nodeid){
             if(!is_numeric($nodeid_returned)) $nodeid_returned = $nodeid_returned->resultRows[0]["id"];
 
             if(!is_null($nodeid_returned) && $nodeid_returned > 0){ 
@@ -744,7 +744,7 @@
                                                                       JOIN nodetypes_avail nta ON nta.code = nt.code
                                                                       WHERE nt.code IN (3,4,5) AND n.id = ?", array($nodeid_returned)));
 
-              $chia_nodes->then(function($chia_nodes_returned) use(&$resolve, $data){
+              $chia_nodes->then(function($chia_nodes_returned) use(&$resolve, $data, $nodeid){
                 $chia_nodes_returned = $chia_nodes_returned->resultRows;
                 
                 if(count($chia_nodes_returned) > 0){
@@ -793,7 +793,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
@@ -862,7 +862,7 @@
       };
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
