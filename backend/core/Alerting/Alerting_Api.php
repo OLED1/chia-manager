@@ -513,7 +513,7 @@
      * @return object                         Returns a promise object: {"status": [0|>0], "message": [Status message], "data": {[Saved DB Values]}}
      */
     public function editAddAlertingRule(array $data): object
-    {
+    {     
       $resolver = function (callable $resolve, callable $reject, callable $notify) use($data){
         if(array_key_exists("node_id", $data) && is_numeric($data["node_id"]) && $data["node_id"] > 2 &&
           array_key_exists("rule_id", $data) && is_numeric($data["rule_id"]) && $data["rule_id"] > 0 &&
@@ -523,71 +523,47 @@
           $rule_id = $data["rule_id"];
           $node_id = $data["node_id"];
 
-          $processing_resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $rule_id, $node_id){
-            if(count($data["alerting"]) > 0){
-              foreach($data["alerting"] AS $alerting_service_id => $service_config){
-                $cleanup_rule = Promise\resolve((new DB_Api)->execute("DELETE FROM alerting_procedure WHERE rule_id = ? AND alerting_service = ? AND rule_node_target = ?", 
-                                                  array($rule_id, $alerting_service_id, $node_id)));
-                $cleanup_rule->then(function($cleanup_rule_returned) use(&$resolve, $data, $rule_id, $node_id, $alerting_service_id, $service_config){
-                  if(is_numeric($alerting_service_id)){
-                    //-1 = "do not alert", 0 = "immediately alert", >0 = "alert after x minutes"
-                    if(array_key_exists("warn_exceeds", $service_config) || array_key_exists("crit_exceeds", $service_config)){
-                      $warn_exceeds = (array_key_exists("warn_exceeds", $service_config) && is_numeric($service_config["warn_exceeds"]) && $service_config["warn_exceeds"] >= 0 ? $service_config["warn_exceeds"] : -1 );
-                      $crit_exceeds = (array_key_exists("crit_exceeds", $service_config) && is_numeric($service_config["crit_exceeds"]) && $service_config["crit_exceeds"] >= 0 ? $service_config["crit_exceeds"] : -1 );
-      
-                      if($warn_exceeds >= 0 || $crit_exceeds >= 0){
-                        $insert_procedure = Promise\resolve((new DB_Api)->execute("INSERT INTO alerting_procedure (id, rule_id, rule_node_target, alerting_service, warn_alert_after, crit_alert_after) VALUES (NULL, ?, ?, ?, ?, ?)", 
-                                                            array($rule_id, $node_id, $alerting_service_id, $warn_exceeds, $crit_exceeds)));
-                                                            
-                        $insert_procedure->then(function($insert_procedure_returned) use(&$resolve, $alerting_service_id, $data){
-                          $new_procedure_id = $insert_procedure_returned->insertId;
-      
-                          if(array_key_exists($alerting_service_id, $data["users"])){
-                            foreach($data["users"][$alerting_service_id] AS $arrkey => $alerting_user_id){
-                              $set_alerting_contact = Promise\resolve((new DB_Api())->execute("INSERT INTO alerting_contact (id, user_id, alerting_procedure_id) VALUES (NULL, ?, ?)", 
-                                                              array($alerting_user_id, $new_procedure_id)));
+          if(count($data["alerting"]) > 0){
+            foreach($data["alerting"] AS $alerting_service_id => $service_config){
+              $cleanup_rule = Promise\resolve((new DB_Api)->execute("DELETE FROM alerting_procedure WHERE rule_id = ? AND alerting_service = ? AND rule_node_target = ?", 
+                                                array($rule_id, $alerting_service_id, $node_id)));
+              $cleanup_rule->then(function($cleanup_rule_returned) use(&$resolve, $data, $rule_id, $node_id, $alerting_service_id, $service_config){
+                if(is_numeric($alerting_service_id)){
+                  //-1 = "do not alert", 0 = "immediately alert", >0 = "alert after x minutes"
+                  if(array_key_exists("warn_exceeds", $service_config) || array_key_exists("crit_exceeds", $service_config)){
+                    $warn_exceeds = (array_key_exists("warn_exceeds", $service_config) && is_numeric($service_config["warn_exceeds"]) && $service_config["warn_exceeds"] >= 0 ? $service_config["warn_exceeds"] : -1 );
+                    $crit_exceeds = (array_key_exists("crit_exceeds", $service_config) && is_numeric($service_config["crit_exceeds"]) && $service_config["crit_exceeds"] >= 0 ? $service_config["crit_exceeds"] : -1 );
     
-                              $set_alerting_contact->otherwise(function(\Exception $e) use(&$resolve){
-                                $resolve($this->logging_api->getErrormessage("editAddAlertingRule", "001", $e));
-                              });
-                            }
+                    if($warn_exceeds >= 0 || $crit_exceeds >= 0){
+                      $insert_procedure = Promise\resolve((new DB_Api)->execute("INSERT INTO alerting_procedure (id, rule_id, rule_node_target, alerting_service, warn_alert_after, crit_alert_after) VALUES (NULL, ?, ?, ?, ?, ?)", 
+                                                          array($rule_id, $node_id, $alerting_service_id, $warn_exceeds, $crit_exceeds)));
+                                                          
+                      $insert_procedure->then(function($insert_procedure_returned) use(&$resolve, $alerting_service_id, $data){
+                        $new_procedure_id = $insert_procedure_returned->insertId;
+    
+                        if(array_key_exists($alerting_service_id, $data["users"])){
+                          foreach($data["users"][$alerting_service_id] AS $arrkey => $alerting_user_id){
+                            $set_alerting_contact = Promise\resolve((new DB_Api())->execute("INSERT INTO alerting_contact (id, user_id, alerting_procedure_id) VALUES (NULL, ?, ?)", 
+                                                            array($alerting_user_id, $new_procedure_id)));
+
+                            $set_alerting_contact->otherwise(function(\Exception $e) use(&$resolve){
+                              $resolve($this->logging_api->getErrormessage("editAddAlertingRule", "001", $e));
+                            });
                           }
-                        })->otherwise(function(\Exeption $e) use(&$resolve){
-                          $resolve($this->logging_api->getErrormessage("editAddAlertingRule", "002", $e));
-                        });
-                      }
+                        }
+                      })->otherwise(function(\Exception $e) use(&$resolve){
+                        $resolve($this->logging_api->getErrormessage("editAddAlertingRule", "002", $e));
+                      });
                     }
                   }
-                })->otherwise(function(\Exception $e) use(&$resolve){
-                  $resolve($this->logging_api->getErrormessage("editAddAlertingRule", "003", $e));
-                });
-              }
-              $resolve(array("status" => 0, "message" => "Resolved."));
-            }else{
-              $resolve(array("status" => 0, "message" => "Resolved."));
-            }
-          };
-
-
-          $processing_canceller = function () {
-            throw new \Exception('Promise cancelled');
-          };
-
-          $processing_promise = Promise\Promise($processing_resolver, $processing_canceller);
-          $processing_promise->then(function($processing_promise_returned) use(&$resolve, $data, $rule_id, $node_id){
-            if($processing_promise_returned["status"] == 0){
-              $new_alerting_rule = Promise\resolve($this->getConfiguredAlertingRules(["rule_id" => $rule_id, "node_id" => $node_id]));
-              $new_alerting_rule->then(function($new_alerting_rule_returned) use(&$resolve, $data, $rule_id, $node_id){
-                if(array_key_exists("data", $new_alerting_rule_returned)){
-                  $resolve(array("status" => 0, "message" => "Successfully processed service alerting for ID {$data["rule_id"]}.", "data" => array("rule_id" => $data["rule_id"], "node_id" => $node_id, "new_data" => $new_alerting_rule_returned["data"])));
-                }else{
-                  $resolve($new_alerting_rule_returned);
                 }
+              })->otherwise(function(\Exception $e) use(&$resolve){
+                $resolve($this->logging_api->getErrormessage("editAddAlertingRule", "003", $e));
               });
-            }else{
-              $resolve($processing_promise_returned);
             }
-          });
+          }
+          
+          $resolve(Promise\resolve(array("status" => 0, "message" => "Successfully added a new alerting rule or edited an existing one.", "data" => ["rule_id" => $rule_id, "node_id" => $node_id])));
         }else{
           $resolve($this->logging_api->getErrormessage("editAddAlertingRule", "004"));
         }

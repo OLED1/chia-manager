@@ -614,11 +614,16 @@ function messagesTrigger(data){
             $("#remove_rule_modal").modal("hide");
             window.sendToWSS("backendRequest", "ChiaMgmt\\Alerting\\Alerting_Api", "Alerting_Api", "getAvailableRuleTypesAndServices", {"nodeid" : nodeid});
         }else if(key == "editAddAlertingRule"){
+            if(data[key]["status"] == 0 && ("rule_id" in data[key]["data"]) && ("node_id" in data[key]["data"])){
+                window.sendToWSS("backendRequest", "ChiaMgmt\\Alerting\\Alerting_Api", "Alerting_Api", "getConfiguredAlertingRules", data[key]["data"]);
+            }
+        }else if(key == "getConfiguredAlertingRules"){
             var rule_id = data[key]["data"]["rule_id"];
             var node_id = data[key]["data"]["node_id"];
+            
+            if("by_rule_id" in data[key]["data"]){
+                var rule_data = data[key]["data"]["by_rule_id"][Object.keys(data[key]["data"]["by_rule_id"])[0]];
 
-            if("by_rule_id" in data[key]["data"]["new_data"]){
-                var rule_data = data[key]["data"]["new_data"]["by_rule_id"][rule_id];
                 $.each(rule_data, function(nodeid, db_rule_data){
                     var class_removed = false;
                     $.each(db_rule_data, function(alerting_service_id, alerting_service_data){
