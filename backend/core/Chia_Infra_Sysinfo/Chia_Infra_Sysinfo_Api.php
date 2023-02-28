@@ -768,38 +768,40 @@
                       Promise\resolve((new DB_Api())->execute("UPDATE alerting_rules SET monitor = 1 WHERE id = ?", array($found_service["alerting_id"])))
                     ];
                   }else{
-                    $resolve($this->logging_api->getErrormessage("editMonitoredServices", "001"));
+                    return $resolve($this->logging_api->getErrormessage("editMonitoredServices", "001"));
                   }
                 }else if($found_service["monitor"] == 1){
                   $statements_to_resolve = [
-                    Promise\resolve((new DB_Api())->execute("UPDATE alerting_rules SET monitor = 0 WHERE id = ?", $found_service["alerting_id"]))
+                    Promise\resolve((new DB_Api())->execute("UPDATE alerting_rules SET monitor = 0 WHERE id = ?", array($found_service["alerting_id"])))
                   ];
                 }else{
-                  $resolve($this->logging_api->getErrormessage("editMonitoredServices", "002", "Monitor value '{$found_service["monitor"]}' not valid."));
-                }                
+                  return $resolve($this->logging_api->getErrormessage("editMonitoredServices", "002", "Monitor value '{$found_service["monitor"]}' not valid."));
+                }
               }
 
               Promise\all($statements_to_resolve)->then(function($all_returned) use(&$resolve, $data){
-                if(array_key_exists("status", $all_returned[0]) && $all_returned[0]["status"] != 0) return $resolve($all_returned[0]);
+                if(array_key_exists(0, $all_returned) && gettype($all_returned[0]) != "object" && array_key_exists("status", $all_returned[0]) && $all_returned[0]["status"] != 0){
+                  return $resolve($all_returned[0]);
+                }
                 
                 $new_monitored_services = Promise\resolve($this->alerting_api->getConfigurableDowntimeServices(["node_id" => $data["node_id"]]));
                 $new_monitored_services->then(function($new_monitored_services_returned) use(&$resolve, $data){
                   if(array_key_exists("data", $new_monitored_services_returned)) $new_monitored_services = $new_monitored_services_returned["data"];
                   else $new_monitored_services = [];
       
-                  $resolve(array("status" => 0, "message" => "Successfully set monitor to {$data["monitor"]} for service with ID {$data["service_id"]}.", "data" => $new_monitored_services));  
+                  return $resolve(array("status" => 0, "message" => "Successfully set monitor to {$data["monitor"]} for service with ID {$data["service_id"]}.", "data" => $new_monitored_services));  
                 });
               })->otherwise(function(\Exception $e) use(&$resolve){
-                $resolve($this->logging_api->getErrormessage("editMonitoredServices", "003", $e));
+                return $resolve($this->logging_api->getErrormessage("editMonitoredServices", "003", $e));
               });
             }else{
-              $resolve($this->logging_api->getErrormessage("editMonitoredServices", "004"));
+              return $resolve($this->logging_api->getErrormessage("editMonitoredServices", "004"));
             }
           })->otherwise(function(\Exception $e) use(&$resolve){
-            $resolve($this->logging_api->getErrormessage("editMonitoredServices", "005", $e));
+            return $resolve($this->logging_api->getErrormessage("editMonitoredServices", "005", $e));
           });
         }else{
-          $resolve($this->logging_api->getErrormessage("editMonitoredServices", "006"));
+          return $resolve($this->logging_api->getErrormessage("editMonitoredServices", "006"));
         }
       };
 
