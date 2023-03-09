@@ -2,6 +2,7 @@
   namespace ChiaMgmt\Chia_Infra_Sysinfo;
   use React\Promise;
   use ChiaMgmt\DB\DB_Api;
+  use ChiaMgmt\WebSocket\WebSocket_Api;
   use ChiaMgmt\Logging\Logging_Api;
   use ChiaMgmt\Alerting\Alerting_Api;
   use ChiaMgmt\Nodes\Nodes_Api;
@@ -70,167 +71,213 @@
      * @param  array  $loginData  {"authhash": "[Querying Node's authhash]"}
      * @return array              {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]", "data": {"nodeid": [nodeid], "data": {[newly added harvester data]}}
      */
-    public function updateSystemInfo(array $data, array $loginData = NULL): array
+    public function updateSystemInfo(array $data, array $loginData = NULL): object
     {
-      if(array_key_exists("system", $data)){
-        try{
-          $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
-          $nodeid = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/[0]["id"];
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData){
+        if(array_key_exists("system", $data)){
+          $nodeid = Promise\resolve((new DB_Api())->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"]))));
+          $nodeid->then(function($nodeid_returned) use(&$resolve, $data){
+            if(array_key_exists(0, $nodeid_returned->resultRows)){
+              $nodeid = $nodeid_returned->resultRows[0]["id"];
 
-          if(array_key_exists("load", $data["system"])){
-            //Client version < 0.3, TODO Cleanup in some versions 
-            $load_1_min = $data["system"]["load"]["1min"];
-            $load_5_min = $data["system"]["load"]["5min"];
-            $load_15_min = $data["system"]["load"]["15min"];
-          }else if(array_key_exists("cpu", $data["system"]) && array_key_exists("load", $data["system"]["cpu"]) && array_key_exists("1min", $data["system"]["cpu"]["load"])){
-            //Client version >=0.3
-            $load_1_min = $data["system"]["cpu"]["load"]["1min"];
-            $load_5_min = $data["system"]["cpu"]["load"]["5min"];
-            $load_15_min = $data["system"]["cpu"]["load"]["15min"];
-          }else{
-            $load_1_min = 0;
-            $load_5_min = 0;
-            $load_15_min = 0;
-          }
+              /**
+               * We need to make an initial insert because all other ressources references to this insert ID
+               * Inserting system overall information
+               */
+              $init_sysinfo_entry = Promise\resolve((new DB_Api())->execute("INSERT INTO chia_infra_sysinfo (id, nodeid, cpu_count, cpu_cores, cpu_model, os_type, os_name) VALUES(NULL, ?, ?, ?, ?, ?, ?)",
+                                                      array($nodeid, $data["system"]["cpu"]["physical_cores"], ($data["system"]["cpu"]["logical_cores"] / $data["system"]["cpu"]["physical_cores"]), $data["system"]["cpu"]["model"],
+                                                      $data["system"]["os"]["type"], str_contains(",", $data["system"]["os"]["name"]) ? implode(",", $data["system"]["os"]["name"]) : $data["system"]["os"]["name"])
+                                                    ));
+              $init_sysinfo_entry->then(function($init_sysinfo_entry_returned) use(&$resolve, $data, $nodeid){
+                $last_insert_id = $init_sysinfo_entry_returned->insertId;
 
-          //Windows does not return these values
-          if(is_null($data["system"]["memory"]["buffers"])) $data["system"]["memory"]["buffers"] = 0;
-          if(is_null($data["system"]["memory"]["cached"])) $data["system"]["memory"]["cached"] = 0;
-          if(is_null($data["system"]["memory"]["shared"])) $data["system"]["memory"]["shared"] = 0;
-          
-          $sql = $this->db_api->execute("INSERT INTO chia_infra_sysinfo (id, nodeid, cpu_count, cpu_cores, cpu_model, os_type, os_name) VALUES(NULL, ?, ?, ?, ?, ?, ?)",
-          array($nodeid, $data["system"]["cpu"]["physical_cores"], ($data["system"]["cpu"]["logical_cores"] / $data["system"]["cpu"]["physical_cores"]), $data["system"]["cpu"]["model"],
-                $data["system"]["os"]["type"], implode(",", $data["system"]["os"]["name"])
-              ));
-          
-          $last_insert_id = $this->db_api->lastInsertId();
+                /**
+                 * Update all nodes system and services up / down status 
+                 */
+                Promise\resolve($this->setAllNodesSystemAndServicesUpStatus());
+                
+                /**
+                 * Prepare and insert CPU load data
+                 */
+                if(array_key_exists("load", $data["system"])){
+                  //Client version < 0.3, TODO Cleanup in some versions 
+                  $load_1_min = $data["system"]["load"]["1min"];
+                  $load_5_min = $data["system"]["load"]["5min"];
+                  $load_15_min = $data["system"]["load"]["15min"];
+                }else if(array_key_exists("cpu", $data["system"]) && array_key_exists("load", $data["system"]["cpu"]) && array_key_exists("1min", $data["system"]["cpu"]["load"])){
+                  //Client version >=0.3
+                  $load_1_min = $data["system"]["cpu"]["load"]["1min"];
+                  $load_5_min = $data["system"]["cpu"]["load"]["5min"];
+                  $load_15_min = $data["system"]["cpu"]["load"]["15min"];
+                }else{
+                  $load_1_min = 0;
+                  $load_5_min = 0;
+                  $load_15_min = 0;
+                }
+                
+                $cpu_load_data = Promise\resolve((new DB_Api())->execute("INSERT INTO chia_infra_sysinfo_cpu_load (id, sysinfo_id, load_1_min, load_5_min, load_15_min) VALUES(NULL, ?, ?, ?, ?)", 
+                                                                          array($last_insert_id, $load_1_min, $load_5_min, $load_15_min)));
+                $cpu_load_data->then(function($cpu_load_data_returned) use(&$resolve, $data, $nodeid, $load_15_min){
+                  $service_insert_id = $cpu_load_data_returned->insertId;
 
-          /**
-           * Update all nodes system and services up / down status 
-           */
-          $this->setAllNodesSystemAndServicesUpStatus();
-          
-          /**
-           * Insert CPU load data
-           */
-          $this_service_type_id = 5;
-          $sql = $this->db_api->execute("INSERT INTO chia_infra_sysinfo_cpu_load (id, sysinfo_id, load_1_min, load_5_min, load_15_min) VALUES(NULL, ?, ?, ?, ?)", array($last_insert_id, $load_1_min, $load_5_min, $load_15_min));
-          $service_insert_id = $this->db_api->lastInsertId();
+                  $updateData = [
+                    "node_id" => $nodeid,
+                    "service_insert_id" => $service_insert_id,
+                    "service_type_id" => 5,
+                    "defined_maximum" => ($data["system"]["cpu"]["physical_cores"] * 2),
+                    "current_service_level" => $load_15_min
+                  ];
+        
+                  Promise\resolve($this->updateAvailableServices($updateData));
+                })->otherwise(function(\Exception $e) use(&$resolve){
+                  $resolve($this->logging_api->getErrormessage("updateSystemInfo", "001", $e));
+                });
 
-          $updateData = [
-            "node_id" => $nodeid,
-            "service_insert_id" => $service_insert_id,
-            "service_type_id" => $this_service_type_id,
-            "defined_maximum" => ($data["system"]["cpu"]["physical_cores"] * 2),
-            "current_service_level" => $load_15_min
-          ];
+                /**
+                 * Prepare and insert CPU usage data
+                 * Client version >= 0.3, TODO Cleanup in some versions 
+                 */
+                if(array_key_exists("cpu", $data["system"]) && array_key_exists("usage", $data["system"]["cpu"])){
+                  $statement_string = "";
+                  $statement_data = [];
+                  $all_usages = 0;
+                  foreach($data["system"]["cpu"]["usage"] AS $arrkey => $thisusage){
+                    array_push($statement_data, $arrkey, $thisusage);
+                    $statement_string .= "(NULL, {$last_insert_id}, ?, ?)";
+                    if(array_key_exists($arrkey+1, $data["system"]["cpu"]["usage"])) $statement_string .= ",";
+                    $all_usages += $thisusage;
+                  }
+        
+                  if(count($statement_data) > 0){
+                    $cpu_usage_data = Promise\resolve((new DB_Api())->execute("INSERT INTO chia_infra_cpu_usage (id, sysinfo_id, cpu_number, cpu_usage) VALUES {$statement_string}", $statement_data));
+                    $cpu_usage_data->then(function($cpu_usage_data_returned) use($all_usages, $nodeid, $data){
+                      $service_insert_id = $cpu_usage_data_returned->insertId;
 
-          $this->updateAvailableServices($updateData);
+                      $updateData = [
+                        "node_id" => $nodeid,
+                        "service_insert_id" => $service_insert_id,
+                        "service_type_id" => 6,
+                        "defined_maximum" => 100,
+                        "current_service_level" => ($all_usages / count($data["system"]["cpu"]["usage"]))
+                      ];
 
-          /**
-           * Insert CPU usage data
-           * Client version >= 0.3, TODO Cleanup in some versions 
-           */
-          $this_service_type_id = 6;
-          if(array_key_exists("cpu", $data["system"]) && array_key_exists("usage", $data["system"]["cpu"])){
-            $statement_string = "";
-            $statement_data = [];
-            $all_usages = 0;
-            foreach($data["system"]["cpu"]["usage"] AS $arrkey => $thisusage){
-              array_push($statement_data, $arrkey, $thisusage);
-              $statement_string .= "(NULL, {$last_insert_id}, ?, ?)";
-              if(array_key_exists($arrkey+1, $data["system"]["cpu"]["usage"])) $statement_string .= ",";
-              $all_usages += $thisusage;
-            }
+                      Promise\resolve($this->updateAvailableServices($updateData));
+                    })->otherwise(function(\Exception $e) use(&$resolve){
+                      $resolve($this->logging_api->getErrormessage("updateSystemInfo", "002", $e));
+                    });
+                  }
+                }
+
+                /**
+                 * Prepare and insert Memory usage data
+                 * Preparing memory data for inserting because Windows clients does not report these values.
+                 */
+                if(is_null($data["system"]["memory"]["buffers"])) $data["system"]["memory"]["buffers"] = 0;
+                if(is_null($data["system"]["memory"]["cached"])) $data["system"]["memory"]["cached"] = 0;
+                if(is_null($data["system"]["memory"]["shared"])) $data["system"]["memory"]["shared"] = 0;
+
+                $memory_usage_data = Promise\resolve((new DB_Api())->execute("INSERT INTO chia_infra_memory_usage (id, sysinfo_id, memory_total, memory_free, memory_buffers, memory_cached, memory_shared) VALUES(NULL, ?, ?, ?, ?, ?, ?)", 
+                                                                              array($last_insert_id, $data["system"]["memory"]["total"], $data["system"]["memory"]["free"], $data["system"]["memory"]["buffers"], $data["system"]["memory"]["cached"], $data["system"]["memory"]["shared"])));
+                $memory_usage_data->then(function($memory_usage_data_returned) use($all_usages, $nodeid, $data){
+                  $service_insert_id = $memory_usage_data_returned->insertId;
+                  $memoryused = $data["system"]["memory"]["total"] - $data["system"]["memory"]["free"] - ($data["system"]["memory"]["buffers"] + $data["system"]["memory"]["cached"]);
+                  
+                  $updateData = [
+                    "node_id" => $nodeid,
+                    "service_insert_id" => $service_insert_id,
+                    "service_type_id" => 7,
+                    "defined_maximum" => $data["system"]["memory"]["total"],
+                    "current_service_level" => $memoryused
+                  ];
+
+                  Promise\resolve($this->updateAvailableServices($updateData));
+                })->otherwise(function(\Exception $e) use(&$resolve){
+                  $resolve($this->logging_api->getErrormessage("updateSystemInfo", "003", $e));
+                });
+
+                /**
+                 * Prepare and insert SWAP usage data
+                 */
+                $swap_usage_data = Promise\resolve((new DB_Api())->execute("INSERT INTO chia_infra_swap_usage (id, sysinfo_id, swap_total, swap_free) VALUES(NULL, ?, ?, ?)", array($last_insert_id, $data["system"]["swap"]["total"], $data["system"]["swap"]["free"])));
+                $memory_usage_data->then(function($memory_usage_data_returned) use($all_usages, $nodeid, $data){
+                  $service_insert_id = $memory_usage_data_returned->insertId;
+
+                  $updateData = [
+                    "node_id" => $nodeid,
+                    "service_insert_id" => $service_insert_id,
+                    "service_type_id" => 8,
+                    "defined_maximum" => $data["system"]["swap"]["total"],
+                    "current_service_level" => ($data["system"]["swap"]["total"] - $data["system"]["swap"]["free"])
+                  ];
+
+                  Promise\resolve($this->updateAvailableServices($updateData));
+                })->otherwise(function(\Exception $e) use(&$resolve){
+                  $resolve($this->logging_api->getErrormessage("updateSystemInfo", "004", $e));
+                });
+
+                /**
+                 * Insert filesystem data
+                 */
+                $statement_string = "";
+                $statement_data = [];
+                foreach($data["system"]["filesystem"] AS $arrkey => $thisfsdata){
+                  if(array_key_exists("device", $thisfsdata)) array_push($statement_data, addslashes($thisfsdata["device"]), $thisfsdata["total"], $thisfsdata["used"], $thisfsdata["free"], addslashes($thisfsdata["mountpoint"])); //Client version >=0.3
+                  else array_push($statement_data, $thisfsdata[0], $thisfsdata[1], $thisfsdata[2], $thisfsdata[3], $thisfsdata[5]);  //Client version < 0.3, TODO Cleanup in some versions
+                  $statement_string .= "(NULL, {$last_insert_id}, ?, ?, ?, ?, ?)";
+                  if(array_key_exists($arrkey+1, $data["system"]["filesystem"])) $statement_string .= ",";
+                }
+
+                if(count($statement_data) > 0){
+                  $filesystem_usage_data = Promise\resolve((new DB_Api())->execute("INSERT INTO chia_infra_sysinfo_filesystems (id, sysinfo_id, device, size, used, avail, mountpoint) VALUES {$statement_string}", $statement_data));
+                }else{
+                  $filesystem_usage_data = Promise\resolve([]);
+                }
+
+                $filesystem_usage_data->then(function($filesystem_usage_data_returned) use($nodeid, $last_insert_id){
+                  $current_sysinfo = Promise\resolve((new DB_Api())->execute("SELECT id, mountpoint, size, used FROM chia_infra_sysinfo_filesystems WHERE sysinfo_id = ?", array($last_insert_id)));
+                  $current_sysinfo->then(function($current_sysinfo_returned) use($nodeid){
+                    foreach($current_sysinfo_returned->resultRows AS $arrkey => $curr_fs_data){
+                      $updateData = [
+                        "node_id" => $nodeid,
+                        "service_insert_id" => $curr_fs_data["id"],
+                        "service_type_id" => 9,
+                        "service_target" => $curr_fs_data["mountpoint"],
+                        "defined_maximum" => $curr_fs_data["size"],
+                        "current_service_level" => $curr_fs_data["used"]
+                      ];
   
-            if(count($statement_data) > 0){
-              $sql = $this->db_api->execute("INSERT INTO chia_infra_cpu_usage (id, sysinfo_id, cpu_number, cpu_usage) VALUES {$statement_string}", $statement_data);
-              $service_insert_id = $this->db_api->lastInsertId();
+                      Promise\resolve($this->updateAvailableServices($updateData));
+                    }
+                  })->otherwise(function(\Exception $e) use(&$resolve){
+                    $resolve($this->logging_api->getErrormessage("updateSystemInfo", "005", $e));
+                  });
+                })->otherwise(function(\Exception $e) use(&$resolve){
+                  $resolve($this->logging_api->getErrormessage("updateSystemInfo", "006", $e));
+                });
 
-              $updateData = [
-                "node_id" => $nodeid,
-                "service_insert_id" => $service_insert_id,
-                "service_type_id" => $this_service_type_id,
-                "defined_maximum" => 100,
-                "current_service_level" => ($all_usages / count($data["system"]["cpu"]["usage"]))
-              ];
-              $this->updateAvailableServices($updateData);
+                return $nodeid;
+              })->then(function($nodeid) use(&$resolve){
+                Promise\resolve($this->alerting_api->alertAllFoundWARNandCRIT());
+                $resolve(array("status" => 0, "message" => "Successfully updated system information for node $nodeid.", "data" => ["nodeid" => $nodeid]));
+              })->otherwise(function(\Exception $e) use(&$resolve){
+                $resolve($this->logging_api->getErrormessage("updateSystemInfo", "007", $e));
+              });
+            }else{
+              $resolve($this->logging_api->getErrormessage("updateSystemInfo", "008"));
             }
-          }
-
-          /**
-           * Insert Memory usage data
-           */
-          $this_service_type_id = 7;
-          $sql = $this->db_api->execute("INSERT INTO chia_infra_memory_usage (id, sysinfo_id, memory_total, memory_free, memory_buffers, memory_cached, memory_shared) VALUES(NULL, ?, ?, ?, ?, ?, ?)", 
-                                          array($last_insert_id, $data["system"]["memory"]["total"], $data["system"]["memory"]["free"], $data["system"]["memory"]["buffers"], $data["system"]["memory"]["cached"], $data["system"]["memory"]["shared"]));
-
-          $service_insert_id = $this->db_api->lastInsertId();
-          $memoryused = $data["system"]["memory"]["total"] - $data["system"]["memory"]["free"] - ($data["system"]["memory"]["buffers"] + $data["system"]["memory"]["cached"]);
-
-          $updateData = [
-            "node_id" => $nodeid,
-            "service_insert_id" => $service_insert_id,
-            "service_type_id" => $this_service_type_id,
-            "defined_maximum" => $data["system"]["memory"]["total"],
-            "current_service_level" => $memoryused
-          ];
-          $this->updateAvailableServices($updateData);
-
-          /**
-           * Insert SWAP usage data
-           */
-          $this_service_type_id = 8;
-          $sql = $this->db_api->execute("INSERT INTO chia_infra_swap_usage (id, sysinfo_id, swap_total, swap_free) VALUES(NULL, ?, ?, ?)", array($last_insert_id, $data["system"]["swap"]["total"], $data["system"]["swap"]["free"]));
-          $service_insert_id = $this->db_api->lastInsertId();
-
-          $updateData = [
-            "node_id" => $nodeid,
-            "service_insert_id" => $service_insert_id,
-            "service_type_id" => $this_service_type_id,
-            "defined_maximum" => $data["system"]["swap"]["total"],
-            "current_service_level" => ($data["system"]["swap"]["total"] - $data["system"]["swap"]["free"])
-          ];
-          $this->updateAvailableServices($updateData);
-
-          /**
-           * Insert filesystem data
-           */
-          $statement_string = "";
-          $statement_data = [];
-          $this_service_type_id = 9;
-          foreach($data["system"]["filesystem"] AS $arrkey => $thisfsdata){
-            if(array_key_exists("device", $thisfsdata)) array_push($statement_data, addslashes($thisfsdata["device"]), $thisfsdata["total"], $thisfsdata["used"], $thisfsdata["free"], addslashes($thisfsdata["mountpoint"])); //Client version >=0.3
-            else array_push($statement_data, $thisfsdata[0], $thisfsdata[1], $thisfsdata[2], $thisfsdata[3], $thisfsdata[5]);  //Client version < 0.3, TODO Cleanup in some versions
-            $statement_string .= "(NULL, {$last_insert_id}, ?, ?, ?, ?, ?)";
-            if(array_key_exists($arrkey+1, $data["system"]["filesystem"])) $statement_string .= ",";
-          }
-
-          if(count($statement_data) > 0){
-            $sql = $this->db_api->execute("INSERT INTO chia_infra_sysinfo_filesystems (id, sysinfo_id, device, size, used, avail, mountpoint) VALUES {$statement_string}", $statement_data);
-          }
-
-          $sql = $this->db_api->execute("SELECT id, mountpoint, size, used FROM chia_infra_sysinfo_filesystems WHERE sysinfo_id = ?", array($last_insert_id));
-          foreach($sql/*->fetchAll(\PDO::FETCH_ASSOC)*/ AS $arrkey => $curr_fs_data){
-            $updateData = [
-              "node_id" => $nodeid,
-              "service_insert_id" => $curr_fs_data["id"],
-              "service_type_id" => $this_service_type_id,
-              "service_target" => $curr_fs_data["mountpoint"],
-              "defined_maximum" => $curr_fs_data["size"],
-              "current_service_level" => $curr_fs_data["used"]
-            ];
-            $this->updateAvailableServices($updateData);
-          }
-
-          $this->alerting_api->alertAllFoundWARNandCRIT();
-
-          return array("status" => 0, "message" => "Successfully updated system information for node $nodeid.", "data" => ["nodeid" => $nodeid]);
-        }catch(\Exception $e){
-          print_r($e);
-          return $this->logging_api->getErrormessage("001", $e);
+          })->otherwise(function(\Exception $e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("updateSystemInfo", "009", $e));
+          });
+        }else{
+          $resolve($this->logging_api->getErrormessage("updateSystemInfo", "010"));
         }
-      }
+      };
+
+      $canceller = function () {
+        throw new \Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -256,18 +303,18 @@
         }
 
         $systemInfos = Promise\resolve((new DB_Api())->execute("SELECT n.id, cias.id AS service_id, n.hostname, n.nodeauthhash, cias.service_type,
-                                                                        cis.os_type, cis.os_name,
-                                                                        cis.cpu_count, cis.cpu_cores, cis.cpu_model,
-                                                                        ciscl.load_1_min,ciscl.load_5_min ,ciscl.load_15_min,
-                                                                        cicu.cpu_number, cicu.cpu_usage,
-                                                                        cimu.memory_total, cimu.memory_free, cimu.memory_buffers, cimu.memory_shared, cimu.memory_cached,
-                                                                        cisu.swap_total, cisu.swap_free,
-                                                                        cisf.device, cisf.size, cisf.used, cisf.avail, cisf.mountpoint,
-                                                                        cias.curr_service_insert_id, cias.service_state, cias.time_or_usage, cias.service_state_first_reported, cias.service_state_last_reported,
-                                                                        cist.service_desc, ar.monitor,
-                                                                        (CASE WHEN ad.downtime_comment IS NOT NULL THEN 1
-                                                                            ELSE 0
-                                                                        END) AS downtime_active
+                                                                      cis.os_type, cis.os_name,
+                                                                      cis.cpu_count, cis.cpu_cores, cis.cpu_model,
+                                                                      ciscl.load_1_min,ciscl.load_5_min ,ciscl.load_15_min,
+                                                                      cicu.cpu_number, cicu.cpu_usage,
+                                                                      cimu.memory_total, cimu.memory_free, cimu.memory_buffers, cimu.memory_shared, cimu.memory_cached,
+                                                                      cisu.swap_total, cisu.swap_free,
+                                                                      cisf.device, cisf.size, cisf.used, cisf.avail, cisf.mountpoint,
+                                                                      cias.curr_service_insert_id, cias.service_state, cias.time_or_usage, cias.service_state_first_reported, cias.service_state_last_reported,
+                                                                      cist.service_desc, ar.monitor,
+                                                                      (CASE WHEN ad.downtime_comment IS NOT NULL THEN 1
+                                                                          ELSE 0
+                                                                      END) AS downtime_active
                                                                 FROM nodes n
                                                                 LEFT JOIN chia_infra_available_services cias ON cias.id = (SELECT cias1.id
                                                                                                                             FROM chia_infra_available_services cias1
@@ -293,9 +340,9 @@
 
         $systemInfos->then(function($systemInfos_returned) use(&$resolve){
           $returnarray = [];
+
           foreach($systemInfos_returned->resultRows AS $arrkey => $sysinfodata){
             $data_current = (strtotime("now") - strtotime($sysinfodata["service_state_last_reported"]) <= 120 ? true : false );
-
 
             if(!array_key_exists($sysinfodata["id"], $returnarray)) $returnarray[$sysinfodata["id"]] = [];
             if($sysinfodata["service_type"] == 1){
@@ -473,6 +520,8 @@
           $function_call = Promise\resolve((new WebSocket_Api())->sendToWSS($callfunction, $querydata));
         }
 
+        print_r($function_call);
+
         $function_call->then(function($function_call_returned) use(&$resolve){
           $resolve($function_call_returned);
         });
@@ -515,11 +564,8 @@
           }
         }
 
-        /*$available_services = Promise\resolve((new DB_Api())->execute("SELECT cias.id, cias.curr_service_insert_id, cias.service_target ,cias.service_type, cias.refers_to_rule_id, ar.rule_target, ar.warn_at_after, ar.crit_at_after, cias.service_state, cias.time_or_usage, cias.node_id, ar.monitor, cias.service_state_first_reported, cias.service_state_last_reported
-                                                                        FROM chia_infra_available_services cias 
-                                                                        JOIN alerting_rules ar ON ar.id = cias.refers_to_rule_id
-                                                                        WHERE $where_statement cias.service_state_first_reported = (SELECT max(cias1.service_state_first_reported) FROM chia_infra_available_services cias1 WHERE cias1.node_id = cias.node_id AND cias1.service_type = cias.service_type AND cias1.service_target = cias.service_target)", $statement_array));*/
-                
+        if($data["node_id"] == 55 and $data["service_type_id"] == 1) print_r($data);
+
         $available_services = Promise\resolve((new DB_Api())->execute("SELECT cias.id, cias.curr_service_insert_id, cias.service_target ,cias.service_type, cias.refers_to_rule_id, ar.rule_target, ar.warn_at_after, ar.crit_at_after, cias.service_state, cias.time_or_usage, cias.node_id, ar.monitor, cias.service_state_first_reported, cias.service_state_last_reported
                                                                         FROM chia_infra_available_services cias 
                                                                         JOIN alerting_rules ar ON ar.id = cias.refers_to_rule_id
@@ -570,6 +616,10 @@
         if(array_key_exists("node_id", $data) && array_key_exists("service_type_id", $data) && array_key_exists("service_insert_id", $data) && 
         array_key_exists("defined_maximum", $data) && array_key_exists("current_service_level", $data) && 
         ($data["service_type_id"] == 9 && array_key_exists("service_target", $data)) || $data["service_type_id"] < 9){
+
+          echo "====================================================\n";
+          echo "updateAvailableServices\n";
+          echo "====================================================\n";
                     
           $nodeid = $data["node_id"];
           $this_service_type_id = $data["service_type_id"];
@@ -618,6 +668,10 @@
                   $insert_new = true;
                   $set_current = "";
                 }
+
+                echo "UPDATE chia_infra_available_services SET curr_service_insert_id = ?, time_or_usage = ?{$set_current} , service_state_last_reported = NOW() WHERE id = ?\n";
+                print_r(array($service_insert_id, intval($current_service_alerting_level["time_or_usage"]), $target_avail_serv_id));
+                echo "\n";
                
                 $update_service = Promise\resolve((new DB_Api())->execute("UPDATE chia_infra_available_services SET curr_service_insert_id = ?, time_or_usage = ?{$set_current} , service_state_last_reported = NOW() WHERE id = ?",
                                                   array($service_insert_id, intval($current_service_alerting_level["time_or_usage"]), $target_avail_serv_id)));
@@ -628,6 +682,8 @@
               }else{
                 $insert_new = true;
               }
+
+              echo ($insert_new ? "INSERT NEW nodeID: $nodeid\n" : "DONT INSERT NEW nodeID: $nodeid\n");
 
               if($insert_new){               
                 $insert_new = Promise\resolve((new DB_Api())->execute("INSERT INTO chia_infra_available_services (id, curr_service_insert_id, service_target, service_type, refers_to_rule_id, service_state, time_or_usage, node_id, current, service_state_first_reported, service_state_last_reported) VALUES(NULL, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())", 
@@ -672,12 +728,11 @@
           if(array_key_exists("data", $available_nodes_returned)) $available_nodes_returned = $available_nodes_returned["data"];
 
           foreach($available_nodes_returned AS $nodeid => $services_data){
-            $this_service_type_id = 1;
             $node_up_down_since = (strtotime($services_data["onlinestatus"]["node_lastreported"]) - strtotime($services_data["onlinestatus"]["node_firstreported"])) / 60;
             $updateData = [
               "node_id" => $nodeid,
               "service_insert_id" => $services_data["onlinestatus"]["entry_id"],
-              "service_type_id" => $this_service_type_id,
+              "service_type_id" => 1,
               "service_target" => NULL,
               "defined_maximum" => NULL,
               "current_service_level" => $services_data["onlinestatus"]["status"],
@@ -696,7 +751,7 @@
                 "current_service_level" => $node_service_state["servicestate"],
                 "current_service_minutes" => $service_up_down_since
               ];
-   
+
               Promise\resolve($this->updateAvailableServices($updateData));
             }
           }
