@@ -29,6 +29,11 @@
     
             $mailer = "Chia Management";
 
+            //TESTING!!!!
+            echo json_encode(array("status" => 0, "message" => "Message has been sent."));
+            return;
+            //TESTING!!!!
+
             try{
                 $mail = new PHPMailer(true);
                 //$mail->SMTPDebug = SMTP::DEBUG_SERVER;

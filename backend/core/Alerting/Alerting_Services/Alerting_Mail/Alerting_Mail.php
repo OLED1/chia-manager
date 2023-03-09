@@ -81,6 +81,9 @@
             $template =  str_replace("[STATESINCE]",$message_to_send->get_state_since(), $template);
             $template =  str_replace("[URGENTACTION]",$this->getActionStatus($newstate), $template);
 
+            echo "Mail to send:\n";
+            print_r($template);
+
             return $template;
         }
 

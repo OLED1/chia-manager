@@ -27,6 +27,7 @@
       exit();
     }
 
+    
     $sysinfos = $all_returned[1];
     $configureable_downtimes = $all_returned[2];
     $found_downtimes = $all_returned[3];
@@ -50,6 +51,10 @@
         var monitored_services = " . json_encode($monitored_services) . ";
       </script>";
 
+      echo "<pre>";
+      print_r($sysinfos["data"][55]);
+      echo "</pre>";
+
       $first = true;
       echo "<ul class='nav nav-tabs' role='tablist'>";
       foreach($sysinfos["data"] AS $nodeid => $sysinfo){
@@ -69,7 +74,8 @@
         /*echo "<pre>";
         print_r($sysinfo);
         echo "</pre>";*/
-      if(!array_key_exists("cpu", $sysinfo) && !array_key_exists("memory", $sysinfo) && !array_key_exists("filesystem", $sysinfo)){
+
+        if(!array_key_exists("cpu", $sysinfo) && !array_key_exists("memory", $sysinfo) && !array_key_exists("filesystem", $sysinfo)){
 ?>
   <div class='row tab-pane fade show <?php echo ($first ? "active" : ""); ?>' id="node-<?php echo $nodeid; ?>" role="tabpanel" aria-labelledby="node-tab-<?php echo $nodeid; ?>"'>
     <?php $first = false; ?>

@@ -66,6 +66,9 @@
      */
     public function updateFarmData(array $data, array $loginData): array
     {
+      
+
+
       try{
         $formatted_data = new Farmdata($data);
 
