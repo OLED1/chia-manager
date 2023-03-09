@@ -128,7 +128,7 @@
      */
     public function processCronRequest(array $loginData, array $backendInfo, array $data, array $nodeInfo, $server): object
     {
-      $resolver = function (callable $resolve, callable $reject, callable $notify) use($loginData, $backendInfo, $data, $server){
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($loginData, $server){
         //status 0 = Success, status 1 = Error, status 2 = Aborted, status 3 = Processing
         $cron_processing = Promise\resolve((new DB_Api())->execute("SELECT id AS job_id, status, exec_started, exec_ended FROM cron_execution ORDER BY exec_started DESC LIMIT 1",[]));
         $cron_processing->then(function($cron_processing_returned) use(&$resolve, $loginData, $server){
@@ -332,7 +332,7 @@
 
           $node_info->then(function($node_info_returned) use(&$resolve, $nodeip, $data, $nodeinfo){
             $node_info_returned = $node_info_returned->resultRows;
-
+            
             $ipaddressvalid = true;
             if(array_key_exists("0", $node_info_returned) && !in_array("webClient", explode(",", $node_info_returned[0]["nodetype"])) && !in_array("backendClient", explode(",", $node_info_returned[0]["nodetype"]))){
               if($nodeip != $node_info_returned[0]["ipaddress"]) $ipaddressvalid = false;
@@ -418,11 +418,14 @@
                   });
                 }else if(count($node_data_returned) == 1){
                   if($nodeip == $node_data_returned[0]["ipaddress"]){
-                    if(strlen(trim($data["authhash"])) == 0) $data = $this->logging->getErrormessage("requesterLogin", "013");
-                    else $data = $this->logging->getErrormessage("requesterLogin", "007");
-    
-                    $data["data"]["nodeid"] = $node_data_returned[0]["id"];
-                    $data["data"]["authhash"] = $this->encryption_api->decryptString($node_data_returned[0]["nodeauthhash"]);
+                    if(strlen(trim($data["authhash"])) == 0) $logging_promise = Promise\resolve($this->logging->getErrormessage("requesterLogin", "013"));
+                    else $logging_promise = Promise\resolve($this->logging->getErrormessage("requesterLogin", "007"));
+
+                    $logging_promise->then(function($logging_promise_returned) use(&$data, $node_data_returned){
+                      $data = $logging_promise_returned;
+                      $data["data"]["nodeid"] = $node_data_returned[0]["id"];
+                      $data["data"]["authhash"] = $this->encryption_api->decryptString($node_data_returned[0]["nodeauthhash"]);
+                    });
     
                     $resolve($data);
                   }else{
@@ -431,8 +434,12 @@
                       return $resolve($this->logging->getErrormessage("requesterLogin", "017", $e));
                     }); 
 
-                    $data = $this->logging->getErrormessage("requesterLogin", "011");
-                    $data["data"]["authhash"] = $this->encryption_api->decryptString($node_data_returned[0]["nodeauthhash"]);
+                    $logging_promise = Promise\resolve($this->logging->getErrormessage("requesterLogin", "011"));
+                    $logging_promise->then(function($logging_promise_returned) use(&$data, $node_data_returned){
+                      $data = $logging_promise_returned;
+                      $data["data"]["authhash"] = $this->encryption_api->decryptString($node_data_returned[0]["nodeauthhash"]);
+                    });
+    
                     $resolve($data);
                   }
                 }else{

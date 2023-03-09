@@ -10,7 +10,6 @@ use ChiaMgmt\Login\Login_Api;
 use ChiaMgmt\RequestHandler\RequestHandler_Api;
 use ChiaMgmt\Sites\Sites_Api;
 use ChiaMgmt\Logging\Logging_Api;
-use ChiaMgmt\System\System_Api;
 
 /**
  * The ChiaWebSocketServer class contains the websocket server itself and it's data processing functions.
@@ -119,7 +118,12 @@ class ChiaWebSocketServerNew implements MessageComponentInterface {
       $data = json_decode($msg, true);
       $request_id = substr(str_shuffle(str_repeat($x='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', ceil(10/strlen($x)) )),1,10);
       echo "[{$this->getDate()}] [{$request_id}] INFO EVENTLOOP GENERAL: Added connection {$from->resourceId} to event loop.\n";
-      
+
+      echo "----------------------------------";
+      echo "\nMESSAGE:\n";
+      print_r($msg);
+      echo "\n----------------------------------\n";
+
       if(is_array($data) && array_key_exists("node" , $data) && array_key_exists("request" , $data)
       && array_key_exists("data" , $data["request"]) && array_key_exists("backendInfo" , $data["request"])){
         //Setting variables for processing
@@ -146,12 +150,12 @@ class ChiaWebSocketServerNew implements MessageComponentInterface {
               $request_login_returned["data"]["resid"] = $from->resourceId;
               if($request_login_returned["status"] == "010004002") $this->requests[$request_login_returned["data"]["authhash"]] = $request_login_returned["data"];
               else $this->requests[$request_login_returned["data"]["authhash"]] = $request_login_returned["data"];
-
-              $message_frontend_clients = Promise\resolve($this->messageFrontendClients(array("siteID" => 2), $this->requestHandler->processConnectionRequest($this->requests), $request_id));
-              $message_frontend_clients->then(function($message_frontend_clients_returned) use($request_id, $from){
+              
+            $message_frontend_clients = [Promise\resolve($this->messageFrontendClients(["siteID" => 2])), Promise\resolve($requestHandler->processConnectionRequest($this->requests))];
+              Promise\all($message_frontend_clients)->then(function($message_frontend_clients_returned) use($request_id, $from){
                 echo "[{$this->getDate()}] [{$request_id}] INFO EVENTLOOP CLIENT_PROCESSING: Successfully sent message to client {$from->resourceId}.\n";
               });
-            }
+            }          
 
             if(array_key_exists("status", $request_login_returned) && $request_login_returned["status"] == 0){
               foreach(explode(",", $request_login_returned["nodeinfo"]["type"]) AS $arrkey => $type){
@@ -171,7 +175,7 @@ class ChiaWebSocketServerNew implements MessageComponentInterface {
                   if(!in_array($from->resourceId, $this->connectedNodesInformed)){
                     array_push($this->connectedNodesInformed, $from->resourceId);
                     //Set Node to UP
-                    $set_node_up_down = $this->requestHandler->processRequest([], ['namespace' => 'ChiaMgmt\Nodes\Nodes_Api', 'method' => 'setNodeUpDown'], ["nodeid" => $requesterLogin["nodeinfo"]["nodedata"]["nodeid"], "updown" => 1]); 
+                    $set_node_up_down = $requestHandler->processRequest([], ['namespace' => 'ChiaMgmt\Nodes\Nodes_Api', 'method' => 'setNodeUpDown'], ["nodeid" => $requesterLogin["nodeinfo"]["nodedata"]["nodeid"], "updown" => 1]); 
                     $this->messageFrontendClients([], $set_node_up_down, $from->resourceId, ['namespace' => 'ChiaMgmt\Nodes\Nodes_Api'], $request_id);
                   }
                 }else{
@@ -379,9 +383,8 @@ class ChiaWebSocketServerNew implements MessageComponentInterface {
    * @param  int $mycon           The connection ID of the sending client to be able to send back an info.
    * @param  array $backendInfo   The backend related information for data processing like namespace- and functionname.
    */
-  public function messageFrontendClients(array $loginData, array $datatosend, int $mycon = NULL, array $backendInfo = NULL, string $reqID = "----------"){
+  public function messageFrontendClients(array $loginData, array $datatosend, int $mycon = NULL, array $backendInfo = NULL, string $reqID = "----------"): object{
     $resolver = function (callable $resolve, callable $reject, callable $notify) use($loginData, $datatosend, $mycon, $backendInfo, $reqID){
-
       echo "[{$this->getDate()}] [----------] INFO SERVER MSG_CLIENTS: Got command message frontend clients " . json_encode($datatosend) . "\n";
 
       if(is_null($backendInfo) && array_key_exists("siteID", $loginData) && $loginData["siteID"] > 0){
@@ -418,11 +421,12 @@ class ChiaWebSocketServerNew implements MessageComponentInterface {
           }
         }
       }
+
       $resolve("Sent message to client with ID {$mycon}.");
     };
 
     $canceller = function () {
-      throw new Exception('Promise cancelled');
+      throw new \Exception('Promise cancelled');
     };
 
     return new Promise\Promise($resolver, $canceller);
