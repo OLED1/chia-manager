@@ -61,12 +61,16 @@
      */
     public function execute(string $statement, array $parameter)
     {                    
-      $promise = $this->connection->query($statement, $parameter)->then(
+      $promise = $this->connection->query($statement, $this->removeHTMLEntities($parameter))->then(
         function (QueryResult $command){
           return $command;
         },
-        function (\Exception $e) {
-          throw new \Exception($e);
+        function (\Exception $e) use($statement, $parameter){
+          if($e->getCode() == 1213){
+            $this->execute($statement, $parameter);
+          }else{
+            throw new \Exception($e);
+          }
         }
       );
       
@@ -74,6 +78,7 @@
 
       return $promise;
     }
+
     /**
      * This method prevents JavaScript injection before statements are put to database.
      * @param  array $parameter The mysql parameters list.
