@@ -8,7 +8,16 @@
   },
   "errormessages" : {
     "updateSystemInfo" : {
-      "001" : [2, "An error occured."]
+      "001" : [2, "An error occured."],
+      "002" : [2, "An error occured."],
+      "003" : [2, "An error occured."],
+      "004" : [2, "An error occured."],
+      "005" : [2, "An error occured."],
+      "006" : [2, "An error occured."],
+      "007" : [2, "An error occured."],
+      "008" : [2, "Node not found. Not saving data."],
+      "009" : [2, "An error occured."],
+      "010" : [1, "Not all data stated."]
     },
     "getSystemInfo" : {
       "001" : [2, "An error occured."],
