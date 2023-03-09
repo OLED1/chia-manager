@@ -1,3 +1,5 @@
+> :warning: **Project moved**: Our project will now be developed [here](https://github.com/ChiaManager/chia-manager)
+
 # chia-manager
 ## Important notice
 This tool is not officially published by CHIA NETWORK INC nor officially supported! It is an unofficial hobby project. _Chia®_ and the Chia Leaf Logo™ are registered trademarks or trademarks of Chia Network, Inc. in the United States and worldwide. **All in italic written words are copyright protected**.
