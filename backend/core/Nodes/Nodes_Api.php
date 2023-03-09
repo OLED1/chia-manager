@@ -423,29 +423,10 @@
       };  
 
       $canceller = function () {
-        throw new Exception('Promise cancelled');
+        throw new \Exception('Promise cancelled');
       };
 
       return new Promise\Promise($resolver, $canceller);
-      
-      if(array_key_exists("authhash", $loginData)){
-        try{
-          $sql = $this->db_api->execute("SELECT n.id, GROUP_CONCAT(nta.description SEPARATOR ', ') AS nodetype, n.hostname
-          FROM nodes n
-          JOIN nodetype nt ON nt.nodeid = n.id
-          JOIN nodetypes_avail nta ON nta.code = nt.code
-          WHERE n.nodeauthhash = ?
-          GROUP BY n.id", array($this->encryption_api->encryptString($loginData["authhash"])));
-          //$sqldata = $sql->fetchAll(\PDO::FETCH_ASSOC)[0];
-          $sqldata = $sql[0];
-
-          return array("status" => 0, "method" => "loginStatus", "message" => "This node is logged in.", "data" => $sqldata);
-        }catch(\Exception $e){
-          return $this->logging_api->getErrormessage("001", $e);
-        }
-      }else{
-        return $this->logging_api->getErrormessage("002");
-      }
     }
 
     /**
@@ -456,19 +437,26 @@
      * @param  array $loginData                { NULL } No logindata needed to query this function.
      * @return array                           {"status": [0|>0], "message": "[Success-/Warning-/Errormessage]"}
      */
-    public function updateScriptVersion(array $data, array $loginData = NULL): array
+    public function updateScriptVersion(array $data, array $loginData = NULL): object
     {
-      if(array_key_exists("authhash", $loginData) && array_key_exists("scriptversion", $data) && array_key_exists("chia", $data)){
-        try{
-          $sql = $this->db_api->execute("UPDATE nodes SET scriptversion = ?, chiaversion = ?, chiapath = ? WHERE nodeauthhash = ?", array($data["scriptversion"], $data["chia"]["version"], $data["chia"]["path"], $this->encryption_api->encryptString($loginData["authhash"])));
-
-          return array("status" =>0, "message" => "Successfully updated version.");
-        }catch(\Exception $e){
-          return $this->logging_api->getErrormessage("001", $e);
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($data, $loginData){
+        if(array_key_exists("authhash", $loginData) && array_key_exists("scriptversion", $data) && array_key_exists("chia", $data)){
+          $updateScriptVersion = Promise\resolve((new DB_Api())->execute("UPDATE nodes SET scriptversion = ?, chiaversion = ?, chiapath = ? WHERE nodeauthhash = ?", array($data["scriptversion"], $data["chia"]["version"], $data["chia"]["path"], $this->encryption_api->encryptString($loginData["authhash"]))));
+          $updateScriptVersion->then(function() use(&$resolve){
+            $resolve(array("status" =>0, "message" => "Successfully updated version."));
+          })->otherwise(function (\Exception $e) use(&$resolve){
+            $resolve($this->logging_api->getErrormessage("updateScriptVersion", "001", $e));
+          });
+        }else{
+          $resolve($this->logging_api->getErrormessage("updateScriptVersion", "002"));
         }
-      }else{
-        return $this->logging_api->getErrormessage("002");
-      }
+      };
+
+      $canceller = function () {
+        throw new \Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
@@ -481,14 +469,21 @@
      */
     public function nodeUpdateStatus(array $data, array $loginData = NULL): array
     {
-      try{
-        $sql = $this->db_api->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"])));
-        $nodeid = $sql/*->fetchAll(\PDO::FETCH_ASSOC)*/[0]["id"];
+      $resolver = function (callable $resolve, callable $reject, callable $notify) use($loginData, $data){
+        $update_status = Promise\resolve((new DB_Api())->execute("SELECT id FROM nodes WHERE nodeauthhash = ? LIMIT 1", array($this->encryption_api->encryptString($loginData["authhash"]))));
+        $update_status->then(function($update_status_returned) use(&$resolve, $data){
+          $nodeid = $update_status_returned->resultRows[0]["id"];
+          $resolve(array("status" => 0, "message" => "Successfully queried node update status.", "data" => array("nodeid" => $nodeid, "status" => $data)));
+        })->otherwise(function (\Exception $e) use(&$resolve){
+          $resolve($this->logging_api->getErrormessage("nodeUpdateStatus", "001", $e));
+        });
+      };
 
-        return array("status" => 0, "message" => "Successfully queried node update status.", "data" => array("nodeid" => $nodeid, "status" => $data));
-      }catch(\Exception $e){
-        return $this->logging_api->getErrormessage("001", $e);
-      }
+      $canceller = function () {
+        throw new \Exception('Promise cancelled');
+      };
+
+      return new Promise\Promise($resolver, $canceller);
     }
 
     /**
