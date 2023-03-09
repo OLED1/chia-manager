@@ -838,12 +838,12 @@
               }
 
               $update_alerting_history = true;
-              if($alerting_history_id > 0){
+              $update_alerting_history = Promise\resolve([]);
+              //TESTING
+              /*if($alerting_history_id > 0){
                 $update_alerting_history = Promise\resolve((new DB_Api)->execute("INSERT INTO alerting_history_alerted_to (id, alerting_history_id, user_id, contact) VALUES (NULL, ?, ?, ?)", 
                                                           array($alerting_history_id, $alerted_to, $alert_contact))); 
-              }else{
-                $update_alerting_history = Promise\resolve([]);
-              }
+              }*/
 
               $update_alerting_history->then(function($update_alerting_history_returned) use(&$resolve){
                 $resolve(array("status" => 0, "message" => "Successfully alerted all configured and found WARN, CRIT and UNKN messages."));
